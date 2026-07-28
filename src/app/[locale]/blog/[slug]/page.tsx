@@ -2,8 +2,25 @@ import React from "react";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import ReactMarkdown from "react-markdown";
 import { prisma } from "@/lib/prisma";
+import SocialShare from "@/components/ui/SocialShare";
+import AdminBar from "@/components/admin/AdminBar";
+
+/**
+ * Extracts plain text summary (first 150 characters) from markdown content for SEO description.
+ */
+function extractDescription(markdownText: string | null | undefined): string {
+  if (!markdownText) return "";
+  const plainText = markdownText
+    .replace(/#+\s?/g, "")
+    .replace(/[*_`~>#-]/g, "")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+  return plainText.substring(0, 150);
+}
 
 /**
  * Dynamic SEO metadata generation for Next.js 15 App Router.
@@ -13,10 +30,18 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string; locale: string }>;
 }): Promise<Metadata> {
-  const { slug, locale } = await params;
-  const post = await prisma.post.findUnique({
+  const { slug: rawSlug, locale } = await params;
+  const slug = decodeURIComponent(rawSlug);
+
+  let post = await prisma.post.findUnique({
     where: { slug },
   });
+
+  if (!post && rawSlug !== slug) {
+    post = await prisma.post.findUnique({
+      where: { slug: rawSlug },
+    });
+  }
 
   if (!post) {
     return {
@@ -26,20 +51,26 @@ export async function generateMetadata({
   }
 
   const title = post.title;
-  const description = post.markdown_content
-    ? post.markdown_content.replace(/[#*`>_\-]/g, "").substring(0, 160).trim() + "..."
-    : "";
+  const description = extractDescription(post.markdown_content);
+  const images = post.image_url ? [post.image_url] : [];
 
   return {
-    title: `${title} | دليلك في ألمانيا`,
-    description: description,
+    title: `${title} | GermanJobsPro`,
+    description,
     openGraph: {
-      title: title,
-      description: description,
+      title,
+      description,
       type: "article",
       publishedTime: post.createdAt.toISOString(),
       authors: [post.generated_by_ai ? "AI Assistant" : "Author"],
       tags: [post.category],
+      images: images.length > 0 ? images : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: images.length > 0 ? images : undefined,
     },
   };
 }
@@ -52,14 +83,27 @@ export default async function SinglePostPage({
 }: {
   params: Promise<{ slug: string; locale: string }>;
 }) {
-  const { slug, locale } = await params;
-  const post = await prisma.post.findUnique({
+  const { slug: rawSlug, locale } = await params;
+  const slug = decodeURIComponent(rawSlug);
+
+  let post = await prisma.post.findUnique({
     where: { slug },
   });
+
+  if (!post && rawSlug !== slug) {
+    post = await prisma.post.findUnique({
+      where: { slug: rawSlug },
+    });
+  }
 
   if (!post) {
     notFound();
   }
+
+  // Check admin session cookie invisibly on the server
+  const cookieStore = await cookies();
+  const adminSession = cookieStore.get("admin_session")?.value;
+  const isAdmin = adminSession === "authenticated" || adminSession === "true";
 
   // Fetch 3 related recent posts (excluding current post)
   const relatedPosts = await prisma.post.findMany({
@@ -116,6 +160,9 @@ export default async function SinglePostPage({
 
   return (
     <div dir={dir} className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 py-16 px-4 sm:px-6 lg:px-8">
+      {/* Invisible Admin Controls - Rendered ONLY if admin_session cookie is active */}
+      {isAdmin && <AdminBar post={post} locale={locale} />}
+
       <article dir="rtl" className="max-w-4xl mx-auto space-y-8 text-right">
         
         {/* Navigation Header */}
@@ -292,6 +339,9 @@ export default async function SinglePostPage({
           </div>
         )}
 
+        {/* Viral Social Share Component */}
+        <SocialShare title={post.title} locale={locale} />
+
         {/* Back Button */}
         <div className="pt-8 border-t border-slate-200 dark:border-slate-800/80">
           <Link
@@ -364,7 +414,7 @@ export default async function SinglePostPage({
                     </div>
 
                     <Link
-                      href={`/${locale}/blog/${relPost.slug}`}
+                      href={`/${locale}/blog/${encodeURIComponent(relPost.slug)}`}
                       className="inline-flex items-center text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                     >
                       اقرأ المقال ←

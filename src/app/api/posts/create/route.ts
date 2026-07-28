@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
  */
 interface CreatePostPayload {
   title?: string;
+  slug?: string;
   markdown_content?: string;
   content?: string;
   markdown?: string;
@@ -23,14 +24,18 @@ interface CreatePostPayload {
 
 /**
  * POST handler to create new blog posts via automation webhooks.
- * Implements bearer token validation, field constraints check, and database insertion.
+ * Implements bearer token validation, deduplication checks, and database insertion.
  */
 export async function POST(request: NextRequest) {
-  // 1. Verify Authentication Header
+  // 1. Verify Authentication Header against process.env.MY_SECRET_AUTOMATION_KEY
   const authHeader = request.headers.get("Authorization");
-  const secretKey = process.env.AUTOMATION_API_KEY || "MY_SECRET_AUTOMATION_KEY";
+  const secretKey = process.env.MY_SECRET_AUTOMATION_KEY || "MY_SECRET_AUTOMATION_KEY";
 
-  if (!authHeader || authHeader !== `Bearer ${secretKey}`) {
+  const isAuthorized =
+    authHeader === secretKey ||
+    authHeader === `Bearer ${secretKey}`;
+
+  if (!authHeader || !isAuthorized) {
     return NextResponse.json(
       {
         success: false,
@@ -109,20 +114,62 @@ export async function POST(request: NextRequest) {
 
     const generatedByAi = Boolean(body.generated_by_ai ?? body.generatedByAi);
 
-    // Generate slug (supporting Latin & Arabic titles)
+    // Compute target slug from payload or title
     const baseSlug = title
       .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, "")
       .trim()
       .replace(/\s+/g, "-");
-    const slugPrefix = baseSlug.length > 0 ? baseSlug : "post";
-    const slug = `${slugPrefix}-${Date.now()}`;
+    const payloadSlug = typeof body.slug === "string" ? body.slug.trim() : "";
+    const targetSlug = payloadSlug || (baseSlug.length > 0 ? baseSlug : "post");
 
-    // 3. Persist to SQLite DB using Prisma
+    // 3. Deduplication Check BEFORE creation
+    // Check if a post with the same source_link or slug already exists in SQLite via Prisma
+    const orConditions: Array<{ source_link?: string; slug?: string }> = [];
+
+    if (sourceLink) {
+      orConditions.push({ source_link: sourceLink });
+    }
+    if (targetSlug) {
+      orConditions.push({ slug: targetSlug });
+    }
+
+    if (orConditions.length > 0) {
+      const existingPost = await prisma.post.findFirst({
+        where: {
+          OR: orConditions,
+        },
+      });
+
+      if (existingPost) {
+        console.log("[Webhook Automation] Post already exists. Skipping creation for source_link/slug:", {
+          sourceLink,
+          targetSlug,
+          existingId: existingPost.id,
+        });
+        return NextResponse.json(
+          {
+            success: true,
+            message: "Post already exists",
+            skipped: true,
+          },
+          { status: 200 }
+        );
+      }
+    }
+
+    // Ensure final slug uniqueness
+    let finalSlug = targetSlug;
+    const slugCheck = await prisma.post.findUnique({ where: { slug: finalSlug } });
+    if (slugCheck) {
+      finalSlug = `${targetSlug}-${Date.now()}`;
+    }
+
+    // 4. Persist to SQLite DB using Prisma
     const newPost = await prisma.post.create({
       data: {
         title,
-        slug,
+        slug: finalSlug,
         markdown_content: markdownContent,
         category,
         image_url: imageUrl,
@@ -134,12 +181,13 @@ export async function POST(request: NextRequest) {
     // Observability logging
     console.log("[Webhook Automation] Successfully persisted post record:", newPost);
 
-    // 4. Return standard HTTP 201 Created response
+    // 5. Return standard HTTP 201 Created response
     return NextResponse.json(
       {
         success: true,
         message: "Post created successfully",
         postId: newPost.id,
+        slug: newPost.slug,
       },
       { status: 201 }
     );

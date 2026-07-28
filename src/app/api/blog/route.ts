@@ -31,7 +31,7 @@ export async function GET() {
         excerpt_ar: cleanExcerpt,
         excerpt_de: cleanExcerpt,
         excerpt_fr: cleanExcerpt,
-        cover_image: "", // Empty to fall back to the premium SVG placeholder in the UI
+        cover_image: post.image_url || "",
         author: post.generated_by_ai ? "AI Assistant" : "Author",
         tags: [post.category],
         created_at: post.createdAt.toISOString(),
