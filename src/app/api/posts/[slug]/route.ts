@@ -33,6 +33,7 @@ async function verifyAdminAuth(request: NextRequest): Promise<boolean> {
 /**
  * DELETE /api/posts/[slug]
  * Deletes a post from SQLite database using Prisma after verifying admin auth.
+ * Decodes URI parameters safely for Arabic slugs and special characters.
  */
 export async function DELETE(
   request: NextRequest,
@@ -51,11 +52,18 @@ export async function DELETE(
   }
 
   try {
-    const { slug } = await params;
+    const { slug: rawSlug } = await params;
+    const slug = decodeURIComponent(rawSlug);
 
-    const existingPost = await prisma.post.findUnique({
+    let existingPost = await prisma.post.findUnique({
       where: { slug },
     });
+
+    if (!existingPost && rawSlug !== slug) {
+      existingPost = await prisma.post.findUnique({
+        where: { slug: rawSlug },
+      });
+    }
 
     if (!existingPost) {
       return NextResponse.json(
@@ -68,10 +76,10 @@ export async function DELETE(
     }
 
     await prisma.post.delete({
-      where: { slug },
+      where: { id: existingPost.id },
     });
 
-    console.log(`[Admin Post Delete] Post '${slug}' deleted successfully.`);
+    console.log(`[Admin Post Delete] Post '${existingPost.slug}' deleted successfully.`);
 
     return NextResponse.json(
       {
@@ -94,7 +102,8 @@ export async function DELETE(
 
 /**
  * PUT /api/posts/[slug]
- * Updates post details (title, markdown_content, etc.) in SQLite database after verifying admin auth.
+ * Updates post details in SQLite database after verifying admin auth.
+ * Decodes URI parameters safely for Arabic slugs and special characters.
  */
 export async function PUT(
   request: NextRequest,
@@ -113,11 +122,18 @@ export async function PUT(
   }
 
   try {
-    const { slug } = await params;
+    const { slug: rawSlug } = await params;
+    const slug = decodeURIComponent(rawSlug);
 
-    const existingPost = await prisma.post.findUnique({
+    let existingPost = await prisma.post.findUnique({
       where: { slug },
     });
+
+    if (!existingPost && rawSlug !== slug) {
+      existingPost = await prisma.post.findUnique({
+        where: { slug: rawSlug },
+      });
+    }
 
     if (!existingPost) {
       return NextResponse.json(
@@ -147,7 +163,7 @@ export async function PUT(
     }
 
     const updatedPost = await prisma.post.update({
-      where: { slug },
+      where: { id: existingPost.id },
       data: {
         title: updatedTitle,
         markdown_content: updatedContent,
@@ -157,7 +173,7 @@ export async function PUT(
       },
     });
 
-    console.log(`[Admin Post Update] Post '${slug}' updated successfully.`);
+    console.log(`[Admin Post Update] Post '${existingPost.slug}' updated successfully.`);
 
     return NextResponse.json(
       {

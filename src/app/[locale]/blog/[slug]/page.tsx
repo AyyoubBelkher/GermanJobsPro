@@ -9,6 +9,15 @@ import SocialShare from "@/components/ui/SocialShare";
 import AdminBar from "@/components/admin/AdminBar";
 
 /**
+ * Strips the first `# Heading` (H1) from markdown content if present at the beginning of the text,
+ * preventing duplicate main title rendering.
+ */
+function stripLeadingH1(content: string | null | undefined): string {
+  if (!content) return "";
+  return content.replace(/^[\s\uFEFF]*#[ \t]+[^\r\n]+(\r?\n)*/, "");
+}
+
+/**
  * Extracts plain text summary (first 150 characters) from markdown content for SEO description.
  */
 function extractDescription(markdownText: string | null | undefined): string {
@@ -313,7 +322,7 @@ export default async function SinglePostPage({
               ),
             }}
           >
-            {post.markdown_content}
+            {stripLeadingH1(post.markdown_content)}
           </ReactMarkdown>
         </div>
 

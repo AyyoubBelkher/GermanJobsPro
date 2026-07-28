@@ -1,4 +1,6 @@
 import React from "react";
+import Navbar from "@/components/ui/Navbar";
+import Footer from "@/components/ui/Footer";
 import HeroSection from "@/components/ui/HeroSection";
 
 export default async function LocaleHomePage({
@@ -43,8 +45,10 @@ export default async function LocaleHomePage({
   const dir = isAr ? "rtl" : "ltr";
 
   return (
-    <div dir={dir} className="min-h-screen bg-slate-50 dark:bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
-      <main className="max-w-6xl mx-auto space-y-12">
+    <div dir={dir} className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans flex flex-col justify-between">
+      <Navbar locale={locale} />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1 space-y-12">
         <HeroSection
           headline={headline}
           subheading={subheading}
@@ -83,6 +87,8 @@ export default async function LocaleHomePage({
           </a>
         </section>
       </main>
+
+      <Footer locale={locale} />
     </div>
   );
 }

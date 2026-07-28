@@ -1,6 +1,8 @@
 import React from 'react';
 import BlogGrid from "@/components/ui/BlogGrid";
 import PostCard from "@/components/ui/PostCard";
+import Navbar from "@/components/ui/Navbar";
+import Footer from "@/components/ui/Footer";
 
 interface BlogPost {
   id: string;
@@ -85,8 +87,10 @@ export default async function BlogPage({
   const ui = labels[locale] || labels.en;
 
   return (
-    <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 py-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
+    <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between">
+      <Navbar locale={locale} />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full flex-1">
         {/* Header section */}
         <header className="text-center mb-16 space-y-4">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
@@ -144,7 +148,9 @@ export default async function BlogPage({
             })}
           </BlogGrid>
         )}
-      </div>
+      </main>
+
+      <Footer locale={locale} />
     </div>
   );
 }

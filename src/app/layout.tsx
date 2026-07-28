@@ -19,8 +19,8 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
-  title: "دليلك في ألمانيا - Germany Guide",
-  description: "دليلك الشامل للانتقال والعيش والعمل والدراسة في ألمانيا",
+  title: "بوابتك للعمل والاستقرار في ألمانيا | Germany Guide",
+  description: "دليلك الشامل والمحدّث يومياً لأحدث الوظائف الشاغرة، فرص التدريب المهني (Ausbildung)، وإرشادات التأشيرة.",
 };
 
 export default function RootLayout({

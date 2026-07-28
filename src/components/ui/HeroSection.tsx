@@ -12,8 +12,8 @@ interface HeroSectionProps {
 }
 
 export default function HeroSection({
-  headline = "دليلك الشامل للعمل في ألمانيا",
-  subheading = "اكتشف الفرص الوظيفية المتاحة، وتعرف على شروط التأشيرة، والمعيشة، والخطوات اللازمة للنجاح والاستقرار المهني في ألمانيا.",
+  headline = "بوابتك للعمل والاستقرار في ألمانيا",
+  subheading = "دليلك الشامل والمحدّث يومياً لأحدث الوظائف الشاغرة، فرص التدريب المهني (Ausbildung)، وإرشادات التأشيرة.",
   emailPlaceholder = "أدخل بريدك الإلكتروني هنا...",
   buttonText = "اشترك الآن",
   successMessage = "شكرًا للاشتراك! تم إرسال رابط تأكيد إلى بريدك الإلكتروني.",
@@ -56,8 +56,14 @@ export default function HeroSection({
         </span>
 
         {/* Main Headline */}
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight sm:leading-none max-w-3xl drop-shadow-sm">
-          {headline}
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight sm:leading-none max-w-3xl drop-shadow-sm flex flex-wrap items-center justify-center gap-3">
+          <span>{headline ? headline.replace(" 🇩🇪", "").replace("🇩🇪", "") : "بوابتك للعمل والاستقرار في ألمانيا"}</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://flagcdn.com/w40/de.png"
+            alt="Germany Flag"
+            className="inline-block w-9 h-6 rounded shadow-sm align-middle border border-white/20"
+          />
         </h1>
 
         {/* Subheading */}
