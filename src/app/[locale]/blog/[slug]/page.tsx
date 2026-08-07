@@ -7,6 +7,10 @@ import ReactMarkdown from "react-markdown";
 import { prisma } from "@/lib/prisma";
 import SocialShare from "@/components/ui/SocialShare";
 import AdminBar from "@/components/admin/AdminBar";
+import NewsletterForm from "@/components/NewsletterForm";
+import { verifySessionToken } from "@/lib/session";
+
+export const revalidate = 60;
 
 /**
  * Strips the first `# Heading` (H1) from markdown content if present at the beginning of the text,
@@ -42,13 +46,13 @@ export async function generateMetadata({
   const { slug: rawSlug, locale } = await params;
   const slug = decodeURIComponent(rawSlug);
 
-  let post = await prisma.post.findUnique({
-    where: { slug },
+  let post = await prisma.post.findFirst({
+    where: { slug, published: true },
   });
 
   if (!post && rawSlug !== slug) {
-    post = await prisma.post.findUnique({
-      where: { slug: rawSlug },
+    post = await prisma.post.findFirst({
+      where: { slug: rawSlug, published: true },
     });
   }
 
@@ -95,13 +99,13 @@ export default async function SinglePostPage({
   const { slug: rawSlug, locale } = await params;
   const slug = decodeURIComponent(rawSlug);
 
-  let post = await prisma.post.findUnique({
-    where: { slug },
+  let post = await prisma.post.findFirst({
+    where: { slug, published: true },
   });
 
   if (!post && rawSlug !== slug) {
-    post = await prisma.post.findUnique({
-      where: { slug: rawSlug },
+    post = await prisma.post.findFirst({
+      where: { slug: rawSlug, published: true },
     });
   }
 
@@ -112,12 +116,13 @@ export default async function SinglePostPage({
   // Check admin session cookie invisibly on the server
   const cookieStore = await cookies();
   const adminSession = cookieStore.get("admin_session")?.value;
-  const isAdmin = adminSession === "authenticated" || adminSession === "true";
+  const isAdmin = await verifySessionToken(adminSession);
 
-  // Fetch 3 related recent posts (excluding current post)
+  // Fetch 3 related recent published posts (excluding current post)
   const relatedPosts = await prisma.post.findMany({
     where: {
       id: { not: post.id },
+      published: true,
     },
     orderBy: { createdAt: "desc" },
     take: 3,
@@ -172,7 +177,7 @@ export default async function SinglePostPage({
       {/* Invisible Admin Controls - Rendered ONLY if admin_session cookie is active */}
       {isAdmin && <AdminBar post={post} locale={locale} />}
 
-      <article dir="rtl" className="max-w-4xl mx-auto space-y-8 text-right">
+      <article dir={dir} className={`max-w-4xl mx-auto space-y-8 ${isAr ? "text-right" : "text-left"}`}>
         
         {/* Navigation Header */}
         <div className="flex justify-start">
@@ -185,7 +190,7 @@ export default async function SinglePostPage({
         </div>
 
         {/* Post Metadata Header */}
-        <header className="space-y-4 text-right">
+        <header className={`space-y-4 ${isAr ? "text-right" : "text-left"}`}>
           <div className="flex items-center justify-start gap-3">
             <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40">
               {post.category}
@@ -249,41 +254,41 @@ export default async function SinglePostPage({
         )}
 
         {/* Article content with high-contrast markdown typography styling */}
-        <div className="prose prose-slate dark:prose-invert prose-lg max-w-none text-right leading-relaxed text-slate-800 dark:text-slate-200">
+        <div className={`prose prose-slate dark:prose-invert prose-lg max-w-none leading-relaxed text-slate-800 dark:text-slate-200 ${isAr ? "text-right" : "text-left"}`}>
           <ReactMarkdown
             components={{
               h1: ({ children }) => (
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-slate-100 mt-12 mb-6 leading-tight text-right border-b border-slate-200 dark:border-slate-800 pb-4">
+                <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-slate-100 mt-12 mb-6 leading-tight border-b border-slate-200 dark:border-slate-800 pb-4 ${isAr ? "text-right" : "text-left"}`}>
                   {children}
                 </h1>
               ),
               h2: ({ children }) => (
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-slate-100 mt-10 mb-5 leading-snug text-right border-b border-slate-100 dark:border-slate-800/60 pb-3">
+                <h2 className={`text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-slate-100 mt-10 mb-5 leading-snug border-b border-slate-100 dark:border-slate-800/60 pb-3 ${isAr ? "text-right" : "text-left"}`}>
                   {children}
                 </h2>
               ),
               h3: ({ children }) => (
-                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-slate-100 mt-8 mb-4 leading-snug text-right">
+                <h3 className={`text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-slate-100 mt-8 mb-4 leading-snug ${isAr ? "text-right" : "text-left"}`}>
                   {children}
                 </h3>
               ),
               h4: ({ children }) => (
-                <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mt-6 mb-3 text-right">
+                <h4 className={`text-lg font-semibold text-slate-900 dark:text-slate-100 mt-6 mb-3 ${isAr ? "text-right" : "text-left"}`}>
                   {children}
                 </h4>
               ),
               p: ({ children }) => (
-                <p className="text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed sm:leading-loose mb-8 text-right font-normal">
+                <p className={`text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed sm:leading-loose mb-8 font-normal ${isAr ? "text-right" : "text-left"}`}>
                   {children}
                 </p>
               ),
               ul: ({ children }) => (
-                <ul className="list-disc list-inside space-y-3 my-8 text-right text-slate-700 dark:text-slate-300 leading-relaxed pr-3">
+                <ul className={`list-disc list-inside space-y-3 my-8 text-slate-700 dark:text-slate-300 leading-relaxed ${isAr ? "text-right pr-3" : "text-left pl-3"}`}>
                   {children}
                 </ul>
               ),
               ol: ({ children }) => (
-                <ol className="list-decimal list-inside space-y-3 my-8 text-right text-slate-700 dark:text-slate-300 leading-relaxed pr-3">
+                <ol className={`list-decimal list-inside space-y-3 my-8 text-slate-700 dark:text-slate-300 leading-relaxed ${isAr ? "text-right pr-3" : "text-left pl-3"}`}>
                   {children}
                 </ol>
               ),
@@ -293,7 +298,7 @@ export default async function SinglePostPage({
                 </li>
               ),
               blockquote: ({ children }) => (
-                <blockquote className="border-r-4 border-blue-500 bg-blue-50/60 dark:bg-blue-950/30 text-slate-700 dark:text-slate-300 italic p-6 my-8 rounded-l-2xl text-right shadow-sm text-base sm:text-lg leading-relaxed">
+                <blockquote className={`${isAr ? "border-r-4 rounded-l-2xl text-right" : "border-l-4 rounded-r-2xl text-left"} border-blue-500 bg-blue-50/60 dark:bg-blue-950/30 text-slate-700 dark:text-slate-300 italic p-6 my-8 shadow-sm text-base sm:text-lg leading-relaxed`}>
                   {children}
                 </blockquote>
               ),
@@ -329,7 +334,7 @@ export default async function SinglePostPage({
         {/* High-Converting CTA Box */}
         {post.source_link && (
           <div className="my-10 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6 border border-blue-500/30">
-            <div className="space-y-2 text-right">
+            <div className={`space-y-2 ${isAr ? "text-right" : "text-left"}`}>
               <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight">
                 رابط التقديم على الوظيفة
               </h3>
@@ -351,6 +356,9 @@ export default async function SinglePostPage({
         {/* Viral Social Share Component */}
         <SocialShare title={post.title} locale={locale} />
 
+        {/* Newsletter Subscription Section */}
+        <NewsletterForm />
+
         {/* Back Button */}
         <div className="pt-8 border-t border-slate-200 dark:border-slate-800/80">
           <Link
@@ -363,7 +371,7 @@ export default async function SinglePostPage({
 
         {/* Related Posts Section ("مقالات ذات صلة") */}
         {relatedPosts.length > 0 && (
-          <section className="mt-16 pt-12 border-t border-slate-200 dark:border-slate-800/80 space-y-8 text-right" dir="rtl">
+          <section className={`mt-16 pt-12 border-t border-slate-200 dark:border-slate-800/80 space-y-8 ${isAr ? "text-right" : "text-left"}`} dir={dir}>
             <div className="flex items-center justify-between">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100">
                 مقالات ذات صلة

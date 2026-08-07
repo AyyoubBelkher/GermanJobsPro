@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { timingSafeCompare, isValidHttpUrl } from "@/lib/session";
 
 /**
  * Interface representing the expected structure of the incoming automation webhook payload.
@@ -28,12 +29,23 @@ interface CreatePostPayload {
  */
 export async function POST(request: NextRequest) {
   // 1. Verify Authentication Header against process.env.MY_SECRET_AUTOMATION_KEY
+  const secretKey = process.env.MY_SECRET_AUTOMATION_KEY;
+
+  if (!secretKey) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Server misconfiguration",
+      },
+      { status: 500 }
+    );
+  }
+
   const authHeader = request.headers.get("Authorization");
-  const secretKey = process.env.MY_SECRET_AUTOMATION_KEY || "MY_SECRET_AUTOMATION_KEY";
 
   const isAuthorized =
-    authHeader === secretKey ||
-    authHeader === `Bearer ${secretKey}`;
+    timingSafeCompare(authHeader, secretKey) ||
+    timingSafeCompare(authHeader, `Bearer ${secretKey}`);
 
   if (!authHeader || !isAuthorized) {
     return NextResponse.json(
@@ -111,6 +123,17 @@ export async function POST(request: NextRequest) {
       typeof rawLink === "string" && rawLink.trim() !== ""
         ? rawLink.trim()
         : null;
+
+    // Validate URL protocols to prevent XSS (javascript: / data: protocols)
+    if (!isValidHttpUrl(imageUrl) || !isValidHttpUrl(sourceLink)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Bad Request: 'image_url' and 'source_link' must use http:// or https:// protocols.",
+        },
+        { status: 400 }
+      );
+    }
 
     const generatedByAi = Boolean(body.generated_by_ai ?? body.generatedByAi);
 
@@ -191,14 +214,15 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
-    console.error("[Webhook Automation Error]:", error);
+  } catch (error: unknown) {
+    console.error("[Webhook Automation Error]:", error instanceof Error ? error.message : error);
     return NextResponse.json(
       {
         success: false,
-        error: error?.message || "Internal Server Error during post creation",
+        error: "Internal Server Error",
       },
       { status: 500 }
     );
   }
 }
+

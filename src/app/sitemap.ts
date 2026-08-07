@@ -6,8 +6,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     process.env.NEXT_PUBLIC_SITE_URL ||
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://germanjobspro.com");
 
-  // Fetch all post slugs and timestamps from SQLite via Prisma
+  // Fetch published post slugs and timestamps from SQLite via Prisma
   const posts = await prisma.post.findMany({
+    where: { published: true },
     select: {
       slug: true,
       updatedAt: true,
@@ -23,12 +24,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 1.0,
-    },
-    {
-      url: `${baseUrl}/blog`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.9,
     },
   ];
 
@@ -48,18 +43,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   });
 
-  // Dynamic routes for each blog post slug across root and localized routes
+  // Dynamic routes for each published blog post slug across localized routes
   posts.forEach((post) => {
-    routes.push({
-      url: `${baseUrl}/blog/${post.slug}`,
-      lastModified: post.updatedAt || new Date(),
-      changeFrequency: "weekly",
-      priority: 0.7,
-    });
-
     locales.forEach((locale) => {
       routes.push({
-        url: `${baseUrl}/${locale}/blog/${post.slug}`,
+        url: `${baseUrl}/${locale}/blog/${encodeURIComponent(post.slug)}`,
         lastModified: post.updatedAt || new Date(),
         changeFrequency: "weekly",
         priority: 0.7,

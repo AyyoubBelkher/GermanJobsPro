@@ -21,6 +21,15 @@ model Post {
   image_url        String?
   source_link      String?
   generated_by_ai  Boolean  @default(false)
+  published        Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }
+
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+

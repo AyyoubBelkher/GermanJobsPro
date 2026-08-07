@@ -19,19 +19,26 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://germanjobspro.com"),
   title: "بوابتك للعمل والاستقرار في ألمانيا | Germany Guide",
   description: "دليلك الشامل والمحدّث يومياً لأحدث الوظائف الشاغرة، فرص التدريب المهني (Ausbildung)، وإرشادات التأشيرة.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
+  params,
 }: Readonly<{
   children: React.ReactNode;
+  params?: Promise<{ locale?: string }>;
 }>) {
+  const resolvedParams = params ? await params : undefined;
+  const locale = resolvedParams?.locale || "ar";
+  const dir = locale === "ar" ? "rtl" : "ltr";
+
   return (
     <html
-      lang="ar"
-      dir="rtl"
+      lang={locale}
+      dir={dir}
       className={`${geistSans.variable} ${geistMono.variable} ${cairo.variable} h-full antialiased`}
     >
       <body className={`${cairo.className} min-h-full flex flex-col font-sans`}>
@@ -40,3 +47,4 @@ export default function RootLayout({
     </html>
   );
 }
+

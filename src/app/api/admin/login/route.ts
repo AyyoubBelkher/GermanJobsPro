@@ -1,25 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { createSessionToken, timingSafeCompare } from "@/lib/session";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { password } = body || {};
+    const body = await request.json().catch(() => ({}));
+    const { email, password } = body || {};
 
-    const expectedPassword = process.env.ADMIN_PASSWORD || "admin123";
+    const expectedEmail = process.env.ADMIN_EMAIL || "admin@germanjobspro.com";
+    const expectedPassword = process.env.ADMIN_PASSWORD;
 
-    if (!password || typeof password !== "string" || password !== expectedPassword) {
+    if (!expectedPassword || !expectedEmail) {
       return NextResponse.json(
         {
           success: false,
-          error: "كلمة المرور غير صحيحة / Invalid admin password",
+          error: "Server misconfiguration",
+        },
+        { status: 500 }
+      );
+    }
+
+    const isEmailValid =
+      typeof email === "string" &&
+      timingSafeCompare(email.trim().toLowerCase(), expectedEmail.trim().toLowerCase());
+    const isPasswordValid =
+      typeof password === "string" && timingSafeCompare(password, expectedPassword);
+
+    if (!email || !password || !isEmailValid || !isPasswordValid) {
+      await new Promise((r) => setTimeout(r, 1000));
+      return NextResponse.json(
+        {
+          success: false,
+          error: "البريد الإلكتروني أو كلمة المرور غير صحيحة / Invalid credentials",
         },
         { status: 401 }
       );
     }
 
+    const sessionToken = await createSessionToken();
     const cookieStore = await cookies();
-    cookieStore.set("admin_session", "authenticated", {
+    cookieStore.set("admin_session", sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -34,12 +54,12 @@ export async function POST(request: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error("[Admin Login Error]:", error);
+  } catch (error: unknown) {
+    console.error("[Admin Login Error]:", error instanceof Error ? error.message : error);
     return NextResponse.json(
       {
         success: false,
-        error: error?.message || "Internal Server Error",
+        error: "Internal Server Error",
       },
       { status: 500 }
     );

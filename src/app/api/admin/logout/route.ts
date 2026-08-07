@@ -13,12 +13,12 @@ export async function POST() {
       },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error("[Admin Logout Error]:", error);
+  } catch (error: unknown) {
+    console.error("[Admin Logout Error]:", error instanceof Error ? error.message : error);
     return NextResponse.json(
       {
         success: false,
-        error: error?.message || "Internal Server Error",
+        error: "Internal Server Error",
       },
       { status: 500 }
     );

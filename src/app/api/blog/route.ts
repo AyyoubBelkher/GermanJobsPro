@@ -4,12 +4,13 @@ import { prisma } from '@/lib/prisma';
 export async function GET() {
   try {
     const dbPosts = await prisma.post.findMany({
+      where: { published: true },
       orderBy: {
         createdAt: 'desc',
       },
     });
 
-    const posts = dbPosts.map(post => {
+    const posts = dbPosts.map((post) => {
       // Strip markdown symbols to create a plain text excerpt
       const cleanExcerpt = post.markdown_content
         ? post.markdown_content
@@ -22,32 +23,22 @@ export async function GET() {
         id: post.id,
         slug: post.slug,
         title: post.title,
-        title_en: post.title,
-        title_ar: post.title,
-        title_de: post.title,
-        title_fr: post.title,
         excerpt: cleanExcerpt,
-        excerpt_en: cleanExcerpt,
-        excerpt_ar: cleanExcerpt,
-        excerpt_de: cleanExcerpt,
-        excerpt_fr: cleanExcerpt,
         cover_image: post.image_url || "",
         author: post.generated_by_ai ? "AI Assistant" : "Author",
         tags: [post.category],
         created_at: post.createdAt.toISOString(),
-        markdown_content_en: post.markdown_content,
-        markdown_content_ar: post.markdown_content,
-        markdown_content_de: post.markdown_content,
-        markdown_content_fr: post.markdown_content,
+        markdown_content: post.markdown_content,
       };
     });
 
     return NextResponse.json({ posts });
-  } catch (error) {
-    console.error("[Blog API Error]:", error);
+  } catch (error: unknown) {
+    console.error("[Blog API Error]:", error instanceof Error ? error.message : error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { success: false, error: "Internal Server Error" },
       { status: 500 }
     );
   }
 }
+

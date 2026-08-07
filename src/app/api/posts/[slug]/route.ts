@@ -1,32 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import {
+  verifySessionToken,
+  timingSafeCompare,
+  decodeSlugParam,
+  isValidHttpUrl,
+} from "@/lib/session";
 
 /**
  * Helper function to verify admin session cookie or Authorization header.
+ * Enforces least privilege (only admin_session cookie or MY_SECRET_AUTOMATION_KEY bearer token).
+ * Delays 1000ms on authentication failure to prevent brute-force attacks.
  */
 async function verifyAdminAuth(request: NextRequest): Promise<boolean> {
-  // Check HTTP-only cookie
+  // 1. Check HTTP-only cookie
   const cookieStore = await cookies();
   const session = cookieStore.get("admin_session")?.value;
-  if (session === "authenticated" || session === "true") {
+  if (await verifySessionToken(session)) {
     return true;
   }
 
-  // Fallback check Authorization header against ADMIN_PASSWORD or MY_SECRET_AUTOMATION_KEY
+  // 2. Fallback check Authorization header against MY_SECRET_AUTOMATION_KEY only
   const authHeader = request.headers.get("Authorization");
-  const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
-  const secretKey = process.env.MY_SECRET_AUTOMATION_KEY || "MY_SECRET_AUTOMATION_KEY";
+  const secretKey = process.env.MY_SECRET_AUTOMATION_KEY;
 
   if (
-    authHeader === adminPassword ||
-    authHeader === `Bearer ${adminPassword}` ||
-    authHeader === secretKey ||
-    authHeader === `Bearer ${secretKey}`
+    secretKey &&
+    (timingSafeCompare(authHeader, secretKey) ||
+      timingSafeCompare(authHeader, `Bearer ${secretKey}`))
   ) {
     return true;
   }
 
+  // Add 1000ms delay on failed auth attempt to mitigate brute-force
+  await new Promise((r) => setTimeout(r, 1000));
   return false;
 }
 
@@ -53,7 +61,7 @@ export async function DELETE(
 
   try {
     const { slug: rawSlug } = await params;
-    const slug = decodeURIComponent(rawSlug);
+    const slug = decodeSlugParam(rawSlug);
 
     let existingPost = await prisma.post.findUnique({
       where: { slug },
@@ -88,12 +96,12 @@ export async function DELETE(
       },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error("[Delete Post Error]:", error);
+  } catch (error: unknown) {
+    console.error("[Delete Post Error]:", error instanceof Error ? error.message : error);
     return NextResponse.json(
       {
         success: false,
-        error: error?.message || "Internal Server Error during post deletion",
+        error: "Internal Server Error",
       },
       { status: 500 }
     );
@@ -123,7 +131,7 @@ export async function PUT(
 
   try {
     const { slug: rawSlug } = await params;
-    const slug = decodeURIComponent(rawSlug);
+    const slug = decodeSlugParam(rawSlug);
 
     let existingPost = await prisma.post.findUnique({
       where: { slug },
@@ -147,6 +155,20 @@ export async function PUT(
 
     const body = await request.json();
     const { title, markdown_content, category, image_url, source_link } = body || {};
+
+    // Validate URL protocols to prevent XSS (javascript: / data: protocols)
+    if (
+      (image_url !== undefined && !isValidHttpUrl(image_url)) ||
+      (source_link !== undefined && !isValidHttpUrl(source_link))
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Bad Request: 'image_url' and 'source_link' must use http:// or https:// protocols.",
+        },
+        { status: 400 }
+      );
+    }
 
     const updatedTitle = typeof title === "string" ? title.trim() : existingPost.title;
     const updatedContent =
@@ -183,14 +205,15 @@ export async function PUT(
       },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error("[Update Post Error]:", error);
+  } catch (error: unknown) {
+    console.error("[Update Post Error]:", error instanceof Error ? error.message : error);
     return NextResponse.json(
       {
         success: false,
-        error: error?.message || "Internal Server Error during post update",
+        error: "Internal Server Error",
       },
       { status: 500 }
     );
   }
 }
+
