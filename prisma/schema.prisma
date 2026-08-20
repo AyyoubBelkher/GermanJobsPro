@@ -33,3 +33,186 @@ model Subscriber {
   createdAt DateTime @default(now())
 }
 
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  sessions     UserSession[]
+  cvs          Cv[]
+  coverLetters CoverLetter[]
+}
+
+model UserSession {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ==========================================
+// P1: CV & RESUME BUILDER MODELS
+// ==========================================
+
+model Cv {
+  id              String           @id @default(cuid())
+  userId          String
+  title           String           @default("Lebenslauf")
+  language        String           @default("de")
+  isDraft         Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  personalInfo    CvPersonalInfo?
+  experiences     CvExperience[]
+  educations      CvEducation[]
+  skills          CvSkill[]
+  languages       CvLanguage[]
+  certifications  CvCertification[]
+  projects        CvProject[]
+  coverLetters    CoverLetter[]
+
+  @@index([userId])
+}
+
+model CvPersonalInfo {
+  id              String    @id @default(cuid())
+  cvId            String    @unique
+  fullName        String
+  email           String
+  phone           String?
+  address         String?
+  photoUrl        String?
+  birthDate       DateTime?
+  birthPlace      String?
+  nationality     String?
+  targetJobTitle  String?
+  linkedinUrl     String?
+  xingUrl         String?
+  summary         String?
+
+  cv              Cv        @relation(fields: [cvId], references: [id], onDelete: Cascade)
+}
+
+model CvExperience {
+  id              String    @id @default(cuid())
+  cvId            String
+  company         String
+  position        String
+  city            String?
+  country         String?   @default("Germany")
+  startDate       DateTime
+  endDate         DateTime?
+  isCurrent       Boolean   @default(false)
+  description     String?
+  order           Int       @default(0)
+
+  cv              Cv        @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId, order])
+}
+
+model CvEducation {
+  id              String    @id @default(cuid())
+  cvId            String
+  institution     String
+  degree          String
+  fieldOfStudy    String?
+  city            String?
+  country         String?
+  startDate       DateTime
+  endDate         DateTime?
+  isCurrent       Boolean   @default(false)
+  grade           String?
+  description     String?
+  order           Int       @default(0)
+
+  cv              Cv        @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId, order])
+}
+
+model CvSkill {
+  id              String   @id @default(cuid())
+  cvId            String
+  name            String
+  category        String?
+  level           String?
+  order           Int      @default(0)
+
+  cv              Cv       @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId, order])
+}
+
+model CvLanguage {
+  id              String   @id @default(cuid())
+  cvId            String
+  language        String
+  proficiency     String
+  order           Int      @default(0)
+
+  cv              Cv       @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId, order])
+}
+
+model CvCertification {
+  id              String    @id @default(cuid())
+  cvId            String
+  name            String
+  issuer          String
+  issueDate       DateTime?
+  expiryDate      DateTime?
+  credentialUrl   String?
+  order           Int       @default(0)
+
+  cv              Cv        @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId, order])
+}
+
+model CvProject {
+  id              String   @id @default(cuid())
+  cvId            String
+  title           String
+  role            String?
+  url             String?
+  description     String?
+  order           Int      @default(0)
+
+  cv              Cv       @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId, order])
+}
+
+model CoverLetter {
+  id                String   @id @default(cuid())
+  userId            String
+  cvId              String?
+  title             String   @default("Anschreiben")
+  jobTitle          String
+  companyName       String
+  recipientName     String?
+  jobDescriptionRaw String?
+  language          String   @default("de")
+  tone              String   @default("professional")
+  generatedContent  String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cv                Cv?      @relation(fields: [cvId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([cvId])
+}
+
+
