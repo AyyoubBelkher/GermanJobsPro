@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, Suspense } from "react";
 import { useSearchParams, useParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/ui/Navbar";
@@ -11,24 +11,13 @@ function UnsubscribeFormContent() {
   const locale = (params?.locale as string) || "ar";
   const searchParams = useSearchParams();
 
-  const [email, setEmail] = useState("");
-  const [token, setToken] = useState("");
+  const [email, setEmail] = useState(() => searchParams.get("email") || "");
+  const [token, setToken] = useState(() => searchParams.get("token") || "");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{
     type: "success" | "error" | null;
     message: string;
   }>({ type: null, message: "" });
-
-  useEffect(() => {
-    const queryEmail = searchParams.get("email");
-    const qToken = searchParams.get("token");
-    if (queryEmail) {
-      setEmail(queryEmail);
-    }
-    if (qToken) {
-      setToken(qToken);
-    }
-  }, [searchParams]);
 
   const handleUnsubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,10 +59,10 @@ function UnsubscribeFormContent() {
       });
       setEmail("");
       setToken("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setStatus({
         type: "error",
-        message: err.message || "حدث خطأ أثناء الاتصال بالخادم.",
+        message: err instanceof Error ? err.message : "حدث خطأ أثناء الاتصال بالخادم.",
       });
     } finally {
       setLoading(false);

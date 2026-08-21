@@ -14,7 +14,9 @@ export default function SocialShare({ title, url, locale = "ar" }: SocialSharePr
 
   useEffect(() => {
     if (!url && typeof window !== "undefined") {
-      setCurrentUrl(window.location.href);
+      requestAnimationFrame(() => {
+        setCurrentUrl(window.location.href);
+      });
     }
   }, [url]);
 

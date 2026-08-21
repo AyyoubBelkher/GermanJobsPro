@@ -10,10 +10,13 @@ import CoverLetterGeneratorClient from "@/components/cover-letter/CoverLetterGen
 
 export default async function NewCoverLetterPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams?: Promise<{ jobTitle?: string; companyName?: string; jobDescription?: string }>;
 }) {
   const { locale } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
   const isAr = locale === "ar";
   const isDe = locale === "de";
   const dir = isAr ? "rtl" : "ltr";
@@ -52,12 +55,18 @@ export default async function NewCoverLetterPage({
           </Link>
           <span>/</span>
           <span className="text-slate-200">
-            {isAr ? "توليد جديد (Gemini AI)" : isDe ? "Neu generieren" : "Generate New"}
+            {isAr ? "توليد جديد (بالذكاء الاصطناعي)" : isDe ? "Neu generieren (KI)" : "Generate New (AI)"}
           </span>
         </div>
 
         {/* Generator Studio Client */}
-        <CoverLetterGeneratorClient userCvs={userCvs} locale={locale} />
+        <CoverLetterGeneratorClient
+          userCvs={userCvs}
+          locale={locale}
+          initialJobTitle={resolvedSearchParams.jobTitle || ""}
+          initialCompanyName={resolvedSearchParams.companyName || ""}
+          initialJobDescription={resolvedSearchParams.jobDescription || ""}
+        />
       </main>
 
       <Footer locale={locale} />

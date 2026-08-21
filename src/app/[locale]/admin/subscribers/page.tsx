@@ -27,33 +27,50 @@ export default function AdminSubscribersPage() {
     text: string;
   } | null>(null);
 
-  const fetchSubscribers = async () => {
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const fetchSubscribers = () => {
     setLoading(true);
     setError(null);
-
-    try {
-      const res = await fetch("/api/admin/subscribers", {
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `خطأ في الخادم (${res.status})`);
-      }
-
-      const data = await res.json();
-      setSubscribers(data.subscribers || []);
-    } catch (err: any) {
-      console.error("Error fetching subscribers:", err);
-      setError(err.message || "تعذر جلب قائمة المشتركين.");
-    } finally {
-      setLoading(false);
-    }
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   useEffect(() => {
-    fetchSubscribers();
-  }, []);
+    let ignore = false;
+
+    const loadSubscribers = async () => {
+      try {
+        const res = await fetch("/api/admin/subscribers", {
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || `خطأ في الخادم (${res.status})`);
+        }
+
+        const data = await res.json();
+        if (!ignore) {
+          setSubscribers(data.subscribers || []);
+        }
+      } catch (err: unknown) {
+        console.error("Error fetching subscribers:", err);
+        if (!ignore) {
+          setError(err instanceof Error ? err.message : "تعذر جلب قائمة المشتركين.");
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadSubscribers();
+
+    return () => {
+      ignore = true;
+    };
+  }, [refreshTrigger]);
 
   const handleDelete = async (id: string, email: string) => {
     if (!window.confirm(`هل أنت تأكد من رغبتك في حذف المشترك (${email})؟`)) {
@@ -79,11 +96,11 @@ export default function AdminSubscribersPage() {
         type: "success",
         text: `تم حذف البريد الإلكتروني (${email}) بنجاح.`,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error deleting subscriber:", err);
       setActionMessage({
         type: "error",
-        text: err.message || "حدث خطأ أثناء محاولة الحذف.",
+        text: err instanceof Error ? err.message : "حدث خطأ أثناء محاولة الحذف.",
       });
     } finally {
       setDeletingId(null);
@@ -109,6 +126,13 @@ export default function AdminSubscribersPage() {
                 className="text-xs text-blue-400 hover:underline flex items-center gap-1"
               >
                 ← العودة إلى الرئيسية
+              </Link>
+              <span className="text-slate-600">•</span>
+              <Link
+                href={`/${locale}/admin`}
+                className="text-xs text-purple-400 hover:underline flex items-center gap-1"
+              >
+                ⚡ لوحة إدارة المستخدمين
               </Link>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">

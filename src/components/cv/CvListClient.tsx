@@ -189,6 +189,17 @@ export default function CvListClient({ initialCvs, locale }: CvListClientProps) 
                   {isAr ? "تعديل السيرة" : isDe ? "Bearbeiten" : "Edit CV"}
                 </Link>
 
+                <a
+                  href={`/api/cv/${cv.id}/pdf`}
+                  download
+                  title={isAr ? "تحميل PDF رسمي (DIN 5008)" : isDe ? "DIN 5008 PDF herunterladen" : "Download PDF"}
+                  className="p-2.5 rounded-xl bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 transition-all cursor-pointer"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.5V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                  </svg>
+                </a>
+
                 <button
                   type="button"
                   onClick={() => handleDuplicate(cv)}

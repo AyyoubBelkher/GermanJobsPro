@@ -57,82 +57,132 @@ export default async function DashboardPage({
               {displayName.charAt(0).toUpperCase()}
             </div>
             <div className="space-y-1">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
                   {isAr ? `مرحباً، ${displayName} 👋` : isDe ? `Willkommen, ${displayName} 👋` : `Welcome, ${displayName} 👋`}
                 </h1>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  {isAr ? "حساب نشط" : isDe ? "Aktiver Account" : "Active Account"}
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                    user.plan === "PRO"
+                      ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                      : user.plan === "TRIAL"
+                      ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                      : "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                  }`}
+                >
+                  {user.plan === "PRO" ? "🌟 PRO PASS" : user.plan === "TRIAL" ? "⏳ TRIAL" : "🆓 STARTER FREE"}
                 </span>
               </div>
-              <p className="text-sm text-slate-400 font-mono">{user.email}</p>
+              <div className="flex items-center gap-3 text-xs text-slate-400 font-mono flex-wrap">
+                <span>{user.email}</span>
+                <span>•</span>
+                <span className="text-emerald-400 font-bold font-sans flex items-center gap-1">
+                  <span>⚡</span>
+                  <span>
+                    {user.plan === "PRO"
+                      ? (isAr
+                          ? "20 طلب ذكاء اصطناعي يومياً (متجددة تلقائياً)"
+                          : isDe
+                          ? "20 KI-Anfragen täglich (automatisch erneuert)"
+                          : "20 Daily AI Requests (auto-renewed)")
+                      : `${user.aiCredits} ${isAr ? "رصيد AI متبقي" : "AI Credits"}`}
+                  </span>
+                </span>
+              </div>
             </div>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
+            <Link
+              href={`/${locale}/dashboard/pricing`}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold text-xs shadow-md shadow-amber-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>💎</span>
+              <span>{isAr ? "الترقية والأسعار" : isDe ? "Preise & Upgrades" : "Upgrade Plan"}</span>
+            </Link>
             <LogoutButton locale={locale} />
           </div>
         </div>
 
         {/* Quick Action Banner */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
             href={`/${locale}/dashboard/cv/new`}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/30 p-6 hover:border-blue-400 transition-all hover:shadow-lg hover:shadow-blue-500/10 flex items-center justify-between"
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/30 p-5 hover:border-blue-400 transition-all hover:shadow-lg hover:shadow-blue-500/10 flex items-center justify-between"
           >
             <div className="space-y-1">
-              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider">
                 {isAr ? "معايير DIN 5008" : isDe ? "DIN 5008 Standard" : "German DIN 5008"}
               </span>
-              <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-blue-300 transition-colors">
-                {isAr ? "+ إنشاء سيرة جديدة" : isDe ? "+ Neuer Lebenslauf" : "+ Create German CV"}
+              <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-blue-300 transition-colors">
+                {isAr ? "+ سيرة جديدة" : isDe ? "+ Neuer Lebenslauf" : "+ Create CV"}
               </h3>
               <p className="text-xs text-slate-400">
                 {isAr ? "سيرة متوافقة مع ATS" : isDe ? "ATS-optimierter Lebenslauf" : "ATS-friendly Resume"}
               </p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 transition-transform shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform shrink-0">
               📄
             </div>
           </Link>
 
           <Link
             href={`/${locale}/dashboard/cover-letters/new`}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 p-6 hover:border-purple-400 transition-all hover:shadow-lg hover:shadow-purple-500/10 flex items-center justify-between"
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 p-5 hover:border-purple-400 transition-all hover:shadow-lg hover:shadow-purple-500/10 flex items-center justify-between"
           >
             <div className="space-y-1">
-              <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">
-                {isAr ? "مدعوم بـ Gemini AI" : isDe ? "Mit Gemini AI" : "Powered by Gemini AI"}
+              <span className="text-[11px] font-bold text-purple-400 uppercase tracking-wider">
+                {isAr ? "مدعوم بالذكاء الاصطناعي ✨" : isDe ? "KI-Unterstützt ✨" : "AI-Powered ✨"}
               </span>
-              <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-purple-300 transition-colors">
-                {isAr ? "✨ توليد خطاب تغطية" : isDe ? "✨ Neues Anschreiben" : "✨ AI Cover Letter"}
+              <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-purple-300 transition-colors">
+                {isAr ? "✨ خطاب تغطية" : isDe ? "✨ Anschreiben" : "✨ AI Cover Letter"}
               </h3>
               <p className="text-xs text-slate-400">
-                {isAr ? "خطاب مخصص لإعلان الوظيفة" : isDe ? "Maßgeschneidertes Anschreiben" : "Tailored cover letter"}
+                {isAr ? "خطاب مخصص للوظيفة" : isDe ? "Maßgeschneidert" : "Tailored letter"}
               </p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-purple-600 flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 transition-transform shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform shrink-0">
               ✍️
             </div>
           </Link>
 
           <Link
             href={`/${locale}/dashboard/ats-analyzer`}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600/20 to-teal-600/20 border border-emerald-500/30 p-6 hover:border-emerald-400 transition-all hover:shadow-lg hover:shadow-emerald-500/10 flex items-center justify-between"
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600/20 to-teal-600/20 border border-emerald-500/30 p-5 hover:border-emerald-400 transition-all hover:shadow-lg hover:shadow-emerald-500/10 flex items-center justify-between"
           >
             <div className="space-y-1">
-              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
-                {isAr ? "فاحص التوافق والكلمات" : isDe ? "ATS & DIN 5008 Audit" : "ATS & Keywords Audit"}
+              <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
+                {isAr ? "فاحص التوافق" : isDe ? "ATS & DIN 5008" : "ATS & DIN 5008"}
               </span>
-              <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-emerald-300 transition-colors">
-                {isAr ? "🔍 فحص السيرة الذاتية" : isDe ? "🔍 Lebenslauf prüfen" : "🔍 ATS CV Analyzer"}
+              <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-emerald-300 transition-colors">
+                {isAr ? "🔍 فحص السيرة" : isDe ? "🔍 Lebenslauf prüfen" : "🔍 ATS CV Audit"}
               </h3>
               <p className="text-xs text-slate-400">
-                {isAr ? "كشف الفجوات والكلمات الناقصة" : isDe ? "Lücken & Keywords prüfen" : "Find gaps & keywords"}
+                {isAr ? "كشف الفجوات والكلمات" : isDe ? "Lücken & Keywords" : "Find gaps & keywords"}
               </p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 transition-transform shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform shrink-0">
               🔍
+            </div>
+          </Link>
+
+          <Link
+            href={`/${locale}/dashboard/dossier`}
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-600/20 to-orange-600/20 border border-amber-500/30 p-5 hover:border-amber-400 transition-all hover:shadow-lg hover:shadow-amber-500/10 flex items-center justify-between"
+          >
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">
+                {isAr ? "دمج ملف الترشيح" : isDe ? "Bewerbungsmappe" : "Application Dossier"}
+              </span>
+              <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-amber-300 transition-colors">
+                {isAr ? "📑 تجميع الملف الكامل" : isDe ? "📑 Mappe erstellen" : "📑 Compile Dossier"}
+              </h3>
+              <p className="text-xs text-slate-400">
+                {isAr ? "غلاف + خطاب + سيرة + شهادات" : isDe ? "Deckblatt + CV + Anlagen" : "Cover + CV + Attachments"}
+              </p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform shrink-0">
+              📑
             </div>
           </Link>
         </div>
@@ -266,7 +316,7 @@ export default async function DashboardPage({
                       {isAr ? "خطابات التغطية (Anschreiben)" : isDe ? "Anschreiben" : "Cover Letters"}
                     </h2>
                     <p className="text-xs text-slate-400">
-                      {isAr ? "خطابات التقديم المصممة بالذكاء الاصطناعي" : isDe ? "Mit Gemini AI generiert" : "AI-generated German Cover Letters"}
+                      {isAr ? "خطابات التقديم المصممة بالذكاء الاصطناعي" : isDe ? "KI-generierte Anschreiben" : "AI-generated German Cover Letters"}
                     </p>
                   </div>
                 </div>
@@ -337,7 +387,7 @@ export default async function DashboardPage({
 
             <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
               <span className="text-xs text-purple-400 font-semibold bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-xl">
-                Gemini 2.5 Flash
+                {isAr ? "ذكاء اصطناعي احترافي ⚡" : isDe ? "KI-Optimiert ⚡" : "AI Powered Pro ⚡"}
               </span>
               <Link
                 href={`/${locale}/dashboard/cover-letters`}

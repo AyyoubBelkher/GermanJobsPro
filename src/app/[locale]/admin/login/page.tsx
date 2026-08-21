@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
@@ -9,6 +9,8 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const params = useParams();
+  const locale = (params?.locale as string) || "ar";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,8 +41,8 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // Successful login redirect to home / blog
-      router.push("/ar/blog");
+      // Successful login redirect to Admin Dashboard
+      router.push(`/${locale}/admin`);
       router.refresh();
     } catch (err: unknown) {
       console.error("Login request error:", err);

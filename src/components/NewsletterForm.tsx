@@ -59,10 +59,10 @@ export default function NewsletterForm({ locale: propLocale }: { locale?: string
         message: data.message || "تم الاشتراك بنجاح في النشرة البريدية! 🎉",
       });
       setEmail("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setStatus({
         type: "error",
-        message: err.message || "فشل إرسال الطلب، يرجى التحقق من اتصالك بالإنترنت.",
+        message: err instanceof Error ? err.message : "فشل إرسال الطلب، يرجى التحقق من اتصالك بالإنترنت.",
       });
     } finally {
       setLoading(false);

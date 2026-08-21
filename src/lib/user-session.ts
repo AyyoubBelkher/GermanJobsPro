@@ -101,7 +101,15 @@ export async function createSession(userId: string): Promise<{ token: string; ex
  */
 export async function verifyUserSession(token?: string | null): Promise<{
   session: { id: string; userId: string; expiresAt: Date };
-  user: { id: string; email: string; name: string | null };
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    plan: string;
+    planExpiresAt: Date | null;
+    aiCredits: number;
+    customerId: string | null;
+  };
 } | null> {
   if (!token || typeof token !== "string" || token.trim() === "") {
     return null;
@@ -118,6 +126,10 @@ export async function verifyUserSession(token?: string | null): Promise<{
             id: true,
             email: true,
             name: true,
+            plan: true,
+            planExpiresAt: true,
+            aiCredits: true,
+            customerId: true,
           },
         },
       },

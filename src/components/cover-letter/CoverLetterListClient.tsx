@@ -84,8 +84,8 @@ export default function CoverLetterListClient({
               {isAr
                 ? "استخدم الذكاء الاصطناعي لتوليد خطاب تقديم احترافي (Anschreiben) متوافق مع معايير DIN 5008 ومخصص لإعلان الوظيفة."
                 : isDe
-                ? "Generieren Sie mit Gemini AI ein DIN 5008 Anschreiben, das perfekt auf Ihre Wunschstelle zugeschnitten ist."
-                : "Use Gemini AI to generate a DIN 5008 German cover letter tailored to any job vacancy."}
+                ? "Generieren Sie mit KI ein DIN 5008 Anschreiben, das perfekt auf Ihre Wunschstelle zugeschnitten ist."
+                : "Use AI to generate a DIN 5008 German cover letter tailored to any job vacancy."}
             </p>
           </div>
           <Link
@@ -132,6 +132,17 @@ export default function CoverLetterListClient({
                 >
                   {isAr ? "عرض وتعديل" : isDe ? "Ansehen & Bearbeiten" : "View & Edit"}
                 </Link>
+
+                <a
+                  href={`/api/cover-letters/${letter.id}/pdf`}
+                  download
+                  title={isAr ? "تحميل PDF (DIN 5008)" : isDe ? "DIN 5008 PDF herunterladen" : "Download PDF"}
+                  className="p-2.5 rounded-xl bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 transition-all cursor-pointer"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.5V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                  </svg>
+                </a>
 
                 <button
                   type="button"

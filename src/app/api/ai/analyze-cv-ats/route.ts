@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyUserSession } from "@/lib/user-session";
 import { analyzeCvAtsSchema } from "@/lib/validations/ai";
 import { analyzeCvAtsAI } from "@/lib/gemini";
+import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
 
 /**
  * POST /api/ai/analyze-cv-ats
@@ -129,19 +130,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const analysis = await analyzeCvAtsAI({
-      cvText: finalCvText,
-      jobDescription: jobDescription || null,
-      language: language || "de",
-    });
+    // AI Credit Guardrail (Atomic reservation/decrement)
+    const creditResult = await consumeAiCredit(authResult.user.id);
+    if (!creditResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: creditResult.error || "نفد رصيد الذكاء الاصطناعي الخاص بك. يرجى الترقية إلى Pro أو إدخال كود ترويجي.",
+          outOfCredits: true,
+        },
+        { status: 403 }
+      );
+    }
 
-    return NextResponse.json(
-      {
-        success: true,
-        analysis,
-      },
-      { status: 200 }
-    );
+    try {
+      const analysis = await analyzeCvAtsAI({
+        cvText: finalCvText,
+        jobDescription: jobDescription || null,
+        language: language || "de",
+      });
+
+      return NextResponse.json(
+        {
+          success: true,
+          analysis,
+          remainingCredits: creditResult.remainingCredits,
+          isPro: creditResult.isPro,
+        },
+        { status: 200 }
+      );
+    } catch (aiError) {
+      await refundAiCredit(authResult.user.id);
+      throw aiError;
+    }
   } catch (error: unknown) {
     console.error("[ATS Analyzer Error]:", error instanceof Error ? error.message : error);
 

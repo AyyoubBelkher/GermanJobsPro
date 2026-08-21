@@ -12,21 +12,36 @@ interface CvOption {
 interface CoverLetterGeneratorClientProps {
   userCvs: CvOption[];
   locale: string;
+  initialJobTitle?: string;
+  initialCompanyName?: string;
+  initialJobDescription?: string;
 }
 
 export default function CoverLetterGeneratorClient({
   userCvs,
   locale,
+  initialJobTitle = "",
+  initialCompanyName = "",
+  initialJobDescription = "",
 }: CoverLetterGeneratorClientProps) {
   const router = useRouter();
 
-  const [jobTitle, setJobTitle] = useState("");
-  const [companyName, setCompanyName] = useState("");
+  const [jobTitle, setJobTitle] = useState(initialJobTitle);
+  const [companyName, setCompanyName] = useState(initialCompanyName);
   const [recipientName, setRecipientName] = useState("");
-  const [jobDescriptionRaw, setJobDescriptionRaw] = useState("");
+  const [jobDescriptionRaw, setJobDescriptionRaw] = useState(initialJobDescription);
   const [tone, setTone] = useState("professional");
   const [language, setLanguage] = useState("de");
   const [selectedCvId, setSelectedCvId] = useState<string>("");
+  const [cvSourceMode, setCvSourceMode] = useState<"saved" | "upload">(userCvs.length > 0 ? "saved" : "upload");
+  const [cvPdfFile, setCvPdfFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [extractedApplicantInfo, setExtractedApplicantInfo] = useState<{
+    fullName?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+  } | null>(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedText, setGeneratedText] = useState<string>("");
@@ -53,18 +68,25 @@ export default function CoverLetterGeneratorClient({
     setError(null);
 
     try {
+      const formData = new FormData();
+      formData.append("jobTitle", jobTitle.trim());
+      formData.append("companyName", companyName.trim());
+      if (recipientName.trim()) {
+        formData.append("recipientName", recipientName.trim());
+      }
+      formData.append("jobDescriptionRaw", jobDescriptionRaw.trim());
+      formData.append("tone", tone);
+      formData.append("language", language);
+
+      if (cvSourceMode === "upload" && cvPdfFile) {
+        formData.append("cvFile", cvPdfFile);
+      } else if (cvSourceMode === "saved" && selectedCvId) {
+        formData.append("cvId", selectedCvId);
+      }
+
       const res = await fetch("/api/ai/generate-cover-letter", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jobTitle: jobTitle.trim(),
-          companyName: companyName.trim(),
-          recipientName: recipientName.trim() || undefined,
-          jobDescriptionRaw: jobDescriptionRaw.trim(),
-          tone,
-          language,
-          cvId: selectedCvId || undefined,
-        }),
+        body: formData,
       });
 
       const data = await res.json();
@@ -74,6 +96,12 @@ export default function CoverLetterGeneratorClient({
       }
 
       setGeneratedText(data.generatedContent);
+      if (data.cvId) {
+        setSelectedCvId(data.cvId);
+      }
+      if (data.applicantInfo) {
+        setExtractedApplicantInfo(data.applicantInfo);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error during AI generation");
     } finally {
@@ -132,10 +160,10 @@ export default function CoverLetterGeneratorClient({
         </h2>
         <p className="text-sm text-slate-400 max-w-2xl">
           {isAr
-            ? "يقوم Gemini AI بتحليل إعلان الوظيفة ومطابقته مع خبراتك لصياغة خطاب تقديم ألماني رسمي مقنع وفق معايير DIN 5008."
+            ? "يقوم الذكاء الاصطناعي بتحليل إعلان الوظيفة ومطابقته مع خبراتك لصياغة خطاب تقديم ألماني رسمي مقنع وفق معايير DIN 5008."
             : isDe
-            ? "Gemini AI analysiert die Stellenanzeige und verfasst ein DIN 5008 konformes deutsches Anschreiben."
-            : "Gemini AI analyzes the job posting and crafts a formal German cover letter strictly adhering to DIN 5008."}
+            ? "Die KI analysiert die Stellenanzeige und verfasst ein DIN 5008 konformes deutsches Anschreiben."
+            : "Advanced AI analyzes the job posting and crafts a formal German cover letter strictly adhering to DIN 5008."}
         </p>
       </div>
 
@@ -191,27 +219,158 @@ export default function CoverLetterGeneratorClient({
               />
             </div>
 
-            {/* Link to existing CV for context */}
-            {userCvs.length > 0 && (
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-purple-400 flex items-center gap-1">
-                  <span>📄</span>
-                  <span>{isAr ? "ربط مع سيرة ذاتية لتخصيص المحتوى" : "Attach CV Profile for Context"}</span>
-                </label>
-                <select
-                  value={selectedCvId}
-                  onChange={(e) => setSelectedCvId(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-purple-500/30 text-slate-200 text-sm focus:border-purple-500 focus:outline-hidden"
+            {/* Link or Upload CV for Context */}
+            <div className="space-y-2.5">
+              <label className="text-xs font-bold text-purple-400 flex items-center gap-1.5">
+                <span>📄</span>
+                <span>{isAr ? "ربط مع سيرة ذاتية لتخصيص المحتوى" : isDe ? "Lebenslauf verknüpfen" : "Attach CV Profile for Context"}</span>
+              </label>
+
+              {/* Toggle Tabs */}
+              <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-slate-950 border border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setCvSourceMode("saved")}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    cvSourceMode === "saved"
+                      ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
                 >
-                  <option value="">{isAr ? "-- بدون ربط سيرة ذاتية --" : "-- No CV attached --"}</option>
-                  {userCvs.map((cv) => (
-                    <option key={cv.id} value={cv.id}>
-                      {cv.title} ({cv.language.toUpperCase()})
-                    </option>
-                  ))}
-                </select>
+                  <span>📋</span>
+                  <span>{isAr ? "سيرتي الذاتية المحفوظة" : isDe ? "Gespeicherte CVs" : "Saved CV"}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCvSourceMode("upload")}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    cvSourceMode === "upload"
+                      ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <span>📄</span>
+                  <span>{isAr ? "رفع ملف CV (PDF)" : isDe ? "PDF hochladen" : "Upload PDF CV"}</span>
+                </button>
               </div>
-            )}
+
+              {/* Tab 1: Saved CV dropdown */}
+              {cvSourceMode === "saved" && (
+                <div>
+                  {userCvs.length > 0 ? (
+                    <select
+                      value={selectedCvId}
+                      onChange={(e) => setSelectedCvId(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-purple-500/30 text-slate-200 text-xs focus:border-purple-500 focus:outline-hidden"
+                    >
+                      <option value="">{isAr ? "-- بدون ربط سيرة ذاتية --" : "-- No CV attached --"}</option>
+                      {userCvs.map((cv) => (
+                        <option key={cv.id} value={cv.id}>
+                          {cv.title} ({cv.language.toUpperCase()})
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 text-center">
+                      {isAr
+                        ? "لا توجد سير ذاتية محفوظة في حسابك. يمكنك رفع ملف PDF مباشرة من التبويب المجاور."
+                        : "No saved CV found. You can upload a PDF CV directly in the other tab."}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Tab 2: PDF Drag & Drop Upload Zone */}
+              {cvSourceMode === "upload" && (
+                <div>
+                  {cvPdfFile ? (
+                    <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/40 flex items-center justify-between gap-3 shadow-inner">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-xl bg-purple-600/20 text-purple-400 flex items-center justify-center shrink-0 text-sm font-bold">
+                          PDF
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-white truncate">{cvPdfFile.name}</p>
+                          <p className="text-[10px] text-slate-400">{(cvPdfFile.size / 1024).toFixed(1)} KB</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCvPdfFile(null)}
+                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white transition-colors cursor-pointer text-xs"
+                        title={isAr ? "إزالة الملف" : "Remove file"}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setIsDragging(true);
+                      }}
+                      onDragLeave={(e) => {
+                        e.preventDefault();
+                        setIsDragging(false);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setIsDragging(false);
+                        const file = e.dataTransfer.files?.[0];
+                        if (file) {
+                          if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") {
+                            setError(isAr ? "يرجى رفع ملف بصيغة PDF فقط" : "Please upload a PDF file only");
+                            return;
+                          }
+                          if (file.size > 5 * 1024 * 1024) {
+                            setError(isAr ? "حجم الملف يتجاوز 5 ميغابايت" : "File exceeds 5MB limit");
+                            return;
+                          }
+                          setCvPdfFile(file);
+                          setError(null);
+                        }
+                      }}
+                      className={`relative border-2 border-dashed rounded-2xl p-4 text-center transition-all cursor-pointer ${
+                        isDragging
+                          ? "border-purple-500 bg-purple-500/10"
+                          : "border-slate-800 hover:border-purple-500/50 bg-slate-950/60"
+                      }`}
+                    >
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") {
+                              setError(isAr ? "يرجى رفع ملف بصيغة PDF فقط" : "Please upload a PDF file only");
+                              return;
+                            }
+                            if (file.size > 5 * 1024 * 1024) {
+                              setError(isAr ? "حجم الملف يتجاوز 5 ميغابايت" : "File exceeds 5MB limit");
+                              return;
+                            }
+                            setCvPdfFile(file);
+                            setError(null);
+                          }
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <div className="space-y-1">
+                        <span className="text-xl">📁</span>
+                        <p className="text-xs font-semibold text-slate-300">
+                          {isAr ? "اسحب وأفلت ملف السيرة الذاتية (PDF)" : isDe ? "CV (PDF) hierher ziehen" : "Drag & drop your CV (PDF) here"}
+                        </p>
+                        <p className="text-[10px] text-slate-500">
+                          {isAr ? "أو انقر لاختيار ملف (الحد الأقصى 5MB)" : "or click to browse (Max 5MB)"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
@@ -269,7 +428,7 @@ export default function CoverLetterGeneratorClient({
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                   </svg>
-                  <span>{isAr ? "جاري التوليد بـ Gemini AI..." : isDe ? "Wird generiert..." : "Generating with Gemini AI..."}</span>
+                  <span>{isAr ? "جاري التوليد بالذكاء الاصطناعي..." : isDe ? "Wird generiert..." : "Generating with AI..."}</span>
                 </>
               ) : (
                 <>
@@ -317,11 +476,26 @@ export default function CoverLetterGeneratorClient({
 
             {generatedText ? (
               <div className="space-y-4">
+                {extractedApplicantInfo && (
+                  <div className="p-3 rounded-2xl bg-purple-950/40 border border-purple-800/40 flex items-center justify-between gap-2 flex-wrap text-xs text-purple-200">
+                    <div className="flex items-center gap-2">
+                      <span>👤</span>
+                      <span className="font-bold">{extractedApplicantInfo.fullName || "Bewerber"}</span>
+                      {extractedApplicantInfo.address && (
+                        <span className="text-slate-400">• 📍 {extractedApplicantInfo.address}</span>
+                      )}
+                    </div>
+                    {extractedApplicantInfo.email && (
+                      <span className="text-slate-400 font-mono text-[11px]">{extractedApplicantInfo.email}</span>
+                    )}
+                  </div>
+                )}
                 <textarea
+                  dir="ltr"
                   rows={20}
                   value={generatedText}
                   onChange={(e) => setGeneratedText(e.target.value)}
-                  className="w-full p-4 rounded-2xl bg-slate-950 border border-slate-800 text-slate-100 text-sm font-sans leading-relaxed focus:border-purple-500 focus:outline-hidden"
+                  className="w-full p-4 rounded-2xl bg-slate-950 border border-slate-800 text-slate-100 text-sm font-sans leading-relaxed focus:border-purple-500 focus:outline-hidden text-left"
                 />
                 <p className="text-xs text-slate-400 italic text-center">
                   {isAr

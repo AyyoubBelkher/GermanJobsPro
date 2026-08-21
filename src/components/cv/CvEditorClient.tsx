@@ -3,6 +3,9 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import CvPhotoUpload from "@/components/cv/CvPhotoUpload";
+import FieldTooltip from "@/components/cv/FieldTooltip";
+import CvAiCopilot from "@/components/cv/CvAiCopilot";
 
 export interface FullCvData {
   id: string;
@@ -98,6 +101,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
   const [optimizingIndex, setOptimizingIndex] = useState<number | null>(null);
   const [optimizingType, setOptimizingType] = useState<"experience" | "project" | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
 
   const isAr = locale === "ar";
   const isDe = locale === "de";
@@ -292,11 +296,39 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
         <div className="flex items-center gap-3 flex-wrap">
           <button
             type="button"
+            onClick={() => setIsCopilotOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-purple-600/30 border border-purple-400/30 transition-all cursor-pointer"
+          >
+            <span>🤖</span>
+            <span>{isAr ? "أنشئ سيرتك بالمحادثة الذكية (AI Copilot)" : "AI CV Copilot"}</span>
+            <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[10px] uppercase tracking-wider font-bold">Live</span>
+          </button>
+
+          <a
+            href={`/api/cv/${cv.id}/pdf`}
+            download
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+          >
+            <span>📥</span>
+            <span>{isAr ? "تحميل PDF (DIN 5008)" : isDe ? "PDF herunterladen" : "Download PDF"}</span>
+          </a>
+
+          <a
+            href={`/api/cv/${cv.id}/pdf?deckblatt=true`}
+            download
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs border border-slate-700 transition-all cursor-pointer"
+          >
+            <span>📑</span>
+            <span>{isAr ? "مع غلاف (Deckblatt)" : isDe ? "+ Deckblatt PDF" : "+ Cover Page"}</span>
+          </a>
+
+          <button
+            type="button"
             onClick={() => {
               setCv({ ...cv, isDraft: !cv.isDraft });
               markUnsaved();
             }}
-            className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition-colors"
+            className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
           >
             {cv.isDraft ? (isAr ? "تعيين كمكتمل" : "Mark as Complete") : isAr ? "تعيين كمسودة" : "Mark as Draft"}
           </button>
@@ -352,12 +384,19 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
       {/* Tab 1: Personal Info */}
       {activeTab === "personal" && (
         <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
-          <h3 className="text-lg font-bold text-white">
-            {isAr ? "المعلومات الشخصية (Persönliche Daten)" : isDe ? "Persönliche Daten" : "Personal Information"}
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <span>{isAr ? "المعلومات الشخصية (Persönliche Daten)" : isDe ? "Persönliche Daten" : "Personal Information"}</span>
+            </h3>
+            <span className="text-[11px] text-slate-400 font-mono">DIN 5008 Standard</span>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-300">{isAr ? "الاسم الكامل *" : "Full Name *"}</label>
+              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <span>{isAr ? "الاسم الكامل *" : "Full Name *"}</span>
+                <FieldTooltip fieldKey="fullName" locale={locale} />
+              </label>
               <input
                 type="text"
                 value={cv.personalInfo?.fullName || ""}
@@ -374,7 +413,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-300">{isAr ? "البريد الإلكتروني *" : "Email *"}</label>
+              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <span>{isAr ? "البريد الإلكتروني *" : "Email *"}</span>
+                <FieldTooltip fieldKey="email" locale={locale} />
+              </label>
               <input
                 type="email"
                 value={cv.personalInfo?.email || ""}
@@ -391,7 +433,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-300">{isAr ? "المسمى الوظيفي المستهدف" : "Target Job Title"}</label>
+              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <span>{isAr ? "المسمى الوظيفي المستهدف" : "Target Job Title"}</span>
+                <FieldTooltip fieldKey="targetJobTitle" locale={locale} />
+              </label>
               <input
                 type="text"
                 value={cv.personalInfo?.targetJobTitle || ""}
@@ -408,7 +453,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-300">{isAr ? "رقم الهاتف" : "Phone Number"}</label>
+              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <span>{isAr ? "رقم الهاتف" : "Phone Number"}</span>
+                <FieldTooltip fieldKey="phone" locale={locale} />
+              </label>
               <input
                 type="text"
                 value={cv.personalInfo?.phone || ""}
@@ -425,7 +473,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
             </div>
 
             <div className="space-y-1 sm:col-span-2">
-              <label className="text-xs font-bold text-slate-300">{isAr ? "العنوان بألمانيا (الشارع، الرمز البريدي، المدينة)" : "Address (Street, ZIP, City)"}</label>
+              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <span>{isAr ? "العنوان بألمانيا (الشارع، الرمز البريدي، المدينة)" : "Address (Street, ZIP, City)"}</span>
+                <FieldTooltip fieldKey="address" locale={locale} />
+              </label>
               <input
                 type="text"
                 value={cv.personalInfo?.address || ""}
@@ -442,7 +493,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-300">{isAr ? "تاريخ الميلاد (معيار ألماني)" : "Birth Date (DIN 5008 standard)"}</label>
+              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <span>{isAr ? "تاريخ الميلاد (معيار ألماني)" : "Birth Date (DIN 5008 standard)"}</span>
+                <FieldTooltip fieldKey="birthDate" locale={locale} />
+              </label>
               <input
                 type="date"
                 value={formatDateInput(cv.personalInfo?.birthDate)}
@@ -458,7 +512,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-300">{isAr ? "مكان الميلاد والجنسية" : "Birth Place & Nationality"}</label>
+              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <span>{isAr ? "مكان الميلاد والجنسية" : "Birth Place & Nationality"}</span>
+                <FieldTooltip fieldKey="birthPlaceAndNationality" locale={locale} />
+              </label>
               <input
                 type="text"
                 value={cv.personalInfo?.birthPlace || ""}
@@ -475,7 +532,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-300">LinkedIn URL</label>
+              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <span>LinkedIn URL</span>
+                <FieldTooltip fieldKey="linkedinUrl" locale={locale} />
+              </label>
               <input
                 type="url"
                 value={cv.personalInfo?.linkedinUrl || ""}
@@ -492,7 +552,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-300">Xing URL (سوق العمل الألماني)</label>
+              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <span>Xing URL (سوق العمل الألماني)</span>
+                <FieldTooltip fieldKey="xingUrl" locale={locale} />
+              </label>
               <input
                 type="url"
                 value={cv.personalInfo?.xingUrl || ""}
@@ -508,25 +571,28 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
               />
             </div>
 
-            <div className="space-y-1 sm:col-span-2">
-              <label className="text-xs font-bold text-slate-300">{isAr ? "رابط الصورة الشخصية (Bewerbungsfoto URL)" : "Photo URL (Bewerbungsfoto)"}</label>
-              <input
-                type="url"
-                value={cv.personalInfo?.photoUrl || ""}
-                onChange={(e) => {
-                  setCv({
-                    ...cv,
-                    personalInfo: { ...cv.personalInfo, fullName: cv.personalInfo?.fullName || "", email: cv.personalInfo?.email || "", photoUrl: e.target.value },
-                  });
-                  markUnsaved();
-                }}
-                placeholder="https://example.com/my-professional-photo.jpg"
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden"
-              />
-            </div>
+            <CvPhotoUpload
+              photoUrl={cv.personalInfo?.photoUrl}
+              onChange={(newPhotoUrl) => {
+                setCv({
+                  ...cv,
+                  personalInfo: {
+                    ...cv.personalInfo,
+                    fullName: cv.personalInfo?.fullName || "",
+                    email: cv.personalInfo?.email || "",
+                    photoUrl: newPhotoUrl,
+                  },
+                });
+                markUnsaved();
+              }}
+              isAr={isAr}
+            />
 
             <div className="space-y-1 sm:col-span-2">
-              <label className="text-xs font-bold text-slate-300">{isAr ? "نبذة مهنية موجزة (Profil / Kurzprofil)" : "Professional Summary (Kurzprofil)"}</label>
+              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <span>{isAr ? "نبذة مهنية موجزة (Profil / Kurzprofil)" : "Professional Summary (Kurzprofil)"}</span>
+                <FieldTooltip fieldKey="summary" locale={locale} />
+              </label>
               <textarea
                 rows={3}
                 value={cv.personalInfo?.summary || ""}
@@ -550,8 +616,9 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
         <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold text-white">
-                {isAr ? "الخبرات المهنية (Berufserfahrung)" : isDe ? "Berufserfahrung" : "Work Experience"}
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <span>{isAr ? "الخبرات المهنية (Berufserfahrung)" : isDe ? "Berufserfahrung" : "Work Experience"}</span>
+                <FieldTooltip fieldKey="experienceSection" locale={locale} />
               </h3>
               <p className="text-xs text-slate-400">
                 {isAr ? "مرتبة زمنياً من الأحدث إلى الأقدم (Antichronologisch)" : "Reverse-chronological order"}
@@ -610,7 +677,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-300">{isAr ? "المسمى الوظيفي *" : "Position *"}</label>
+                      <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                        <span>{isAr ? "المسمى الوظيفي *" : "Position *"}</span>
+                        <FieldTooltip fieldKey="position" locale={locale} />
+                      </label>
                       <input
                         type="text"
                         value={exp.position}
@@ -626,7 +696,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-300">{isAr ? "الشركة *" : "Company *"}</label>
+                      <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                        <span>{isAr ? "الشركة *" : "Company *"}</span>
+                        <FieldTooltip fieldKey="company" locale={locale} />
+                      </label>
                       <input
                         type="text"
                         value={exp.company}
@@ -642,7 +715,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-300">{isAr ? "تاريخ البدء *" : "Start Date *"}</label>
+                      <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                        <span>{isAr ? "تاريخ البدء *" : "Start Date *"}</span>
+                        <FieldTooltip fieldKey="dates" locale={locale} />
+                      </label>
                       <input
                         type="date"
                         value={formatDateInput(exp.startDate)}
@@ -658,7 +734,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
 
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-slate-300">{isAr ? "تاريخ الانتهاء" : "End Date"}</label>
+                        <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                          <span>{isAr ? "تاريخ الانتهاء" : "End Date"}</span>
+                          <FieldTooltip fieldKey="dates" locale={locale} />
+                        </label>
                         <label className="text-[10px] text-slate-400 flex items-center gap-1">
                           <input
                             type="checkbox"
@@ -689,7 +768,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
 
                     <div className="space-y-1 sm:col-span-2">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-slate-300">{isAr ? "الوصف والمهام (Bullet Points)" : "Responsibilities & Impact"}</label>
+                        <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                          <span>{isAr ? "الوصف والمهام (Bullet Points)" : "Responsibilities & Impact"}</span>
+                          <FieldTooltip fieldKey="experienceDescription" locale={locale} />
+                        </label>
                         <button
                           type="button"
                           onClick={() => handleOptimizeBullet(idx, "experience")}
@@ -730,8 +812,9 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
         <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold text-white">
-                {isAr ? "التعليم والشهادات الجامعية (Ausbildung & Studium)" : isDe ? "Ausbildung & Studium" : "Education & Academic Degrees"}
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <span>{isAr ? "التعليم والشهادات الجامعية (Ausbildung & Studium)" : isDe ? "Ausbildung & Studium" : "Education & Academic Degrees"}</span>
+                <FieldTooltip fieldKey="degree" locale={locale} />
               </h3>
               <p className="text-xs text-slate-400">
                 {isAr ? "درجات البكالوريوس، الماجستير، والتكوين المهني Ausbildung" : "University degrees & Vocational training"}
@@ -792,7 +875,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-300">{isAr ? "الدرجة العلمية *" : "Degree *"}</label>
+                      <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                        <span>{isAr ? "الدرجة العلمية *" : "Degree *"}</span>
+                        <FieldTooltip fieldKey="degree" locale={locale} />
+                      </label>
                       <input
                         type="text"
                         value={edu.degree}
@@ -808,7 +894,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-300">{isAr ? "التخصص / مجال الدراسة" : "Field of Study"}</label>
+                      <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                        <span>{isAr ? "التخصص / مجال الدراسة" : "Field of Study"}</span>
+                        <FieldTooltip fieldKey="fieldOfStudy" locale={locale} />
+                      </label>
                       <input
                         type="text"
                         value={edu.fieldOfStudy || ""}
@@ -824,7 +913,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-300">{isAr ? "المؤسسة / الجامعة *" : "Institution *"}</label>
+                      <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                        <span>{isAr ? "المؤسسة / الجامعة *" : "Institution *"}</span>
+                        <FieldTooltip fieldKey="institution" locale={locale} />
+                      </label>
                       <input
                         type="text"
                         value={edu.institution}
@@ -840,7 +932,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-300">{isAr ? "المعدل / التقدير (German Note)" : "Grade (German Note)"}</label>
+                      <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                        <span>{isAr ? "المعدل / التقدير (German Note)" : "Grade (German Note)"}</span>
+                        <FieldTooltip fieldKey="grade" locale={locale} />
+                      </label>
                       <input
                         type="text"
                         value={edu.grade || ""}
@@ -856,7 +951,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-300">{isAr ? "تاريخ البدء *" : "Start Date *"}</label>
+                      <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                        <span>{isAr ? "تاريخ البدء *" : "Start Date *"}</span>
+                        <FieldTooltip fieldKey="dates" locale={locale} />
+                      </label>
                       <input
                         type="date"
                         value={formatDateInput(edu.startDate)}
@@ -871,7 +969,10 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-300">{isAr ? "تاريخ التخرج" : "End Date"}</label>
+                      <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                        <span>{isAr ? "تاريخ التخرج" : "End Date"}</span>
+                        <FieldTooltip fieldKey="dates" locale={locale} />
+                      </label>
                       <input
                         type="date"
                         value={formatDateInput(edu.endDate)}
@@ -898,8 +999,9 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
           {/* Skills Section */}
           <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 space-y-6 shadow-xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white">
-                {isAr ? "المهارات التقنية والمهنية (Kenntnisse)" : "Skills"}
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <span>{isAr ? "المهارات التقنية والمهنية (Kenntnisse)" : "Skills"}</span>
+                <FieldTooltip fieldKey="skillsSection" locale={locale} />
               </h3>
               <button
                 type="button"
@@ -965,8 +1067,9 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
           <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 space-y-6 shadow-xl">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold text-white">
-                  {isAr ? "اللغات (Sprachkenntnisse)" : "Languages"}
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <span>{isAr ? "اللغات (Sprachkenntnisse)" : "Languages"}</span>
+                  <FieldTooltip fieldKey="languagesSection" locale={locale} />
                 </h3>
                 <p className="text-xs text-slate-400">
                   {isAr ? "معايير الإطار الأوروبي CEFR (A1 - C2)" : "CEFR Levels (A1 - C2)"}
@@ -1044,8 +1147,9 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
           {/* Certifications */}
           <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 space-y-6 shadow-xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white">
-                {isAr ? "الشهادات والاعتمادات (Zertifikate)" : "Certifications"}
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <span>{isAr ? "الشهادات والاعتمادات (Zertifikate)" : "Certifications"}</span>
+                <FieldTooltip fieldKey="certificationsSection" locale={locale} />
               </h3>
               <button
                 type="button"
@@ -1114,8 +1218,9 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
           {/* Projects */}
           <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 space-y-6 shadow-xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white">
-                {isAr ? "المشاريع المميزة (Projekte)" : "Projects"}
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <span>{isAr ? "المشاريع المميزة (Projekte)" : "Projects"}</span>
+                <FieldTooltip fieldKey="projectsSection" locale={locale} />
               </h3>
               <button
                 type="button"
@@ -1186,36 +1291,82 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
       {/* Tab 6: DIN 5008 Preview */}
       {activeTab === "preview" && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between bg-slate-900 p-4 rounded-2xl border border-slate-800">
+          <div className="flex items-center justify-between bg-slate-900 p-4 rounded-2xl border border-slate-800 flex-wrap gap-3">
             <span className="text-xs text-slate-300 font-bold">
               {isAr ? "معاينة السيرة الذاتية (DIN 5008 Tabellarischer Lebenslauf)" : "German DIN 5008 Tabular CV Preview"}
             </span>
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
-            >
-              🖨️ {isAr ? "طباعة / تصدير PDF" : isDe ? "Drucken / PDF" : "Print / PDF"}
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <a
+                href={`/api/cv/${cv.id}/pdf`}
+                download
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all cursor-pointer inline-flex items-center gap-1"
+              >
+                <span>📥</span>
+                <span>{isAr ? "تحميل PDF رسمي" : isDe ? "DIN 5008 PDF" : "Download Official PDF"}</span>
+              </a>
+
+              <a
+                href={`/api/cv/${cv.id}/pdf?deckblatt=true`}
+                download
+                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs border border-slate-700 transition-all cursor-pointer inline-flex items-center gap-1"
+              >
+                <span>📑</span>
+                <span>{isAr ? "+ غلاف (Deckblatt)" : isDe ? "+ Deckblatt" : "+ Cover Page"}</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer inline-flex items-center gap-1"
+              >
+                <span>🖨️</span>
+                <span>{isAr ? "طباعة" : isDe ? "Drucken" : "Print"}</span>
+              </button>
+            </div>
           </div>
 
           {/* Printable / Rendered DIN 5008 Sheet */}
-          <div className="bg-white text-slate-900 p-8 sm:p-12 rounded-3xl shadow-2xl max-w-4xl mx-auto space-y-8 font-sans">
+          <div dir="ltr" className="bg-white text-slate-900 p-8 sm:p-12 rounded-3xl shadow-2xl max-w-4xl mx-auto space-y-8 font-sans text-left">
             {/* Header: Name & Photo */}
-            <div className="flex items-start justify-between border-b-2 border-slate-900 pb-6 gap-6">
-              <div className="space-y-1">
-                <h1 className="text-3xl font-black tracking-tight text-slate-900 uppercase">
+            <div className="flex items-start justify-between border-b-2 border-slate-900 pb-6 gap-6 text-left">
+              <div className="space-y-1 text-left">
+                <h1 className="text-3xl font-black tracking-tight text-slate-900 uppercase text-left">
                   {cv.personalInfo?.fullName || "Vorname Nachname"}
                 </h1>
-                <p className="text-base font-semibold text-blue-700">
-                  {cv.personalInfo?.targetJobTitle || "Lebenslauf"}
+                <p className="text-base font-semibold text-blue-700 text-left">
+                  {cv.personalInfo?.targetJobTitle || "Curriculum Vitae / Lebenslauf"}
                 </p>
-                <div className="pt-2 text-xs text-slate-600 space-y-0.5 font-medium">
-                  {cv.personalInfo?.address && <p>📍 {cv.personalInfo.address}</p>}
-                  {cv.personalInfo?.phone && <p>📞 {cv.personalInfo.phone}</p>}
-                  {cv.personalInfo?.email && <p>✉️ {cv.personalInfo.email}</p>}
-                  {cv.personalInfo?.linkedinUrl && <p>🔗 {cv.personalInfo.linkedinUrl}</p>}
-                  {cv.personalInfo?.xingUrl && <p>💼 {cv.personalInfo.xingUrl}</p>}
+                <div className="pt-3 text-xs text-slate-600 space-y-1 font-medium text-left">
+                  {cv.personalInfo?.address && (
+                    <p className="flex items-center gap-1.5 text-left">
+                      <span>📍</span>
+                      <span>{cv.personalInfo.address}</span>
+                    </p>
+                  )}
+                  {cv.personalInfo?.phone && (
+                    <p className="flex items-center gap-1.5 text-left">
+                      <span>📞</span>
+                      <span className="font-mono">{cv.personalInfo.phone}</span>
+                    </p>
+                  )}
+                  {cv.personalInfo?.email && (
+                    <p className="flex items-center gap-1.5 text-left">
+                      <span>✉️</span>
+                      <span className="font-mono">{cv.personalInfo.email}</span>
+                    </p>
+                  )}
+                  {cv.personalInfo?.linkedinUrl && (
+                    <p className="flex items-center gap-1.5 text-left">
+                      <span>🔗</span>
+                      <span className="truncate max-w-md">{cv.personalInfo.linkedinUrl}</span>
+                    </p>
+                  )}
+                  {cv.personalInfo?.xingUrl && (
+                    <p className="flex items-center gap-1.5 text-left">
+                      <span>💼</span>
+                      <span className="truncate max-w-md">{cv.personalInfo.xingUrl}</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -1233,45 +1384,57 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
               )}
             </div>
 
+            {/* Section: Kurzprofil / Summary */}
+            {cv.personalInfo?.summary && (
+              <div className="space-y-2 text-left">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 text-left">
+                  Kurzprofil
+                </h2>
+                <div className="text-xs text-slate-700 bg-slate-50 border-l-4 border-blue-600 p-3.5 rounded-r-xl leading-relaxed text-left whitespace-pre-line">
+                  {cv.personalInfo.summary}
+                </div>
+              </div>
+            )}
+
             {/* Section: Persönliche Daten */}
             {(cv.personalInfo?.birthDate || cv.personalInfo?.birthPlace || cv.personalInfo?.nationality) && (
-              <div className="space-y-2">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1">
+              <div className="space-y-2 text-left">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 text-left">
                   Persönliche Daten
                 </h2>
-                <div className="grid grid-cols-3 gap-y-1 text-xs text-slate-800">
+                <div className="grid grid-cols-12 gap-y-1.5 gap-x-4 text-xs text-slate-800 text-left">
                   {cv.personalInfo?.birthDate && (
                     <>
-                      <span className="font-semibold text-slate-500">Geburtsdatum:</span>
-                      <span className="col-span-2">{new Date(cv.personalInfo.birthDate).toLocaleDateString("de-DE")}</span>
+                      <span className="col-span-4 sm:col-span-3 font-semibold text-slate-500 text-left">Geburtsdatum:</span>
+                      <span className="col-span-8 sm:col-span-9 text-left">{new Date(cv.personalInfo.birthDate).toLocaleDateString("de-DE")}</span>
                     </>
                   )}
                   {cv.personalInfo?.birthPlace && (
                     <>
-                      <span className="font-semibold text-slate-500">Geburtsort:</span>
-                      <span className="col-span-2">{cv.personalInfo.birthPlace}</span>
+                      <span className="col-span-4 sm:col-span-3 font-semibold text-slate-500 text-left">Geburtsort:</span>
+                      <span className="col-span-8 sm:col-span-9 text-left">{cv.personalInfo.birthPlace}</span>
                     </>
                   )}
                   {cv.personalInfo?.nationality && (
                     <>
-                      <span className="font-semibold text-slate-500">Staatsangehörigkeit:</span>
-                      <span className="col-span-2">{cv.personalInfo.nationality}</span>
+                      <span className="col-span-4 sm:col-span-3 font-semibold text-slate-500 text-left">Staatsangehörigkeit:</span>
+                      <span className="col-span-8 sm:col-span-9 text-left">{cv.personalInfo.nationality}</span>
                     </>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Section: Berufserfahrung */}
+            {/* Section: Berufserfahrung (Two-Column Tabellarisch) */}
             {cv.experiences.length > 0 && (
-              <div className="space-y-4">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1">
+              <div className="space-y-4 text-left">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 text-left">
                   Berufserfahrung
                 </h2>
-                <div className="space-y-4">
+                <div className="space-y-4 text-left">
                   {cv.experiences.map((exp, idx) => (
-                    <div key={idx} className="grid grid-cols-4 gap-4 text-xs">
-                      <div className="text-slate-500 font-semibold">
+                    <div key={idx} className="grid grid-cols-12 gap-4 text-xs text-left items-start">
+                      <div className="col-span-4 sm:col-span-3 text-slate-500 font-bold text-xs text-left">
                         {new Date(exp.startDate).toLocaleDateString("de-DE", { month: "2-digit", year: "numeric" })} –{" "}
                         {exp.isCurrent
                           ? "heute"
@@ -1279,13 +1442,13 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                           ? new Date(exp.endDate).toLocaleDateString("de-DE", { month: "2-digit", year: "numeric" })
                           : "heute"}
                       </div>
-                      <div className="col-span-3 space-y-1">
-                        <div className="font-bold text-slate-900 text-sm">
-                          {exp.position} • <span className="text-slate-700 font-medium">{exp.company}</span>
+                      <div className="col-span-8 sm:col-span-9 space-y-1 text-left">
+                        <div className="font-bold text-slate-900 text-sm text-left">
+                          {exp.position} • <span className="text-blue-700 font-medium">{exp.company}</span>
                           {exp.city && <span className="text-slate-500 font-normal">, {exp.city}</span>}
                         </div>
                         {exp.description && (
-                          <div className="text-slate-700 whitespace-pre-line leading-relaxed">
+                          <div className="text-slate-700 whitespace-pre-line leading-relaxed text-left pt-0.5">
                             {exp.description}
                           </div>
                         )}
@@ -1296,16 +1459,16 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
               </div>
             )}
 
-            {/* Section: Ausbildung & Studium */}
+            {/* Section: Ausbildung & Studium (Two-Column Tabellarisch) */}
             {cv.educations.length > 0 && (
-              <div className="space-y-4">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1">
+              <div className="space-y-4 text-left">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 text-left">
                   Ausbildung & Studium
                 </h2>
-                <div className="space-y-3">
+                <div className="space-y-3 text-left">
                   {cv.educations.map((edu, idx) => (
-                    <div key={idx} className="grid grid-cols-4 gap-4 text-xs">
-                      <div className="text-slate-500 font-semibold">
+                    <div key={idx} className="grid grid-cols-12 gap-4 text-xs text-left items-start">
+                      <div className="col-span-4 sm:col-span-3 text-slate-500 font-bold text-xs text-left">
                         {new Date(edu.startDate).toLocaleDateString("de-DE", { month: "2-digit", year: "numeric" })} –{" "}
                         {edu.isCurrent
                           ? "heute"
@@ -1313,12 +1476,17 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                           ? new Date(edu.endDate).toLocaleDateString("de-DE", { month: "2-digit", year: "numeric" })
                           : "heute"}
                       </div>
-                      <div className="col-span-3 space-y-0.5">
-                        <div className="font-bold text-slate-900 text-sm">
+                      <div className="col-span-8 sm:col-span-9 space-y-0.5 text-left">
+                        <div className="font-bold text-slate-900 text-sm text-left">
                           {edu.degree} {edu.fieldOfStudy ? `in ${edu.fieldOfStudy}` : ""}
                         </div>
-                        <div className="text-slate-700 font-medium">{edu.institution}</div>
-                        {edu.grade && <div className="text-slate-600 font-semibold">Abschlussnote: {edu.grade}</div>}
+                        <div className="text-blue-700 font-medium text-left">{edu.institution}</div>
+                        {edu.grade && <div className="text-slate-600 font-semibold text-left">Abschlussnote: {edu.grade}</div>}
+                        {edu.description && (
+                          <div className="text-slate-700 whitespace-pre-line leading-relaxed text-left pt-0.5">
+                            {edu.description}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1328,49 +1496,111 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
 
             {/* Section: Kenntnisse & Sprachen */}
             {(cv.skills.length > 0 || cv.languages.length > 0) && (
-              <div className="space-y-3">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1">
+              <div className="space-y-3 text-left">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 text-left">
                   Kenntnisse & Qualifikationen
                 </h2>
-                <div className="grid grid-cols-4 gap-4 text-xs">
+                <div className="space-y-3 text-left">
                   {cv.languages.length > 0 && (
-                    <>
-                      <div className="text-slate-500 font-semibold">Sprachen:</div>
-                      <div className="col-span-3 space-y-1">
+                    <div className="grid grid-cols-12 gap-4 text-xs text-left items-start">
+                      <div className="col-span-4 sm:col-span-3 text-slate-500 font-bold text-left">Sprachen:</div>
+                      <div className="col-span-8 sm:col-span-9 flex flex-wrap gap-x-4 gap-y-1 text-left">
                         {cv.languages.map((l, i) => (
-                          <div key={i} className="text-slate-800">
-                            <strong>{l.language}:</strong> {l.proficiency}
-                          </div>
+                          <span key={i} className="text-slate-800 text-left">
+                            <strong className="text-slate-900">{l.language}:</strong> {l.proficiency}
+                          </span>
                         ))}
                       </div>
-                    </>
+                    </div>
                   )}
 
                   {cv.skills.length > 0 && (
-                    <>
-                      <div className="text-slate-500 font-semibold">IT-Kenntnisse:</div>
-                      <div className="col-span-3 text-slate-800 leading-relaxed">
-                        {cv.skills.map((s) => s.name).join(" • ")}
+                    <div className="grid grid-cols-12 gap-4 text-xs text-left items-start">
+                      <div className="col-span-4 sm:col-span-3 text-slate-500 font-bold text-left">IT-Kenntnisse:</div>
+                      <div className="col-span-8 sm:col-span-9 flex flex-wrap gap-2 text-left">
+                        {cv.skills.map((s, i) => (
+                          <span key={i} className="px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-800 text-xs font-medium">
+                            {s.name} {s.level ? `(${s.level})` : ""}
+                          </span>
+                        ))}
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
             )}
 
-            {/* German CV Signature Line */}
-            <div className="pt-8 text-xs text-slate-500 flex items-center justify-between border-t border-slate-200">
-              <div>
+            {/* Section: Zertifikate (if any) */}
+            {cv.certifications && cv.certifications.length > 0 && (
+              <div className="space-y-3 text-left">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 text-left">
+                  Zertifikate & Weiterbildung
+                </h2>
+                <div className="space-y-2 text-left">
+                  {cv.certifications.map((cert, idx) => (
+                    <div key={idx} className="grid grid-cols-12 gap-4 text-xs text-left items-start">
+                      <div className="col-span-4 sm:col-span-3 text-slate-500 font-bold text-left">
+                        {cert.issueDate ? new Date(cert.issueDate).toLocaleDateString("de-DE", { month: "2-digit", year: "numeric" }) : "Zertifikat"}
+                      </div>
+                      <div className="col-span-8 sm:col-span-9 text-left">
+                        <span className="font-bold text-slate-900">{cert.name}</span>
+                        {cert.issuer && <span className="text-slate-600"> • {cert.issuer}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Section: Projekte (if any) */}
+            {cv.projects && cv.projects.length > 0 && (
+              <div className="space-y-3 text-left">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 text-left">
+                  Projekte
+                </h2>
+                <div className="space-y-3 text-left">
+                  {cv.projects.map((proj, idx) => (
+                    <div key={idx} className="space-y-0.5 text-left">
+                      <div className="font-bold text-slate-900 text-xs text-left">
+                        {proj.title} {proj.role ? <span className="text-blue-700 font-medium">({proj.role})</span> : ""}
+                      </div>
+                      {proj.description && (
+                        <div className="text-slate-700 text-xs whitespace-pre-line text-left">
+                          {proj.description}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* German CV Signature Line (Ort, Datum & Unterschrift) */}
+            <div className="pt-8 text-xs text-slate-500 flex items-center justify-between border-t border-slate-200 text-left">
+              <div className="text-left">
                 {cv.personalInfo?.address ? cv.personalInfo.address.split(",")[1]?.trim() || "Deutschland" : "Deutschland"},{" "}
                 {new Date().toLocaleDateString("de-DE")}
               </div>
-              <div className="font-serif italic text-slate-800 text-sm">
+              <div className="font-serif italic text-slate-800 text-sm text-right">
                 {cv.personalInfo?.fullName || "Max Mustermann"}
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Side-by-Side Interactive AI CV Copilot & Interviewer */}
+      <CvAiCopilot
+        isOpen={isCopilotOpen}
+        onClose={() => setIsCopilotOpen(false)}
+        cv={cv}
+        onUpdateCv={(updatedCv) => {
+          setCv(updatedCv);
+          markUnsaved();
+        }}
+        locale={locale}
+        onNavigateTab={(tabId) => setActiveTab(tabId as typeof activeTab)}
+      />
     </div>
   );
 }

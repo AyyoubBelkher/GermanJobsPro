@@ -74,7 +74,7 @@ export default function AdminBar({ post, locale = "ar" }: AdminBarProps) {
         setSuccessMessage("");
         router.refresh();
       }, 1000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Update post error:", err);
       setErrorMessage(isAr ? "حدث خطأ أثناء التحديث" : "An error occurred while updating");
       setLoading(false);
@@ -101,7 +101,7 @@ export default function AdminBar({ post, locale = "ar" }: AdminBarProps) {
 
       // Redirect to blog home after successful deletion
       window.location.href = `/${locale}/blog`;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Delete post error:", err);
       setErrorMessage(isAr ? "حدث خطأ أثناء الحذف" : "An error occurred while deleting");
       setLoading(false);

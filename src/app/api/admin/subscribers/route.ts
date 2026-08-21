@@ -9,7 +9,7 @@ async function isAdmin(): Promise<boolean> {
   return await verifySessionToken(session);
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   if (!(await isAdmin())) {
     return NextResponse.json(
       { error: "Unauthorized" },

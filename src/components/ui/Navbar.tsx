@@ -14,9 +14,12 @@ export default function Navbar({ locale = "ar" }: NavbarProps) {
   const isDe = locale === "de";
 
   const homeLink = `/${locale}`;
+  const jobsLink = `/${locale}/jobs`;
   const blogLink = `/${locale}/blog`;
   const dashboardLink = `/${locale}/dashboard`;
   const atsLink = `/${locale}/dashboard/ats-analyzer`;
+  const dossierLink = `/${locale}/dashboard/dossier`;
+  const pricingLink = `/${locale}/dashboard/pricing`;
   const loginLink = `/${locale}/auth/login`;
   const newCvLink = `/${locale}/dashboard/cv/new`;
 
@@ -42,7 +45,7 @@ export default function Navbar({ locale = "ar" }: NavbarProps) {
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-semibold text-slate-300">
+        <nav className="hidden md:flex items-center gap-4 lg:gap-6 text-sm font-semibold text-slate-300">
           <Link
             href={homeLink}
             className="hover:text-blue-400 transition-colors"
@@ -50,17 +53,38 @@ export default function Navbar({ locale = "ar" }: NavbarProps) {
             {isAr ? "الرئيسية" : isDe ? "Startseite" : "Home"}
           </Link>
           <Link
+            href={jobsLink}
+            className="hover:text-blue-400 transition-colors flex items-center gap-1"
+          >
+            <span>💼</span>
+            <span>{isAr ? "فرص العمل" : isDe ? "Jobs" : "Jobs"}</span>
+          </Link>
+          <Link
             href={blogLink}
             className="hover:text-blue-400 transition-colors"
           >
-            {isAr ? "أحدث الوظائف" : isDe ? "Jobs & Blog" : "Jobs & Blog"}
+            {isAr ? "المقالات" : isDe ? "Blog" : "Blog"}
           </Link>
           <Link
             href={atsLink}
             className="hover:text-emerald-400 transition-colors flex items-center gap-1"
           >
             <span className="text-emerald-400">🔍</span>
-            <span>{isAr ? "فاحص ATS" : isDe ? "ATS Checker" : "ATS Analyzer"}</span>
+            <span>{isAr ? "فاحص ATS" : isDe ? "ATS Checker" : "ATS"}</span>
+          </Link>
+          <Link
+            href={dossierLink}
+            className="hover:text-amber-400 transition-colors flex items-center gap-1"
+          >
+            <span className="text-amber-400">📑</span>
+            <span>{isAr ? "ملف الترشيح" : isDe ? "Bewerbungsmappe" : "Dossier"}</span>
+          </Link>
+          <Link
+            href={pricingLink}
+            className="hover:text-amber-400 transition-colors flex items-center gap-1 text-amber-400 font-bold"
+          >
+            <span>💎</span>
+            <span>{isAr ? "الترقية (PRO)" : isDe ? "PRO Pass" : "PRO"}</span>
           </Link>
           <Link
             href={dashboardLink}
@@ -119,11 +143,19 @@ export default function Navbar({ locale = "ar" }: NavbarProps) {
               {isAr ? "الرئيسية" : isDe ? "Startseite" : "Home"}
             </Link>
             <Link
+              href={jobsLink}
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-3 py-2 rounded-xl hover:bg-slate-900 hover:text-blue-400 transition-colors flex items-center gap-2"
+            >
+              <span>💼</span>
+              <span>{isAr ? "فرص العمل (Jobs)" : isDe ? "Jobs in Deutschland" : "Jobs in Germany"}</span>
+            </Link>
+            <Link
               href={blogLink}
               onClick={() => setMobileMenuOpen(false)}
               className="px-3 py-2 rounded-xl hover:bg-slate-900 hover:text-blue-400 transition-colors"
             >
-              {isAr ? "أحدث الوظائف" : isDe ? "Jobs & Blog" : "Jobs & Blog"}
+              {isAr ? "المقالات" : isDe ? "Blog" : "Blog"}
             </Link>
             <Link
               href={atsLink}
@@ -132,6 +164,22 @@ export default function Navbar({ locale = "ar" }: NavbarProps) {
             >
               <span>🔍</span>
               <span>{isAr ? "فاحص السيرة (ATS Analyzer)" : isDe ? "ATS Lebenslauf-Checker" : "ATS CV Analyzer"}</span>
+            </Link>
+            <Link
+              href={dossierLink}
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-3 py-2 rounded-xl hover:bg-slate-900 text-amber-400 transition-colors flex items-center gap-2"
+            >
+              <span>📑</span>
+              <span>{isAr ? "ملف الترشيح (Bewerbungsmappe)" : isDe ? "Bewerbungsmappe" : "Dossier Studio"}</span>
+            </Link>
+            <Link
+              href={pricingLink}
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-3 py-2 rounded-xl hover:bg-slate-900 text-amber-400 transition-colors flex items-center gap-2 font-bold"
+            >
+              <span>💎</span>
+              <span>{isAr ? "الترقية والأسعار (PRO)" : isDe ? "Preise & Upgrades (PRO)" : "Pricing & PRO"}</span>
             </Link>
             <Link
               href={dashboardLink}

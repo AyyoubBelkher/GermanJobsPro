@@ -140,6 +140,15 @@ export default function CoverLetterEditorClient({
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
+          <a
+            href={`/api/cover-letters/${coverLetter.id}/pdf`}
+            download
+            className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>📥</span>
+            <span>{isAr ? "تحميل PDF (DIN 5008)" : isDe ? "DIN 5008 PDF" : "Download PDF"}</span>
+          </a>
+
           <button
             type="button"
             onClick={handleCopy}
@@ -155,7 +164,7 @@ export default function CoverLetterEditorClient({
             className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             <span>🖨️</span>
-            <span>{isAr ? "طباعة / PDF" : "Print"}</span>
+            <span>{isAr ? "طباعة" : "Print"}</span>
           </button>
 
           <button
@@ -278,13 +287,14 @@ export default function CoverLetterEditorClient({
             </div>
 
             <textarea
+              dir="ltr"
               rows={24}
               value={coverLetter.generatedContent}
               onChange={(e) => {
                 setCoverLetter({ ...coverLetter, generatedContent: e.target.value });
                 markUnsaved();
               }}
-              className="w-full p-4 rounded-2xl bg-slate-950 border border-slate-800 text-slate-100 text-sm font-sans leading-relaxed focus:border-purple-500 focus:outline-hidden"
+              className="w-full p-4 rounded-2xl bg-slate-950 border border-slate-800 text-slate-100 text-sm font-sans leading-relaxed focus:border-purple-500 focus:outline-hidden text-left"
             />
           </div>
         </div>

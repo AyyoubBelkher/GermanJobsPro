@@ -34,15 +34,22 @@ model Subscriber {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
-  passwordHash String
-  name         String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  sessions     UserSession[]
-  cvs          Cv[]
-  coverLetters CoverLetter[]
+  id             String        @id @default(cuid())
+  email          String        @unique
+  passwordHash   String
+  name           String?
+  plan           String        @default("FREE") // "FREE" | "TRIAL" | "PRO"
+  planExpiresAt  DateTime?
+  aiCredits      Int           @default(3) // 3 free starter AI credits
+  dailyAiCreditsUsed Int           @default(0)
+  lastCreditResetAt  DateTime      @default(now())
+  customerId     String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  sessions       UserSession[]
+  cvs            Cv[]
+  coverLetters   CoverLetter[]
+  promoRedemptions UserPromoRedemption[]
 }
 
 model UserSession {
@@ -214,5 +221,70 @@ model CoverLetter {
   @@index([userId])
   @@index([cvId])
 }
+
+// ==========================================
+// P2: GERMAN JOB BOARD MODELS
+// ==========================================
+
+model Job {
+  id             String   @id @default(cuid())
+  title          String
+  company        String
+  city           String?  @default("Germany")
+  category       String   @default("General")
+  jobType        String?  @default("Full-time")
+  languageReq    String?  @default("B1/B2")
+  salary         String?
+  applyUrl       String   @unique
+  descriptionRaw String?
+  publishedAt    DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([category])
+  @@index([city])
+  @@index([publishedAt])
+}
+
+// ==========================================
+// P2: MONETIZATION & PROMO CODES
+// ==========================================
+
+model PromoCode {
+  id             String    @id @default(cuid())
+  code           String    @unique
+  planGranted    String    @default("TRIAL") // "TRIAL" | "PRO"
+  durationDays   Int       @default(7)
+  creditsGranted Int       @default(15)
+  maxUses        Int       @default(10)
+  timesUsed      Int       @default(0)
+  expiresAt      DateTime?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+
+  redemptions    UserPromoRedemption[]
+}
+
+model UserPromoRedemption {
+  id          String    @id @default(cuid())
+  userId      String
+  promoCodeId String
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, promoCodeId])
+  @@index([userId])
+}
+
+model ProcessedWebhookEvent {
+  id        String   @id @default(cuid())
+  eventId   String   @unique
+  eventName String
+  userId    String?
+  createdAt DateTime @default(now())
+}
+
 
 

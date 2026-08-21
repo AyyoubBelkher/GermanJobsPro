@@ -13,6 +13,89 @@ const getGeminiClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
+const FALLBACK_MODELS = [
+  process.env.GEMINI_MODEL || "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+];
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Checks if an error is a rate limit (HTTP 429 / RESOURCE_EXHAUSTED / Quota exceeded).
+ */
+export function isRateLimitError(error: unknown): boolean {
+  if (!error) return false;
+  const str = String(error).toLowerCase();
+  const msg = error instanceof Error ? error.message.toLowerCase() : "";
+  return (
+    str.includes("429") ||
+    str.includes("resource_exhausted") ||
+    str.includes("quota") ||
+    str.includes("rate limit") ||
+    str.includes("too many requests") ||
+    msg.includes("429") ||
+    msg.includes("resource_exhausted") ||
+    msg.includes("quota") ||
+    msg.includes("rate limit") ||
+    msg.includes("too many requests")
+  );
+}
+
+/**
+ * Executes generateContent with 1-retry backoff per model and automatic fallback across multiple models.
+ */
+async function generateContentWithFallback(
+  ai: ReturnType<typeof getGeminiClient>,
+  params: {
+    contents: string;
+    config?: Parameters<typeof ai.models.generateContent>[0]["config"];
+  }
+): Promise<string> {
+  const models = Array.from(new Set(FALLBACK_MODELS));
+  let lastError: unknown = null;
+
+  for (let m = 0; m < models.length; m++) {
+    const model = models[m];
+    // Up to 2 attempts per model (initial + 1 retry on 429)
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: params.contents,
+          config: params.config,
+        });
+
+        const text = response.text?.trim();
+        if (text) {
+          return text;
+        }
+      } catch (err: unknown) {
+        lastError = err;
+        console.warn(
+          `[Gemini ${model} (attempt ${attempt + 1}/2) failed]:`,
+          err instanceof Error ? err.message : err
+        );
+
+        if (isRateLimitError(err)) {
+          // If this was attempt 0, wait 1500ms backoff and retry once with same model
+          if (attempt === 0) {
+            await sleep(1500);
+            continue;
+          }
+          // If attempt 1 failed with rate limit, break out to try next fallback model
+          break;
+        } else {
+          // Non-rate limit error: try next model immediately
+          break;
+        }
+      }
+    }
+  }
+
+  throw lastError || new Error("All Gemini models failed to respond.");
+}
+
 export interface CvContext {
   fullName?: string | null;
   email?: string | null;
@@ -52,6 +135,67 @@ export interface GenerateCoverLetterParams {
   language?: string;
   tone?: string;
   cvContext?: CvContext | null;
+  cvRawText?: string | null;
+}
+
+export interface ExtractedApplicantInfo {
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  targetJobTitle?: string;
+}
+
+/**
+ * Extracts candidate contact information (Name, Email, Phone, Address/City) from raw CV text.
+ */
+export async function extractApplicantInfoAI(cvText: string): Promise<ExtractedApplicantInfo> {
+  const ai = getGeminiClient();
+
+  const systemInstruction = `You are an expert resume parsing assistant.
+Extract the applicant's personal and contact information from the provided CV text.
+Return a valid JSON object strictly adhering to this schema:
+{
+  "fullName": "Applicant Full Name",
+  "email": "Applicant Email Address",
+  "phone": "Applicant Phone Number (with country code if present)",
+  "address": "Applicant City and Country or Street Address (e.g., Berlin, Deutschland)",
+  "targetJobTitle": "Applicant Current or Target Job Title"
+}
+If any field is missing or cannot be found, set it to an empty string "".
+Do NOT include markdown code fences or conversational commentary.`;
+
+  const userPrompt = `<<<CV_TEXT>>>\n${cvText.slice(0, 5000)}\n<<<CV_TEXT>>>\n\nPlease extract the applicant contact details in JSON format.`;
+
+  try {
+    const text = await generateContentWithFallback(ai, {
+      contents: userPrompt,
+      config: {
+        systemInstruction,
+        temperature: 0.1,
+        responseMimeType: "application/json",
+      },
+    });
+
+    const cleaned = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/, "").trim();
+    const parsed = JSON.parse(cleaned);
+    return {
+      fullName: parsed.fullName?.trim() || undefined,
+      email: parsed.email?.trim() || undefined,
+      phone: parsed.phone?.trim() || undefined,
+      address: parsed.address?.trim() || undefined,
+      targetJobTitle: parsed.targetJobTitle?.trim() || undefined,
+    };
+  } catch (err: unknown) {
+    console.warn("[extractApplicantInfoAI Failed, using regex fallback]:", err instanceof Error ? err.message : err);
+    // Regex fallbacks for basic email and phone
+    const emailMatch = cvText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+    const phoneMatch = cvText.match(/(?:\+?\d{1,3}[\s-]?)?\(?\d{2,5}\)?[\s-]?\d{3,}[\s-]?\d{2,}/);
+    return {
+      email: emailMatch ? emailMatch[0] : undefined,
+      phone: phoneMatch ? phoneMatch[0] : undefined,
+    };
+  }
 }
 
 export interface OptimizeBulletParams {
@@ -65,17 +209,24 @@ export interface OptimizeBulletParams {
  */
 export async function generateCoverLetterAI(params: GenerateCoverLetterParams): Promise<string> {
   const ai = getGeminiClient();
-  const modelName = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
   const systemInstruction = `You are an expert German career coach and senior executive recruiter specializing in high-converting German job applications (Bewerbungsunterlagen).
 Your task is to write a top-tier, persuasive cover letter (Anschreiben) adhering strictly to German business correspondence standards (DIN 5008).
 
-Key Structural Requirements (DIN 5008):
-1. Betreffzeile: Clear, bold subject line (e.g. **Bewerbung als [jobTitle]**).
-2. Förmliche Anrede: Use "Sehr geehrte Frau [Name]," or "Sehr geehrter Herr [Name]," if recipient is known; otherwise "Sehr geehrte Damen und Herren,".
-3. Einleitung: High-impact hook focusing on value proposition and motivation (avoid generic clichés like "hiermit bewerbe ich mich").
-4. Hauptteil: Connect applicant qualifications, skills, and past achievements directly to company requirements and German workplace culture.
-5. Schlussteil: Confident call to action for an interview, notice period/earliest start date placeholder ("[Frühestmöglicher Eintrittstermin: TT.MM.JJJJ / nach Absprache]"), salary expectation placeholder if suitable ("[Gehaltsvorstellung: XX.XXX € brutto/Jahr]"), and formal closing ("Mit freundlichen Grüßen").
+Key Structural Requirements:
+1. Förmliche Anrede: Start directly with "Sehr geehrte Frau [Name]," or "Sehr geehrter Herr [Name]," if recipient is known; otherwise "Sehr geehrte Damen und Herren,".
+2. Einleitung: High-impact hook focusing on value proposition and motivation (avoid generic clichés like "hiermit bewerbe ich mich").
+3. Hauptteil: Connect applicant qualifications, skills, and past achievements directly to company requirements and German workplace culture.
+4. Schlussteil: Confident call to action for an interview, notice period/earliest start date.
+
+Output & Layout Scope:
+- Output ONLY the letter text starting directly with the formal salutation (e.g. 'Sehr geehrte Damen und Herren,') and ending before the formal closing.
+- Do NOT include sender address, recipient address, date, or subject headers in the output text (these are automatically formatted and rendered by the PDF template).
+- Do NOT include closing phrases like "Mit freundlichen Grüßen" or candidate signatures at the end (these are automatically rendered by the PDF template).
+
+Strict Placeholder & Salary Instructions:
+- Do NOT include generic placeholders like TT.MM.JJJJ or XX.XXX €. If salary or start date is not specified, state 'frühestmöglich' or omit salary demands.
+- Never output unfilled bracketed placeholders (such as [Datum], [Gehalt], [Name], etc.) in the body of the letter. If information is missing, write natural, complete German sentences without placeholders.
 
 Formatting Guidelines:
 - Language: Output in ${params.language === "en" ? "English" : params.language === "ar" ? "Arabic" : "German (standard Hochdeutsch)"}.
@@ -127,21 +278,19 @@ Target Language: ${params.language || "de"}
     }
   }
 
+  if (params.cvRawText && params.cvRawText.trim().length > 0) {
+    userPrompt += `\nApplicant Resume / CV Content (Extracted from uploaded PDF):\n<<<CV_TEXT>>>\n${params.cvRawText.trim()}\n<<<CV_TEXT>>>\n`;
+  }
+
   userPrompt += `\n<<<JOB_DESCRIPTION>>>\n${params.jobDescriptionRaw}\n<<<JOB_DESCRIPTION>>>\n\nPlease craft the formal cover letter now.`;
 
-  const response = await ai.models.generateContent({
-    model: modelName,
+  const text = await generateContentWithFallback(ai, {
     contents: userPrompt,
     config: {
       systemInstruction,
       temperature: 0.7,
     },
   });
-
-  const text = response.text?.trim();
-  if (!text) {
-    throw new Error("Gemini AI returned an empty response.");
-  }
 
   // Remove potential enclosing markdown code blocks if the model included them
   const cleanedText = text.replace(/^```markdown\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/, "");
@@ -170,7 +319,6 @@ export interface AnalyzeCvAtsParams {
  */
 export async function optimizeBulletAI(params: OptimizeBulletParams): Promise<string> {
   const ai = getGeminiClient();
-  const modelName = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
   const systemInstruction = `You are an expert German CV writer and ATS (Applicant Tracking System) optimization specialist.
 Your task is to transform raw resume bullet points or job descriptions into powerful, concise, and impact-driven German bullet points.
@@ -197,19 +345,13 @@ ${params.text}
 
 Please generate the optimized ATS bullet points.`;
 
-  const response = await ai.models.generateContent({
-    model: modelName,
+  const text = await generateContentWithFallback(ai, {
     contents: userPrompt,
     config: {
       systemInstruction,
       temperature: 0.5,
     },
   });
-
-  const text = response.text?.trim();
-  if (!text) {
-    throw new Error("Gemini AI returned an empty response.");
-  }
 
   const cleanedText = text.replace(/^```markdown\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/, "");
   return cleanedText;
@@ -220,7 +362,6 @@ Please generate the optimized ATS bullet points.`;
  */
 export async function analyzeCvAtsAI(params: AnalyzeCvAtsParams): Promise<AtsAnalysisResult> {
   const ai = getGeminiClient();
-  const modelName = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
   const systemInstruction = `You are a Senior German ATS & DIN 5008 Resume Auditor and Executive Recruiter.
 Analyze the provided CV for German ATS compatibility, DIN 5008 standards (tabular structure, reverse-chronological order, required contact details, language levels), keyword optimization, and clarity.
@@ -252,8 +393,7 @@ Security & Delimiters:
 
   userPrompt += "Please perform the ATS & DIN 5008 audit and return the JSON analysis.";
 
-  const response = await ai.models.generateContent({
-    model: modelName,
+  const text = await generateContentWithFallback(ai, {
     contents: userPrompt,
     config: {
       systemInstruction,
@@ -261,11 +401,6 @@ Security & Delimiters:
       responseMimeType: "application/json",
     },
   });
-
-  const text = response.text?.trim();
-  if (!text) {
-    throw new Error("Gemini AI returned an empty response.");
-  }
 
   const cleanedText = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/, "").trim();
 
@@ -286,3 +421,178 @@ Security & Delimiters:
   }
 }
 
+export type InterviewStep =
+  | "initial"
+  | "targetJob"
+  | "personalInfo"
+  | "experience"
+  | "education"
+  | "skills"
+  | "languages"
+  | "summary"
+  | "review"
+  | "completed";
+
+export interface ProposedCvData {
+  section: "targetJob" | "personalInfo" | "experience" | "education" | "skills" | "languages" | "summary" | "none";
+  explanationAr: string;
+  germanPreview: string;
+  data?: {
+    personalInfo?: {
+      fullName?: string;
+      email?: string;
+      phone?: string;
+      address?: string;
+      birthDate?: string;
+      birthPlace?: string;
+      nationality?: string;
+      targetJobTitle?: string;
+      linkedinUrl?: string;
+      xingUrl?: string;
+      summary?: string;
+    };
+    experiences?: Array<{
+      company: string;
+      position: string;
+      city?: string;
+      country?: string;
+      startDate: string;
+      endDate?: string | null;
+      isCurrent?: boolean;
+      description?: string;
+      order?: number;
+    }>;
+    educations?: Array<{
+      institution: string;
+      degree: string;
+      fieldOfStudy?: string;
+      city?: string;
+      country?: string;
+      startDate: string;
+      endDate?: string | null;
+      isCurrent?: boolean;
+      grade?: string;
+      description?: string;
+      order?: number;
+    }>;
+    skills?: Array<{
+      name: string;
+      category?: string;
+      level?: string;
+      order?: number;
+    }>;
+    languages?: Array<{
+      language: string;
+      proficiency: string;
+      order?: number;
+    }>;
+  };
+}
+
+export interface InterviewCvResponse {
+  message: string;
+  proposedData?: ProposedCvData | null;
+  nextStep: InterviewStep;
+  actions: string[];
+}
+
+export interface InterviewCvParams {
+  currentCvData: Record<string, unknown> | null | undefined;
+  userMessage?: string;
+  currentStep?: string;
+  locale?: string;
+  history?: Array<{ role: "user" | "assistant"; content: string }>;
+}
+
+/**
+ * Interactive Side-by-Side German Career Consultant & CV Copilot.
+ * Speaks Arabic/Darija/English, translating and formatting all candidate details
+ * into high-converting German DIN 5008 tabular CV structures.
+ */
+export async function interviewCvAI(params: InterviewCvParams): Promise<InterviewCvResponse> {
+  const ai = getGeminiClient();
+
+  const systemInstruction = `You are "KariereBerater AI", an elite, supportive German Career Consultant and CV Specialist speaking fluent, friendly Arabic with Moroccan/Maghrebi friendly nuances (or standard Arabic/French/English when spoken to).
+Your goal is to guide the candidate step-by-step through building or enhancing their German CV (DIN 5008 Tabellarischer Lebenslauf) to land job interviews in Germany.
+
+The conversational flow steps are:
+1. "initial" / "targetJob": Target role/job title in Germany (e.g. Frontend-Entwickler (m/w/d), Pflegefachkraft, Mechatroniker).
+2. "personalInfo": Legal name, contact details (phone with country code, email), German address format (or current address), birthplace and nationality (essential for German visa/work permit).
+3. "experience": Work history (reverse-chronological). Translate raw job duties into high-impact ATS bullet points using German action nouns/verbs (Substantivstil, e.g. "Entwicklung und Wartung von...", "Optimierung der...").
+4. "education": Academic degrees and training (mapping Baccalaureate -> Abitur, DTS/Technicien -> Staatlich geprüfter Techniker, Licence -> Bachelor of Science/Arts, Master -> Master of Science/Arts).
+5. "skills": Hard skills & tools with ratings (Experte, Fortgeschritten, Grundkenntnisse).
+6. "languages": Languages with official CEFR levels (Muttersprache, C1, B2, B1, A2, A1).
+7. "summary": Compelling 2-3 sentence German Kurzprofil.
+8. "review" / "completed": Final congratulations and tips.
+
+Output Schema:
+You MUST respond with a VALID JSON object adhering EXACTLY to this schema (no extra wrappers, no markdown codeblocks):
+{
+  "message": "Friendly, encouraging Arabic message explaining what you prepared and asking the next clear question.",
+  "proposedData": {
+    "section": "targetJob" | "personalInfo" | "experience" | "education" | "skills" | "languages" | "summary" | "none",
+    "explanationAr": "Brief 1-line Arabic summary of what was generated/translated.",
+    "germanPreview": "Clean formatted German text snippet showing what will be added to the CV.",
+    "data": {
+      "personalInfo": { "fullName": "...", "targetJobTitle": "...", ... },
+      "experiences": [ { "company": "...", "position": "...", "startDate": "YYYY-MM-DD", "description": "• ..." } ],
+      "educations": [ { "institution": "...", "degree": "...", "fieldOfStudy": "...", "startDate": "YYYY-MM-DD" } ],
+      "skills": [ { "name": "...", "level": "Fortgeschritten", "category": "Tech" } ],
+      "languages": [ { "language": "...", "proficiency": "B2 (Fließend in Wort und Schrift)" } ]
+    }
+  } | null,
+  "nextStep": "targetJob" | "personalInfo" | "experience" | "education" | "skills" | "languages" | "summary" | "review" | "completed",
+  "actions": ["Array of 2-4 quick response suggestions in Arabic, e.g. 'نعم، اعتمد النص ✅', 'تعديل ✏️', 'تخطي هذه الخطوة ⏭️'"]
+}
+
+Important Rules:
+- If the user provides information, ALWAYS formulate the polished German equivalent in "proposedData", while explaining in Arabic in "message" why you chose specific German terms.
+- If the user asks for suggestions or is unsure, provide 2-3 concrete German options with explanations.
+- Never output markdown code fences (\`\`\`json). Output pure JSON.`;
+
+  let prompt = `Current Step: ${params.currentStep || "initial"}\n`;
+  prompt += `Locale: ${params.locale || "ar"}\n\n`;
+
+  if (params.currentCvData) {
+    prompt += `Current CV Snapshot:\n${JSON.stringify(params.currentCvData, null, 2)}\n\n`;
+  }
+
+  if (params.history && params.history.length > 0) {
+    prompt += `Recent Conversation History:\n`;
+    params.history.slice(-6).forEach((h) => {
+      prompt += `${h.role === "user" ? "Candidate" : "Career Consultant"}: ${h.content}\n`;
+    });
+    prompt += `\n`;
+  }
+
+  if (params.userMessage) {
+    prompt += `Candidate's Latest Message: "${params.userMessage}"\n\n`;
+  } else {
+    prompt += `Candidate just opened the AI Copilot. Start with a warm greeting in Arabic, assess their current CV status, and guide them to the first step.\n\n`;
+  }
+
+  prompt += `Please respond with the structured JSON interview output.`;
+
+  const text = await generateContentWithFallback(ai, {
+    contents: prompt,
+    config: {
+      systemInstruction,
+      temperature: 0.4,
+      responseMimeType: "application/json",
+    },
+  });
+
+  const cleanedText = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/, "").trim();
+
+  try {
+    const parsed = JSON.parse(cleanedText);
+    return {
+      message: String(parsed.message || "أهلاً بك! دعنا نطور سيرتك الذاتية الألمانية معاً."),
+      proposedData: parsed.proposedData || null,
+      nextStep: (parsed.nextStep as InterviewStep) || "targetJob",
+      actions: Array.isArray(parsed.actions) ? parsed.actions.map(String) : ["نعم، اعتمد النص ✅", "تعديل ✏️", "تخطي هذه الخطوة ⏭️"],
+    };
+  } catch {
+    throw new Error("Failed to parse Interview AI JSON response.");
+  }
+}

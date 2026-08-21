@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const { email, password } = body || {};
 
-    const expectedEmail = process.env.ADMIN_EMAIL || "admin@germanjobspro.com";
+    const expectedEmail = process.env.ADMIN_EMAIL;
     const expectedPassword = process.env.ADMIN_PASSWORD;
 
     if (!expectedPassword || !expectedEmail) {

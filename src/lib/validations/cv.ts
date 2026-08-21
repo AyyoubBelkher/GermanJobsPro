@@ -28,7 +28,24 @@ export const cvPersonalInfoSchema = z.object({
   email: z.string().email("Invalid email address").max(150),
   phone: z.string().max(50).nullable().optional(),
   address: z.string().max(255).nullable().optional(),
-  photoUrl: z.string().url("Invalid photo URL").max(2000).nullable().optional().or(z.literal("")),
+  photoUrl: z
+    .string()
+    .refine(
+      (val) => {
+        if (!val || val.trim() === "") return true;
+        const trimmed = val.trim();
+        return (
+          trimmed.startsWith("data:image/") ||
+          trimmed.startsWith("http://") ||
+          trimmed.startsWith("https://") ||
+          trimmed.startsWith("/")
+        );
+      },
+      { message: "Invalid photo URL or image data format" }
+    )
+    .nullable()
+    .optional()
+    .or(z.literal("")),
   birthDate: optionalDateSchema,
   birthPlace: z.string().max(100).nullable().optional(),
   nationality: z.string().max(100).nullable().optional(),

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { verifyUserSession } from "@/lib/user-session";
 import { optimizeBulletSchema } from "@/lib/validations/ai";
 import { optimizeBulletAI } from "@/lib/gemini";
+import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
 
 /**
  * POST /api/ai/optimize-bullet
@@ -37,19 +38,39 @@ export async function POST(request: NextRequest) {
 
     const { text, role, language } = parseResult.data;
 
-    const optimizedText = await optimizeBulletAI({
-      text,
-      role,
-      language,
-    });
+    // AI Credit Guardrail (Atomic reservation/decrement)
+    const creditResult = await consumeAiCredit(authResult.user.id);
+    if (!creditResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: creditResult.error || "نفد رصيد الذكاء الاصطناعي الخاص بك. يرجى الترقية إلى Pro أو إدخال كود ترويجي.",
+          outOfCredits: true,
+        },
+        { status: 403 }
+      );
+    }
 
-    return NextResponse.json(
-      {
-        success: true,
-        optimizedText,
-      },
-      { status: 200 }
-    );
+    try {
+      const optimizedText = await optimizeBulletAI({
+        text,
+        role,
+        language,
+      });
+
+      return NextResponse.json(
+        {
+          success: true,
+          optimizedText,
+          remainingCredits: creditResult.remainingCredits,
+          isPro: creditResult.isPro,
+        },
+        { status: 200 }
+      );
+    } catch (aiError) {
+      await refundAiCredit(authResult.user.id);
+      throw aiError;
+    }
   } catch (error: unknown) {
     console.error("[Optimize Bullet Error]:", error instanceof Error ? error.message : error);
 
