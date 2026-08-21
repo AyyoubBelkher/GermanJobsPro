@@ -99,3 +99,103 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const isAuth = await isAuthorized(request);
+    if (!isAuth) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    let id = searchParams.get("id");
+    let code = searchParams.get("code");
+
+    if (!id && !code) {
+      const body = await request.json().catch(() => ({}));
+      id = body.id;
+      code = body.code;
+    }
+
+    if (!id && !code) {
+      return NextResponse.json(
+        { success: false, error: "Promo ID or Code is required." },
+        { status: 400 }
+      );
+    }
+
+    const existing = await prisma.promoCode.findFirst({
+      where: id ? { id } : { code: code!.trim().toUpperCase() },
+    });
+
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, error: "Promo code not found." },
+        { status: 404 }
+      );
+    }
+
+    await prisma.promoCode.delete({
+      where: { id: existing.id },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Promo code "${existing.code}" deleted successfully.`,
+    });
+  } catch (error: unknown) {
+    console.error("[DELETE /api/admin/promo Error]:", error instanceof Error ? error.message : error);
+    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const isAuth = await isAuthorized(request);
+    if (!isAuth) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json().catch(() => null);
+    if (!body || (!body.id && !body.code)) {
+      return NextResponse.json(
+        { success: false, error: "Promo ID or Code is required." },
+        { status: 400 }
+      );
+    }
+
+    const existing = await prisma.promoCode.findFirst({
+      where: body.id ? { id: body.id } : { code: String(body.code).trim().toUpperCase() },
+    });
+
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, error: "Promo code not found." },
+        { status: 404 }
+      );
+    }
+
+    const updated = await prisma.promoCode.update({
+      where: { id: existing.id },
+      data: {
+        isActive: body.isActive !== undefined ? Boolean(body.isActive) : existing.isActive,
+        maxUses: typeof body.maxUses === "number" ? Math.max(1, body.maxUses) : existing.maxUses,
+        durationDays: typeof body.durationDays === "number" ? Math.max(1, body.durationDays) : existing.durationDays,
+        creditsGranted: typeof body.creditsGranted === "number" ? Math.max(1, body.creditsGranted) : existing.creditsGranted,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Promo code "${updated.code}" updated successfully.`,
+      promoCode: updated,
+    });
+  } catch (error: unknown) {
+    console.error("[PATCH /api/admin/promo Error]:", error instanceof Error ? error.message : error);
+    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  return PATCH(request);
+}

@@ -39,6 +39,51 @@ async function verifyAdminAuth(request: NextRequest): Promise<boolean> {
 }
 
 /**
+ * GET /api/posts/[slug]
+ * Retrieves post details by slug.
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  try {
+    const { slug: rawSlug } = await params;
+    const slug = decodeSlugParam(rawSlug);
+
+    let post = await prisma.post.findUnique({
+      where: { slug },
+    });
+
+    if (!post && rawSlug !== slug) {
+      post = await prisma.post.findUnique({
+        where: { slug: rawSlug },
+      });
+    }
+
+    if (!post) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Post not found",
+        },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true, post }, { status: 200 });
+  } catch (error: unknown) {
+    console.error("[Get Post Error]:", error instanceof Error ? error.message : error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Internal Server Error",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * DELETE /api/posts/[slug]
  * Deletes a post from SQLite database using Prisma after verifying admin auth.
  * Decodes URI parameters safely for Arabic slugs and special characters.
@@ -215,5 +260,19 @@ export async function PUT(
       { status: 500 }
     );
   }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ slug: string }> }
+) {
+  return PUT(request, context);
+}
+
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ slug: string }> }
+) {
+  return PUT(request, context);
 }
 

@@ -238,3 +238,51 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  return POST(request);
+}
+
+export async function PUT(request: NextRequest) {
+  return POST(request);
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    if (!(await isAuthorizedAdmin(request))) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    let userId = searchParams.get("userId") || searchParams.get("id");
+
+    if (!userId) {
+      const body = await request.json().catch(() => ({}));
+      userId = body.userId || body.id;
+    }
+
+    if (!userId || typeof userId !== "string") {
+      return NextResponse.json({ success: false, error: "User ID is required" }, { status: 400 });
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!existingUser) {
+      return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
+    }
+
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `User ${existingUser.email} deleted successfully.`,
+    });
+  } catch (error: unknown) {
+    console.error("[Admin Users DELETE Error]:", error instanceof Error ? error.message : error);
+    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
+  }
+}

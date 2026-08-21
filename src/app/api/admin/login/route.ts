@@ -65,3 +65,27 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function GET() {
+  try {
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get("admin_session")?.value;
+    const isAuth = Boolean(sessionToken && (await import("@/lib/session")).verifySessionToken(sessionToken));
+
+    return NextResponse.json(
+      {
+        success: true,
+        authenticated: isAuth,
+      },
+      { status: 200 }
+    );
+  } catch {
+    return NextResponse.json(
+      {
+        success: false,
+        authenticated: false,
+      },
+      { status: 200 }
+    );
+  }
+}

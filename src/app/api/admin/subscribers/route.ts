@@ -88,3 +88,68 @@ export async function DELETE(req: NextRequest) {
   }
 }
 
+export async function POST(req: NextRequest) {
+  if (!(await isAdmin())) {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  try {
+    const body = await req.json().catch(() => ({}));
+    const { action, id, email, active } = body;
+
+    // Handle delete via POST
+    if (action === "delete" || action === "DELETE") {
+      return DELETE(req);
+    }
+
+    // Handle toggle or status update
+    if (id && typeof id === "string" && active !== undefined) {
+      const updated = await prisma.subscriber.update({
+        where: { id },
+        data: { active: Boolean(active) },
+      });
+      return NextResponse.json({
+        success: true,
+        message: "Subscriber status updated.",
+        subscriber: updated,
+      });
+    }
+
+    // Handle create new subscriber
+    if (email && typeof email === "string" && email.trim() !== "") {
+      const cleanEmail = email.trim().toLowerCase();
+      const subscriber = await prisma.subscriber.upsert({
+        where: { email: cleanEmail },
+        update: { active: true },
+        create: { email: cleanEmail, active: true },
+      });
+      return NextResponse.json(
+        { success: true, message: "Subscriber saved successfully.", subscriber },
+        { status: 201 }
+      );
+    }
+
+    return NextResponse.json(
+      { success: false, error: "Invalid action or parameters." },
+      { status: 400 }
+    );
+  } catch (error: unknown) {
+    console.error("[Admin Subscribers POST Error]:", error instanceof Error ? error.message : error);
+    return NextResponse.json(
+      { success: false, error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  return POST(req);
+}
+
+export async function PUT(req: NextRequest) {
+  return POST(req);
+}
+
