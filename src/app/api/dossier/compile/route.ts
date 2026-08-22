@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { verifyUserSession } from "@/lib/user-session";
 import {
   compileApplicationDossier,
-  compileBewerbungsmappe,
   DossierAttachment,
 } from "@/lib/pdf/dossier-compiler";
 import { CvPdfData } from "@/lib/pdf/cv-template";
@@ -135,7 +134,7 @@ export async function POST(request: NextRequest) {
       const cvFileBuffer = Buffer.from(await cvFile.arrayBuffer());
 
       // Extract text from CV to extract candidate contact details for the Deckblatt
-      let deckblattMetadata: DeckblattData = {
+      const deckblattMetadata: DeckblattData = {
         fullName: authResult.user.name || "Bewerber",
         email: authResult.user.email,
         phone: null,
