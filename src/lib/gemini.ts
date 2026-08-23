@@ -596,3 +596,179 @@ Important Rules:
     throw new Error("Failed to parse Interview AI JSON response.");
   }
 }
+
+export interface MagicImportCvParams {
+  rawCvText: string;
+  targetJobTitle?: string | null;
+  locale?: string;
+}
+
+export interface MagicImportCvData {
+  title?: string;
+  personalInfo: {
+    fullName: string;
+    email: string;
+    phone?: string;
+    address?: string;
+    birthDate?: string;
+    birthPlace?: string;
+    nationality?: string;
+    targetJobTitle?: string;
+    linkedinUrl?: string;
+    xingUrl?: string;
+    summary?: string;
+  };
+  experiences: Array<{
+    company: string;
+    position: string;
+    city?: string;
+    country?: string;
+    startDate: string;
+    endDate?: string | null;
+    isCurrent: boolean;
+    description?: string;
+  }>;
+  educations: Array<{
+    institution: string;
+    degree: string;
+    fieldOfStudy?: string;
+    city?: string;
+    country?: string;
+    startDate: string;
+    endDate?: string | null;
+    isCurrent: boolean;
+    grade?: string;
+    description?: string;
+  }>;
+  skills: Array<{
+    name: string;
+    category?: string;
+    level?: string;
+  }>;
+  languages: Array<{
+    language: string;
+    proficiency: string;
+  }>;
+  certifications?: Array<{
+    name: string;
+    issuer: string;
+    issueDate?: string;
+  }>;
+}
+
+/**
+ * 1-Click Magic Import & ATS Auto-Fix:
+ * Parses any uploaded CV (Arabic, French, English, German) and translates/optimizes
+ * it into strict German DIN 5008 tabular format with professional Substantivstil bullet points.
+ */
+export async function magicImportCvAI(params: MagicImportCvParams): Promise<MagicImportCvData> {
+  const ai = getGeminiClient();
+
+  const systemInstruction = `You are a Senior German ATS Optimization Architect & Executive Recruiter specializing in German DIN 5008 Resumes (Tabellarischer Lebenslauf).
+Your mission is to parse the candidate's raw CV text (which may be in English, Arabic, French, or messy German) and transform it into an elite, DIN 5008-compliant German CV.
+
+Strict Transformation Rules:
+1. Language & Phrasing:
+   - ALL work descriptions, job titles, education degrees, and summaries MUST be translated and formulated into professional, high-standard German (Hochdeutsch).
+   - Use German action nouns and nominal phrasing (Substantivstil standard in German CVs, e.g. "Konzeption und Entwicklung von...", "Optimierung der Systemarchitektur", "Führung eines interdisziplinären Teams", "Kundenbetreuung und Bedarfsanalyse").
+   - Format bullet points cleanly starting with "• ".
+2. Dates:
+   - Convert all date ranges into standardized "YYYY-MM-01" or "YYYY-MM-DD" format.
+   - If currently employed or ongoing, set isCurrent: true and endDate: null.
+3. German Education Equivalencies:
+   - Map academic degrees to their standard German equivalents (e.g. "Bachelor of Science (B.Sc.)", "Master of Science (M.Sc.)", "Staatlich geprüfter Techniker", "Abitur / Allgemeine Hochschulreife", "Berufsausbildung").
+4. Languages:
+   - Standardize language proficiencies to official German CEFR designations (e.g. "Muttersprache (C2)", "Verhandlungssicher (C1)", "Fließend in Wort und Schrift (B2)", "Gute Kenntnisse (B1)", "Grundkenntnisse (A2/A1)").
+5. Personal Details & Contact:
+   - Extract legal full name, email, phone with international prefix, city/address, nationality, and birth date/place if available.
+   - Target Job Title: Use ${params.targetJobTitle ? `"${params.targetJobTitle}"` : "the most relevant professional German target title (e.g. 'Softwareentwickler (m/w/d)', 'Pflegefachkraft (m/w/d)', 'Projektmanager (m/w/d)')"}.
+   - Summary: Write a compelling 2-3 sentence German Kurzprofil highlighting experience, core technologies/competencies, and motivation.
+
+You MUST return a VALID JSON object adhering EXACTLY to this schema (no markdown fences, no explanatory chat):
+{
+  "title": "Lebenslauf - [Position / Name]",
+  "personalInfo": {
+    "fullName": "Max Mustermann",
+    "email": "max@example.com",
+    "phone": "+49 151 12345678",
+    "address": "Musterstraße 1, 10115 Berlin, Deutschland",
+    "birthDate": "YYYY-MM-DD or empty",
+    "birthPlace": "City, Country or empty",
+    "nationality": "German / Moroccan / Syrian / etc.",
+    "targetJobTitle": "Senior Frontend-Entwickler (m/w/d)",
+    "linkedinUrl": "url or empty",
+    "xingUrl": "url or empty",
+    "summary": "2-3 sentence German summary"
+  },
+  "experiences": [
+    {
+      "company": "Company Name",
+      "position": "German Job Title",
+      "city": "City",
+      "country": "Country",
+      "startDate": "YYYY-MM-01",
+      "endDate": "YYYY-MM-01 or null",
+      "isCurrent": boolean,
+      "description": "• German bullet 1 in Substantivstil\n• German bullet 2\n• German bullet 3"
+    }
+  ],
+  "educations": [
+    {
+      "institution": "University / School Name",
+      "degree": "German Degree Name (e.g., Bachelor of Science)",
+      "fieldOfStudy": "Field of Study in German (e.g., Informatik)",
+      "city": "City",
+      "country": "Country",
+      "startDate": "YYYY-MM-01",
+      "endDate": "YYYY-MM-01 or null",
+      "isCurrent": boolean,
+      "grade": "Grade / Note or empty",
+      "description": "Short details or empty"
+    }
+  ],
+  "skills": [
+    {
+      "name": "Skill / Tool Name",
+      "category": "Fachkenntnisse | IT & Software | Methoden & Tools | Soft Skills",
+      "level": "Experte | Fortgeschritten | Grundkenntnisse"
+    }
+  ],
+  "languages": [
+    {
+      "language": "Deutsch / Arabisch / Englisch / Französisch",
+      "proficiency": "Fließend (B2) / Muttersprache / etc."
+    }
+  ],
+  "certifications": [
+    {
+      "name": "Certificate Name",
+      "issuer": "Issuing Body",
+      "issueDate": "YYYY-MM-01 or empty"
+    }
+  ]
+}`;
+
+  let userPrompt = `Target Job Title: ${params.targetJobTitle || "Automatic from CV"}\n\n`;
+  userPrompt += `<<<RAW_CV_CONTENT>>>\n${params.rawCvText.slice(0, 15000)}\n<<<RAW_CV_CONTENT>>>\n\n`;
+  userPrompt += `Please parse, translate to German, optimize to DIN 5008 standards, and return pure JSON.`;
+
+  const text = await generateContentWithFallback(ai, {
+    contents: userPrompt,
+    config: {
+      systemInstruction,
+      temperature: 0.2,
+      responseMimeType: "application/json",
+    },
+  });
+
+  const cleaned = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/, "").trim();
+
+  try {
+    const parsed = JSON.parse(cleaned);
+    return parsed;
+  } catch (err) {
+    console.error("[magicImportCvAI Parse Error]:", err, cleaned);
+    throw new Error("Failed to parse AI generated DIN 5008 CV data.");
+  }
+}
+

@@ -1,15 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { verifySessionToken } from "@/lib/session";
+import { verifySessionToken, timingSafeCompare } from "@/lib/session";
 
 async function isAuthorized(request: NextRequest): Promise<boolean> {
-  const authHeader = request.headers.get("authorization");
+  const authHeader = request.headers.get("authorization") || request.headers.get("Authorization");
   const customHeader = request.headers.get("x-automation-key");
-  const secretKey = process.env.MY_SECRET_AUTOMATION_KEY;
 
-  if (secretKey && secretKey.trim() !== "") {
-    if (authHeader === `Bearer ${secretKey}` || authHeader === secretKey || customHeader === secretKey) {
+  const validKeys = [
+    process.env.AUTOMATION_SECRET_KEY,
+    process.env.MY_SECRET_AUTOMATION_KEY,
+  ].filter((k): k is string => Boolean(k && k.trim() !== ""));
+
+  for (const key of validKeys) {
+    if (
+      timingSafeCompare(authHeader, `Bearer ${key}`) ||
+      timingSafeCompare(authHeader, key) ||
+      timingSafeCompare(customHeader, key)
+    ) {
       return true;
     }
   }

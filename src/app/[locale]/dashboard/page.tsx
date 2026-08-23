@@ -4,7 +4,6 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
-import LogoutButton from "@/components/dashboard/LogoutButton";
 import { verifyUserSession } from "@/lib/user-session";
 import { prisma } from "@/lib/prisma";
 
@@ -28,6 +27,7 @@ export default async function DashboardPage({
   }
 
   const { user } = authResult;
+  const isPro = user.plan === "PRO" && (!user.planExpiresAt || new Date(user.planExpiresAt) > new Date());
   const displayName = user.name || user.email.split("@")[0];
 
   // Fetch real user CVs and Cover Letters
@@ -47,60 +47,69 @@ export default async function DashboardPage({
 
   return (
     <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between">
-      <Navbar locale={locale} />
+      <Navbar locale={locale} initialUser={user} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1 space-y-10">
         {/* User Profile Header Card */}
         <div className="bg-slate-900/90 border border-slate-800/80 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-2xl shadow-lg border border-blue-400/20">
+          <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+            <div className="w-14 sm:w-16 h-14 sm:h-16 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white font-extrabold text-2xl shadow-lg border border-blue-400/20 shrink-0">
               {displayName.charAt(0).toUpperCase()}
             </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
+            <div className="space-y-1.5 min-w-0">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-black text-white truncate">
                   {isAr ? `مرحباً، ${displayName} 👋` : isDe ? `Willkommen, ${displayName} 👋` : `Welcome, ${displayName} 👋`}
                 </h1>
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                    user.plan === "PRO"
-                      ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider ${
+                    isPro
+                      ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                       : user.plan === "TRIAL"
-                      ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
-                      : "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                      ? "bg-purple-500/15 text-purple-300 border border-purple-500/30"
+                      : "bg-slate-800 text-slate-300 border border-slate-700"
                   }`}
                 >
-                  {user.plan === "PRO" ? "🌟 PRO PASS" : user.plan === "TRIAL" ? "⏳ TRIAL" : "🆓 STARTER FREE"}
+                  {isPro ? "⭐ PRO PASS" : user.plan === "TRIAL" ? "⏳ TRIAL" : "⚡ STARTER FREE"}
                 </span>
               </div>
               <div className="flex items-center gap-3 text-xs text-slate-400 font-mono flex-wrap">
-                <span>{user.email}</span>
+                <span className="truncate max-w-[200px] sm:max-w-none">{user.email}</span>
                 <span>•</span>
-                <span className="text-emerald-400 font-bold font-sans flex items-center gap-1">
+                <span className="text-emerald-400 font-bold font-sans flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg">
                   <span>⚡</span>
                   <span>
-                    {user.plan === "PRO"
-                      ? (isAr
-                          ? "20 طلب ذكاء اصطناعي يومياً (متجددة تلقائياً)"
-                          : isDe
-                          ? "20 KI-Anfragen täglich (automatisch erneuert)"
-                          : "20 Daily AI Requests (auto-renewed)")
-                      : `${user.aiCredits} ${isAr ? "رصيد AI متبقي" : "AI Credits"}`}
+                    {isPro
+                      ? isAr
+                        ? "20 طلب ذكاء اصطناعي يومياً (متجددة)"
+                        : isDe
+                        ? "20 KI-Anfragen täglich (erneuert)"
+                        : "20 Daily AI Requests (renewed)"
+                      : `${user.aiCredits} ${isAr ? "رصيد AI متبقي" : "AI Credits Left"}`}
                   </span>
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
-            <Link
-              href={`/${locale}/dashboard/pricing`}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold text-xs shadow-md shadow-amber-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <span>💎</span>
-              <span>{isAr ? "الترقية والأسعار" : isDe ? "Preise & Upgrades" : "Upgrade Plan"}</span>
-            </Link>
-            <LogoutButton locale={locale} />
+          <div className="flex items-center gap-3 shrink-0">
+            {isPro ? (
+              <Link
+                href={`/${locale}/dashboard/pricing`}
+                className="px-4 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold text-xs transition-colors flex items-center gap-1.5"
+              >
+                <span>💎</span>
+                <span>{isAr ? "إدارة خطة PRO" : isDe ? "PRO Tarif verwalten" : "Manage PRO Plan"}</span>
+              </Link>
+            ) : (
+              <Link
+                href={`/${locale}/dashboard/pricing`}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold text-xs shadow-md shadow-amber-500/20 transition-all flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] active:scale-95"
+              >
+                <span>💎</span>
+                <span>{isAr ? "ترقية إلى PRO PASS" : isDe ? "Auf PRO upgraden" : "Upgrade to PRO"}</span>
+              </Link>
+            )}
           </div>
         </div>
 

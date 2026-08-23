@@ -3,33 +3,19 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { verifySessionToken } from "@/lib/session";
 
-async function isAuthorizedAdmin(request: NextRequest): Promise<boolean> {
+async function isAuthorizedAdmin(): Promise<boolean> {
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get("admin_session")?.value;
-  if (sessionToken && (await verifySessionToken(sessionToken))) {
-    return true;
-  }
-
-  const authHeader = request.headers.get("authorization");
-  const customHeader = request.headers.get("x-automation-key");
-  const secretKey = process.env.MY_SECRET_AUTOMATION_KEY;
-
-  if (secretKey && secretKey.trim() !== "") {
-    if (authHeader === `Bearer ${secretKey}` || authHeader === secretKey || customHeader === secretKey) {
-      return true;
-    }
-  }
-
-  return false;
+  return Boolean(sessionToken && (await verifySessionToken(sessionToken)));
 }
 
 /**
  * GET /api/admin/users
  * Returns platform statistics and the complete list of users ordered by creation date descending.
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    if (!(await isAuthorizedAdmin(request))) {
+    if (!(await isAuthorizedAdmin())) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
@@ -96,7 +82,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    if (!(await isAuthorizedAdmin(request))) {
+    if (!(await isAuthorizedAdmin())) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
@@ -249,7 +235,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    if (!(await isAuthorizedAdmin(request))) {
+    if (!(await isAuthorizedAdmin())) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 

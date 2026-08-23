@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createSessionToken, timingSafeCompare } from "@/lib/session";
+import { createSessionToken, timingSafeCompare, verifySessionToken } from "@/lib/session";
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,22 +70,29 @@ export async function GET() {
   try {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("admin_session")?.value;
-    const isAuth = Boolean(sessionToken && (await import("@/lib/session")).verifySessionToken(sessionToken));
+
+    if (!sessionToken || !(await verifySessionToken(sessionToken))) {
+      return NextResponse.json(
+        {
+          authenticated: false,
+        },
+        { status: 401 }
+      );
+    }
 
     return NextResponse.json(
       {
         success: true,
-        authenticated: isAuth,
+        authenticated: true,
       },
       { status: 200 }
     );
   } catch {
     return NextResponse.json(
       {
-        success: false,
         authenticated: false,
       },
-      { status: 200 }
+      { status: 401 }
     );
   }
 }

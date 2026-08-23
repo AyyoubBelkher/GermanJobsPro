@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import CvMagicImportModal from "@/components/cv/CvMagicImportModal";
 
 interface CvSummary {
   id: string;
@@ -32,6 +33,7 @@ export default function CvListClient({ initialCvs, locale }: CvListClientProps) 
   const [cvs, setCvs] = useState<CvSummary[]>(initialCvs);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isAr = locale === "ar";
@@ -111,12 +113,47 @@ export default function CvListClient({ initialCvs, locale }: CvListClientProps) 
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {error && (
         <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-medium">
           {error}
         </div>
       )}
+
+      {/* High-Converting Magic Import Hero Card */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-950/60 via-indigo-950/40 to-purple-950/60 border border-blue-500/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+        <div className="absolute top-0 ltr:right-0 rtl:left-0 -mr-16 -mt-16 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-extrabold uppercase tracking-wider">
+              <span>✨ 1-Click Magic Import & ATS Auto-Fix</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-white">
+              {isAr
+                ? "لديك سيرة ذاتية جاهزة؟ حولها فوراً إلى المعايير الألمانية DIN 5008"
+                : isDe
+                ? "Bestehenden Lebenslauf im Handumdrehen nach DIN 5008 optimieren"
+                : "Already have a CV? Convert it instantly to German DIN 5008 standard"}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              {isAr
+                ? "ارفع ملف PDF بأي لغة، وسيقوم الذكاء الاصطناعي باستخراج بياناتك وترجمتها وصياغتها بأسلوب ألماني احترافي (Substantivstil) متوافق تماماً مع أنظمة ATS."
+                : isDe
+                ? "PDF hochladen, Daten automatisch extrahieren und mit 1-Klick einen DIN 5008 konformen Lebenslauf im perfekten Substantivstil generieren."
+                : "Upload your existing PDF in any language to auto-extract, translate, and reformat into an ATS-friendly German resume."}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsImportModalOpen(true)}
+            className="shrink-0 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-extrabold text-sm shadow-xl shadow-blue-600/30 active:scale-95 transition-all cursor-pointer flex items-center gap-2.5 border border-blue-400/30"
+          >
+            <span className="text-lg">✨</span>
+            <span>{isAr ? "استيراد وتحسين سيرة ذاتية (PDF)" : isDe ? "Lebenslauf magisch importieren" : "1-Click PDF Magic Import"}</span>
+          </button>
+        </div>
+      </div>
 
       {cvs.length === 0 ? (
         <div className="text-center py-16 px-4 rounded-3xl bg-slate-900/60 border border-dashed border-slate-800 space-y-4">
@@ -135,12 +172,22 @@ export default function CvListClient({ initialCvs, locale }: CvListClientProps) 
                 : "Create your first DIN 5008 compliant German resume to impress German recruiters."}
             </p>
           </div>
-          <Link
-            href={`/${locale}/dashboard/cv/new`}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-600/20"
-          >
-            {isAr ? "+ إنشاء أول سيرة ذاتية" : isDe ? "+ Ersten Lebenslauf erstellen" : "+ Create First German CV"}
-          </Link>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setIsImportModalOpen(true)}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-600/20 cursor-pointer"
+            >
+              <span>✨</span>
+              <span>{isAr ? "استيراد سيرة ذاتية سابقة (PDF)" : isDe ? "Bestehende PDF importieren" : "Magic Import (PDF)"}</span>
+            </button>
+            <Link
+              href={`/${locale}/dashboard/cv/new`}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm transition-all border border-slate-700"
+            >
+              {isAr ? "+ إنشاء سيرة من الصفر" : isDe ? "+ Neu von Grund auf" : "+ Create From Scratch"}
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -265,6 +312,13 @@ export default function CvListClient({ initialCvs, locale }: CvListClientProps) 
           </div>
         </div>
       )}
+
+      {/* Magic Import & ATS Auto-Fix Modal */}
+      <CvMagicImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        locale={locale}
+      />
     </div>
   );
 }

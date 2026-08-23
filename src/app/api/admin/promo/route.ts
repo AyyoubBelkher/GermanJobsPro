@@ -3,34 +3,19 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { verifySessionToken } from "@/lib/session";
 
-async function isAuthorized(request: NextRequest): Promise<boolean> {
-  const authHeader = request.headers.get("authorization");
-  const customHeader = request.headers.get("x-automation-key");
-  const secretKey = process.env.MY_SECRET_AUTOMATION_KEY;
-
-  if (secretKey && secretKey.trim() !== "") {
-    if (authHeader === `Bearer ${secretKey}` || authHeader === secretKey || customHeader === secretKey) {
-      return true;
-    }
-  }
-
-  // Validate real signed admin session token
+async function isAuthorized(): Promise<boolean> {
   const cookieStore = await cookies();
   const adminCookie = cookieStore.get("admin_session")?.value;
-  if (adminCookie && (await verifySessionToken(adminCookie))) {
-    return true;
-  }
-
-  return false;
+  return Boolean(adminCookie && (await verifySessionToken(adminCookie)));
 }
 
 /**
  * GET /api/admin/promo
  * Lists all promo codes and their usage stats.
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const isAuth = await isAuthorized(request);
+    const isAuth = await isAuthorized();
     if (!isAuth) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -52,7 +37,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const isAuth = await isAuthorized(request);
+    const isAuth = await isAuthorized();
     if (!isAuth) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -102,7 +87,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const isAuth = await isAuthorized(request);
+    const isAuth = await isAuthorized();
     if (!isAuth) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -151,7 +136,7 @@ export async function DELETE(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const isAuth = await isAuthorized(request);
+    const isAuth = await isAuthorized();
     if (!isAuth) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }

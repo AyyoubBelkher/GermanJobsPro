@@ -64,8 +64,25 @@ export async function verifyPassword(password: string, storedHash: string): Prom
 }
 
 /**
- * Generates a SHA-256 hash of a raw session token.
+ * Generates a SHA-256 hash of a string.
  */
+export function hashSha256(value: string): string {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+/**
+ * Generates a cryptographically secure 6-digit numeric OTP code.
+ */
+export function generateOtp(): string {
+  return crypto.randomInt(100000, 1000000).toString();
+}
+
+/**
+ * Generates a cryptographically secure 32-byte (64-char hex) token.
+ */
+export function generateSecureToken(): string {
+  return crypto.randomBytes(32).toString("hex");
+}
 
 /**
  * Creates a new user session in the database.
@@ -178,3 +195,18 @@ export async function revokeUserSession(token?: string | null): Promise<boolean>
     return false;
   }
 }
+
+/**
+ * Convenience helper to read user_session cookie and verify session in Server Components and Route Handlers.
+ */
+export async function getUserSession() {
+  try {
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    const token = cookieStore.get("user_session")?.value;
+    return verifyUserSession(token);
+  } catch {
+    return null;
+  }
+}
+

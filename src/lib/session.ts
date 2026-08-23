@@ -35,9 +35,9 @@ export function isValidHttpUrl(urlStr?: string | null): boolean {
 }
 
 export async function createSessionToken(): Promise<string> {
-  const secret = process.env.ADMIN_PASSWORD;
+  const secret = process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD;
   if (!secret) {
-    throw new Error("ADMIN_PASSWORD environment variable is not defined");
+    throw new Error("ADMIN_SESSION_SECRET or ADMIN_PASSWORD environment variable is not defined");
   }
 
   const timestamp = Date.now().toString();
@@ -68,7 +68,7 @@ export async function verifySessionToken(token?: string | null): Promise<boolean
     return false;
   }
 
-  const secret = process.env.ADMIN_PASSWORD;
+  const secret = process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD;
   if (!secret) {
     return false;
   }
@@ -118,9 +118,9 @@ export async function verifySessionToken(token?: string | null): Promise<boolean
 }
 
 export async function createUnsubscribeToken(email: string): Promise<string> {
-  const secret = process.env.ADMIN_PASSWORD;
+  const secret = process.env.NEWSLETTER_UNSUB_SECRET || process.env.ADMIN_PASSWORD;
   if (!secret) {
-    throw new Error("ADMIN_PASSWORD environment variable is not defined");
+    throw new Error("NEWSLETTER_UNSUB_SECRET or ADMIN_PASSWORD environment variable is not defined");
   }
 
   const normalizedEmail = email.trim().toLowerCase();
@@ -154,7 +154,7 @@ export async function verifyUnsubscribeToken(
 
   try {
     const expectedToken = await createUnsubscribeToken(email);
-    return token.trim().toLowerCase() === expectedToken.toLowerCase();
+    return timingSafeCompare(token.trim().toLowerCase(), expectedToken.toLowerCase());
   } catch {
     return false;
   }

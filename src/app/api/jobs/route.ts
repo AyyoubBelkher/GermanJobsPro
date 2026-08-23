@@ -4,18 +4,19 @@ import { timingSafeCompare } from "@/lib/session";
 
 function isAuthorized(request: NextRequest): boolean {
   const authHeader = request.headers.get("authorization") || request.headers.get("Authorization");
-  if (!authHeader) return false;
+  const customHeader = request.headers.get("x-automation-key");
+  if (!authHeader && !customHeader) return false;
 
   const validKeys = [
     process.env.AUTOMATION_SECRET_KEY,
     process.env.MY_SECRET_AUTOMATION_KEY,
-    "my_secret_automation_key_99",
   ].filter((k): k is string => Boolean(k && k.trim()));
 
   for (const key of validKeys) {
     if (
       timingSafeCompare(authHeader, `Bearer ${key}`) ||
-      timingSafeCompare(authHeader, key)
+      timingSafeCompare(authHeader, key) ||
+      timingSafeCompare(customHeader, key)
     ) {
       return true;
     }

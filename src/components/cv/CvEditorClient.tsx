@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CvPhotoUpload from "@/components/cv/CvPhotoUpload";
 import FieldTooltip from "@/components/cv/FieldTooltip";
-import CvAiCopilot from "@/components/cv/CvAiCopilot";
+import CvMagicImportModal from "@/components/cv/CvMagicImportModal";
 
 export interface FullCvData {
   id: string;
@@ -101,7 +101,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
   const [optimizingIndex, setOptimizingIndex] = useState<number | null>(null);
   const [optimizingType, setOptimizingType] = useState<"experience" | "project" | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const isAr = locale === "ar";
   const isDe = locale === "de";
@@ -296,12 +296,11 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
         <div className="flex items-center gap-3 flex-wrap">
           <button
             type="button"
-            onClick={() => setIsCopilotOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-purple-600/30 border border-purple-400/30 transition-all cursor-pointer"
+            onClick={() => setIsImportModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-blue-600/30 border border-blue-400/30 transition-all cursor-pointer"
           >
-            <span>🤖</span>
-            <span>{isAr ? "أنشئ سيرتك بالمحادثة الذكية (AI Copilot)" : "AI CV Copilot"}</span>
-            <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[10px] uppercase tracking-wider font-bold">Live</span>
+            <span>✨</span>
+            <span>{isAr ? "استيراد وتحسين سيرة ذاتية (1-Click PDF to DIN 5008)" : isDe ? "1-Klick PDF zu DIN 5008" : "1-Click PDF to DIN 5008"}</span>
           </button>
 
           <a
@@ -1589,17 +1588,11 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
         </div>
       )}
 
-      {/* Side-by-Side Interactive AI CV Copilot & Interviewer */}
-      <CvAiCopilot
-        isOpen={isCopilotOpen}
-        onClose={() => setIsCopilotOpen(false)}
-        cv={cv}
-        onUpdateCv={(updatedCv) => {
-          setCv(updatedCv);
-          markUnsaved();
-        }}
+      {/* Magic Import & ATS Auto-Fix Modal */}
+      <CvMagicImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
         locale={locale}
-        onNavigateTab={(tabId) => setActiveTab(tabId as typeof activeTab)}
       />
     </div>
   );

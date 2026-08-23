@@ -40,6 +40,7 @@ model User {
   name           String?
   plan           String        @default("FREE") // "FREE" | "TRIAL" | "PRO"
   planExpiresAt  DateTime?
+  emailVerified  Boolean       @default(false)
   aiCredits      Int           @default(3) // 3 free starter AI credits
   dailyAiCreditsUsed Int           @default(0)
   lastCreditResetAt  DateTime      @default(now())
@@ -47,12 +48,35 @@ model User {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   sessions       UserSession[]
+  passwordResetTokens PasswordResetToken[]
   cvs            Cv[]
   coverLetters   CoverLetter[]
   promoRedemptions UserPromoRedemption[]
 }
 
 model UserSession {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model EmailVerificationCode {
+  id        String   @id @default(cuid())
+  email     String
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+model PasswordResetToken {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -285,6 +309,25 @@ model ProcessedWebhookEvent {
   userId    String?
   createdAt DateTime @default(now())
 }
+
+// ==========================================
+// SUPPORT & CONTACT TICKETS
+// ==========================================
+
+model SupportTicket {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  category  String
+  subject   String
+  message   String
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([status])
+}
+
 
 
 

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { hashPassword, createSession } from "@/lib/user-session";
+import { hashPassword, hashSha256, generateOtp } from "@/lib/user-session";
+import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { email, password, name } = body || {};
+    const { email, password, name, locale } = body || {};
 
     if (typeof email !== "string" || typeof password !== "string") {
       return NextResponse.json(
@@ -32,51 +32,78 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check duplicate email
+    const passwordHash = await hashPassword(trimmedPassword);
+    const userName = typeof name === "string" && name.trim() !== "" ? name.trim() : null;
+
+    // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail },
     });
 
     if (existingUser) {
-      return NextResponse.json(
-        { success: false, error: "هذا البريد الإلكتروني مسجل بالفعل / Email already registered" },
-        { status: 409 }
-      );
+      if (existingUser.emailVerified) {
+        return NextResponse.json(
+          { success: false, error: "هذا البريد الإلكتروني مسجل بالفعل / Email already registered" },
+          { status: 409 }
+        );
+      } else {
+        // Update unverified user credentials
+        await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            passwordHash,
+            name: userName ?? existingUser.name,
+          },
+        });
+      }
+    } else {
+      // Create new user with emailVerified = false
+      await prisma.user.create({
+        data: {
+          email: normalizedEmail,
+          passwordHash,
+          name: userName,
+          emailVerified: false,
+        },
+      });
     }
 
-    const passwordHash = await hashPassword(trimmedPassword);
-    const userName = typeof name === "string" && name.trim() !== "" ? name.trim() : null;
+    // Generate 6-digit OTP code
+    const otp = generateOtp();
+    const codeHash = hashSha256(otp);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-    const newUser = await prisma.user.create({
+    // Remove any previous verification codes for this email
+    await prisma.emailVerificationCode.deleteMany({
+      where: { email: normalizedEmail },
+    });
+
+    // Save new verification code record
+    await prisma.emailVerificationCode.create({
       data: {
         email: normalizedEmail,
-        passwordHash,
-        name: userName,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        createdAt: true,
+        codeHash,
+        expiresAt,
+        attempts: 0,
       },
     });
 
-    const session = await createSession(newUser.id);
-    const cookieStore = await cookies();
-
-    cookieStore.set("user_session", session.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 30 * 24 * 60 * 60, // 30 days
+    // Dispatch verification email asynchronously
+    const preferredLocale = typeof locale === "string" && ["ar", "de", "en"].includes(locale) ? locale : "ar";
+    sendVerificationEmail({
+      email: normalizedEmail,
+      code: otp,
+      locale: preferredLocale,
+    }).catch((err) => {
+      console.error("[Signup Email Dispatch Error]:", err);
     });
 
     return NextResponse.json(
       {
         success: true,
-        message: "تم إنشاء الحساب بنجاح / Account created successfully",
-        user: newUser,
+        requiresVerification: true,
+        email: normalizedEmail,
+        message: "تم إرسال رمز التحقق إلى بريدك الإلكتروني / Verification code sent to your email",
       },
       { status: 201 }
     );

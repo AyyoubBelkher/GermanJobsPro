@@ -39,6 +39,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!user.emailVerified) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "يرجى تأكيد بريدك الإلكتروني للمتابعة / Please verify your email address to continue",
+          requiresVerification: true,
+          email: user.email,
+        },
+        { status: 403 }
+      );
+    }
+
     const cookieStore = await cookies();
     const existingToken = cookieStore.get("user_session")?.value;
 
