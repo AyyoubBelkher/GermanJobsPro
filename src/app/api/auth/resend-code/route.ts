@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashSha256, generateOtp } from "@/lib/user-session";
 import { sendVerificationEmail } from "@/lib/email";
+import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+  // Apply IP-based rate limiting (Max 5 requests per IP per hour)
+  const rateLimitResponse = checkRateLimit(request, AUTH_RATE_LIMITS.RESEND_CODE);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json().catch(() => ({}));
     const { email, locale } = body || {};
@@ -28,10 +35,14 @@ export async function POST(request: NextRequest) {
       where: { email: normalizedEmail },
     });
 
+    // Prevent Email Enumeration: return 200 OK generic message if user is not found
     if (!user) {
       return NextResponse.json(
-        { success: false, error: "المستخدم غير موجود / User not found" },
-        { status: 404 }
+        {
+          success: true,
+          message: "إذا كان البريد مسجلاً، تم إرسال الرمز بنجاح / If this email is registered, the verification code has been sent",
+        },
+        { status: 200 }
       );
     }
 

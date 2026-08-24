@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword, createSession, revokeUserSession } from "@/lib/user-session";
+import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+  // Apply IP-based rate limiting (Max 10 attempts per IP per 10 minutes)
+  const rateLimitResponse = checkRateLimit(request, AUTH_RATE_LIMITS.LOGIN);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json().catch(() => ({}));
     const { email, password } = body || {};
