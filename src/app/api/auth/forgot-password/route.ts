@@ -49,7 +49,14 @@ export async function POST(request: NextRequest) {
       });
 
       // Construct reset URL
-      const origin = request.nextUrl.origin || process.env.NEXT_PUBLIC_SITE_URL || "https://germanjobspro.com";
+      const rawOrigin =
+        process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+        process.env.NEXTAUTH_URL?.trim() ||
+        (request.nextUrl?.origin && !request.nextUrl.origin.includes("localhost")
+          ? request.nextUrl.origin.trim()
+          : "") ||
+        "https://www.germanjobspro.com";
+      const origin = rawOrigin.replace(/\/+$/, "");
       const preferredLocale = typeof locale === "string" && ["ar", "de", "en"].includes(locale) ? locale : "ar";
       const resetUrl = `${origin}/${preferredLocale}/auth/reset-password?token=${rawToken}&email=${encodeURIComponent(normalizedEmail)}`;
 
