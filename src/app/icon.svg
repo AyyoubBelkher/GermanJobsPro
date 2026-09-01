@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="256" fill="#090D16"/>
+  
+  <!-- Flag Arcs & Growth Swoosh -->
+  <path d="M 120 280 C 100 180 170 90 280 80 C 340 75 400 110 430 160" stroke="#1E293B" stroke-width="26" stroke-linecap="round" fill="none"/>
+  <path d="M 95 310 C 80 200 150 110 270 95 C 370 85 435 155 450 240" stroke="#DC2626" stroke-width="24" stroke-linecap="round" fill="none"/>
+  <path d="M 170 420 C 260 435 375 390 425 285 L 435 240" stroke="#F59E0B" stroke-width="24" stroke-linecap="round" fill="none"/>
+  <polygon points="410,210 460,245 425,290" fill="#F59E0B"/>
+
+  <!-- Suitcase Handle -->
+  <path d="M 215 175 L 215 150 C 215 138 228 128 240 128 L 272 128 C 284 128 297 138 297 150 L 297 175" stroke="#FFFFFF" stroke-width="18" stroke-linecap="round" fill="none"/>
+
+  <!-- Suitcase Body -->
+  <rect x="150" y="175" width="212" height="155" rx="22" fill="#FFFFFF"/>
+
+  <!-- Suitcase Details -->
+  <path d="M 150 220 L 235 260 C 248 266 264 266 277 260 L 362 220" stroke="#090D16" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <rect x="238" y="245" width="36" height="34" rx="8" fill="#090D16"/>
+  <rect x="247" y="254" width="18" height="16" rx="4" fill="#FFFFFF"/>
+</svg>
