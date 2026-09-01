@@ -5,6 +5,8 @@ import Footer from "@/components/ui/Footer";
 import { prisma } from "@/lib/prisma";
 import JobBoardClient, { JobItem } from "@/components/jobs/JobBoardClient";
 
+export const revalidate = 60;
+
 export async function generateMetadata({
   params,
 }: {
@@ -41,46 +43,71 @@ export default async function JobsPage({
   const search = resolvedSearchParams.search?.trim() || "";
   const category = resolvedSearchParams.category?.trim() || "";
   const language = resolvedSearchParams.language?.trim() || "";
-  const page = Math.max(1, parseInt(resolvedSearchParams.page || "1", 10));
+  const parsedPage = parseInt(resolvedSearchParams.page || "1", 10);
+  const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
   const limit = 15;
   const skip = (page - 1) * limit;
 
-  // Build filter conditions
+  // Build PostgreSQL filter conditions with case-insensitive matching
   const whereConditions: Array<Record<string, unknown>> = [];
 
   if (search) {
     whereConditions.push({
       OR: [
-        { title: { contains: search } },
-        { company: { contains: search } },
-        { city: { contains: search } },
+        { title: { contains: search, mode: "insensitive" } },
+        { company: { contains: search, mode: "insensitive" } },
+        { city: { contains: search, mode: "insensitive" } },
       ],
     });
   }
 
   if (category && category !== "all") {
     whereConditions.push({
-      category: { contains: category },
+      category: { contains: category, mode: "insensitive" },
     });
   }
 
   if (language && language !== "all") {
     whereConditions.push({
-      languageReq: { contains: language },
+      languageReq: { contains: language, mode: "insensitive" },
     });
   }
 
   const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
 
-  const [total, rawJobs] = await Promise.all([
-    prisma.job.count({ where }),
-    prisma.job.findMany({
-      where,
-      orderBy: { publishedAt: "desc" },
-      skip,
-      take: limit,
-    }),
-  ]);
+  let total = 0;
+  let rawJobs: Array<{
+    id: string;
+    title: string;
+    company: string;
+    city: string | null;
+    category: string;
+    jobType: string | null;
+    languageReq: string | null;
+    salary: string | null;
+    applyUrl: string;
+    descriptionRaw: string | null;
+    publishedAt: Date;
+  }> = [];
+
+  try {
+    const [fetchedTotal, fetchedJobs] = await Promise.all([
+      prisma.job.count({ where }),
+      prisma.job.findMany({
+        where,
+        orderBy: { publishedAt: "desc" },
+        skip,
+        take: limit,
+      }),
+    ]);
+    total = fetchedTotal;
+    rawJobs = fetchedJobs;
+  } catch (error) {
+    console.error(
+      "[JobsPage] Database query warning (Neon connection timeout or offline):",
+      error instanceof Error ? error.message : error
+    );
+  }
 
   const totalPages = Math.ceil(total / limit) || 1;
 
@@ -95,7 +122,7 @@ export default async function JobsPage({
     salary: j.salary,
     applyUrl: j.applyUrl,
     descriptionRaw: j.descriptionRaw,
-    publishedAt: j.publishedAt.toISOString(),
+    publishedAt: j.publishedAt instanceof Date ? j.publishedAt.toISOString() : String(j.publishedAt),
   }));
 
   return (

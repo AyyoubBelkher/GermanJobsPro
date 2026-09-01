@@ -49,3 +49,10 @@ dev.db*
 *.sqlite
 *.sqlite*
 
+# production dumps and backup data
+backup-data.json
+live-production-data.json
+*.backup.json
+*.backup
+*.dump
+

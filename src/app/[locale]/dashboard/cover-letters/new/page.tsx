@@ -46,11 +46,11 @@ export default async function NewCoverLetterPage({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1 space-y-8">
         {/* Header Breadcrumbs */}
         <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-          <Link href={`/${locale}/dashboard`} className="hover:text-purple-400 transition-colors">
+          <Link href={`/${locale}/dashboard`} className="hover:text-blue-400 transition-colors">
             {isAr ? "لوحة التحكم" : isDe ? "Dashboard" : "Dashboard"}
           </Link>
           <span>/</span>
-          <Link href={`/${locale}/dashboard/cover-letters`} className="hover:text-purple-400 transition-colors">
+          <Link href={`/${locale}/dashboard/cover-letters`} className="hover:text-blue-400 transition-colors">
             {isAr ? "خطابات التغطية" : isDe ? "Anschreiben" : "Cover Letters"}
           </Link>
           <span>/</span>

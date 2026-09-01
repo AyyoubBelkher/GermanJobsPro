@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CvPhotoUpload from "@/components/cv/CvPhotoUpload";
@@ -106,36 +106,45 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
   const isAr = locale === "ar";
   const isDe = locale === "de";
 
+  const isInitialMount = useRef(true);
+  const cvRef = useRef(cv);
+  cvRef.current = cv;
+
   const markUnsaved = () => {
     if (saveStatus !== "unsaved") setSaveStatus("unsaved");
   };
 
-  const handleSave = async () => {
-    setSaveStatus("saving");
-    setErrorMsg(null);
+  const executeSave = async (silent = false) => {
+    const currentCv = cvRef.current;
+    if (!silent) {
+      setSaveStatus("saving");
+      setErrorMsg(null);
+    } else {
+      setSaveStatus("saving");
+    }
 
     try {
       const payload = {
-        title: cv.title,
-        language: cv.language,
-        isDraft: cv.isDraft,
-        personalInfo: cv.personalInfo
+        title: currentCv.title,
+        language: currentCv.language,
+        isDraft: currentCv.isDraft,
+        personalInfo: currentCv.personalInfo
           ? {
-              fullName: cv.personalInfo.fullName || "Name",
-              email: cv.personalInfo.email || "email@example.com",
-              phone: cv.personalInfo.phone || null,
-              address: cv.personalInfo.address || null,
-              photoUrl: cv.personalInfo.photoUrl || null,
-              birthDate: cv.personalInfo.birthDate ? new Date(cv.personalInfo.birthDate).toISOString() : null,
-              birthPlace: cv.personalInfo.birthPlace || null,
-              nationality: cv.personalInfo.nationality || null,
-              targetJobTitle: cv.personalInfo.targetJobTitle || null,
-              linkedinUrl: cv.personalInfo.linkedinUrl || null,
-              xingUrl: cv.personalInfo.xingUrl || null,
-              summary: cv.personalInfo.summary || null,
+              fullName: currentCv.personalInfo.fullName || "Name",
+              email: currentCv.personalInfo.email || "email@example.com",
+              phone: currentCv.personalInfo.phone || null,
+              address: currentCv.personalInfo.address || null,
+              photoUrl: currentCv.personalInfo.photoUrl || null,
+              birthDate: currentCv.personalInfo.birthDate ? new Date(currentCv.personalInfo.birthDate).toISOString() : null,
+              birthPlace: currentCv.personalInfo.birthPlace || null,
+              nationality: currentCv.personalInfo.nationality || null,
+              targetJobTitle: currentCv.personalInfo.targetJobTitle || null,
+              linkedinUrl: currentCv.personalInfo.linkedinUrl || null,
+              xingUrl: currentCv.personalInfo.xingUrl || null,
+              summary: currentCv.personalInfo.summary || null,
             }
           : undefined,
-        experiences: cv.experiences.map((exp, idx) => ({
+        experiences: currentCv.experiences.map((exp, idx) => ({
           company: exp.company,
           position: exp.position,
           city: exp.city || null,
@@ -146,7 +155,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
           description: exp.description || null,
           order: idx,
         })),
-        educations: cv.educations.map((edu, idx) => ({
+        educations: currentCv.educations.map((edu, idx) => ({
           institution: edu.institution,
           degree: edu.degree,
           fieldOfStudy: edu.fieldOfStudy || null,
@@ -159,18 +168,18 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
           description: edu.description || null,
           order: idx,
         })),
-        skills: cv.skills.map((skill, idx) => ({
+        skills: currentCv.skills.map((skill, idx) => ({
           name: skill.name,
           category: skill.category || null,
           level: skill.level || null,
           order: idx,
         })),
-        languages: cv.languages.map((lang, idx) => ({
+        languages: currentCv.languages.map((lang, idx) => ({
           language: lang.language,
           proficiency: lang.proficiency,
           order: idx,
         })),
-        certifications: cv.certifications.map((cert, idx) => ({
+        certifications: currentCv.certifications.map((cert, idx) => ({
           name: cert.name,
           issuer: cert.issuer,
           issueDate: cert.issueDate ? new Date(cert.issueDate).toISOString() : null,
@@ -178,7 +187,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
           credentialUrl: cert.credentialUrl || null,
           order: idx,
         })),
-        projects: cv.projects.map((proj, idx) => ({
+        projects: currentCv.projects.map((proj, idx) => ({
           title: proj.title,
           role: proj.role || null,
           url: proj.url || null,
@@ -187,7 +196,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
         })),
       };
 
-      const res = await fetch(`/api/cv/${cv.id}`, {
+      const res = await fetch(`/api/cv/${currentCv.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -199,12 +208,34 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
       }
 
       setSaveStatus("saved");
-      router.refresh();
+      if (!silent) {
+        router.refresh();
+      }
     } catch (err: unknown) {
       setSaveStatus("error");
-      setErrorMsg(err instanceof Error ? err.message : "Error saving CV");
+      if (!silent) {
+        setErrorMsg(err instanceof Error ? err.message : "Error saving CV");
+      }
     }
   };
+
+  const handleSave = () => executeSave(false);
+
+  // Debounced auto-save effect
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    if (saveStatus !== "unsaved") return;
+
+    const timer = setTimeout(() => {
+      executeSave(true);
+    }, 1800);
+
+    return () => clearTimeout(timer);
+  }, [cv, saveStatus]);
 
   const handleOptimizeBullet = async (index: number, type: "experience" | "project") => {
     const rawText = type === "experience" ? cv.experiences[index]?.description : cv.projects[index]?.description;
@@ -294,10 +325,40 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
+          {/* Real-time Auto-save Indicator */}
+          <div className="flex items-center">
+            {saveStatus === "saving" && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-medium text-blue-300 animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping" />
+                <span>{isAr ? "جاري الحفظ في السحابة..." : isDe ? "Wird gespeichert..." : "Saving to cloud..."}</span>
+              </div>
+            )}
+            {saveStatus === "saved" && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-medium text-emerald-400">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+                <span>{isAr ? "تم الحفظ في السحابة ✓" : isDe ? "In der Cloud gespeichert ✓" : "Saved to cloud ✓"}</span>
+              </div>
+            )}
+            {saveStatus === "unsaved" && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-medium text-amber-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                <span>{isAr ? "تعديلات غير محفوظة" : isDe ? "Ungespeicherte Änderungen" : "Unsaved changes"}</span>
+              </div>
+            )}
+            {saveStatus === "error" && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-xs font-medium text-rose-300">
+                <span>⚠️</span>
+                <span>{isAr ? "خطأ في المزامنة" : isDe ? "Fehler beim Speichern" : "Sync error"}</span>
+              </div>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={() => setIsImportModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-blue-600/30 border border-blue-400/30 transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-blue-600/25 border border-blue-400/30 transition-all cursor-pointer"
           >
             <span>✨</span>
             <span>{isAr ? "استيراد وتحسين سيرة ذاتية (1-Click PDF to DIN 5008)" : isDe ? "1-Klick PDF zu DIN 5008" : "1-Click PDF to DIN 5008"}</span>
@@ -336,14 +397,14 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
             type="button"
             onClick={handleSave}
             disabled={saveStatus === "saving"}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 cursor-pointer"
           >
             {saveStatus === "saving" ? (
               <span>{isAr ? "جاري الحفظ..." : "Saving..."}</span>
             ) : saveStatus === "unsaved" ? (
-              <span>{isAr ? "💾 حفظ التغييرات *" : "💾 Save Changes *"}</span>
+              <span>{isAr ? "💾 حفظ الآن" : "💾 Save Now"}</span>
             ) : (
-              <span>{isAr ? "✓ تم الحفظ" : "✓ Saved"}</span>
+              <span>{isAr ? "✓ محفوظ" : "✓ Saved"}</span>
             )}
           </button>
         </div>
@@ -775,7 +836,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                           type="button"
                           onClick={() => handleOptimizeBullet(idx, "experience")}
                           disabled={optimizingIndex === idx && optimizingType === "experience"}
-                          className="text-[11px] px-2.5 py-1 rounded-lg bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/30 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                          className="text-[11px] px-2.5 py-1 rounded-lg bg-blue-600/15 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
                         >
                           <span>✨</span>
                           <span>

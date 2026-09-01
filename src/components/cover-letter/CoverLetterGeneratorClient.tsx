@@ -188,7 +188,7 @@ export default function CoverLetterGeneratorClient({
                 value={jobTitle}
                 onChange={(e) => setJobTitle(e.target.value)}
                 placeholder="z.B. Frontend Developer / Pflegefachkraft"
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-purple-500 focus:outline-hidden"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden"
               />
             </div>
 
@@ -202,7 +202,7 @@ export default function CoverLetterGeneratorClient({
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 placeholder="z.B. Siemens AG / BMW Group"
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-purple-500 focus:outline-hidden"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden"
               />
             </div>
 
@@ -215,13 +215,13 @@ export default function CoverLetterGeneratorClient({
                 value={recipientName}
                 onChange={(e) => setRecipientName(e.target.value)}
                 placeholder="z.B. Frau Dr. Schmidt / Herr Müller"
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-purple-500 focus:outline-hidden"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden"
               />
             </div>
 
             {/* Link or Upload CV for Context */}
             <div className="space-y-2.5">
-              <label className="text-xs font-bold text-purple-400 flex items-center gap-1.5">
+              <label className="text-xs font-bold text-blue-400 flex items-center gap-1.5">
                 <span>📄</span>
                 <span>{isAr ? "ربط مع سيرة ذاتية لتخصيص المحتوى" : isDe ? "Lebenslauf verknüpfen" : "Attach CV Profile for Context"}</span>
               </label>
@@ -233,7 +233,7 @@ export default function CoverLetterGeneratorClient({
                   onClick={() => setCvSourceMode("saved")}
                   className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                     cvSourceMode === "saved"
-                      ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
+                      ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
                       : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
@@ -246,7 +246,7 @@ export default function CoverLetterGeneratorClient({
                   onClick={() => setCvSourceMode("upload")}
                   className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                     cvSourceMode === "upload"
-                      ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
+                      ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
                       : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
@@ -262,7 +262,7 @@ export default function CoverLetterGeneratorClient({
                     <select
                       value={selectedCvId}
                       onChange={(e) => setSelectedCvId(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-purple-500/30 text-slate-200 text-xs focus:border-purple-500 focus:outline-hidden"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-blue-500/30 text-slate-200 text-xs focus:border-blue-500 focus:outline-hidden"
                     >
                       <option value="">{isAr ? "-- بدون ربط سيرة ذاتية --" : "-- No CV attached --"}</option>
                       {userCvs.map((cv) => (
@@ -285,9 +285,9 @@ export default function CoverLetterGeneratorClient({
               {cvSourceMode === "upload" && (
                 <div>
                   {cvPdfFile ? (
-                    <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/40 flex items-center justify-between gap-3 shadow-inner">
+                    <div className="p-3.5 rounded-2xl bg-blue-950/30 border border-blue-500/40 flex items-center justify-between gap-3 shadow-inner">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-8 h-8 rounded-xl bg-purple-600/20 text-purple-400 flex items-center justify-center shrink-0 text-sm font-bold">
+                        <div className="w-8 h-8 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center shrink-0 text-sm font-bold">
                           PDF
                         </div>
                         <div className="min-w-0">
@@ -333,8 +333,8 @@ export default function CoverLetterGeneratorClient({
                       }}
                       className={`relative border-2 border-dashed rounded-2xl p-4 text-center transition-all cursor-pointer ${
                         isDragging
-                          ? "border-purple-500 bg-purple-500/10"
-                          : "border-slate-800 hover:border-purple-500/50 bg-slate-950/60"
+                          ? "border-blue-500 bg-blue-500/10"
+                          : "border-slate-800 hover:border-blue-500/50 bg-slate-950/60"
                       }`}
                     >
                       <input
@@ -360,11 +360,9 @@ export default function CoverLetterGeneratorClient({
                       <div className="space-y-1">
                         <span className="text-xl">📁</span>
                         <p className="text-xs font-semibold text-slate-300">
-                          {isAr ? "اسحب وأفلت ملف السيرة الذاتية (PDF)" : isDe ? "CV (PDF) hierher ziehen" : "Drag & drop your CV (PDF) here"}
+                          {isAr ? "اضغط لاختيار ملف PDF أو اسحبه إلى هنا" : "Klicken oder PDF hierher ziehen"}
                         </p>
-                        <p className="text-[10px] text-slate-500">
-                          {isAr ? "أو انقر لاختيار ملف (الحد الأقصى 5MB)" : "or click to browse (Max 5MB)"}
-                        </p>
+                        <p className="text-[10px] text-slate-400">PDF bis zu 5MB</p>
                       </div>
                     </div>
                   )}
@@ -372,13 +370,13 @@ export default function CoverLetterGeneratorClient({
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-200">{isAr ? "نبرة الخطاب" : "Tone"}</label>
+                <label className="text-xs font-bold text-slate-200">{isAr ? "النبرة والأسلوب" : "Tone"}</label>
                 <select
                   value={tone}
                   onChange={(e) => setTone(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:border-purple-500 focus:outline-hidden"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:border-blue-500 focus:outline-hidden"
                 >
                   <option value="professional">{isAr ? "رسمي كلاسيكي (Professionell)" : "Professional"}</option>
                   <option value="modern">{isAr ? "عصري وديناميكي (Modern)" : "Modern & Active"}</option>
@@ -391,7 +389,7 @@ export default function CoverLetterGeneratorClient({
                 <select
                   value={language}
                   onChange={(e) => setLanguage(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:border-purple-500 focus:outline-hidden"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:border-blue-500 focus:outline-hidden"
                 >
                   <option value="de">Deutsch (الألمانية)</option>
                   <option value="en">English (الإنجليزية)</option>
@@ -410,7 +408,7 @@ export default function CoverLetterGeneratorClient({
                 value={jobDescriptionRaw}
                 onChange={(e) => setJobDescriptionRaw(e.target.value)}
                 placeholder={isAr ? "الصق هنا متطلبات الوظيفة أو نص إعلان العمل بالألمانية..." : "Fügen Sie hier die Stellenbeschreibung oder Anforderungen ein..."}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:border-purple-500 focus:outline-hidden font-mono"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:border-blue-500 focus:outline-hidden font-mono"
               />
               <p className="text-[11px] text-slate-500 text-end">
                 {jobDescriptionRaw.length} / 4000
@@ -420,7 +418,7 @@ export default function CoverLetterGeneratorClient({
             <button
               type="submit"
               disabled={isGenerating}
-              className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm transition-all shadow-lg shadow-purple-600/25 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-600/25 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               {isGenerating ? (
                 <>
@@ -445,7 +443,7 @@ export default function CoverLetterGeneratorClient({
           <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-purple-500 animate-pulse" />
+                <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
                 <h3 className="font-bold text-white text-base sm:text-lg">
                   {isAr ? "معاينة الخطاب ومحرر التعديل" : isDe ? "Anschreiben Vorschau & Editor" : "Cover Letter Preview & Editor"}
                 </h3>
@@ -466,7 +464,7 @@ export default function CoverLetterGeneratorClient({
                     type="button"
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="px-4 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all shadow-md cursor-pointer disabled:opacity-50"
+                    className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-md cursor-pointer disabled:opacity-50"
                   >
                     {isSaving ? (isAr ? "جاري الحفظ..." : "Saving...") : isAr ? "💾 حفظ في حسابي" : "💾 Save Cover Letter"}
                   </button>
@@ -477,7 +475,7 @@ export default function CoverLetterGeneratorClient({
             {generatedText ? (
               <div className="space-y-4">
                 {extractedApplicantInfo && (
-                  <div className="p-3 rounded-2xl bg-purple-950/40 border border-purple-800/40 flex items-center justify-between gap-2 flex-wrap text-xs text-purple-200">
+                  <div className="p-3 rounded-2xl bg-blue-950/30 border border-blue-800/40 flex items-center justify-between gap-2 flex-wrap text-xs text-blue-200">
                     <div className="flex items-center gap-2">
                       <span>👤</span>
                       <span className="font-bold">{extractedApplicantInfo.fullName || "Bewerber"}</span>
@@ -495,7 +493,7 @@ export default function CoverLetterGeneratorClient({
                   rows={20}
                   value={generatedText}
                   onChange={(e) => setGeneratedText(e.target.value)}
-                  className="w-full p-4 rounded-2xl bg-slate-950 border border-slate-800 text-slate-100 text-sm font-sans leading-relaxed focus:border-purple-500 focus:outline-hidden text-left"
+                  className="w-full p-4 rounded-2xl bg-slate-950 border border-slate-800 text-slate-100 text-sm font-sans leading-relaxed focus:border-blue-500 focus:outline-hidden text-left"
                 />
                 <p className="text-xs text-slate-400 italic text-center">
                   {isAr
@@ -505,7 +503,7 @@ export default function CoverLetterGeneratorClient({
               </div>
             ) : (
               <div className="text-center py-20 px-4 rounded-2xl bg-slate-950/60 border border-dashed border-slate-800 space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-purple-950 text-purple-400 flex items-center justify-center mx-auto text-xl">
+                <div className="w-12 h-12 rounded-xl bg-blue-950 text-blue-400 flex items-center justify-center mx-auto text-xl">
                   ✨
                 </div>
                 <p className="text-sm font-semibold text-slate-300">

@@ -58,7 +58,7 @@ export default async function CoverLettersPage({
 
           <Link
             href={`/${locale}/dashboard/cover-letters/new`}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-all shadow-lg shadow-purple-600/20"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-600/20"
           >
             <span>✨</span>
             <span>{isAr ? "توليد خطاب جديد" : isDe ? "Neues Anschreiben generieren" : "Generate Cover Letter"}</span>

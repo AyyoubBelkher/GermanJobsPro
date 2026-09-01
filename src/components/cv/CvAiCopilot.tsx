@@ -286,7 +286,7 @@ export default function CvAiCopilot({
       };
     }
 
-    // 2. Append/Merge Experiences without duplication
+    // 2. Append/Merge Experiences without duplication and re-index order
     if (pData.experiences && pData.experiences.length > 0) {
       const updatedExperiences = [...nextCv.experiences];
 
@@ -322,15 +322,18 @@ export default function CvAiCopilot({
             endDate: newExp.endDate || null,
             isCurrent: newExp.isCurrent || false,
             description: expDesc || null,
-            order: updatedExperiences.length,
+            order: 0,
           });
         }
       });
 
-      nextCv.experiences = updatedExperiences;
+      nextCv.experiences = updatedExperiences.map((exp, idx) => ({
+        ...exp,
+        order: idx,
+      }));
     }
 
-    // 3. Append/Merge Educations without duplication
+    // 3. Append/Merge Educations without duplication and re-index order
     if (pData.educations && pData.educations.length > 0) {
       const updatedEducations = [...nextCv.educations];
 
@@ -365,39 +368,48 @@ export default function CvAiCopilot({
             isCurrent: newEdu.isCurrent || false,
             grade: newEdu.grade || null,
             description: newEdu.description || null,
-            order: updatedEducations.length,
+            order: 0,
           });
         }
       });
 
-      nextCv.educations = updatedEducations;
+      nextCv.educations = updatedEducations.map((edu, idx) => ({
+        ...edu,
+        order: idx,
+      }));
     }
 
-    // 4. Append/Merge Skills
+    // 4. Append/Merge Skills and re-index order
     if (pData.skills && pData.skills.length > 0) {
       const existingNames = new Set(nextCv.skills.map((s) => s.name.toLowerCase()));
       const filtered = pData.skills
         .filter((s) => !existingNames.has(s.name.toLowerCase()))
-        .map((s, idx) => ({
+        .map((s) => ({
           name: s.name,
           category: s.category || "Tech",
           level: s.level || "Fortgeschritten",
-          order: nextCv.skills.length + idx,
+          order: 0,
         }));
-      nextCv.skills = [...nextCv.skills, ...filtered];
+      nextCv.skills = [...nextCv.skills, ...filtered].map((s, idx) => ({
+        ...s,
+        order: idx,
+      }));
     }
 
-    // 5. Append/Merge Languages
+    // 5. Append/Merge Languages and re-index order
     if (pData.languages && pData.languages.length > 0) {
       const existingLangs = new Set(nextCv.languages.map((l) => l.language.toLowerCase()));
       const filtered = pData.languages
         .filter((l) => !existingLangs.has(l.language.toLowerCase()))
-        .map((l, idx) => ({
+        .map((l) => ({
           language: l.language,
           proficiency: l.proficiency || "B2 (Fließend in Wort und Schrift)",
-          order: nextCv.languages.length + idx,
+          order: 0,
         }));
-      nextCv.languages = [...nextCv.languages, ...filtered];
+      nextCv.languages = [...nextCv.languages, ...filtered].map((l, idx) => ({
+        ...l,
+        order: idx,
+      }));
     }
 
     onUpdateCv(nextCv);
@@ -439,13 +451,13 @@ export default function CvAiCopilot({
       {/* Header */}
       <div className="p-4 sm:p-5 border-b border-slate-800/80 bg-slate-900/60 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-blue-600 text-white flex items-center justify-center text-lg shadow-lg shadow-purple-600/30">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-blue-500 text-white flex items-center justify-center text-lg shadow-lg shadow-blue-600/30">
             🤖
           </div>
           <div>
             <h3 className="font-extrabold text-white text-sm sm:text-base flex items-center gap-2">
               <span>{isAr ? "مستشارك المهني الذكي" : "German Career Copilot"}</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
                 DIN 5008
               </span>
             </h3>
@@ -479,11 +491,11 @@ export default function CvAiCopilot({
               }}
               className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${
                 isActive
-                  ? "bg-purple-600 text-white shadow-md shadow-purple-600/25"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/25"
                   : "bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800"
               }`}
             >
-              <span className="text-[10px] font-mono text-purple-300">#{idx + 1}</span>
+              <span className="text-[10px] font-mono text-blue-300">#{idx + 1}</span>
               <span>{isAr ? s.labelAr : s.labelEn}</span>
             </button>
           );
@@ -512,9 +524,9 @@ export default function CvAiCopilot({
 
             {/* Proposal Card (if AI suggested structured German data) */}
             {m.proposedData && (
-              <div className="w-full max-w-[95%] p-4 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-purple-500/30 space-y-3 shadow-xl">
-                <div className="flex items-center justify-between border-b border-purple-500/20 pb-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-purple-300">
+              <div className="w-full max-w-[95%] p-4 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-blue-500/30 space-y-3 shadow-xl">
+                <div className="flex items-center justify-between border-b border-blue-500/20 pb-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-blue-300">
                     <span>✨</span>
                     <span>{isAr ? "الترجمة والصياغة المقترحة بالألمانية:" : "Proposed German Data:"}</span>
                   </div>
@@ -555,7 +567,7 @@ export default function CvAiCopilot({
                 {/* German Mono Preview or Editable Textarea */}
                 {editingMap[m.id] ? (
                   <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-[11px] text-purple-300">
+                    <div className="flex items-center justify-between text-[11px] text-blue-300">
                       <span>✏️ {isAr ? "تعديل النص الألماني مباشرة:" : "Edit German text directly:"}</span>
                       <span className="text-[10px] text-slate-400 font-mono">LTR German</span>
                     </div>
@@ -571,7 +583,7 @@ export default function CvAiCopilot({
                         const val = e.target.value;
                         setEditedPreviews((prev) => ({ ...prev, [m.id]: val }));
                       }}
-                      className="w-full p-3 rounded-xl bg-slate-950 border border-purple-500/50 text-slate-100 font-mono text-xs leading-relaxed text-left focus:outline-hidden focus:border-purple-400 resize-y"
+                      className="w-full p-3 rounded-xl bg-slate-950 border border-blue-500/50 text-slate-100 font-mono text-xs leading-relaxed text-left focus:outline-hidden focus:border-blue-400 resize-y"
                       placeholder="Geben Sie hier den deutschen Text ein..."
                     />
                   </div>
@@ -621,7 +633,7 @@ export default function CvAiCopilot({
                     type="button"
                     onClick={() => handleSendMessage(act)}
                     disabled={isLoading}
-                    className="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-900/30 text-purple-300 hover:text-purple-100 border border-purple-500/20 hover:border-purple-500/40 text-xs font-semibold transition-all cursor-pointer disabled:opacity-50"
+                    className="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-blue-900/30 text-blue-300 hover:text-blue-100 border border-blue-500/20 hover:border-blue-500/40 text-xs font-semibold transition-all cursor-pointer disabled:opacity-50"
                   >
                     {act}
                   </button>
@@ -634,8 +646,8 @@ export default function CvAiCopilot({
         {/* Loading Indicator */}
         {isLoading && (
           <div className="flex items-start gap-2">
-            <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-purple-300 text-xs flex items-center gap-2 shadow-md">
-              <span className="w-2 h-2 rounded-full bg-purple-500 animate-ping" />
+            <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-blue-300 text-xs flex items-center gap-2 shadow-md">
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
               <span>{isAr ? "المستشار الذكي يحلل ويكتب بالألمانية..." : "Consultant is thinking..."}</span>
             </div>
           </div>
@@ -692,13 +704,13 @@ export default function CvAiCopilot({
               STEP_PLACEHOLDERS[currentStep]?.[isAr ? "ar" : "en"] ||
               STEP_PLACEHOLDERS.initial[isAr ? "ar" : "en"]
             }
-            className="flex-1 px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-white text-xs sm:text-sm focus:border-purple-500 focus:outline-hidden resize-none leading-relaxed"
+            className="flex-1 px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-white text-xs sm:text-sm focus:border-blue-500 focus:outline-hidden resize-none leading-relaxed"
           />
 
           <button
             type="submit"
             disabled={!inputMessage.trim() || isLoading}
-            className="p-3 rounded-2xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold text-sm shadow-lg shadow-purple-600/30 transition-all disabled:opacity-40 cursor-pointer shrink-0"
+            className="p-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition-all disabled:opacity-40 cursor-pointer shrink-0"
             title={isAr ? "إرسال" : "Send"}
           >
             🚀

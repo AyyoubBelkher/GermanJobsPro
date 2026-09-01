@@ -4,12 +4,18 @@ import { verifyUserSession } from "@/lib/user-session";
 import { optimizeBulletSchema } from "@/lib/validations/ai";
 import { optimizeBulletAI } from "@/lib/gemini";
 import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
+import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 
 /**
  * POST /api/ai/optimize-bullet
  * Optimizes a CV bullet point into an ATS-friendly, impact-oriented German statement.
  */
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = checkRateLimit(request, AUTH_RATE_LIMITS.AI_API);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("user_session")?.value;

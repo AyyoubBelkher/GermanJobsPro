@@ -65,6 +65,22 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
 
+    // Validate PDF magic bytes: %PDF- (0x25, 0x50, 0x44, 0x46, 0x2D)
+    const isPdfMagic =
+      uint8Array.length >= 5 &&
+      uint8Array[0] === 0x25 && // %
+      uint8Array[1] === 0x50 && // P
+      uint8Array[2] === 0x44 && // D
+      uint8Array[3] === 0x46 && // F
+      uint8Array[4] === 0x2d; // -
+
+    if (!isPdfMagic) {
+      return NextResponse.json(
+        { success: false, error: "Invalid PDF signature. The uploaded file is not a genuine PDF document." },
+        { status: 400 }
+      );
+    }
+
     let rawExtractedText = "";
     let pageCount = 1;
 

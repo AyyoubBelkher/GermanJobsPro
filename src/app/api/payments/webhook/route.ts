@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     const payload = JSON.parse(rawBody);
     const eventName = payload?.meta?.event_name;
-    const customData = payload?.meta?.custom_data;
+    const customData = payload?.meta?.custom_data || payload?.data?.attributes?.custom_data;
     const attributes = payload?.data?.attributes;
     const rawEventId = payload?.data?.id || payload?.meta?.webhook_id || attributes?.first_order_item?.order_id;
     const eventId = String(rawEventId || `${eventName}_${attributes?.user_email}_${attributes?.created_at || ""}`);
@@ -80,7 +80,13 @@ export async function POST(request: NextRequest) {
       }
 
       if (targetUser) {
-        const ninetyDays = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+        const now = Date.now();
+        const baseTime =
+          targetUser.planExpiresAt && targetUser.planExpiresAt.getTime() > now
+            ? targetUser.planExpiresAt.getTime()
+            : now;
+
+        const ninetyDays = new Date(baseTime + 90 * 24 * 60 * 60 * 1000);
 
         await prisma.$transaction([
           prisma.user.update({

@@ -139,7 +139,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                   isPro
                     ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                     : isTrial
-                    ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                    ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
                     : "bg-slate-800 text-slate-300"
                 }`}
               >
@@ -176,7 +176,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
         {/* Promo Code Redemption Card */}
         <div className="md:col-span-6 bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-7 space-y-4 shadow-xl flex flex-col justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1">
+            <span className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1">
               <span>🎁</span>
               <span>{isAr ? "هل لديك كود ترويجي أو تجريبي؟" : "Have a Promo or Trial Code?"}</span>
             </span>
@@ -197,12 +197,12 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                 value={promoCode}
                 onChange={(e) => setPromoCode(e.target.value)}
                 placeholder={isAr ? "أدخل الكود هنا (مثال: GERMAN2026)" : "Enter code (e.g. PROMO2026)"}
-                className="flex-1 px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs sm:text-sm uppercase font-mono tracking-wider focus:border-purple-500 focus:outline-hidden"
+                className="flex-1 px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs sm:text-sm uppercase font-mono tracking-wider focus:border-blue-500 focus:outline-hidden"
               />
               <button
                 type="submit"
                 disabled={isRedeeming || !promoCode.trim()}
-                className="px-5 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs sm:text-sm transition-all disabled:opacity-50 shrink-0 cursor-pointer shadow-md shadow-purple-600/20"
+                className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition-all disabled:opacity-50 shrink-0 cursor-pointer shadow-md shadow-blue-600/20"
               >
                 {isRedeeming ? (isAr ? "جاري التفعيل..." : "Redeeming...") : isAr ? "تفعيل" : "Redeem"}
               </button>

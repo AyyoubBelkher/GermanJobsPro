@@ -3,14 +3,26 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { cookies } from "next/headers";
-import ReactMarkdown from "react-markdown";
 import { prisma } from "@/lib/prisma";
 import SocialShare from "@/components/ui/SocialShare";
 import AdminBar from "@/components/admin/AdminBar";
 import NewsletterForm from "@/components/NewsletterForm";
+import LessonContentRenderer from "@/components/blog/LessonContentRenderer";
+import CommentSection, { CommentItem } from "@/components/blog/CommentSection";
 import { verifySessionToken } from "@/lib/session";
 
 export const revalidate = 60;
+
+/**
+ * Safely decodes a URI component without throwing URIError on malformed strings.
+ */
+function safeDecodeURIComponent(str: string): string {
+  try {
+    return decodeURIComponent(str);
+  } catch {
+    return str;
+  }
+}
 
 /**
  * Strips the first `# Heading` (H1) from markdown content if present at the beginning of the text,
@@ -36,6 +48,42 @@ function extractDescription(markdownText: string | null | undefined): string {
 }
 
 /**
+ * Helper to fetch a post safely by decoded or raw slug.
+ */
+async function fetchPostBySlug(rawSlug: string) {
+  const decoded = safeDecodeURIComponent(rawSlug);
+
+  try {
+    let post = await prisma.post.findFirst({
+      where: { slug: decoded, published: true },
+    });
+
+    if (!post && rawSlug !== decoded) {
+      post = await prisma.post.findFirst({
+        where: { slug: rawSlug, published: true },
+      });
+    }
+
+    // Secondary fallback: normalized trim
+    if (!post) {
+      post = await prisma.post.findFirst({
+        where: {
+          OR: [
+            { slug: decoded.trim(), published: true },
+            { slug: rawSlug.trim(), published: true },
+          ],
+        },
+      });
+    }
+
+    return post;
+  } catch (err) {
+    console.error("[fetchPostBySlug] DB Query Error:", err);
+    return null;
+  }
+}
+
+/**
  * Dynamic SEO metadata generation for Next.js 15 App Router.
  */
 export async function generateMetadata({
@@ -44,17 +92,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string; locale: string }>;
 }): Promise<Metadata> {
   const { slug: rawSlug, locale } = await params;
-  const slug = decodeURIComponent(rawSlug);
-
-  let post = await prisma.post.findFirst({
-    where: { slug, published: true },
-  });
-
-  if (!post && rawSlug !== slug) {
-    post = await prisma.post.findFirst({
-      where: { slug: rawSlug, published: true },
-    });
-  }
+  const post = await fetchPostBySlug(rawSlug);
 
   if (!post) {
     return {
@@ -97,36 +135,64 @@ export default async function SinglePostPage({
   params: Promise<{ slug: string; locale: string }>;
 }) {
   const { slug: rawSlug, locale } = await params;
-  const slug = decodeURIComponent(rawSlug);
-
-  let post = await prisma.post.findFirst({
-    where: { slug, published: true },
-  });
-
-  if (!post && rawSlug !== slug) {
-    post = await prisma.post.findFirst({
-      where: { slug: rawSlug, published: true },
-    });
-  }
+  const post = await fetchPostBySlug(rawSlug);
 
   if (!post) {
     notFound();
   }
 
-  // Check admin session cookie invisibly on the server
-  const cookieStore = await cookies();
-  const adminSession = cookieStore.get("admin_session")?.value;
-  const isAdmin = await verifySessionToken(adminSession);
+  // Check admin session cookie safely inside try/catch
+  let isAdmin = false;
+  try {
+    const cookieStore = await cookies();
+    const adminSession = cookieStore.get("admin_session")?.value;
+    if (adminSession) {
+      isAdmin = await verifySessionToken(adminSession);
+    }
+  } catch {
+    isAdmin = false;
+  }
 
-  // Fetch 3 related recent published posts (excluding current post)
-  const relatedPosts = await prisma.post.findMany({
-    where: {
-      id: { not: post.id },
-      published: true,
-    },
-    orderBy: { createdAt: "desc" },
-    take: 3,
-  });
+  // Fetch comments safely
+  let comments: CommentItem[] = [];
+  try {
+    const rawComments = await prisma.comment.findMany({
+      where: { postId: post.id },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        content: true,
+        createdAt: true,
+      },
+    });
+
+    comments = rawComments.map((c) => ({
+      id: c.id,
+      name: c.name,
+      content: c.content,
+      createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : String(c.createdAt),
+    }));
+  } catch (err) {
+    console.error("[SinglePostPage] Comments fetch error:", err);
+    comments = [];
+  }
+
+  // Fetch 3 related recent published posts safely
+  let relatedPosts: typeof post[] = [];
+  try {
+    relatedPosts = await prisma.post.findMany({
+      where: {
+        id: { not: post.id },
+        published: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+    });
+  } catch (err) {
+    console.error("[SinglePostPage] Related posts fetch error:", err);
+    relatedPosts = [];
+  }
 
   const isAr = locale === "ar";
   const dir = isAr ? "rtl" : "ltr";
@@ -229,7 +295,7 @@ export default async function SinglePostPage({
           </div>
         ) : (
           <div className="aspect-video w-full relative rounded-3xl overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-md">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-900 to-slate-950 flex flex-col items-center justify-center p-8 text-center text-white">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-8 text-center text-white">
               <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:30px_30px]" />
               <div className="p-4 rounded-3xl bg-white/10 backdrop-blur-md mb-4 border border-white/20">
                 <svg
@@ -253,87 +319,18 @@ export default async function SinglePostPage({
           </div>
         )}
 
-        {/* Article content with high-contrast markdown typography styling */}
+        {/* Enhanced Article Content Renderer (German A1 aware & general markdown) */}
         <div className={`prose prose-slate dark:prose-invert prose-lg max-w-none leading-relaxed text-slate-800 dark:text-slate-200 ${isAr ? "text-right" : "text-left"}`}>
-          <ReactMarkdown
-            components={{
-              h1: ({ children }) => (
-                <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-slate-100 mt-12 mb-6 leading-tight border-b border-slate-200 dark:border-slate-800 pb-4 ${isAr ? "text-right" : "text-left"}`}>
-                  {children}
-                </h1>
-              ),
-              h2: ({ children }) => (
-                <h2 className={`text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-slate-100 mt-10 mb-5 leading-snug border-b border-slate-100 dark:border-slate-800/60 pb-3 ${isAr ? "text-right" : "text-left"}`}>
-                  {children}
-                </h2>
-              ),
-              h3: ({ children }) => (
-                <h3 className={`text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-slate-100 mt-8 mb-4 leading-snug ${isAr ? "text-right" : "text-left"}`}>
-                  {children}
-                </h3>
-              ),
-              h4: ({ children }) => (
-                <h4 className={`text-lg font-semibold text-slate-900 dark:text-slate-100 mt-6 mb-3 ${isAr ? "text-right" : "text-left"}`}>
-                  {children}
-                </h4>
-              ),
-              p: ({ children }) => (
-                <p className={`text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed sm:leading-loose mb-8 font-normal ${isAr ? "text-right" : "text-left"}`}>
-                  {children}
-                </p>
-              ),
-              ul: ({ children }) => (
-                <ul className={`list-disc list-inside space-y-3 my-8 text-slate-700 dark:text-slate-300 leading-relaxed ${isAr ? "text-right pr-3" : "text-left pl-3"}`}>
-                  {children}
-                </ul>
-              ),
-              ol: ({ children }) => (
-                <ol className={`list-decimal list-inside space-y-3 my-8 text-slate-700 dark:text-slate-300 leading-relaxed ${isAr ? "text-right pr-3" : "text-left pl-3"}`}>
-                  {children}
-                </ol>
-              ),
-              li: ({ children }) => (
-                <li className="text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed sm:leading-loose">
-                  {children}
-                </li>
-              ),
-              blockquote: ({ children }) => (
-                <blockquote className={`${isAr ? "border-r-4 rounded-l-2xl text-right" : "border-l-4 rounded-r-2xl text-left"} border-blue-500 bg-blue-50/60 dark:bg-blue-950/30 text-slate-700 dark:text-slate-300 italic p-6 my-8 shadow-sm text-base sm:text-lg leading-relaxed`}>
-                  {children}
-                </blockquote>
-              ),
-              a: ({ href, children }) => (
-                <a
-                  href={href}
-                  className="text-blue-600 dark:text-blue-400 font-semibold underline underline-offset-4 hover:text-blue-500 transition-colors"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {children}
-                </a>
-              ),
-              code: ({ children }) => (
-                <code className="bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-2.5 py-1 rounded-md text-sm font-mono dir-ltr inline-block">
-                  {children}
-                </code>
-              ),
-              pre: ({ children }) => (
-                <pre className="bg-slate-900 text-slate-100 p-5 rounded-2xl overflow-x-auto my-8 text-left dir-ltr border border-slate-800 shadow-md">
-                  {children}
-                </pre>
-              ),
-              hr: () => (
-                <hr className="my-12 border-slate-200 dark:border-slate-800" />
-              ),
-            }}
-          >
-            {stripLeadingH1(post.markdown_content)}
-          </ReactMarkdown>
+          <LessonContentRenderer
+            content={stripLeadingH1(post.markdown_content)}
+            category={post.category}
+            locale={locale}
+          />
         </div>
 
         {/* High-Converting CTA Box */}
         {post.source_link && (
-          <div className="my-10 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6 border border-blue-500/30">
+          <div className="my-10 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6 border border-blue-500/30">
             <div className={`space-y-2 ${isAr ? "text-right" : "text-left"}`}>
               <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight">
                 رابط التقديم على الوظيفة
@@ -355,6 +352,13 @@ export default async function SinglePostPage({
 
         {/* Viral Social Share Component */}
         <SocialShare title={post.title} locale={locale} />
+
+        {/* Interactive Comment Section */}
+        <CommentSection
+          postId={post.id}
+          initialComments={comments}
+          locale={locale}
+        />
 
         {/* Newsletter Subscription Section */}
         <NewsletterForm />
@@ -399,7 +403,7 @@ export default async function SinglePostPage({
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-600 via-indigo-900 to-slate-950 flex flex-col items-center justify-center p-4 text-white text-center">
+                      <div className="w-full h-full bg-gradient-to-br from-blue-600 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 text-white text-center">
                         <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-md mb-2 border border-white/20">
                           <svg
                             className="w-8 h-8 text-blue-200"

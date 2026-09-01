@@ -53,7 +53,7 @@ export default async function DashboardPage({
         {/* User Profile Header Card */}
         <div className="bg-slate-900/90 border border-slate-800/80 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4 sm:gap-5 min-w-0">
-            <div className="w-14 sm:w-16 h-14 sm:h-16 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white font-extrabold text-2xl shadow-lg border border-blue-400/20 shrink-0">
+            <div className="w-14 sm:w-16 h-14 sm:h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-blue-500 flex items-center justify-center text-white font-extrabold text-2xl shadow-lg border border-blue-400/20 shrink-0">
               {displayName.charAt(0).toUpperCase()}
             </div>
             <div className="space-y-1.5 min-w-0">
@@ -66,7 +66,7 @@ export default async function DashboardPage({
                     isPro
                       ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                       : user.plan === "TRIAL"
-                      ? "bg-purple-500/15 text-purple-300 border border-purple-500/30"
+                      ? "bg-blue-500/15 text-blue-300 border border-blue-500/30"
                       : "bg-slate-800 text-slate-300 border border-slate-700"
                   }`}
                 >
@@ -137,20 +137,20 @@ export default async function DashboardPage({
 
           <Link
             href={`/${locale}/dashboard/cover-letters/new`}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 p-5 hover:border-purple-400 transition-all hover:shadow-lg hover:shadow-purple-500/10 flex items-center justify-between"
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-900/30 to-slate-900/60 border border-blue-500/30 p-5 hover:border-blue-400 transition-all hover:shadow-lg hover:shadow-blue-500/10 flex items-center justify-between"
           >
             <div className="space-y-1">
-              <span className="text-[11px] font-bold text-purple-400 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider">
                 {isAr ? "مدعوم بالذكاء الاصطناعي ✨" : isDe ? "KI-Unterstützt ✨" : "AI-Powered ✨"}
               </span>
-              <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-purple-300 transition-colors">
+              <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-blue-300 transition-colors">
                 {isAr ? "✨ خطاب تغطية" : isDe ? "✨ Anschreiben" : "✨ AI Cover Letter"}
               </h3>
               <p className="text-xs text-slate-400">
                 {isAr ? "خطاب مخصص للوظيفة" : isDe ? "Maßgeschneidert" : "Tailored letter"}
               </p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform shrink-0">
               ✍️
             </div>
           </Link>
@@ -164,14 +164,14 @@ export default async function DashboardPage({
                 {isAr ? "فاحص التوافق" : isDe ? "ATS & DIN 5008" : "ATS & DIN 5008"}
               </span>
               <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-emerald-300 transition-colors">
-                {isAr ? "🔍 فحص السيرة" : isDe ? "🔍 Lebenslauf prüfen" : "🔍 ATS CV Audit"}
+                {isAr ? "🎯 فحص ATS الأسبوعي" : isDe ? "🎯 ATS-Audit" : "🎯 ATS Resume Audit"}
               </h3>
               <p className="text-xs text-slate-400">
-                {isAr ? "كشف الفجوات والكلمات" : isDe ? "Lücken & Keywords" : "Find gaps & keywords"}
+                {isAr ? "مطابقة الكلمات والمواصفات" : isDe ? "DIN 5008 Prüfung" : "DIN 5008 & Keyword check"}
               </p>
             </div>
             <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform shrink-0">
-              🔍
+              🎯
             </div>
           </Link>
 
@@ -181,13 +181,13 @@ export default async function DashboardPage({
           >
             <div className="space-y-1">
               <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">
-                {isAr ? "دمج ملف الترشيح" : isDe ? "Bewerbungsmappe" : "Application Dossier"}
+                {isAr ? "تجميع المستندات" : isDe ? "Dossier Compiler" : "Dossier Compiler"}
               </span>
               <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-amber-300 transition-colors">
-                {isAr ? "📑 تجميع الملف الكامل" : isDe ? "📑 Mappe erstellen" : "📑 Compile Dossier"}
+                {isAr ? "📁 ملف الترشيح الكامل" : isDe ? "📁 Bewerbungsmappe" : "📁 Complete Dossier"}
               </h3>
               <p className="text-xs text-slate-400">
-                {isAr ? "غلاف + خطاب + سيرة + شهادات" : isDe ? "Deckblatt + CV + Anlagen" : "Cover + CV + Attachments"}
+                {isAr ? "غلاف + خطاب + سيرة في PDF" : isDe ? "Deckblatt + CV + Anschreiben" : "Cover + CV + Letter"}
               </p>
             </div>
             <div className="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform shrink-0">
@@ -196,9 +196,9 @@ export default async function DashboardPage({
           </Link>
         </div>
 
-        {/* Dashboard Sections Grid */}
+        {/* Dynamic Dual-Column Content: CVs & Cover Letters */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Section 1: Saved CVs (Lebenslauf) */}
+          {/* Section 1: Saved CVs */}
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-6 sm:p-8 space-y-6 flex flex-col justify-between">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -213,7 +213,7 @@ export default async function DashboardPage({
                       {isAr ? "السير الذاتية (Lebenslauf)" : isDe ? "Lebensläufe" : "German CVs"}
                     </h2>
                     <p className="text-xs text-slate-400">
-                      {isAr ? "السير الذاتية المنشأة بمعايير DIN 5008" : isDe ? "Nach DIN 5008 Standard" : "Created CVs using DIN 5008 standard"}
+                      {isAr ? "سير ذاتية متوافقة مع معيار DIN 5008" : isDe ? "DIN 5008 konforme Lebensläufe" : "DIN 5008 German Standard Resumes"}
                     </p>
                   </div>
                 </div>
@@ -230,7 +230,7 @@ export default async function DashboardPage({
                 </div>
               </div>
 
-              {/* CV List or Empty State */}
+              {/* CVs List or Empty State */}
               {cvs.length === 0 ? (
                 <div className="text-center py-10 px-4 rounded-2xl bg-slate-950/60 border border-dashed border-slate-800 space-y-3">
                   <div className="inline-flex p-3 rounded-full bg-slate-900 text-slate-500">
@@ -243,17 +243,17 @@ export default async function DashboardPage({
                   </p>
                   <p className="text-xs text-slate-500 max-w-xs mx-auto">
                     {isAr
-                      ? "ابدأ بإنشاء أول سيرة ذاتية لك متوافقة مع سوق العمل الألماني."
+                      ? "أنشئ سيرتك الذاتية الألمانية الأولى المتوافقة 100% مع أنظمة ATS ومعيار DIN 5008."
                       : isDe
-                      ? "Erstellen Sie Ihren ersten professionellen deutschen Lebenslauf."
-                      : "Create your first German ATS-optimized CV."}
+                      ? "Erstellen Sie Ihren ersten DIN 5008 Lebenslauf mit Substantivstil-Optimierung."
+                      : "Create your first German standard CV with ATS-friendly Substantivstil phrasing."}
                   </p>
                   <div className="pt-2">
                     <Link
                       href={`/${locale}/dashboard/cv/new`}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition-all shadow-md"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition-all shadow-md shadow-blue-600/20"
                     >
-                      {isAr ? "إنشاء سيرة ذاتية الآن" : isDe ? "Jetzt erstellen" : "Create CV Now"}
+                      {isAr ? "إنشاء سيرة ذاتية الآن" : isDe ? "Lebenslauf erstellen" : "Create CV Now"}
                     </Link>
                   </div>
                 </div>
@@ -265,24 +265,20 @@ export default async function DashboardPage({
                       className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 transition-all flex items-center justify-between gap-4"
                     >
                       <div className="space-y-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-2">
                           <h4 className="font-bold text-white text-sm truncate">{cv.title}</h4>
                           <span
-                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                               cv.isDraft
                                 ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                                 : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                             }`}
                           >
-                            {cv.isDraft ? (isAr ? "مسودة" : isDe ? "Entwurf" : "Draft") : isAr ? "مكتمل" : isDe ? "Fertig" : "Completed"}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-800 text-slate-400 uppercase">
-                            {cv.language}
+                            {cv.isDraft ? (isAr ? "مسودة" : "Draft") : isAr ? "مكتمل" : "Complete"}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-400 truncate">
-                          {cv.personalInfo?.targetJobTitle || (isAr ? "بدون مسمى محدد" : "No target title")} •{" "}
-                          {new Date(cv.updatedAt).toLocaleDateString(locale)}
+                        <p className="text-xs text-slate-400">
+                          {cv.personalInfo?.fullName || "Unbekannt"} • {new Date(cv.updatedAt).toLocaleDateString(locale)}
                         </p>
                       </div>
                       <Link
@@ -298,8 +294,8 @@ export default async function DashboardPage({
             </div>
 
             <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
-              <span className="text-xs text-blue-400 font-semibold bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-xl">
-                DIN 5008 German Standard
+              <span className="text-xs text-slate-400 font-mono">
+                DIN 5008 Standard • Substantivstil
               </span>
               <Link
                 href={`/${locale}/dashboard/cv`}
@@ -315,7 +311,7 @@ export default async function DashboardPage({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-purple-600/10 border border-purple-500/20 text-purple-400">
+                  <div className="p-2.5 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
                     </svg>
@@ -330,12 +326,12 @@ export default async function DashboardPage({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-900/40 text-purple-400 border border-purple-700/50">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-900/40 text-blue-400 border border-blue-700/50">
                     {coverLetters.length}
                   </span>
                   <Link
                     href={`/${locale}/dashboard/cover-letters`}
-                    className="text-xs text-purple-400 hover:text-purple-300 font-semibold underline"
+                    className="text-xs text-blue-400 hover:text-blue-300 font-semibold underline"
                   >
                     {isAr ? "عرض الكل" : isDe ? "Alle anzeigen" : "View all"}
                   </Link>
@@ -363,7 +359,7 @@ export default async function DashboardPage({
                   <div className="pt-2">
                     <Link
                       href={`/${locale}/dashboard/cover-letters/new`}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs transition-all shadow-md"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition-all shadow-md shadow-blue-600/20"
                     >
                       {isAr ? "توليد خطاب الآن" : isDe ? "Anschreiben generieren" : "Generate Cover Letter"}
                     </Link>
@@ -384,7 +380,7 @@ export default async function DashboardPage({
                       </div>
                       <Link
                         href={`/${locale}/dashboard/cover-letters/${cl.id}`}
-                        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-purple-600 text-slate-300 hover:text-white text-xs font-semibold transition-colors shrink-0"
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white text-xs font-semibold transition-colors shrink-0"
                       >
                         {isAr ? "عرض" : isDe ? "Ansehen" : "View"}
                       </Link>
@@ -395,7 +391,7 @@ export default async function DashboardPage({
             </div>
 
             <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
-              <span className="text-xs text-purple-400 font-semibold bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-xl">
+              <span className="text-xs text-blue-400 font-semibold bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-xl">
                 {isAr ? "ذكاء اصطناعي احترافي ⚡" : isDe ? "KI-Optimiert ⚡" : "AI Powered Pro ⚡"}
               </span>
               <Link

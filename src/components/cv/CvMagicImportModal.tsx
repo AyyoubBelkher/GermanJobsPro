@@ -169,7 +169,7 @@ export default function CvMagicImportModal({
 
         {/* Modal Header */}
         <div className="space-y-2 text-center">
-          <div className="inline-flex p-3 rounded-2xl bg-gradient-to-tr from-blue-600/20 via-indigo-600/20 to-purple-600/20 border border-blue-500/30 text-blue-400 mb-1">
+          <div className="inline-flex p-3 rounded-2xl bg-blue-600/10 border border-blue-500/30 text-blue-400 mb-1">
             <span className="text-2xl">✨</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-white">
@@ -394,7 +394,7 @@ export default function CvMagicImportModal({
                 <button
                   type="button"
                   onClick={handleStartImport}
-                  className="flex-1 py-3 px-6 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-blue-600/30 active:scale-98 cursor-pointer flex items-center justify-center gap-2"
+                  className="flex-1 py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-blue-600/30 active:scale-98 cursor-pointer flex items-center justify-center gap-2"
                 >
                   <span>✨</span>
                   <span>

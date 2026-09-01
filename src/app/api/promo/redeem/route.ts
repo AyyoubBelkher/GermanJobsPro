@@ -79,13 +79,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newExpiry = new Date(Date.now() + promo.durationDays * 24 * 60 * 60 * 1000);
+    // Fetch current user plan details
+    const currentUser = await prisma.user.findUnique({
+      where: { id: authResult.user.id },
+      select: { plan: true, planExpiresAt: true },
+    });
+
+    if (!currentUser) {
+      return NextResponse.json(
+        { success: false, error: "المستخدم غير موجود." },
+        { status: 404 }
+      );
+    }
+
+    const now = Date.now();
+    const isCurrentlyActivePro =
+      currentUser.plan === "PRO" &&
+      currentUser.planExpiresAt !== null &&
+      currentUser.planExpiresAt.getTime() > now;
+
+    // Calculate newExpiry extending from existing active expiration if in future
+    const currentExpiryTime =
+      currentUser.planExpiresAt && currentUser.planExpiresAt.getTime() > now
+        ? currentUser.planExpiresAt.getTime()
+        : now;
+
+    const newExpiry = new Date(currentExpiryTime + promo.durationDays * 24 * 60 * 60 * 1000);
+
+    // Prevent downgrading an active 'PRO' user plan to 'TRIAL' / 'FREE'
+    const finalPlan = isCurrentlyActivePro && promo.planGranted !== "PRO"
+      ? "PRO"
+      : promo.planGranted;
 
     const [updatedUser] = await prisma.$transaction([
       prisma.user.update({
         where: { id: authResult.user.id },
         data: {
-          plan: promo.planGranted,
+          plan: finalPlan,
           planExpiresAt: newExpiry,
           aiCredits: { increment: promo.creditsGranted },
         },
@@ -108,10 +138,14 @@ export async function POST(request: NextRequest) {
       }),
     ]);
 
+    const successMessage = isCurrentlyActivePro && promo.planGranted !== "PRO"
+      ? `تم تفعيل الكود بنجاح! تم تمديد اشتراكك وإضافة ${promo.creditsGranted} رصيد AI.`
+      : `تم تفعيل الكود بنجاح! تم ترقية حسابك إلى خطة ${finalPlan} وإضافة ${promo.creditsGranted} رصيد AI.`;
+
     return NextResponse.json(
       {
         success: true,
-        message: `تم تفعيل الكود بنجاح! تم ترقية حسابك إلى خطة ${promo.planGranted} وإضافة ${promo.creditsGranted} رصيد AI.`,
+        message: successMessage,
         plan: updatedUser.plan,
         planExpiresAt: updatedUser.planExpiresAt,
         creditsGranted: promo.creditsGranted,

@@ -57,14 +57,19 @@ export async function POST(req: NextRequest) {
 
     const email = emailRaw.trim().toLowerCase();
 
-    if (token && typeof token === "string" && token.trim() !== "") {
-      const isValid = await verifyUnsubscribeToken(email, token);
-      if (!isValid) {
-        return NextResponse.json(
-          { success: false, error: "رمز إلغاء الاشتراك غير صالِح" },
-          { status: 403 }
-        );
-      }
+    if (!token || typeof token !== "string" || token.trim() === "") {
+      return NextResponse.json(
+        { success: false, error: "رمز إلغاء الاشتراك غير صالِح" },
+        { status: 403 }
+      );
+    }
+
+    const isValid = await verifyUnsubscribeToken(email, token.trim());
+    if (!isValid) {
+      return NextResponse.json(
+        { success: false, error: "رمز إلغاء الاشتراك غير صالِح" },
+        { status: 403 }
+      );
     }
 
     const existing = await prisma.subscriber.findUnique({

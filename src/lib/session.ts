@@ -34,10 +34,20 @@ export function isValidHttpUrl(urlStr?: string | null): boolean {
   return trimmed.startsWith("http://") || trimmed.startsWith("https://");
 }
 
+/**
+ * Validate image URL to ensure it uses http://, https://, or a relative path starting with / (e.g. /images/...).
+ */
+export function isValidImageUrl(urlStr?: string | null): boolean {
+  if (!urlStr || typeof urlStr !== "string") return true;
+  const trimmed = urlStr.trim().toLowerCase();
+  if (trimmed === "") return true;
+  return trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("/");
+}
+
 export async function createSessionToken(): Promise<string> {
-  const secret = process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD;
+  const secret = process.env.ADMIN_SESSION_SECRET;
   if (!secret) {
-    throw new Error("ADMIN_SESSION_SECRET or ADMIN_PASSWORD environment variable is not defined");
+    throw new Error("ADMIN_SESSION_SECRET environment variable is not defined");
   }
 
   const timestamp = Date.now().toString();
@@ -68,7 +78,7 @@ export async function verifySessionToken(token?: string | null): Promise<boolean
     return false;
   }
 
-  const secret = process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD;
+  const secret = process.env.ADMIN_SESSION_SECRET;
   if (!secret) {
     return false;
   }
@@ -118,9 +128,9 @@ export async function verifySessionToken(token?: string | null): Promise<boolean
 }
 
 export async function createUnsubscribeToken(email: string): Promise<string> {
-  const secret = process.env.NEWSLETTER_UNSUB_SECRET || process.env.ADMIN_PASSWORD;
+  const secret = process.env.NEWSLETTER_UNSUB_SECRET || process.env.ADMIN_SESSION_SECRET;
   if (!secret) {
-    throw new Error("NEWSLETTER_UNSUB_SECRET or ADMIN_PASSWORD environment variable is not defined");
+    throw new Error("NEWSLETTER_UNSUB_SECRET or ADMIN_SESSION_SECRET environment variable is not defined");
   }
 
   const normalizedEmail = email.trim().toLowerCase();

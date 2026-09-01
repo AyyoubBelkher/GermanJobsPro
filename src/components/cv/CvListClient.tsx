@@ -121,8 +121,8 @@ export default function CvListClient({ initialCvs, locale }: CvListClientProps) 
       )}
 
       {/* High-Converting Magic Import Hero Card */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-950/60 via-indigo-950/40 to-purple-950/60 border border-blue-500/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
-        <div className="absolute top-0 ltr:right-0 rtl:left-0 -mr-16 -mt-16 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-blue-950/70 to-slate-900 border border-blue-500/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+        <div className="absolute top-0 end-0 -me-16 -mt-16 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-extrabold uppercase tracking-wider">
@@ -147,7 +147,7 @@ export default function CvListClient({ initialCvs, locale }: CvListClientProps) 
           <button
             type="button"
             onClick={() => setIsImportModalOpen(true)}
-            className="shrink-0 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-extrabold text-sm shadow-xl shadow-blue-600/30 active:scale-95 transition-all cursor-pointer flex items-center gap-2.5 border border-blue-400/30"
+            className="shrink-0 px-6 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm shadow-xl shadow-blue-600/30 active:scale-95 transition-all cursor-pointer flex items-center gap-2.5 border border-blue-400/30"
           >
             <span className="text-lg">✨</span>
             <span>{isAr ? "استيراد وتحسين سيرة ذاتية (PDF)" : isDe ? "Lebenslauf magisch importieren" : "1-Click PDF Magic Import"}</span>

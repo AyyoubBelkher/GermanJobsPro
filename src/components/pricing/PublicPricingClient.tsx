@@ -181,7 +181,7 @@ export default function PublicPricingClient({
       {user && (
         <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-blue-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
               {user.name?.[0]?.toUpperCase() || user.email[0]?.toUpperCase() || "U"}
             </div>
             <div>
@@ -194,7 +194,7 @@ export default function PublicPricingClient({
                     isPro
                       ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
                       : isTrial
-                      ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                      ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
                       : "bg-slate-800 text-slate-300 border border-slate-700"
                   }`}
                 >
@@ -307,9 +307,9 @@ export default function PublicPricingClient({
 
 
         {/* TIER 2: PRO Pass */}
-        <div className="rounded-3xl bg-gradient-to-b from-blue-950/60 via-slate-900/90 to-purple-950/50 border-2 border-blue-500/50 p-8 sm:p-10 flex flex-col justify-between space-y-8 backdrop-blur-xl relative shadow-2xl shadow-blue-500/10 scale-100 lg:scale-105">
+        <div className="rounded-3xl bg-gradient-to-b from-slate-900 via-blue-950/70 to-slate-900 border-2 border-blue-500/50 p-8 sm:p-10 flex flex-col justify-between space-y-8 backdrop-blur-xl relative shadow-2xl shadow-blue-500/10 scale-100 lg:scale-105">
           {/* Popular Badge */}
-          <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-black text-xs shadow-lg shadow-blue-600/30 uppercase tracking-wider flex items-center gap-1.5">
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-blue-600 text-white font-black text-xs shadow-lg shadow-blue-600/30 uppercase tracking-wider flex items-center gap-1.5">
             <span>⭐</span>
             <span>{isAr ? "الأكثر طلباً • الخيار الموصى به" : isDe ? "Bestseller • Empfohlen" : "Most Popular • Best Value"}</span>
           </div>
@@ -334,7 +334,7 @@ export default function PublicPricingClient({
 
             <div className="space-y-1">
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">
+                <span className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-200">
                   9.99 €
                 </span>
                 <span className="text-xs text-slate-400 font-medium">
@@ -398,7 +398,7 @@ export default function PublicPricingClient({
               type="button"
               onClick={handleCheckout}
               disabled={isCheckingOut || isPro}
-              className="w-full py-4 px-8 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-extrabold text-sm sm:text-base shadow-xl shadow-blue-600/30 hover:scale-[1.02] active:scale-98 transition-all disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2 border border-blue-400/30"
+              className="w-full py-4 px-8 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm sm:text-base shadow-xl shadow-blue-600/30 hover:scale-[1.02] active:scale-98 transition-all disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2 border border-blue-400/30"
             >
               {isCheckingOut ? (
                 <span>{isAr ? "جاري تحويلك إلى الدفع الآمن..." : "Redirecting to Checkout..."}</span>
@@ -422,7 +422,7 @@ export default function PublicPricingClient({
       {/* ========================================================= */}
       <div className="max-w-2xl mx-auto rounded-3xl bg-slate-900/80 border border-slate-800 p-6 sm:p-8 space-y-5 text-center shadow-xl">
         <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-bold uppercase">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase">
             <span>🎁</span>
             <span>{isAr ? "كوبون أو كود خصم ترويجي" : isDe ? "Gutscheincode" : "Voucher or Promo Code"}</span>
           </div>

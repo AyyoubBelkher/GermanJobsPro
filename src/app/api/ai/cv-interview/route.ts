@@ -3,12 +3,18 @@ import { cookies } from "next/headers";
 import { verifyUserSession } from "@/lib/user-session";
 import { interviewCvAI, InterviewCvParams, isRateLimitError } from "@/lib/gemini";
 import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
+import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 
 /**
  * POST /api/ai/cv-interview
  * Interactive German CV Career Consultant & AI Copilot.
  */
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = checkRateLimit(request, AUTH_RATE_LIMITS.AI_API);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   let userId: string | null = null;
   let creditDeducted = false;
 

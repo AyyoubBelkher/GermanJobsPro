@@ -28,6 +28,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
 
   const isAr = locale === "ar";
   const isDe = locale === "de";
+  const isFr = locale === "fr";
   const dir = isAr ? "rtl" : "ltr";
 
   // Check auth session state on mount
@@ -98,6 +99,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
   const homeLink = `/${locale}`;
   const jobsLink = `/${locale}/jobs`;
   const blogLink = `/${locale}/blog`;
+  const germanA1Link = `/${locale}/blog?category=German+A1`;
   const dashboardLink = `/${locale}/dashboard`;
   const atsLink = `/${locale}/dashboard/ats-analyzer`;
   const dossierLink = `/${locale}/dashboard/dossier`;
@@ -129,16 +131,23 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-5 xl:gap-6 text-sm font-semibold text-slate-300">
+        <nav className="hidden lg:flex items-center gap-4 xl:gap-5 text-sm font-semibold text-slate-300">
           <Link href={homeLink} className="hover:text-blue-400 transition-colors">
-            {isAr ? "الرئيسية" : isDe ? "Startseite" : "Home"}
+            {isAr ? "الرئيسية" : isDe ? "Startseite" : isFr ? "Accueil" : "Home"}
           </Link>
           <Link href={jobsLink} className="hover:text-blue-400 transition-colors flex items-center gap-1.5">
             <span>💼</span>
-            <span>{isAr ? "فرص العمل" : isDe ? "Jobs" : "Jobs"}</span>
+            <span>{isAr ? "فرص العمل" : isDe ? "Jobs" : isFr ? "Emplois" : "Jobs"}</span>
           </Link>
           <Link href={blogLink} className="hover:text-blue-400 transition-colors">
-            {isAr ? "المقالات" : isDe ? "Blog" : "Blog"}
+            {isAr ? "المقالات" : isDe ? "Blog" : isFr ? "Blog" : "Blog"}
+          </Link>
+          <Link
+            href={germanA1Link}
+            className="hover:text-blue-300 transition-all flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold hover:bg-blue-500/20"
+          >
+            <span>🇩🇪</span>
+            <span>{isAr ? "تعلم الألمانية A1" : isDe ? "Deutsch A1" : isFr ? "Allemand A1" : "German A1"}</span>
           </Link>
 
           {/* Conditional links based on auth */}
@@ -146,20 +155,20 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
             <>
               <Link href={atsLink} className="hover:text-emerald-400 transition-colors flex items-center gap-1">
                 <span className="text-emerald-400">🔍</span>
-                <span>{isAr ? "فاحص ATS" : isDe ? "ATS Check" : "ATS Check"}</span>
+                <span>{isAr ? "فاحص ATS" : isDe ? "ATS Check" : isFr ? "Test ATS" : "ATS Check"}</span>
               </Link>
               <Link href={dossierLink} className="hover:text-amber-400 transition-colors flex items-center gap-1">
                 <span className="text-amber-400">📑</span>
-                <span>{isAr ? "ملف الترشيح" : isDe ? "Bewerbungsmappe" : "Dossier"}</span>
+                <span>{isAr ? "ملف الترشيح" : isDe ? "Bewerbungsmappe" : isFr ? "Dossier" : "Dossier"}</span>
               </Link>
               <Link href={dashboardLink} className="hover:text-blue-400 transition-colors font-bold text-blue-400">
-                {isAr ? "لوحة التحكم" : isDe ? "Dashboard" : "Dashboard"}
+                {isAr ? "لوحة التحكم" : isDe ? "Dashboard" : isFr ? "Tableau de bord" : "Dashboard"}
               </Link>
             </>
           ) : (
             <Link href={pricingLink} className="hover:text-amber-400 transition-colors flex items-center gap-1 text-amber-400 font-bold">
               <span>💎</span>
-              <span>{isAr ? "الأسعار وPRO" : isDe ? "Preise & PRO" : "Pricing & PRO"}</span>
+              <span>{isAr ? "الأسعار وPRO" : isDe ? "Preise & PRO" : isFr ? "Tarifs & PRO" : "Pricing & PRO"}</span>
             </Link>
           )}
         </nav>
@@ -189,7 +198,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-extrabold shadow-md shadow-blue-600/20 transition-all hover:scale-[1.02] active:scale-95"
                 >
                   <span>✨</span>
-                  <span>{isAr ? "+ سيرة جديدة" : isDe ? "+ Neuer CV" : "+ New CV"}</span>
+                  <span>{isAr ? "+ سيرة جديدة" : isDe ? "+ Neuer CV" : isFr ? "+ Nouveau CV" : "+ New CV"}</span>
                 </Link>
 
                 {/* User Profile Dropdown */}
@@ -200,7 +209,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                     className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 transition-all cursor-pointer focus:outline-none"
                     aria-expanded={userDropdownOpen}
                   >
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-purple-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-blue-500 text-white font-bold text-xs flex items-center justify-center shadow-xs">
                       {userInitial}
                     </div>
                     <span className="text-xs font-bold max-w-[100px] truncate hidden md:inline">
@@ -229,7 +238,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                         className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
                       >
                         <span>📊</span>
-                        <span>{isAr ? "لوحة التحكم الرئيسية" : isDe ? "Dashboard Übersicht" : "Main Dashboard"}</span>
+                        <span>{isAr ? "لوحة التحكم الرئيسية" : isDe ? "Dashboard Übersicht" : isFr ? "Tableau de bord" : "Main Dashboard"}</span>
                       </Link>
 
                       <Link
@@ -238,7 +247,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                         className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
                       >
                         <span>📄</span>
-                        <span>{isAr ? "سيرتي الذاتية (DIN 5008)" : isDe ? "Meine Lebensläufe" : "My Resumes"}</span>
+                        <span>{isAr ? "سيرتي الذاتية (DIN 5008)" : isDe ? "Meine Lebensläufe" : isFr ? "Mes CVs (DIN 5008)" : "My Resumes (DIN 5008)"}</span>
                       </Link>
 
                       <Link
@@ -247,7 +256,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                         className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
                       >
                         <span>📑</span>
-                        <span>{isAr ? "ملف الترشيح المتكامل" : isDe ? "Bewerbungsmappe" : "Complete Dossier"}</span>
+                        <span>{isAr ? "ملف الترشيح المتكامل" : isDe ? "Bewerbungsmappe" : isFr ? "Dossier complet" : "Complete Dossier"}</span>
                       </Link>
 
                       <Link
@@ -256,7 +265,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                         className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-amber-300 hover:text-amber-200 hover:bg-amber-500/10 transition-colors"
                       >
                         <span>💎</span>
-                        <span>{isAr ? "ترقية الحساب (PRO)" : isDe ? "Upgrade auf PRO" : "Upgrade to PRO"}</span>
+                        <span>{isAr ? "ترقية الحساب (PRO)" : isDe ? "Upgrade auf PRO" : isFr ? "Passer à PRO" : "Upgrade to PRO"}</span>
                       </Link>
 
                       <div className="pt-1 border-t border-slate-800/80">
@@ -266,7 +275,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                           className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer text-start font-semibold"
                         >
                           <span>🚪</span>
-                          <span>{isAr ? "تسجيل الخروج" : isDe ? "Abmelden" : "Sign Out"}</span>
+                          <span>{isAr ? "تسجيل الخروج" : isDe ? "Abmelden" : isFr ? "Déconnexion" : "Sign Out"}</span>
                         </button>
                       </div>
                     </div>
@@ -280,14 +289,14 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                   href={loginLink}
                   className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-900 border border-slate-800 transition-all"
                 >
-                  {isAr ? "تسجيل الدخول" : isDe ? "Anmelden" : "Sign In"}
+                  {isAr ? "تسجيل الدخول" : isDe ? "Anmelden" : isFr ? "Connexion" : "Sign In"}
                 </Link>
 
                 <Link
                   href={signupLink}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-extrabold shadow-md shadow-blue-600/20 transition-all hover:scale-[1.02] active:scale-95"
                 >
-                  <span>{isAr ? "أنشئ سيرتك الذاتية 🇩🇪" : isDe ? "Lebenslauf erstellen 🇩🇪" : "Create German CV 🇩🇪"}</span>
+                  <span>{isAr ? "أنشئ سيرتك الذاتية 🇩🇪" : isDe ? "Lebenslauf erstellen 🇩🇪" : isFr ? "Créer votre CV 🇩🇪" : "Create German CV 🇩🇪"}</span>
                 </Link>
               </div>
             )
@@ -324,7 +333,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
           {user && (
             <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-purple-600 text-white font-bold text-sm flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-blue-500 text-white font-bold text-sm flex items-center justify-center shrink-0">
                   {userInitial}
                 </div>
                 <div className="min-w-0">
@@ -351,7 +360,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
               onClick={() => setMobileMenuOpen(false)}
               className="px-3 py-2.5 rounded-xl hover:bg-slate-900 hover:text-blue-400 transition-colors"
             >
-              {isAr ? "الرئيسية" : isDe ? "Startseite" : "Home"}
+              {isAr ? "الرئيسية" : isDe ? "Startseite" : isFr ? "Accueil" : "Home"}
             </Link>
 
             <Link
@@ -360,7 +369,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
               className="px-3 py-2.5 rounded-xl hover:bg-slate-900 hover:text-blue-400 transition-colors flex items-center gap-2"
             >
               <span>💼</span>
-              <span>{isAr ? "فرص العمل (Jobs)" : isDe ? "Jobs in Deutschland" : "Jobs in Germany"}</span>
+              <span>{isAr ? "فرص العمل (Jobs)" : isDe ? "Jobs in Deutschland" : isFr ? "Emplois en Allemagne" : "Jobs in Germany"}</span>
             </Link>
 
             <Link
@@ -369,7 +378,16 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
               className="px-3 py-2.5 rounded-xl hover:bg-slate-900 hover:text-blue-400 transition-colors flex items-center gap-2"
             >
               <span>📚</span>
-              <span>{isAr ? "دليل ومقالات التوظيف" : isDe ? "Ratgeber & Blog" : "Career Blog"}</span>
+              <span>{isAr ? "دليل ومقالات التوظيف" : isDe ? "Ratgeber & Blog" : isFr ? "Guides & Blog" : "Career Blog"}</span>
+            </Link>
+
+            <Link
+              href={germanA1Link}
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-3 py-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-colors flex items-center gap-2 font-bold"
+            >
+              <span>🇩🇪</span>
+              <span>{isAr ? "تعلم الألمانية A1" : isDe ? "Deutsch A1 lernen" : isFr ? "Apprendre l'allemand A1" : "Learn German A1"}</span>
             </Link>
 
             {user ? (
@@ -380,7 +398,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                   className="px-3 py-2.5 rounded-xl hover:bg-slate-900 text-blue-400 transition-colors flex items-center gap-2 font-bold"
                 >
                   <span>📊</span>
-                  <span>{isAr ? "لوحة التحكم (Dashboard)" : isDe ? "Dashboard" : "Dashboard"}</span>
+                  <span>{isAr ? "لوحة التحكم (Dashboard)" : isDe ? "Dashboard" : isFr ? "Tableau de bord" : "Dashboard"}</span>
                 </Link>
 
                 <Link
@@ -389,7 +407,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                   className="px-3 py-2.5 rounded-xl hover:bg-slate-900 hover:text-white transition-colors flex items-center gap-2"
                 >
                   <span>📄</span>
-                  <span>{isAr ? "السير الذاتية (DIN 5008)" : isDe ? "Lebensläufe" : "Resumes"}</span>
+                  <span>{isAr ? "السير الذاتية (DIN 5008)" : isDe ? "Lebensläufe" : isFr ? "Mes CVs (DIN 5008)" : "Resumes"}</span>
                 </Link>
 
                 <Link
@@ -398,7 +416,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                   className="px-3 py-2.5 rounded-xl hover:bg-slate-900 text-emerald-400 transition-colors flex items-center gap-2"
                 >
                   <span>🔍</span>
-                  <span>{isAr ? "فاحص السيرة (ATS Analyzer)" : isDe ? "ATS Lebenslauf-Checker" : "ATS CV Analyzer"}</span>
+                  <span>{isAr ? "فاحص السيرة (ATS Analyzer)" : isDe ? "ATS Lebenslauf-Checker" : isFr ? "Analyseur ATS" : "ATS CV Analyzer"}</span>
                 </Link>
 
                 <Link
@@ -407,7 +425,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                   className="px-3 py-2.5 rounded-xl hover:bg-slate-900 text-amber-400 transition-colors flex items-center gap-2"
                 >
                   <span>📑</span>
-                  <span>{isAr ? "ملف الترشيح (Bewerbungsmappe)" : isDe ? "Bewerbungsmappe" : "Dossier Studio"}</span>
+                  <span>{isAr ? "ملف الترشيح (Bewerbungsmappe)" : isDe ? "Bewerbungsmappe" : isFr ? "Dossier complet" : "Dossier Studio"}</span>
                 </Link>
 
                 <Link
@@ -416,7 +434,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                   className="px-3 py-2.5 rounded-xl hover:bg-slate-900 text-amber-400 transition-colors flex items-center gap-2 font-bold"
                 >
                   <span>💎</span>
-                  <span>{isAr ? "الترقية والأسعار (PRO)" : isDe ? "Preise & Upgrades (PRO)" : "Pricing & PRO"}</span>
+                  <span>{isAr ? "الترقية والأسعار (PRO)" : isDe ? "Preise & Upgrades (PRO)" : isFr ? "Tarifs & PRO" : "Pricing & PRO"}</span>
                 </Link>
               </>
             ) : (
@@ -427,7 +445,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                   className="px-3 py-2.5 rounded-xl hover:bg-slate-900 text-amber-400 transition-colors flex items-center gap-2 font-bold"
                 >
                   <span>💎</span>
-                  <span>{isAr ? "الأسعار والترقية (PRO)" : isDe ? "Preise & Tarife" : "Pricing & PRO"}</span>
+                  <span>{isAr ? "الأسعار والترقية (PRO)" : isDe ? "Preise & Tarife" : isFr ? "Tarifs & PRO" : "Pricing & PRO"}</span>
                 </Link>
 
                 <Link
@@ -436,7 +454,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                   className="px-3 py-2.5 rounded-xl hover:bg-slate-900 hover:text-blue-400 transition-colors flex items-center gap-2"
                 >
                   <span>🔑</span>
-                  <span>{isAr ? "تسجيل الدخول" : isDe ? "Anmelden" : "Sign In"}</span>
+                  <span>{isAr ? "تسجيل الدخول" : isDe ? "Anmelden" : isFr ? "Connexion" : "Sign In"}</span>
                 </Link>
               </>
             )}
@@ -452,7 +470,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                   className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold text-xs text-center flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/20"
                 >
                   <span>✨</span>
-                  <span>{isAr ? "+ إنشاء سيرة جديدة" : isDe ? "+ Neuer Lebenslauf" : "+ Create New CV"}</span>
+                  <span>{isAr ? "+ إنشاء سيرة جديدة" : isDe ? "+ Neuer Lebenslauf" : isFr ? "+ Nouveau CV" : "+ Create New CV"}</span>
                 </Link>
 
                 <button
@@ -460,7 +478,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                   onClick={handleLogout}
                   className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-rose-500/10 text-rose-400 text-xs font-bold text-center border border-slate-800 transition-all cursor-pointer"
                 >
-                  {isAr ? "تسجيل الخروج" : isDe ? "Abmelden" : "Sign Out"}
+                  {isAr ? "تسجيل الخروج" : isDe ? "Abmelden" : isFr ? "Déconnexion" : "Sign Out"}
                 </button>
               </>
             ) : (
@@ -469,7 +487,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold text-xs text-center flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/20"
               >
-                <span>{isAr ? "أنشئ سيرتك الذاتية مجاناً 🇩🇪" : isDe ? "Kostenlos registrieren 🇩🇪" : "Create Free German CV 🇩🇪"}</span>
+                <span>{isAr ? "أنشئ سيرتك الذاتية مجاناً 🇩🇪" : isDe ? "Kostenlos registrieren 🇩🇪" : isFr ? "Créer votre CV gratuit 🇩🇪" : "Create Free German CV 🇩🇪"}</span>
               </Link>
             )}
           </div>

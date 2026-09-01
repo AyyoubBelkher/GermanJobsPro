@@ -5,12 +5,18 @@ import { verifyUserSession } from "@/lib/user-session";
 import { analyzeCvAtsSchema } from "@/lib/validations/ai";
 import { analyzeCvAtsAI } from "@/lib/gemini";
 import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
+import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 
 /**
  * POST /api/ai/analyze-cv-ats
  * Analyzes a CV for German ATS compatibility and DIN 5008 compliance.
  */
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = checkRateLimit(request, AUTH_RATE_LIMITS.AI_API);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("user_session")?.value;

@@ -55,6 +55,10 @@ async function processImageFile(file: File): Promise<string> {
             return;
           }
 
+          // Fill background with white to prevent black background on transparent PNGs when exported as JPEG
+          ctx.fillStyle = "#FFFFFF";
+          ctx.fillRect(0, 0, width, height);
+
           // Smooth rendering
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = "high";

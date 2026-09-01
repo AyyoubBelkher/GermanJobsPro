@@ -130,7 +130,7 @@ export default function AdminSubscribersPage() {
               <span className="text-slate-600">•</span>
               <Link
                 href={`/${locale}/admin`}
-                className="text-xs text-purple-400 hover:underline flex items-center gap-1"
+                className="text-xs text-emerald-400 hover:underline flex items-center gap-1"
               >
                 ⚡ لوحة إدارة المستخدمين
               </Link>

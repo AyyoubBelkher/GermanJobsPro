@@ -44,28 +44,28 @@ export async function GET(request: NextRequest) {
     if (search) {
       whereConditions.push({
         OR: [
-          { title: { contains: search } },
-          { company: { contains: search } },
-          { city: { contains: search } },
+          { title: { contains: search, mode: "insensitive" } },
+          { company: { contains: search, mode: "insensitive" } },
+          { city: { contains: search, mode: "insensitive" } },
         ],
       });
     }
 
     if (category && category !== "all" && category !== "All") {
       whereConditions.push({
-        category: { contains: category },
+        category: { contains: category, mode: "insensitive" },
       });
     }
 
     if (language && language !== "all" && language !== "All") {
       whereConditions.push({
-        languageReq: { contains: language },
+        languageReq: { contains: language, mode: "insensitive" },
       });
     }
 
     if (city && city !== "all" && city !== "All") {
       whereConditions.push({
-        city: { contains: city },
+        city: { contains: city, mode: "insensitive" },
       });
     }
 

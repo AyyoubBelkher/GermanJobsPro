@@ -127,9 +127,9 @@ export default function CoverLetterEditorClient({
                   setCoverLetter({ ...coverLetter, title: e.target.value });
                   markUnsaved();
                 }}
-                className="bg-transparent text-white font-extrabold text-lg sm:text-xl border-b border-transparent hover:border-slate-700 focus:border-purple-500 focus:outline-hidden px-1"
+                className="bg-transparent text-white font-extrabold text-lg sm:text-xl border-b border-transparent hover:border-slate-700 focus:border-blue-500 focus:outline-hidden px-1"
               />
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20 uppercase">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase">
                 {coverLetter.tone}
               </span>
             </div>
@@ -181,7 +181,7 @@ export default function CoverLetterEditorClient({
             type="button"
             onClick={handleSave}
             disabled={saveStatus === "saving"}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-purple-600/20 disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 cursor-pointer"
           >
             {saveStatus === "saving" ? (
               <span>{isAr ? "جاري الحفظ..." : "Saving..."}</span>
@@ -200,12 +200,12 @@ export default function CoverLetterEditorClient({
         </div>
       )}
 
-      {/* Main Content Grid: Editor & Printable Paper */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left: Metadata & Form Controls */}
+      {/* Main Two-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left: Metadata Form */}
         <div className="lg:col-span-4 bg-slate-900/80 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
-          <h3 className="font-bold text-white text-sm">
-            {isAr ? "بيانات الخطاب والمستلم" : isDe ? "Anschreiben Details" : "Letter Details"}
+          <h3 className="font-bold text-white text-sm pb-2 border-b border-slate-800">
+            {isAr ? "بيانات الوظيفة والمستلم" : "Job & Recipient Details"}
           </h3>
 
           <div className="space-y-1">
@@ -217,7 +217,7 @@ export default function CoverLetterEditorClient({
                 setCoverLetter({ ...coverLetter, jobTitle: e.target.value });
                 markUnsaved();
               }}
-              className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:border-purple-500 focus:outline-hidden"
+              className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:border-blue-500 focus:outline-hidden"
             />
           </div>
 
@@ -230,7 +230,7 @@ export default function CoverLetterEditorClient({
                 setCoverLetter({ ...coverLetter, companyName: e.target.value });
                 markUnsaved();
               }}
-              className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:border-purple-500 focus:outline-hidden"
+              className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:border-blue-500 focus:outline-hidden"
             />
           </div>
 
@@ -244,7 +244,7 @@ export default function CoverLetterEditorClient({
                 markUnsaved();
               }}
               placeholder="z.B. Frau Schmidt"
-              className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:border-purple-500 focus:outline-hidden"
+              className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:border-blue-500 focus:outline-hidden"
             />
           </div>
 
@@ -256,7 +256,7 @@ export default function CoverLetterEditorClient({
                 setCoverLetter({ ...coverLetter, tone: e.target.value });
                 markUnsaved();
               }}
-              className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:border-purple-500 focus:outline-hidden"
+              className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:border-blue-500 focus:outline-hidden"
             >
               <option value="professional">Professional / Professionell</option>
               <option value="modern">Modern & Dynamic</option>
@@ -264,7 +264,7 @@ export default function CoverLetterEditorClient({
             </select>
           </div>
 
-          <div className="p-4 rounded-2xl bg-purple-950/30 border border-purple-800/40 text-xs text-purple-300 space-y-1">
+          <div className="p-4 rounded-2xl bg-blue-950/20 border border-blue-800/30 text-xs text-blue-300 space-y-1">
             <p className="font-bold">DIN 5008 German Standard</p>
             <p className="text-[11px] text-slate-400">
               {isAr
@@ -294,7 +294,7 @@ export default function CoverLetterEditorClient({
                 setCoverLetter({ ...coverLetter, generatedContent: e.target.value });
                 markUnsaved();
               }}
-              className="w-full p-4 rounded-2xl bg-slate-950 border border-slate-800 text-slate-100 text-sm font-sans leading-relaxed focus:border-purple-500 focus:outline-hidden text-left"
+              className="w-full p-4 rounded-2xl bg-slate-950 border border-slate-800 text-slate-100 text-sm font-sans leading-relaxed focus:border-blue-500 focus:outline-hidden text-left"
             />
           </div>
         </div>

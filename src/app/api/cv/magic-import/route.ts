@@ -8,16 +8,65 @@ import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 
+function parseEuropeanDate(val?: string | null): Date | null {
+  if (!val || typeof val !== "string") return null;
+  const s = val.trim();
+  if (!s) return null;
+
+  // 1. Try standard ISO / Date.parse first (e.g. YYYY-MM-DD or YYYY-MM)
+  const standardDate = new Date(s);
+  if (!isNaN(standardDate.getTime()) && /^\d{4}/.test(s)) {
+    return standardDate;
+  }
+
+  // 2. Format: DD.MM.YYYY or DD/MM/YYYY or DD-MM-YYYY
+  const dmyMatch = s.match(/^(\d{1,2})[./\-](\d{1,2})[./\-](\d{4})$/);
+  if (dmyMatch) {
+    const day = parseInt(dmyMatch[1], 10);
+    const month = parseInt(dmyMatch[2], 10) - 1;
+    const year = parseInt(dmyMatch[3], 10);
+    if (month >= 0 && month <= 11 && day >= 1 && day <= 31) {
+      return new Date(Date.UTC(year, month, day));
+    }
+  }
+
+  // 3. Format: MM/YYYY or MM.YYYY or MM-YYYY
+  const myMatch = s.match(/^(\d{1,2})[./\-](\d{4})$/);
+  if (myMatch) {
+    const month = parseInt(myMatch[1], 10) - 1;
+    const year = parseInt(myMatch[2], 10);
+    if (month >= 0 && month <= 11) {
+      return new Date(Date.UTC(year, month, 1));
+    }
+  }
+
+  // 4. Format: YYYY.MM or YYYY/MM or YYYY-MM
+  const ymMatch = s.match(/^(\d{4})[./\-](\d{1,2})$/);
+  if (ymMatch) {
+    const year = parseInt(ymMatch[1], 10);
+    const month = parseInt(ymMatch[2], 10) - 1;
+    if (month >= 0 && month <= 11) {
+      return new Date(Date.UTC(year, month, 1));
+    }
+  }
+
+  // 5. Format: YYYY (standalone 4-digit year)
+  const yMatch = s.match(/^(\d{4})$/);
+  if (yMatch) {
+    const year = parseInt(yMatch[1], 10);
+    return new Date(Date.UTC(year, 0, 1));
+  }
+
+  return !isNaN(standardDate.getTime()) ? standardDate : null;
+}
+
 function parseDateSafe(val?: string | null): Date {
-  if (!val || typeof val !== "string" || val.trim() === "") return new Date();
-  const d = new Date(val.trim());
-  return isNaN(d.getTime()) ? new Date() : d;
+  const d = parseEuropeanDate(val);
+  return d !== null ? d : new Date();
 }
 
 function parseNullableDate(val?: string | null): Date | null {
-  if (!val || typeof val !== "string" || val.trim() === "") return null;
-  const d = new Date(val.trim());
-  return isNaN(d.getTime()) ? null : d;
+  return parseEuropeanDate(val);
 }
 
 /**
@@ -76,6 +125,22 @@ export async function POST(request: NextRequest) {
 
         const arrayBuffer = await file.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
+
+        // Validate PDF magic bytes: %PDF- (0x25, 0x50, 0x44, 0x46, 0x2D)
+        const isPdfMagic =
+          uint8Array.length >= 5 &&
+          uint8Array[0] === 0x25 && // %
+          uint8Array[1] === 0x50 && // P
+          uint8Array[2] === 0x44 && // D
+          uint8Array[3] === 0x46 && // F
+          uint8Array[4] === 0x2d; // -
+
+        if (!isPdfMagic) {
+          return NextResponse.json(
+            { success: false, error: "Invalid PDF signature. The uploaded file is not a genuine PDF document." },
+            { status: 400 }
+          );
+        }
 
         try {
           const { text } = await extractText(uint8Array);

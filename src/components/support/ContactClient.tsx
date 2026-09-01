@@ -292,7 +292,7 @@ export default function ContactClient({ initialUser, locale }: ContactClientProp
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-extrabold text-sm sm:text-base shadow-xl shadow-blue-600/25 hover:scale-[1.02] active:scale-98 transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 border border-blue-400/30"
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm sm:text-base shadow-xl shadow-blue-600/25 hover:scale-[1.02] active:scale-98 transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 border border-blue-400/30"
               >
                 {loading ? (
                   <span>{isAr ? "جاري إرسال التذكرة..." : isDe ? "Wird gesendet..." : "Submitting Ticket..."}</span>

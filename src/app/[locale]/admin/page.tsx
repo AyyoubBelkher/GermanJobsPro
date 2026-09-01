@@ -266,7 +266,7 @@ export default function AdminDashboardPage() {
               href={`/${locale}/admin/subscribers`}
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs sm:text-sm font-medium transition"
             >
-              <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
               <span>{isAr ? "المشتركون (Email List)" : "Subscribers"}</span>
@@ -405,23 +405,23 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Card 3: Total AI Credits */}
-          <div className="relative overflow-hidden rounded-3xl bg-slate-900/90 border border-slate-800/90 p-6 shadow-xl backdrop-blur-sm group hover:border-purple-500/30 transition">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/10 rounded-full blur-2xl pointer-events-none group-hover:bg-purple-600/20 transition" />
+          <div className="relative overflow-hidden rounded-3xl bg-slate-900/90 border border-slate-800/90 p-6 shadow-xl backdrop-blur-sm group hover:border-blue-500/30 transition">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-2xl pointer-events-none group-hover:bg-blue-600/20 transition" />
             <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-semibold uppercase tracking-wider text-purple-400/90">
+              <span className="text-xs font-semibold uppercase tracking-wider text-blue-400/90">
                 {isAr ? "إجمالي رصيد الذكاء الاصطناعي" : "Total AI Credits In Circulation"}
               </span>
-              <div className="p-2.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
+              <div className="p-2.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl sm:text-4xl font-extrabold text-purple-300 font-mono">
+              <span className="text-3xl sm:text-4xl font-extrabold text-blue-300 font-mono">
                 {loading ? "..." : stats.totalAiCredits.toLocaleString()}
               </span>
-              <span className="text-xs text-purple-400/80 font-medium">
+              <span className="text-xs text-blue-400/80 font-medium">
                 ⚡ {isAr ? "رصيد متاح" : "credits available"}
               </span>
             </div>
@@ -615,10 +615,10 @@ export default function AdminDashboardPage() {
 
                         {/* AI Credits */}
                         <td className="py-4 px-6">
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-300 font-mono font-bold text-xs">
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-300 font-mono font-bold text-xs">
                             <span>⚡</span>
                             <span>{user.aiCredits}</span>
-                            <span className="text-[10px] text-purple-400/70 font-sans">{isAr ? "رصيد" : "credits"}</span>
+                            <span className="text-[10px] text-blue-400/70 font-sans">{isAr ? "رصيد" : "credits"}</span>
                           </div>
                         </td>
 
@@ -667,7 +667,7 @@ export default function AdminDashboardPage() {
                             <button
                               onClick={() => handleAddCredits(user.id, user.email, 50)}
                               disabled={isActionLoading}
-                              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 hover:border-purple-500/50 transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/30 hover:border-blue-500/50 transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
                               title="Add 50 AI Credits"
                             >
                               {actionLoadingId === `credits-${user.id}` ? (

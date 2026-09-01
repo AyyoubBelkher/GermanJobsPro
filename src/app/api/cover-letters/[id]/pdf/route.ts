@@ -79,13 +79,26 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const pdfBuffer = await renderToBuffer(pdfElement);
 
-    const safeCompany = coverLetter.companyName.replace(/[^a-zA-Z0-9äöüÄÖÜß_-]/g, "_");
+    const safeCompany = coverLetter.companyName.replace(/[^a-zA-Z0-9äöüÄÖÜß_-]/g, "_") || "Bewerbung";
+    const asciiCompany = safeCompany
+      .replace(/ä/g, "ae")
+      .replace(/ö/g, "oe")
+      .replace(/ü/g, "ue")
+      .replace(/Ä/g, "Ae")
+      .replace(/Ö/g, "Oe")
+      .replace(/Ü/g, "Ue")
+      .replace(/ß/g, "ss")
+      .replace(/[^a-zA-Z0-9_-]/g, "_");
+
+    const fallbackFilename = `Anschreiben_${asciiCompany || "Bewerbung"}.pdf`;
+    const utf8Filename = `Anschreiben_${safeCompany}.pdf`;
+    const encodedUtf8Filename = encodeURIComponent(utf8Filename);
 
     return new NextResponse(pdfBuffer as unknown as BodyInit, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="Anschreiben_${safeCompany}.pdf"`,
+        "Content-Disposition": `attachment; filename="${fallbackFilename}"; filename*=UTF-8''${encodedUtf8Filename}`,
         "Cache-Control": "no-store, max-age=0",
       },
     });

@@ -96,9 +96,27 @@ export async function POST(request: NextRequest) {
         }
 
         const arrayBuffer = await file.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+
+        // Validate PDF magic bytes: %PDF- (0x25, 0x50, 0x44, 0x46, 0x2D)
+        const isPdfMagic =
+          uint8Array.length >= 5 &&
+          uint8Array[0] === 0x25 &&
+          uint8Array[1] === 0x50 &&
+          uint8Array[2] === 0x44 &&
+          uint8Array[3] === 0x46 &&
+          uint8Array[4] === 0x2d;
+
+        if (!isPdfMagic) {
+          return NextResponse.json(
+            { success: false, error: `File "${fileName}" does not have a valid PDF signature.` },
+            { status: 400 }
+          );
+        }
+
         attachmentBuffers.push({
           name: fileName,
-          buffer: new Uint8Array(arrayBuffer),
+          buffer: uint8Array,
         });
       }
     }
@@ -132,6 +150,22 @@ export async function POST(request: NextRequest) {
 
       // Read array buffer once into a Node Buffer
       const cvFileBuffer = Buffer.from(await cvFile.arrayBuffer());
+
+      // Validate PDF magic bytes: %PDF-
+      const isCvPdfMagic =
+        cvFileBuffer.length >= 5 &&
+        cvFileBuffer[0] === 0x25 &&
+        cvFileBuffer[1] === 0x50 &&
+        cvFileBuffer[2] === 0x44 &&
+        cvFileBuffer[3] === 0x46 &&
+        cvFileBuffer[4] === 0x2d;
+
+      if (!isCvPdfMagic) {
+        return NextResponse.json(
+          { success: false, error: "Uploaded CV file is not a genuine PDF document." },
+          { status: 400 }
+        );
+      }
 
       // Extract text from CV to extract candidate contact details for the Deckblatt
       const deckblattMetadata: DeckblattData = {
@@ -290,13 +324,27 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const safeName = applicantName.replace(/[^a-zA-Z0-9äöüÄÖÜß_-]/g, "_");
+    const rawName = applicantName || "Bewerber";
+    const safeName = rawName.replace(/[^a-zA-Z0-9äöüÄÖÜß_-]/g, "_") || "Bewerber";
+    const asciiName = safeName
+      .replace(/ä/g, "ae")
+      .replace(/ö/g, "oe")
+      .replace(/ü/g, "ue")
+      .replace(/Ä/g, "Ae")
+      .replace(/Ö/g, "Oe")
+      .replace(/Ü/g, "Ue")
+      .replace(/ß/g, "ss")
+      .replace(/[^a-zA-Z0-9_-]/g, "_");
+
+    const fallbackFilename = `Bewerbungsmappe_${asciiName || "Bewerber"}.pdf`;
+    const utf8Filename = `Bewerbungsmappe_${safeName}.pdf`;
+    const encodedUtf8Filename = encodeURIComponent(utf8Filename);
 
     return new NextResponse(compiledPdfBytes as unknown as BodyInit, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="Bewerbungsmappe_${safeName}.pdf"`,
+        "Content-Disposition": `attachment; filename="${fallbackFilename}"; filename*=UTF-8''${encodedUtf8Filename}`,
         "Cache-Control": "no-store, max-age=0",
       },
     });

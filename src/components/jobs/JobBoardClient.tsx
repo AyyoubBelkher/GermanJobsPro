@@ -387,7 +387,7 @@ export default function JobBoardClient({
                             job.company
                           )}&jobDescription=${encodeURIComponent(job.descriptionRaw || "")}`}
                           title={isAr ? "توليد خطاب تغطية بالذكاء الاصطناعي لهذه الوظيفة" : "Generate Cover Letter with AI"}
-                          className="p-2 rounded-xl bg-purple-600/10 hover:bg-purple-600 text-purple-400 hover:text-white border border-purple-500/20 transition-all cursor-pointer"
+                          className="p-2 rounded-xl bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/20 transition-all cursor-pointer"
                         >
                           <span className="text-xs">✨ Anschreiben</span>
                         </Link>
@@ -472,7 +472,7 @@ export default function JobBoardClient({
                     )}&companyName=${encodeURIComponent(
                       job.company
                     )}&jobDescription=${encodeURIComponent(job.descriptionRaw || "")}`}
-                    className="py-2 px-3 rounded-xl bg-purple-600/10 hover:bg-purple-600 text-purple-400 hover:text-white border border-purple-500/20 font-bold text-xs text-center transition-all flex items-center justify-center gap-1"
+                    className="py-2 px-3 rounded-xl bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/20 font-bold text-xs text-center transition-all flex items-center justify-center gap-1"
                   >
                     <span>✨</span>
                     <span>Anschreiben</span>

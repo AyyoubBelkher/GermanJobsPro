@@ -33,10 +33,10 @@ export default function PostCard({
 }: PostCardProps) {
   const isArabic = /[\u0600-\u06FF]/.test(title);
 
-  // Determine final image URL with fallback to reliable Unsplash job cover image
+  // Determine final image URL, using post image directly without static fallback overrides
   const rawImage = imageUrl || image_url || cover_image;
   const finalImageUrl =
-    rawImage && typeof rawImage === "string" && rawImage.trim().length > 0 && !rawImage.startsWith("/images/")
+    rawImage && typeof rawImage === "string" && rawImage.trim().length > 0
       ? rawImage.trim()
       : DEFAULT_UNSPLASH_IMAGE;
 

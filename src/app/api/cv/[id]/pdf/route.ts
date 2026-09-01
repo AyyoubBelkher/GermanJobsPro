@@ -58,14 +58,27 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const pdfElement = React.createElement(CvDocument, { cv, includeDeckblatt }) as unknown as React.ReactElement<DocumentProps>;
     const pdfBuffer = await renderToBuffer(pdfElement);
 
-    const safeName = (cv.personalInfo?.fullName || "Bewerber")
-      .replace(/[^a-zA-Z0-9äöüÄÖÜß_-]/g, "_");
+    const rawName = cv.personalInfo?.fullName || "Bewerber";
+    const safeName = rawName.replace(/[^a-zA-Z0-9äöüÄÖÜß_-]/g, "_") || "Bewerber";
+    const asciiName = safeName
+      .replace(/ä/g, "ae")
+      .replace(/ö/g, "oe")
+      .replace(/ü/g, "ue")
+      .replace(/Ä/g, "Ae")
+      .replace(/Ö/g, "Oe")
+      .replace(/Ü/g, "Ue")
+      .replace(/ß/g, "ss")
+      .replace(/[^a-zA-Z0-9_-]/g, "_");
+
+    const fallbackFilename = `Lebenslauf_${asciiName || "Bewerber"}.pdf`;
+    const utf8Filename = `Lebenslauf_${safeName}.pdf`;
+    const encodedUtf8Filename = encodeURIComponent(utf8Filename);
 
     return new NextResponse(pdfBuffer as unknown as BodyInit, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="Lebenslauf_${safeName}.pdf"`,
+        "Content-Disposition": `attachment; filename="${fallbackFilename}"; filename*=UTF-8''${encodedUtf8Filename}`,
         "Cache-Control": "no-store, max-age=0",
       },
     });

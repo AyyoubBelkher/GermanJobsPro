@@ -417,7 +417,7 @@ export default function DossierCompilerClient({
               {/* Step 2: Cover Letter Selection */}
               <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 space-y-3 shadow-xl">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400 font-bold text-sm flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold text-sm flex items-center justify-center">
                     2
                   </div>
                   <h3 className="font-bold text-white text-base">
@@ -428,7 +428,7 @@ export default function DossierCompilerClient({
                 <select
                   value={selectedCoverLetterId}
                   onChange={(e) => setSelectedCoverLetterId(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-purple-500 focus:outline-hidden"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden"
                 >
                   <option value="none">
                     {isAr ? "-- بدون خطاب تغطية (CV فقط) --" : "-- No Cover Letter (CV only) --"}
@@ -656,7 +656,7 @@ export default function DossierCompilerClient({
               <button
                 type="submit"
                 disabled={isCompiling}
-                className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-extrabold text-sm sm:text-base transition-all shadow-xl shadow-blue-600/25 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm sm:text-base transition-all shadow-xl shadow-blue-600/25 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isCompiling ? (
                   <>
@@ -707,13 +707,13 @@ export default function DossierCompilerClient({
 
               {/* Cover Letter Item */}
               {selectedCoverLetterId && selectedCoverLetterId !== "none" && (
-                <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-800/40 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-purple-600/20 text-purple-400 flex items-center justify-center font-bold text-xs">
+                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold text-xs">
                     {includeDeckblatt ? 2 : 1}
                   </div>
                   <div>
                     <p className="text-xs font-bold text-white">Anschreiben (DIN 5008)</p>
-                    <p className="text-[10px] text-purple-300">خطاب التغطية الرسمي</p>
+                    <p className="text-[10px] text-blue-300">خطاب التغطية الرسمي</p>
                   </div>
                 </div>
               )}

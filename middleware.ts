@@ -5,15 +5,15 @@ import { verifySessionToken } from "@/lib/session";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Protect all admin routes matching /:locale/admin/* except /:locale/admin/login
-  const adminRouteRegex = /^\/([^/]+)\/admin(\/.*)?$/;
-  const adminMatch = pathname.match(adminRouteRegex);
+  // 1. Protect all admin routes: /:locale/admin/* and /admin/* except /login
+  const localizedAdminMatch = pathname.match(/^\/([^/]+)\/admin(\/.*)?$/);
+  const rootAdminMatch = pathname.match(/^\/admin(\/.*)?$/);
 
-  if (adminMatch) {
-    const locale = adminMatch[1];
-    const subPath = adminMatch[2] || "";
+  if (localizedAdminMatch || rootAdminMatch) {
+    const locale = localizedAdminMatch ? localizedAdminMatch[1] : "ar";
+    const subPath = localizedAdminMatch ? localizedAdminMatch[2] || "" : rootAdminMatch![1] || "";
 
-    // Allow /:locale/admin/login
+    // Allow login route
     if (subPath === "/login") {
       return NextResponse.next();
     }
@@ -25,12 +25,12 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 2. Protect all user dashboard routes matching /:locale/dashboard/*
-  const dashboardRouteRegex = /^\/([^/]+)\/dashboard(\/.*)?$/;
-  const dashboardMatch = pathname.match(dashboardRouteRegex);
+  // 2. Protect all user dashboard routes: /:locale/dashboard/* and /dashboard/*
+  const localizedDashboardMatch = pathname.match(/^\/([^/]+)\/dashboard(\/.*)?$/);
+  const rootDashboardMatch = pathname.match(/^\/dashboard(\/.*)?$/);
 
-  if (dashboardMatch) {
-    const locale = dashboardMatch[1];
+  if (localizedDashboardMatch || rootDashboardMatch) {
+    const locale = localizedDashboardMatch ? localizedDashboardMatch[1] : "ar";
     const userSession = request.cookies.get("user_session")?.value;
 
     if (!userSession || userSession.trim() === "") {
@@ -46,7 +46,11 @@ export const config = {
   matcher: [
     "/:locale/admin/:path*",
     "/:locale/admin",
+    "/admin/:path*",
+    "/admin",
     "/:locale/dashboard/:path*",
     "/:locale/dashboard",
+    "/dashboard/:path*",
+    "/dashboard",
   ],
 };

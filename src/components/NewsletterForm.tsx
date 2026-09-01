@@ -72,13 +72,13 @@ export default function NewsletterForm({ locale: propLocale }: { locale?: string
   return (
     <section className="my-8 relative group max-w-xl mx-auto" dir="rtl">
       {/* Outer Glow & Gradient Border Wrapper */}
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 rounded-2xl blur-xs opacity-40 group-hover:opacity-60 transition duration-300 pointer-events-none" />
+      <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-blue-500 rounded-2xl blur-xs opacity-40 group-hover:opacity-60 transition duration-300 pointer-events-none" />
 
-      <div className="relative p-[1px] rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 shadow-lg">
+      <div className="relative p-[1px] rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 shadow-lg">
         <div className="bg-slate-900 text-white rounded-[15px] p-6 relative overflow-hidden">
           {/* Background Ambient Glow Patterns */}
           <div className="absolute -top-20 -left-20 w-44 h-44 bg-blue-500/15 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-20 -right-20 w-44 h-44 bg-purple-500/15 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-20 -right-20 w-44 h-44 bg-blue-600/10 rounded-full blur-2xl pointer-events-none" />
 
           <div className="relative z-10 space-y-4 text-center">
             {/* Header Title */}

@@ -24,6 +24,12 @@ export const AUTH_RATE_LIMITS = {
     windowMs: 10 * 60 * 1000, // 10 minutes
     message: "تم تجاوز الحد المسموح من محاولات تسجيل الدخول. يرجى المحاولة بعد 10 دقائق / Too many login attempts. Please try again later.",
   },
+  ADMIN_LOGIN: {
+    action: "admin:login",
+    limit: 5,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    message: "تم تجاوز الحد المسموح لمحاولات دخول لوحة التحكم. يرجى المحاولة لاحقاً / Too many admin login attempts. Please try again later.",
+  },
   SIGNUP: {
     action: "auth:signup",
     limit: 5,
@@ -35,6 +41,24 @@ export const AUTH_RATE_LIMITS = {
     limit: 5,
     windowMs: 60 * 60 * 1000, // 1 hour
     message: "تم تجاوز الحد المسموح لإعادة إرسال الرمز. يرجى المحاولة لاحقاً / Too many resend requests. Please try again later.",
+  },
+  FORGOT_PASSWORD: {
+    action: "auth:forgot-password",
+    limit: 5,
+    windowMs: 60 * 60 * 1000, // 1 hour
+    message: "تم تجاوز الحد المسموح لطلبات استعادة كلمة المرور. يرجى المحاولة لاحقاً / Too many password reset requests. Please try again later.",
+  },
+  COMMENTS: {
+    action: "content:comments",
+    limit: 10,
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    message: "تم تجاوز الحد المسموح لإضافة التعليقات. يرجى الانتظار قليلاً قبل إضافة تعليق جديد / Too many comment submissions. Please wait a few minutes.",
+  },
+  AI_API: {
+    action: "ai:request",
+    limit: 20,
+    windowMs: 60 * 1000, // 1 minute (20 requests/min per IP)
+    message: "تم تجاوز معدل الطلبات المسموح للذكاء الاصطناعي. يرجى الانتظار بضع ثوانٍ / Too many AI requests. Please slow down.",
   },
 } as const;
 

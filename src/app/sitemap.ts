@@ -6,14 +6,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     process.env.NEXT_PUBLIC_SITE_URL ||
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://germanjobspro.com");
 
-  // Fetch published post slugs and timestamps from SQLite via Prisma
-  const posts = await prisma.post.findMany({
-    where: { published: true },
-    select: {
-      slug: true,
-      updatedAt: true,
-    },
-  });
+  // Fetch published post slugs and timestamps from DB via Prisma
+  let posts: Array<{ slug: string; updatedAt: Date }> = [];
+  try {
+    posts = await prisma.post.findMany({
+      where: { published: true },
+      select: {
+        slug: true,
+        updatedAt: true,
+      },
+    });
+  } catch (error) {
+    console.warn("[Sitemap] Could not fetch dynamic posts during build prerender:", error instanceof Error ? error.message : error);
+  }
 
   const locales = ["ar", "en", "de", "fr"];
 

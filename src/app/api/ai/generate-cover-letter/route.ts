@@ -10,6 +10,7 @@ import {
   ExtractedApplicantInfo,
 } from "@/lib/gemini";
 import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
+import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 import { extractText } from "unpdf";
 
 const MAX_PDF_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
@@ -20,6 +21,11 @@ const MAX_PDF_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
  * Supports both JSON and multipart/form-data with direct PDF CV uploads.
  */
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = checkRateLimit(request, AUTH_RATE_LIMITS.AI_API);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("user_session")?.value;
@@ -119,6 +125,23 @@ export async function POST(request: NextRequest) {
       try {
         const arrayBuffer = await cvFile.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
+
+        // Validate PDF magic bytes: %PDF-
+        const isPdfMagic =
+          uint8Array.length >= 5 &&
+          uint8Array[0] === 0x25 && // %
+          uint8Array[1] === 0x50 && // P
+          uint8Array[2] === 0x44 && // D
+          uint8Array[3] === 0x46 && // F
+          uint8Array[4] === 0x2d; // -
+
+        if (!isPdfMagic) {
+          return NextResponse.json(
+            { success: false, error: "Invalid PDF signature. The uploaded file is not a genuine PDF document." },
+            { status: 400 }
+          );
+        }
+
         const { text } = await extractText(uint8Array);
         parsedPdfText = Array.isArray(text) ? text.join("\n") : String(text || "");
       } catch (parseErr: unknown) {

@@ -53,17 +53,27 @@ export async function consumeAiCredit(
 
     // Reset quota if last reset was on a previous day or > 24h ago
     if (shouldResetDailyQuota(user.lastCreditResetAt ?? new Date(0), now)) {
-      await prisma.user.update({
+      await prisma.user.updateMany({
         where: { id: userId },
         data: {
           dailyAiCreditsUsed: 0,
           lastCreditResetAt: now,
         },
       });
-      currentDailyUsed = 0;
     }
 
-    if (currentDailyUsed >= DAILY_PRO_LIMIT) {
+    // Atomic conditional increment of dailyAiCreditsUsed: only succeeds if dailyAiCreditsUsed < DAILY_PRO_LIMIT
+    const updated = await prisma.user.updateMany({
+      where: {
+        id: userId,
+        dailyAiCreditsUsed: { lt: DAILY_PRO_LIMIT },
+      },
+      data: {
+        dailyAiCreditsUsed: { increment: 1 },
+      },
+    });
+
+    if (updated.count === 0) {
       return {
         success: false,
         isPro: true,
@@ -72,16 +82,13 @@ export async function consumeAiCredit(
       };
     }
 
-    // Atomic increment of dailyAiCreditsUsed
-    const updated = await prisma.user.update({
+    const refreshed = await prisma.user.findUnique({
       where: { id: userId },
-      data: {
-        dailyAiCreditsUsed: { increment: 1 },
-      },
       select: { dailyAiCreditsUsed: true },
     });
 
-    const dailyRemaining = Math.max(0, DAILY_PRO_LIMIT - updated.dailyAiCreditsUsed);
+    const currentUsed = refreshed?.dailyAiCreditsUsed ?? DAILY_PRO_LIMIT;
+    const dailyRemaining = Math.max(0, DAILY_PRO_LIMIT - currentUsed);
     return { success: true, isPro: true, dailyRemaining };
   }
 
@@ -119,7 +126,7 @@ export async function refundAiCredit(userId: string): Promise<void> {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { plan: true, planExpiresAt: true, dailyAiCreditsUsed: true },
+      select: { plan: true, planExpiresAt: true },
     });
 
     if (!user) return;
@@ -127,14 +134,15 @@ export async function refundAiCredit(userId: string): Promise<void> {
     const isPro = user.plan === "PRO" && (!user.planExpiresAt || user.planExpiresAt > new Date());
 
     if (isPro) {
-      if (user.dailyAiCreditsUsed > 0) {
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            dailyAiCreditsUsed: { decrement: 1 },
-          },
-        });
-      }
+      await prisma.user.updateMany({
+        where: {
+          id: userId,
+          dailyAiCreditsUsed: { gt: 0 },
+        },
+        data: {
+          dailyAiCreditsUsed: { decrement: 1 },
+        },
+      });
       return;
     }
 
