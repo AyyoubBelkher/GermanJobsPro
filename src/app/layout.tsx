@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Cairo } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -43,6 +44,7 @@ export default async function RootLayout({
     >
       <body className={`${cairo.className} min-h-full flex flex-col font-sans`}>
         {children}
+        <GoogleAnalytics gaId="G-K8HLLFTTDF" />
       </body>
     </html>
   );
