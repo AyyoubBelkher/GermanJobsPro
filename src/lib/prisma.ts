@@ -26,6 +26,7 @@ function getPrismaClient(): PrismaClient {
       ssl: {
         rejectUnauthorized: false,
       },
+      connectionTimeoutMillis: 5000,
     });
 
   if (process.env.NODE_ENV !== "production") {
