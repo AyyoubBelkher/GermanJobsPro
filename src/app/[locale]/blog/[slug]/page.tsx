@@ -84,7 +84,19 @@ async function fetchPostBySlug(rawSlug: string) {
 }
 
 /**
- * Dynamic SEO metadata generation for Next.js 15 App Router.
+ * Resolves the author name dynamically based on whether the post was generated
+ * by AI or written by editorial staff, localized per page locale.
+ */
+function getAuthorName(generatedByAi: boolean, locale: string): string {
+  const isAr = locale === "ar";
+  if (generatedByAi) {
+    return isAr ? "فريق GermanJobsPro" : "GermanJobsPro Team";
+  }
+  return isAr ? "إدارة التحرير" : "Editorial Team";
+}
+
+/**
+ * Dynamic SEO metadata generation for Next.js App Router.
  */
 export async function generateMetadata({
   params,
@@ -104,6 +116,7 @@ export async function generateMetadata({
   const title = post.title;
   const description = extractDescription(post.markdown_content);
   const images = post.image_url ? [post.image_url] : [];
+  const authorName = getAuthorName(Boolean(post.generated_by_ai), locale);
 
   return {
     title: `${title} | GermanJobsPro`,
@@ -113,7 +126,7 @@ export async function generateMetadata({
       description,
       type: "article",
       publishedTime: post.createdAt.toISOString(),
-      authors: [post.generated_by_ai ? "AI Assistant" : "Author"],
+      authors: [authorName],
       tags: [post.category],
       images: images.length > 0 ? images : undefined,
     },
@@ -200,31 +213,66 @@ export default async function SinglePostPage({
   // Localized static strings
   const labels: Record<
     string,
-    { backToBlog: string; authorLabel: string; publishedLabel: string; minutesRead: string }
+    {
+      backToBlog: string;
+      authorLabel: string;
+      publishedLabel: string;
+      minutesRead: string;
+      relatedPosts: string;
+      viewAllPosts: string;
+      readArticle: string;
+      applyLinkTitle: string;
+      applyLinkDesc: string;
+      applyButton: string;
+    }
   > = {
     ar: {
       backToBlog: "← العودة إلى المدونة",
       authorLabel: "الكاتب:",
       publishedLabel: "تاريخ النشر:",
       minutesRead: "قراءة ٥ دقائق",
+      relatedPosts: "مقالات ذات صلة",
+      viewAllPosts: "عرض جميع المقالات ←",
+      readArticle: "اقرأ المقال ←",
+      applyLinkTitle: "رابط التقديم على الوظيفة",
+      applyLinkDesc: "اضغط على الزر أدناه للانتقال المباشر إلى صفحة التقديم الرسمية.",
+      applyButton: "التقديم الآن 🚀",
     },
     en: {
       backToBlog: "← Back to Blog",
       authorLabel: "Author:",
       publishedLabel: "Published:",
       minutesRead: "5 min read",
+      relatedPosts: "Related Articles",
+      viewAllPosts: "View all articles →",
+      readArticle: "Read Article →",
+      applyLinkTitle: "Job Application Link",
+      applyLinkDesc: "Click the button below to go directly to the official application page.",
+      applyButton: "Apply Now 🚀",
     },
     de: {
       backToBlog: "← Zurück zum Blog",
       authorLabel: "Autor:",
       publishedLabel: "Veröffentlicht:",
       minutesRead: "5 Min. Lesezeit",
+      relatedPosts: "Ähnliche Artikel",
+      viewAllPosts: "Alle Artikel anzeigen →",
+      readArticle: "Artikel lesen →",
+      applyLinkTitle: "Bewerbungslink zur Stelle",
+      applyLinkDesc: "Klicken Sie auf den Button, um direkt zur offiziellen Bewerbungsseite zu gelangen.",
+      applyButton: "Jetzt bewerben 🚀",
     },
     fr: {
       backToBlog: "← Retour au blog",
-      authorLabel: "Auteur:",
-      publishedLabel: "Publié le:",
+      authorLabel: "Auteur :",
+      publishedLabel: "Publié le :",
       minutesRead: "5 min de lecture",
+      relatedPosts: "Articles connexes",
+      viewAllPosts: "Voir tous les articles →",
+      readArticle: "Lire l'article →",
+      applyLinkTitle: "Lien de candidature à l'emploi",
+      applyLinkDesc: "Cliquez sur le bouton ci-dessous pour accéder directement à la page de candidature officielle.",
+      applyButton: "Postuler maintenant 🚀",
     },
   };
 
@@ -236,7 +284,7 @@ export default async function SinglePostPage({
     day: "numeric",
   });
 
-  const author = post.generated_by_ai ? "AI Assistant" : "Author";
+  const author = getAuthorName(Boolean(post.generated_by_ai), locale);
 
   return (
     <div dir={dir} className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 py-16 px-4 sm:px-6 lg:px-8">
@@ -333,10 +381,10 @@ export default async function SinglePostPage({
           <div className="my-10 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6 border border-blue-500/30">
             <div className={`space-y-2 ${isAr ? "text-right" : "text-left"}`}>
               <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight">
-                رابط التقديم على الوظيفة
+                {ui.applyLinkTitle}
               </h3>
               <p className="text-blue-100 text-sm sm:text-base">
-                اضغط على الزر أدناه للانتقال المباشر إلى صفحة التقديم الرسمية.
+                {ui.applyLinkDesc}
               </p>
             </div>
             <a
@@ -345,7 +393,7 @@ export default async function SinglePostPage({
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center px-8 py-4 rounded-2xl bg-white text-blue-600 font-bold text-base hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 whitespace-nowrap"
             >
-              التقديم الآن 🚀
+              {ui.applyButton}
             </a>
           </div>
         )}
@@ -361,7 +409,7 @@ export default async function SinglePostPage({
         />
 
         {/* Newsletter Subscription Section */}
-        <NewsletterForm />
+        <NewsletterForm locale={locale} />
 
         {/* Back Button */}
         <div className="pt-8 border-t border-slate-200 dark:border-slate-800/80">
@@ -373,18 +421,18 @@ export default async function SinglePostPage({
           </Link>
         </div>
 
-        {/* Related Posts Section ("مقالات ذات صلة") */}
+        {/* Related Posts Section */}
         {relatedPosts.length > 0 && (
           <section className={`mt-16 pt-12 border-t border-slate-200 dark:border-slate-800/80 space-y-8 ${isAr ? "text-right" : "text-left"}`} dir={dir}>
             <div className="flex items-center justify-between">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100">
-                مقالات ذات صلة
+                {ui.relatedPosts}
               </h2>
               <Link
                 href={`/${locale}/blog`}
                 className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
               >
-                عرض جميع المقالات ←
+                {ui.viewAllPosts}
               </Link>
             </div>
 
@@ -438,7 +486,7 @@ export default async function SinglePostPage({
                       href={`/${locale}/blog/${encodeURIComponent(relPost.slug)}`}
                       className="inline-flex items-center text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                     >
-                      اقرأ المقال ←
+                      {ui.readArticle}
                     </Link>
                   </div>
                 </div>

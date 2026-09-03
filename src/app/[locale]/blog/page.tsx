@@ -20,6 +20,11 @@ export default async function BlogPage({
   const resolvedSearchParams = await searchParams;
   const { page: pageStr, category: rawCategory } = resolvedSearchParams;
 
+  const isAr = locale === 'ar';
+  const isDe = locale === 'de';
+  const isFr = locale === 'fr';
+  const dir = isAr ? 'rtl' : 'ltr';
+
   const selectedCategory = rawCategory?.trim() || "all";
   const page = Math.max(1, parseInt(pageStr || '1', 10) || 1);
   const pageSize = 12;
@@ -149,16 +154,13 @@ export default async function BlogPage({
       title: post.title,
       excerpt: cleanExcerpt,
       cover_image: post.image_url || "",
-      author: post.generated_by_ai ? "AI Assistant" : "Author",
+      author: post.generated_by_ai
+        ? (isAr ? "فريق GermanJobsPro" : "GermanJobsPro Team")
+        : (isAr ? "إدارة التحرير" : "Editorial Team"),
       tags: [post.category],
       created_at: post.createdAt.toISOString(),
     };
   });
-
-  const isAr = locale === 'ar';
-  const isDe = locale === 'de';
-  const isFr = locale === 'fr';
-  const dir = isAr ? 'rtl' : 'ltr';
 
   // Localized static UI labels based on locale
   const labels: Record<
