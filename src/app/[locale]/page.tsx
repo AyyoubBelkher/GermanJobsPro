@@ -135,15 +135,15 @@ export default async function LandingPage({
     },
     {
       question: isAr
-        ? "كيف تعمل ميزة الاستيراد والتحسين السحري (1-Click Magic Import)؟"
+        ? "كيف تعمل ميزة التحويل الفوري والتكييف الذكي (1-Click PDF to DIN 5008)؟"
         : isDe
-        ? "Wie funktioniert der 1-Klick Magic Import?"
-        : "How does the 1-Click PDF Magic Import & ATS Auto-Fix work?",
+        ? "Wie funktioniert die 1-Klick Konvertierung & DIN 5008 Optimierung?"
+        : "How does the 1-Click PDF to DIN 5008 Auto-Adapt work?",
       answer: isAr
-        ? "بكل بساطة، يمكنك رفع سيرتك الذاتية الحالية بأي لغة (PDF). يقوم الذكاء الاصطناعي باستخراج كافة بياناتك وترجمتها وصياغة كافة المهام الوظيفية بأسلوب الأسماء الفعلية الاحترافي (Substantivstil)، وضبط مستويات اللغات حسب الإطار الأوروبي المشترك (CEFR)، ثم توليد ملف سيرة ذاتية DIN 5008 جاهز للتعديل والتحميل."
+        ? "بكل بساطة، يمكنك رفع سيرتك الذاتية الحالية (PDF) بأي لغة، ليقوم النظام فوراً بتكييفها وصياغة خبراتك بالأسلوب الاسمي الألماني (Substantivstil) واستخراج وثيقة رسمية متوافقة 100% مع معايير DIN 5008 جاهزة للتعديل والتحميل."
         : isDe
-        ? "Laden Sie einfach Ihren bestehenden Lebenslauf als PDF in beliebiger Sprache hoch. Unsere KI extrahiert Ihre Daten, übersetzt sie ins Deutsche, formuliert alle Tätigkeiten im professionellen Substantivstil und ordnet Sprachkenntnisse nach GeR/CEFR ein."
-        : "Simply upload your existing CV in PDF format (in any language). Our AI extracts your background, translates it to professional German, reformulates work duties into active action nouns (Substantivstil), maps languages to CEFR (A1-C2), and creates a ready-to-download DIN 5008 CV.",
+        ? "Laden Sie einfach Ihren bestehenden Lebenslauf als PDF in beliebiger Sprache hoch. Das System passt ihn sofort an, formuliert Ihre Erfahrungen im deutschen Substantivstil und erstellt ein 100% DIN 5008 konformes Dokument."
+        : "Simply upload your existing CV in PDF format (in any language). The system instantly adapts it, crafts your experience in German Substantivstil, and generates an official document 100% compliant with DIN 5008 standards.",
     },
     {
       question: isAr
@@ -176,10 +176,10 @@ export default async function LandingPage({
         ? "Kann ich die Plattform kostenlos nutzen?"
         : "Can I start and use the platform for free?",
       answer: isAr
-        ? "نعم! يمكنك التسجيل مجاناً وإنشاء وتعديل وتنزيل سيرتك الذاتية بتنسيق DIN 5008 الرسمي وتصفح جميع الوظائف. كما يحصل كل مستخدم جديد على رصيد ذكاء اصطناعي تجريبي لتجربة ميزات التوليد والاستيراد السحري."
+        ? "نعم! يمكنك التسجيل مجاناً وإنشاء وتعديل وتنزيل سيرتك الذاتية بتنسيق DIN 5008 الرسمي وتصفح جميع الوظائف. كما يحصل كل مستخدم جديد على رصيد ذكاء اصطناعي تجريبي لتجربة ميزات التوليد والتكييف الذكي (DIN 5008)."
         : isDe
         ? "Ja! Die Registrierung ist kostenlos. Sie können Ihren DIN 5008 Lebenslauf erstellen, bearbeiten, herunterladen und die Jobbörse nutzen. Zudem erhalten Sie kostenloses KI-Guthaben zum Testen."
-        : "Yes! Registration is completely free. You can build, edit, and download your official DIN 5008 CV and browse all jobs. Every new account receives free AI credits to test the Magic Import and cover letter generators.",
+        : "Yes! Registration is completely free. You can build, edit, and download your official DIN 5008 CV and browse all jobs. Every new account receives free AI credits to test the smart adaptation and cover letter generators.",
     },
   ];
 
@@ -191,10 +191,10 @@ export default async function LandingPage({
       ? "Zum Dashboard / Lebensläufe 🇩🇪"
       : "Go to Dashboard / My Resumes 🇩🇪"
     : isAr
-    ? "أنشئ سيرتك الذاتية مجاناً (1-Click PDF)"
+    ? "تحويل فوري (1-Click PDF)"
     : isDe
-    ? "Kostenlos Lebenslauf erstellen (1-Klick)"
-    : "Create German CV Free (1-Click PDF)";
+    ? "Sofort-Konvertierung (1-Klick PDF)"
+    : "Instant Convert (1-Click PDF)";
 
   const bottomCtaHref = user ? `/${locale}/dashboard/dossier` : `/${locale}/auth/signup`;
   const bottomCtaText = user
@@ -352,8 +352,8 @@ export default async function LandingPage({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Pillar 1: Magic Import & DIN 5008 */}
-            <div className="relative group overflow-hidden rounded-3xl bg-slate-900/80 border border-slate-800/80 hover:border-blue-500/40 p-8 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6">
+            {/* Pillar 1: German CV Converter & DIN 5008 Builder */}
+            <div className="relative group overflow-hidden rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-8 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6">
               <div className="space-y-4">
                 <div className="w-14 h-14 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   📄
@@ -361,22 +361,22 @@ export default async function LandingPage({
                 <div className="space-y-2">
                   <h3 className="text-xl sm:text-2xl font-bold text-white group-hover:text-blue-400 transition-colors">
                     {isAr
-                      ? "1. الاستيراد السحري والسيرة الذاتية (DIN 5008)"
+                      ? "1. محوّل ومنشئ السيرة الذاتية الألمانية (DIN 5008)"
                       : isDe
-                      ? "1. Magic Import & DIN 5008 Lebenslauf"
-                      : "1. Magic PDF Import & DIN 5008 CV"}
+                      ? "1. Konverter & DIN 5008 Lebenslauf-Generator"
+                      : "1. German CV Converter & DIN 5008 Builder"}
                   </h3>
                   <p className="text-sm text-slate-400 leading-relaxed">
                     {isAr
-                      ? "ارفع سيرتك الذاتية السابقة (PDF) بأي لغة، وسيقوم الذكاء الاصطناعي فوراً بترجمتها وصياغة كافة المهام بأسلوب الأسماء الفعلية الألمانية (Substantivstil) المتوافق مع معيار DIN 5008."
+                      ? "ارفع سيرتك الذاتية الحالية (PDF) بأي لغة، ليقوم النظام فوراً بتكييفها وصياغة خبراتك بالأسلوب الاسمي الألماني (Substantivstil) واستخراج وثيقة رسمية متوافقة 100% مع معايير DIN 5008."
                       : isDe
-                      ? "Importieren Sie jedes PDF. Die KI übersetzt und optimiert alle Tätigkeiten im authentischen Substantivstil nach offiziellen DIN 5008 Vorgaben."
-                      : "Upload your existing PDF resume in any language. The AI auto-translates, formats into standard DIN 5008 tabular layout, and writes bullet points in professional Substantivstil."}
+                      ? "Laden Sie Ihren aktuellen Lebenslauf (PDF) in beliebiger Sprache hoch. Das System passt ihn sofort an, formuliert Ihre Erfahrungen im deutschen Substantivstil und erstellt ein 100% DIN 5008 konformes offizielles Dokument."
+                      : "Upload your current resume (PDF) in any language. The system instantly adapts it, crafts your experience in German Substantivstil, and generates an official document 100% compliant with DIN 5008 standards."}
                   </p>
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 font-mono text-xs text-slate-300 space-y-1.5">
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-300 space-y-1.5">
                 <div className="flex items-center justify-between text-blue-400 font-bold text-[11px]">
                   <span>Substantivstil Output:</span>
                   <span>✓ 100% DIN 5008</span>
@@ -391,7 +391,7 @@ export default async function LandingPage({
             </div>
 
             {/* Pillar 2: AI Anschreiben Generator */}
-            <div className="relative group overflow-hidden rounded-3xl bg-slate-900/80 border border-slate-800/80 hover:border-indigo-500/40 p-8 transition-all shadow-xl hover:shadow-indigo-500/10 flex flex-col justify-between space-y-6">
+            <div className="relative group overflow-hidden rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-indigo-500/40 p-8 transition-all shadow-xl hover:shadow-indigo-500/10 flex flex-col justify-between space-y-6">
               <div className="space-y-4">
                 <div className="w-14 h-14 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   ✍️
@@ -414,7 +414,7 @@ export default async function LandingPage({
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 font-mono text-xs text-slate-300 space-y-1.5">
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-300 space-y-1.5">
                 <div className="flex items-center justify-between text-indigo-400 font-bold text-[11px]">
                   <span>DIN 5008 Anschreiben:</span>
                   <span>✓ Formal German</span>
@@ -426,7 +426,7 @@ export default async function LandingPage({
             </div>
 
             {/* Pillar 3: ATS Audit & CEFR Mapping */}
-            <div className="relative group overflow-hidden rounded-3xl bg-slate-900/80 border border-slate-800/80 hover:border-emerald-500/40 p-8 transition-all shadow-xl hover:shadow-emerald-500/10 flex flex-col justify-between space-y-6">
+            <div className="relative group overflow-hidden rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/40 p-8 transition-all shadow-xl hover:shadow-emerald-500/10 flex flex-col justify-between space-y-6">
               <div className="space-y-4">
                 <div className="w-14 h-14 rounded-2xl bg-emerald-600/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   🎯
@@ -449,7 +449,7 @@ export default async function LandingPage({
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 text-xs text-slate-300 flex items-center justify-between">
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-300 flex items-center justify-between">
                 <div className="flex items-center gap-2 font-bold text-emerald-400">
                   <span className="text-lg">98%</span>
                   <span>ATS Match Score</span>
@@ -459,7 +459,7 @@ export default async function LandingPage({
             </div>
 
             {/* Pillar 4: Complete Dossier Studio (Bewerbungsmappe) */}
-            <div className="relative group overflow-hidden rounded-3xl bg-slate-900/80 border border-slate-800/80 hover:border-blue-500/40 p-8 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6">
+            <div className="relative group overflow-hidden rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-8 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6">
               <div className="space-y-4">
                 <div className="w-14 h-14 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   📑
@@ -482,7 +482,7 @@ export default async function LandingPage({
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 text-xs text-slate-300 flex items-center justify-between">
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-300 flex items-center justify-between">
                 <span className="font-bold text-blue-400">PDF Compiler:</span>
                 <span className="text-slate-400">Deckblatt + Anschreiben + Lebenslauf</span>
               </div>
@@ -593,24 +593,24 @@ export default async function LandingPage({
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
             {/* Step 1 */}
-            <div className="rounded-3xl bg-slate-900/80 border border-slate-800 p-8 space-y-4 relative">
+            <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-8 space-y-4 relative">
               <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 font-black text-lg flex items-center justify-center">
                 01
               </div>
               <h3 className="text-xl font-bold text-white">
-                {isAr ? "1. استيراد السيرة الذاتية (PDF)" : isDe ? "1. PDF importieren" : "1. Import Your Existing CV"}
+                {isAr ? "1. تحويل فوري (1-Click PDF)" : isDe ? "1. Sofort-Konvertierung (1-Klick PDF)" : "1. Instant Conversion (1-Click PDF)"}
               </h3>
               <p className="text-sm text-slate-400 leading-relaxed">
                 {isAr
-                  ? "ارفع ملف سيرتك الحالية أو ابدأ من الصفر. يقوم الذكاء الاصطناعي باستخراج وتحويل البيانات فورياً."
+                  ? "ارفع سيرتك الذاتية الحالية (PDF) بأي لغة، ليقوم النظام فوراً بتكييفها وصياغة خبراتك وفق معايير DIN 5008."
                   : isDe
-                  ? "Laden Sie Ihr bestehendes PDF hoch oder starten Sie neu. Die Daten werden sofort analysiert."
-                  : "Upload your current PDF resume or start fresh. The AI instantly extracts and standardizes your background."}
+                  ? "Laden Sie Ihr bestehendes PDF hoch oder starten Sie neu. Die Daten werden sofort analysiert und angepasst."
+                  : "Upload your current PDF resume or start fresh. The system instantly extracts and adapts your background to DIN 5008."}
               </p>
             </div>
 
             {/* Step 2 */}
-            <div className="rounded-3xl bg-slate-900/80 border border-slate-800 p-8 space-y-4 relative">
+            <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-8 space-y-4 relative">
               <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 font-black text-lg flex items-center justify-center">
                 02
               </div>
@@ -627,7 +627,7 @@ export default async function LandingPage({
             </div>
 
             {/* Step 3 */}
-            <div className="rounded-3xl bg-slate-900/80 border border-slate-800 p-8 space-y-4 relative">
+            <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-8 space-y-4 relative">
               <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 font-black text-lg flex items-center justify-center">
                 03
               </div>

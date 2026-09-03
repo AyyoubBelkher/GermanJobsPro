@@ -1,21 +1,16 @@
 import "dotenv/config";
+import { Pool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
-import { PrismaNeon } from "@prisma/adapter-neon";
-import { neonConfig } from "@neondatabase/serverless";
-import ws from "ws";
-
-// Configure WebSocket constructor for Node.js / Serverless runtimes
-if (!neonConfig.webSocketConstructor && typeof window === "undefined") {
-  neonConfig.webSocketConstructor = ws;
-}
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
+  pgPool?: Pool;
 };
 
 /**
- * Initializes and caches PrismaClient instance using PrismaNeon serverless adapter over WebSockets (port 443).
- * Eliminates TCP 5432 timeouts, manages Neon compute cold starts, and ensures reliable serverless pooling.
+ * Native PostgreSQL TCP client over port 5432 using @prisma/adapter-pg.
+ * Eliminates WebSocket handshake timeouts (ETIMEDOUT) while fulfilling engineType="client".
  */
 function getPrismaClient(): PrismaClient {
   if (globalForPrisma.prisma) {
@@ -24,23 +19,20 @@ function getPrismaClient(): PrismaClient {
 
   const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL;
 
-  if (!connectionString) {
-    console.warn("[Prisma] Warning: DATABASE_URL is not set in environment variables.");
+  const pool =
+    globalForPrisma.pgPool ??
+    new Pool({
+      connectionString,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    });
+
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.pgPool = pool;
   }
 
-  const adapter = new PrismaNeon(
-    {
-      connectionString,
-    },
-    {
-      onPoolError: (err) => {
-        console.error("[Neon Pool Error]:", err.message);
-      },
-      onConnectionError: (err) => {
-        console.error("[Neon Connection Error]:", err.message);
-      },
-    }
-  );
+  const adapter = new PrismaPg(pool);
 
   const client = new PrismaClient({
     adapter,

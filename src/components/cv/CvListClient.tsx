@@ -126,7 +126,7 @@ export default function CvListClient({ initialCvs, locale }: CvListClientProps) 
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-extrabold uppercase tracking-wider">
-              <span>✨ 1-Click Magic Import & ATS Auto-Fix</span>
+              <span>✨ {isAr ? "تكييف ذكي (DIN 5008)" : "1-Click PDF to DIN 5008 Auto-Adapt"}</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white">
               {isAr
@@ -150,7 +150,7 @@ export default function CvListClient({ initialCvs, locale }: CvListClientProps) 
             className="shrink-0 px-6 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm shadow-xl shadow-blue-600/30 active:scale-95 transition-all cursor-pointer flex items-center gap-2.5 border border-blue-400/30"
           >
             <span className="text-lg">✨</span>
-            <span>{isAr ? "استيراد وتحسين سيرة ذاتية (PDF)" : isDe ? "Lebenslauf magisch importieren" : "1-Click PDF Magic Import"}</span>
+            <span>{isAr ? "تحويل فوري (1-Click PDF)" : isDe ? "1-Klick PDF zu DIN 5008" : "Instant Convert (1-Click PDF)"}</span>
           </button>
         </div>
       </div>
@@ -179,7 +179,7 @@ export default function CvListClient({ initialCvs, locale }: CvListClientProps) 
               className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-600/20 cursor-pointer"
             >
               <span>✨</span>
-              <span>{isAr ? "استيراد سيرة ذاتية سابقة (PDF)" : isDe ? "Bestehende PDF importieren" : "Magic Import (PDF)"}</span>
+              <span>{isAr ? "تكييف ذكي (DIN 5008)" : isDe ? "Bestehende PDF anpassen" : "1-Click PDF (DIN 5008)"}</span>
             </button>
             <Link
               href={`/${locale}/dashboard/cv/new`}

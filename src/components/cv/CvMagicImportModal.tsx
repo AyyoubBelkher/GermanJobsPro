@@ -174,17 +174,17 @@ export default function CvMagicImportModal({
           </div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-white">
             {isAr
-              ? "استيراد وتحسين سيرة ذاتية (1-Click PDF to DIN 5008)"
+              ? "تحويل فوري (1-Click PDF) وتكييف ذكي (DIN 5008)"
               : isDe
-              ? "Magischer Lebenslauf-Import (1-Klick zu DIN 5008)"
-              : "Magic CV Import & ATS Auto-Fix (1-Click DIN 5008)"}
+              ? "Sofort-Konvertierung (1-Klick) & DIN 5008 Anpassung"
+              : "1-Click PDF Converter & DIN 5008 Smart Adapt"}
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
             {isAr
-              ? "ارفع سيرتك الذاتية الحالية بأي لغة (PDF)، وسيقوم الذكاء الاصطناعي بترجمتها وتحويلها فوراً إلى صيغة DIN 5008 الألمانية الرسمية مع صياغة Substantivstil."
+              ? "ارفع سيرتك الذاتية الحالية (PDF) بأي لغة، ليقوم النظام فوراً بتكييفها وصياغة خبراتك بالأسلوب الاسمي الألماني (Substantivstil) واستخراج وثيقة رسمية متوافقة 100% مع معايير DIN 5008."
               : isDe
-              ? "Laden Sie Ihren Lebenslauf als PDF hoch. Die KI übersetzt und formatiert ihn nach DIN 5008 im professionellen Substantivstil."
-              : "Upload your existing CV in any language (PDF) and our AI will instantly translate & format it into a DIN 5008 German standard resume."}
+              ? "Laden Sie Ihren aktuellen Lebenslauf (PDF) in beliebiger Sprache hoch. Das System passt ihn sofort an, formuliert Ihre Erfahrungen im deutschen Substantivstil und erstellt ein 100% DIN 5008 konformes Dokument."
+              : "Upload your current resume (PDF) in any language. The system instantly adapts it, crafts your experience in German Substantivstil, and generates an official document 100% compliant with DIN 5008 standards."}
           </p>
         </div>
 
@@ -399,10 +399,10 @@ export default function CvMagicImportModal({
                   <span>✨</span>
                   <span>
                     {isAr
-                      ? "بدء الاستيراد والتحويل التلقائي"
+                      ? "تحويل فوري (1-Click PDF)"
                       : isDe
-                      ? "Automatischen Import starten"
-                      : "Start 1-Click Magic Import"}
+                      ? "Sofort-Konvertierung starten"
+                      : "Start 1-Click Conversion"}
                   </span>
                 </button>
               </div>

@@ -60,6 +60,24 @@ export const AUTH_RATE_LIMITS = {
     windowMs: 60 * 1000, // 1 minute (20 requests/min per IP)
     message: "تم تجاوز معدل الطلبات المسموح للذكاء الاصطناعي. يرجى الانتظار بضع ثوانٍ / Too many AI requests. Please slow down.",
   },
+  SUPPORT: {
+    action: "support:contact",
+    limit: 5,
+    windowMs: 15 * 60 * 1000, // 15 minutes (max 5 tickets per IP per 15 min)
+    message: "تم تجاوز الحد المسموح لإرسال رسائل الدعم الفني. يرجى المحاولة لاحقاً / Too many support requests. Please try again later.",
+  },
+  CONTACT: {
+    action: "support:contact",
+    limit: 5,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    message: "تم تجاوز الحد المسموح لإرسال رسائل الدعم الفني. يرجى المحاولة لاحقاً / Too many support requests. Please try again later.",
+  },
+  NEWSLETTER: {
+    action: "newsletter:subscribe",
+    limit: 5,
+    windowMs: 15 * 60 * 1000, // 15 minutes (max 5 subscriptions per IP per 15 min)
+    message: "تم تجاوز الحد المسموح للاشتراك في النشرة البريدية. يرجى المحاولة لاحقاً / Too many newsletter subscription attempts. Please try again later.",
+  },
 } as const;
 
 /**

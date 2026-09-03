@@ -23,7 +23,7 @@ export async function generateMetadata({
       ? "Preise & Tarife (PRO Pass) 💎 | GermanJobsPro 🇩🇪"
       : "Pricing & Plans (PRO Pass) 💎 | GermanJobsPro 🇩🇪",
     description: isAr
-      ? "استثمر في مستقبلك المهني في ألمانيا. خطط وأسعار شفافة تمنحك وصولاً غير محدود لأدوات الذكاء الاصطناعي والاستيراد السحري وتجميع ملف الترشيح الكامل (DIN 5008)."
+      ? "استثمر في مستقبلك المهني في ألمانيا. خطط وأسعار شفافة تمنحك وصولاً غير محدود لأدوات الذكاء الاصطناعي والتحويل الفوري (1-Click PDF) وتجميع ملف الترشيح الكامل (DIN 5008)."
       : "Transparente Preise für Ihren DIN 5008 Lebenslauf, KI-Anschreiben und vollständige Bewerbungsmappe.",
   };
 }
@@ -86,7 +86,7 @@ export default async function PublicPricingPage({
 
           <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal">
             {isAr
-              ? "اختر الخطة المناسبة لك واجتز فلاتر التوظيف الألمانية باحترافية مع أدوات الذكاء الاصطناعي والاستيراد السحري (DIN 5008)."
+              ? "اختر الخطة المناسبة لك واجتز فلاتر التوظيف الألمانية باحترافية مع أدوات الذكاء الاصطناعي والتكييف الذكي (DIN 5008)."
               : isDe
               ? "Wählen Sie den passenden Plan und überzeugen Sie deutsche Arbeitgeber mit DIN 5008 konformen Bewerbungsunterlagen."
               : "Choose the plan that fits your career goals and pass German ATS filters with our certified DIN 5008 AI toolkit."}

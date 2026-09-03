@@ -361,7 +361,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-blue-600/25 border border-blue-400/30 transition-all cursor-pointer"
           >
             <span>✨</span>
-            <span>{isAr ? "استيراد وتحسين سيرة ذاتية (1-Click PDF to DIN 5008)" : isDe ? "1-Klick PDF zu DIN 5008" : "1-Click PDF to DIN 5008"}</span>
+            <span>{isAr ? "تحويل فوري (1-Click PDF)" : isDe ? "1-Klick PDF zu DIN 5008" : "1-Click PDF to DIN 5008"}</span>
           </button>
 
           <a

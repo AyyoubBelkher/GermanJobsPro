@@ -111,8 +111,30 @@ export async function POST(request: NextRequest) {
       ? "PRO"
       : promo.planGranted;
 
-    const [updatedUser] = await prisma.$transaction([
-      prisma.user.update({
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      // Atomic conditional update to prevent race conditions:
+      // only increment timesUsed if timesUsed < maxUses, isActive = true, and expiresAt is valid
+      const rowsUpdated = await tx.$executeRaw`
+        UPDATE "PromoCode"
+        SET "timesUsed" = "timesUsed" + 1
+        WHERE "code" = ${cleanCode}
+          AND "isActive" = true
+          AND "timesUsed" < "maxUses"
+          AND ("expiresAt" IS NULL OR "expiresAt" > NOW());
+      `;
+
+      if (rowsUpdated === 0) {
+        throw new Error("PROMO_EXHAUSTED_OR_EXPIRED");
+      }
+
+      await tx.userPromoRedemption.create({
+        data: {
+          userId: authResult.user.id,
+          promoCodeId: promo.id,
+        },
+      });
+
+      return await tx.user.update({
         where: { id: authResult.user.id },
         data: {
           plan: finalPlan,
@@ -125,18 +147,8 @@ export async function POST(request: NextRequest) {
           planExpiresAt: true,
           aiCredits: true,
         },
-      }),
-      prisma.promoCode.update({
-        where: { id: promo.id },
-        data: { timesUsed: { increment: 1 } },
-      }),
-      prisma.userPromoRedemption.create({
-        data: {
-          userId: authResult.user.id,
-          promoCodeId: promo.id,
-        },
-      }),
-    ]);
+      });
+    });
 
     const successMessage = isCurrentlyActivePro && promo.planGranted !== "PRO"
       ? `تم تفعيل الكود بنجاح! تم تمديد اشتراكك وإضافة ${promo.creditsGranted} رصيد AI.`
@@ -154,6 +166,25 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error: unknown) {
+    if (error instanceof Error && error.message === "PROMO_EXHAUSTED_OR_EXPIRED") {
+      return NextResponse.json(
+        { success: false, error: "تم استنفاد الحد الأقصى لاستخدام هذا الكود الترويجي أو انتهت صلاحيته." },
+        { status: 400 }
+      );
+    }
+
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code: string }).code === "P2002"
+    ) {
+      return NextResponse.json(
+        { success: false, error: "لقد قمت بالفعل باستخدام هذا الكود الترويجي من قبل على حسابك." },
+        { status: 400 }
+      );
+    }
+
     console.error("[POST /api/promo/redeem Error]:", error instanceof Error ? error.message : error);
     return NextResponse.json(
       { success: false, error: "حدث خطأ أثناء تفعيل الكود. يرجى المحاولة لاحقاً." },

@@ -143,10 +143,10 @@ export default function PublicPricingClient({
         ? "Handelt es sich um ein Abonnement oder eine Einmalzahlung?"
         : "Is this a recurring subscription or a one-time pass?",
       answer: isAr
-        ? "باقة PRO Pass هي تصريح شامل يمنحك وصولاً فورياً وكاملاً لكافة ميزات الذكاء الاصطناعي والاستيراد السحري وتجميع ملف الترشيح بدون أي رسوم خفية. يمكنك الإلغاء أو التجديد بكل حرية من لوحة التحكم."
+        ? "باقة PRO Pass هي تصريح شامل يمنحك وصولاً فورياً وكاملاً لكافة ميزات الذكاء الاصطناعي والتكييف الذكي (DIN 5008) وتجميع ملف الترشيح بدون أي رسوم خفية. يمكنك الإلغاء أو التجديد بكل حرية من لوحة التحكم."
         : isDe
         ? "Der PRO Pass bietet vollen Zugriff auf alle KI-Funktionen, den DIN 5008 Generator und die Bewerbungsmappe ohne versteckte Kosten. Sie behalten die volle Kontrolle."
-        : "The PRO Pass gives you full, unrestricted access to all AI engines, Magic Import, and the complete Dossier Studio with no hidden fees.",
+        : "The PRO Pass gives you full, unrestricted access to all AI engines, instant DIN 5008 adaptation, and the complete Dossier Studio with no hidden fees.",
     },
     {
       question: isAr
@@ -158,7 +158,7 @@ export default function PublicPricingClient({
         ? "يتم تفعيل كافة ميزات باقة المحترفين فورياً وتلقائياً على حسابك بمجرد إتمام الدفع، بما في ذلك زيادة رصيد الذكاء الاصطناعي اليومي، وتفعيل استيراد وتوليد ملفات الترشيح (Bewerbungsmappe) الكاملة."
         : isDe
         ? "Ihr Konto wird sofort nach der erfolgreichen Zahlung automatisch auf PRO hochgestuft. Alle Premium-Funktionen stehen Ihnen ohne Wartezeit zur Verfügung."
-        : "Your account is upgraded to PRO instantly upon successful checkout. All premium AI generators, Magic Import, and PDF export tools become active immediately.",
+        : "Your account is upgraded to PRO instantly upon successful checkout. All premium AI generators, 1-Click PDF to DIN 5008 adaptation, and PDF export tools become active immediately.",
     },
     {
       question: isAr
@@ -265,7 +265,7 @@ export default function PublicPricingClient({
               </li>
               <li className="flex items-center gap-3">
                 <span className="text-emerald-400 font-bold">✓</span>
-                <span>{isAr ? "تجربة الاستيراد السحري (1-Click PDF Import)" : "1-Click PDF Magic Import Trial"}</span>
+                <span>{isAr ? "تحويل فوري (1-Click PDF)" : "1-Click PDF Conversion Trial"}</span>
               </li>
               <li className="flex items-center gap-3">
                 <span className="text-emerald-400 font-bold">✓</span>
@@ -351,7 +351,7 @@ export default function PublicPricingClient({
               <li className="flex items-center gap-3">
                 <span className="text-blue-400 font-bold">✓</span>
                 <span className="font-semibold text-white">
-                  {isAr ? "استيراد وتحسين سحري غير محدود (1-Click PDF to DIN 5008)" : "Unlimited 1-Click PDF Magic Import"}
+                  {isAr ? "تكييف ذكي (DIN 5008) وتحويل فوري غير محدود" : "Unlimited 1-Click PDF to DIN 5008 Adaptation"}
                 </span>
               </li>
               <li className="flex items-center gap-3">
@@ -505,7 +505,7 @@ export default function PublicPricingClient({
                 <td className="py-3.5 px-6 text-center text-emerald-400 font-bold bg-blue-600/5 border-x border-blue-500/10">✓ {isAr ? "غير محدود" : "Unlimited"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium">{isAr ? "الاستيراد السحري (1-Click PDF Magic Import)" : "1-Click PDF Magic Import"}</td>
+                <td className="py-3.5 px-6 font-medium">{isAr ? "تحويل فوري (1-Click PDF)" : "1-Click PDF to DIN 5008"}</td>
                 <td className="py-3.5 px-6 text-center text-slate-400">{isAr ? "تجريبي" : "1 Trial"}</td>
                 <td className="py-3.5 px-6 text-center text-emerald-400 font-bold bg-blue-600/5 border-x border-blue-500/10">✓ {isAr ? "غير محدود" : "Unlimited"}</td>
               </tr>
