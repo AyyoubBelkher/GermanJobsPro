@@ -329,10 +329,10 @@ export default function ContactClient({ initialUser, locale }: ContactClientProp
           </p>
 
           <a
-            href="mailto:ayyoubbelkher1@gmail.com"
+            href="mailto:support@germanjobspro.com"
             className="block w-full py-2.5 px-4 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-blue-400 hover:text-blue-300 font-mono text-xs text-center font-bold transition-colors"
           >
-            ayyoubbelkher1@gmail.com
+            support@germanjobspro.com
           </a>
         </div>
 

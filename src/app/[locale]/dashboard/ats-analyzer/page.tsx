@@ -10,10 +10,13 @@ import AtsAnalyzerClient from "@/components/ats/AtsAnalyzerClient";
 
 export default async function AtsAnalyzerPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams?: Promise<{ jobDescription?: string }>;
 }) {
   const { locale } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
   const isAr = locale === "ar";
   const isDe = locale === "de";
   const dir = isAr ? "rtl" : "ltr";
@@ -52,7 +55,11 @@ export default async function AtsAnalyzerPage({
           </span>
         </div>
 
-        <AtsAnalyzerClient userCvs={userCvs} locale={locale} />
+        <AtsAnalyzerClient
+          userCvs={userCvs}
+          locale={locale}
+          initialJobDescription={resolvedSearchParams.jobDescription || ""}
+        />
       </main>
 
       <Footer locale={locale} />

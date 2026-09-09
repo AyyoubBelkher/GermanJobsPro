@@ -138,6 +138,8 @@ export async function POST(request: NextRequest) {
       languageReq,
       salary,
       applyUrl,
+      contactEmail,
+      requirements,
       descriptionRaw,
       publishedAt,
     } = body;
@@ -173,6 +175,8 @@ export async function POST(request: NextRequest) {
         jobType: jobType !== undefined && jobType !== null && String(jobType).trim() ? String(jobType).trim() : "Full-time",
         languageReq: languageReq !== undefined && languageReq !== null && String(languageReq).trim() ? String(languageReq).trim() : "B1/B2",
         salary: salary !== undefined && salary !== null && String(salary).trim() ? String(salary).trim() : null,
+        contactEmail: contactEmail !== undefined && contactEmail !== null && String(contactEmail).trim() ? String(contactEmail).trim() : null,
+        requirements: requirements !== undefined && requirements !== null && String(requirements).trim() ? String(requirements).trim() : null,
         descriptionRaw: descriptionRaw !== undefined && descriptionRaw !== null && String(descriptionRaw).trim() ? String(descriptionRaw).trim() : null,
         publishedAt: publishedAt ? new Date(publishedAt as string | number | Date) : new Date(),
       },

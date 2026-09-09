@@ -433,7 +433,7 @@ export async function sendSupportAlertEmail(ticket: {
   subject: string;
   message: string;
 }): Promise<{ success: boolean; error?: string }> {
-  const adminEmail = process.env.ADMIN_SUPPORT_EMAIL || "ayyoubbelkher1@gmail.com";
+  const adminEmail = process.env.ADMIN_SUPPORT_EMAIL || "support@germanjobspro.com";
   const { subject, html, text } = getSupportTicketEmailHtml(ticket);
   return sendEmail({
     to: adminEmail,

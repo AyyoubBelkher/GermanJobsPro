@@ -302,10 +302,10 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
             <div className="space-y-1">
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-black text-white">$9.99</span>
-                <span className="text-xs text-slate-400">{isAr ? "لمدة 3 أشهر (90 يوماً)" : "for 3 months"}</span>
+                <span className="text-xs text-slate-400">{isAr ? "صلاحية 90 يوماً (دورة التقديم)" : isDe ? "für 90 Tage" : "for 90 days (Application Cycle)"}</span>
               </div>
               <p className="text-[11px] text-emerald-400 font-semibold">
-                {isAr ? "≈ 100 درهم مغربي • 37 ريال سعودي • دفع لمرة واحدة" : "One-time payment • No hidden fees"}
+                {isAr ? "دفع لمرة واحدة • بدون اشتراك متكرر أو رسوم خفية" : isDe ? "Einmalzahlung • Keine wiederkehrenden Gebühren" : "One-time payment • No recurring fees"}
               </p>
             </div>
 

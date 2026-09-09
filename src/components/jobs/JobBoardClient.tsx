@@ -13,8 +13,24 @@ export interface JobItem {
   languageReq: string | null;
   salary: string | null;
   applyUrl: string;
+  contactEmail?: string | null;
+  requirements?: string | null;
   descriptionRaw: string | null;
   publishedAt: string | Date;
+}
+
+export function stripHtml(html?: string | null): string {
+  if (!html) return "";
+  return html
+    .replace(/<[^>]*>?/gm, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 interface JobBoardClientProps {
@@ -318,20 +334,18 @@ export default function JobBoardClient({
                   >
                     {/* Job Title & Company */}
                     <td className="py-4 px-6">
-                      <div className="space-y-0.5">
-                        <a
-                          href={job.applyUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-bold text-white hover:text-blue-400 transition-colors text-sm sm:text-base flex items-center gap-1.5"
+                      <div className="space-y-0.5" dir="ltr">
+                        <Link
+                          href={`/${locale}/jobs/${job.id}`}
+                          className="font-bold text-white hover:text-blue-400 transition-colors text-sm sm:text-base flex items-center gap-1.5 text-start"
                         >
-                          <span>{job.title}</span>
-                          <span className="text-slate-500 text-xs group-hover:text-blue-400">↗</span>
-                        </a>
-                        <p className="text-xs text-slate-400 flex items-center gap-2">
-                          <span className="font-semibold text-slate-300">🏢 {job.company}</span>
+                          <span className="truncate">{job.title}</span>
+                          <span className="text-slate-500 text-xs group-hover:text-blue-400 shrink-0">→</span>
+                        </Link>
+                        <p className="text-xs text-slate-400 flex items-center gap-2 text-start">
+                          <span className="font-semibold text-slate-300 truncate">🏢 {job.company}</span>
                           {job.salary && (
-                            <span className="text-emerald-400 font-medium">💰 {job.salary}</span>
+                            <span className="text-emerald-400 font-medium shrink-0">💰 {job.salary}</span>
                           )}
                         </p>
                       </div>
@@ -368,16 +382,14 @@ export default function JobBoardClient({
                     {/* Action Buttons */}
                     <td className="py-4 px-6 whitespace-nowrap">
                       <div className="flex items-center justify-center gap-2">
-                        {/* Direct Apply */}
-                        <a
-                          href={job.applyUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        {/* View Details & Apply internally */}
+                        <Link
+                          href={`/${locale}/jobs/${job.id}`}
                           className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition-all flex items-center gap-1 cursor-pointer"
                         >
-                          <span>{isAr ? "التقديم المباشر" : isDe ? "Bewerben" : "Apply"}</span>
-                          <span>↗</span>
-                        </a>
+                          <span>{isAr ? "التفاصيل والتقديم" : isDe ? "Details" : "View & Apply"}</span>
+                          <span>→</span>
+                        </Link>
 
                         {/* Generate Anschreiben */}
                         <Link
@@ -385,7 +397,7 @@ export default function JobBoardClient({
                             job.title
                           )}&companyName=${encodeURIComponent(
                             job.company
-                          )}&jobDescription=${encodeURIComponent(job.descriptionRaw || "")}`}
+                          )}&jobDescription=${encodeURIComponent(job.requirements || job.descriptionRaw || "")}`}
                           title={isAr ? "توليد خطاب تغطية بالذكاء الاصطناعي لهذه الوظيفة" : "Generate Cover Letter with AI"}
                           className="p-2 rounded-xl bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/20 transition-all cursor-pointer"
                         >
@@ -394,8 +406,10 @@ export default function JobBoardClient({
 
                         {/* ATS Analyzer */}
                         <Link
-                          href={`/${locale}/dashboard/ats-analyzer`}
-                          title={isAr ? "فحص ملاءمة السيرة الذاتية" : "Check ATS Resume"}
+                          href={`/${locale}/dashboard/ats-analyzer?jobDescription=${encodeURIComponent(
+                            job.requirements || job.descriptionRaw || ""
+                          )}`}
+                          title={isAr ? "فحص ملاءمة السيرة الذاتية (ATS)" : "Check ATS Resume"}
                           className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all cursor-pointer"
                         >
                           <span className="text-xs">🔍 ATS</span>
@@ -424,13 +438,13 @@ export default function JobBoardClient({
                   <span className="text-[11px] text-slate-500">{formatDate(job.publishedAt)}</span>
                 </div>
 
-                <div>
+                <div dir="ltr" className="text-start">
                   <h3 className="font-extrabold text-white text-base leading-snug hover:text-blue-400 transition-colors">
-                    <a href={job.applyUrl} target="_blank" rel="noopener noreferrer">
+                    <Link href={`/${locale}/jobs/${job.id}`} className="block text-start">
                       {job.title}
-                    </a>
+                    </Link>
                   </h3>
-                  <p className="text-xs text-slate-400 mt-1">🏢 {job.company}</p>
+                  <p className="text-xs text-slate-400 mt-1 text-start">🏢 {job.company}</p>
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap text-xs">
@@ -448,22 +462,20 @@ export default function JobBoardClient({
                 </div>
 
                 {job.descriptionRaw && (
-                  <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                    {job.descriptionRaw}
+                  <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed text-start" dir="ltr">
+                    {stripHtml(job.descriptionRaw)}
                   </p>
                 )}
               </div>
 
               <div className="pt-4 border-t border-slate-800/80 space-y-2">
-                <a
-                  href={job.applyUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  href={`/${locale}/jobs/${job.id}`}
                   className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs text-center transition-all shadow-md shadow-blue-600/20 flex items-center justify-center gap-1 cursor-pointer"
                 >
-                  <span>{isAr ? "التقديم المباشر في الشركة" : isDe ? "Jetzt bewerben" : "Apply Now"}</span>
-                  <span>↗</span>
-                </a>
+                  <span>{isAr ? "تفاصيل الوظيفة والتقديم" : isDe ? "Details & Bewerben" : "View Details & Apply"}</span>
+                  <span>→</span>
+                </Link>
 
                 <div className="grid grid-cols-2 gap-2">
                   <Link
@@ -471,7 +483,7 @@ export default function JobBoardClient({
                       job.title
                     )}&companyName=${encodeURIComponent(
                       job.company
-                    )}&jobDescription=${encodeURIComponent(job.descriptionRaw || "")}`}
+                    )}&jobDescription=${encodeURIComponent(job.requirements || job.descriptionRaw || "")}`}
                     className="py-2 px-3 rounded-xl bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/20 font-bold text-xs text-center transition-all flex items-center justify-center gap-1"
                   >
                     <span>✨</span>
@@ -479,7 +491,9 @@ export default function JobBoardClient({
                   </Link>
 
                   <Link
-                    href={`/${locale}/dashboard/ats-analyzer`}
+                    href={`/${locale}/dashboard/ats-analyzer?jobDescription=${encodeURIComponent(
+                      job.requirements || job.descriptionRaw || ""
+                    )}`}
                     className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs text-center transition-all flex items-center justify-center gap-1"
                   >
                     <span>🔍</span>

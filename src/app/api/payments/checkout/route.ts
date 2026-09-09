@@ -4,7 +4,7 @@ import { verifyUserSession } from "@/lib/user-session";
 
 /**
  * POST /api/payments/checkout
- * Initiates a checkout session for GermanJobsPro PRO PASS ($9.99 / ~100 MAD).
+ * Initiates a checkout session for GermanJobsPro PRO PASS ($9.99 USD / 90-day application cycle).
  */
 export async function POST() {
   try {

@@ -143,10 +143,10 @@ export default function PublicPricingClient({
         ? "Handelt es sich um ein Abonnement oder eine Einmalzahlung?"
         : "Is this a recurring subscription or a one-time pass?",
       answer: isAr
-        ? "باقة PRO Pass هي تصريح شامل يمنحك وصولاً فورياً وكاملاً لكافة ميزات الذكاء الاصطناعي والتكييف الذكي (DIN 5008) وتجميع ملف الترشيح بدون أي رسوم خفية. يمكنك الإلغاء أو التجديد بكل حرية من لوحة التحكم."
+        ? "باقة PRO Pass بقيمة 9.99 دولار أمريكي ($9.99 USD) هي تصريح وصول شامل لدورة تقديم كاملة مدتها 90 يوماً متواصلة. يتم الدفع لمرة واحدة فقط بدون أي تجديد تلقائي أو اشتراكات دورية خفية."
         : isDe
-        ? "Der PRO Pass bietet vollen Zugriff auf alle KI-Funktionen, den DIN 5008 Generator und die Bewerbungsmappe ohne versteckte Kosten. Sie behalten die volle Kontrolle."
-        : "The PRO Pass gives you full, unrestricted access to all AI engines, instant DIN 5008 adaptation, and the complete Dossier Studio with no hidden fees.",
+        ? "Der PRO Pass für einmalig 9,99 USD ist ein 90-Tage-Komplettzugang für Ihren gesamten Bewerbungszyklus. Es gibt keine automatische Verlängerung und keine versteckten Kosten."
+        : "The PRO Pass is priced at $9.99 USD as a one-time payment for 90 full days of access (a full job application cycle), with no recurring auto-renewals or hidden fees.",
     },
     {
       question: isAr
@@ -247,7 +247,7 @@ export default function PublicPricingClient({
             </div>
 
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl sm:text-5xl font-black text-white">0 €</span>
+              <span className="text-4xl sm:text-5xl font-black text-white">$0</span>
               <span className="text-xs text-slate-400 font-medium">
                 {isAr ? "/ مجاناً للأبد" : isDe ? "/ dauerhaft kostenlos" : "/ forever free"}
               </span>
@@ -335,14 +335,14 @@ export default function PublicPricingClient({
             <div className="space-y-1">
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-200">
-                  9.99 €
+                  $9.99
                 </span>
                 <span className="text-xs text-slate-400 font-medium">
-                  {isAr ? "/ تصريح كامل (أو ما يعادل 100 درهم)" : isDe ? "/ Einmaliger PRO Pass" : "/ Full Access Pass"}
+                  {isAr ? "/ تصريح كامل (صلاحية 90 يوماً)" : isDe ? "/ 90 Tage PRO Pass" : "/ 90-Day Full Access Pass"}
                 </span>
               </div>
               <p className="text-[11px] text-emerald-400 font-medium">
-                {isAr ? "✓ تفعيل فوري بدون قيود" : isDe ? "✓ Sofortige Freischaltung" : "✓ Instant Activation"}
+                {isAr ? "✓ دفع لمرة واحدة لدورة التقديم • تفعيل فوري" : isDe ? "✓ Einmalzahlung für Ihren Bewerbungszyklus • Sofortige Freischaltung" : "✓ One-time payment for your application cycle • Instant Activation"}
               </p>
             </div>
 

@@ -275,6 +275,8 @@ model Job {
   languageReq    String?  @default("B1/B2")
   salary         String?
   applyUrl       String   @unique
+  contactEmail   String?
+  requirements   String?
   descriptionRaw String?
   publishedAt    DateTime @default(now())
   createdAt      DateTime @default(now())

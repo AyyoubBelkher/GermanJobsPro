@@ -13,9 +13,14 @@ interface CvOption {
 interface AtsAnalyzerClientProps {
   userCvs: CvOption[];
   locale: string;
+  initialJobDescription?: string;
 }
 
-export default function AtsAnalyzerClient({ userCvs, locale }: AtsAnalyzerClientProps) {
+export default function AtsAnalyzerClient({
+  userCvs,
+  locale,
+  initialJobDescription = "",
+}: AtsAnalyzerClientProps) {
   const isAr = locale === "ar";
   const isDe = locale === "de";
 
@@ -26,7 +31,7 @@ export default function AtsAnalyzerClient({ userCvs, locale }: AtsAnalyzerClient
   );
   const [selectedCvId, setSelectedCvId] = useState<string>(userCvs[0]?.id || "");
   const [cvText, setCvText] = useState("");
-  const [jobDescription, setJobDescription] = useState("");
+  const [jobDescription, setJobDescription] = useState(initialJobDescription);
   const [language, setLanguage] = useState(locale || "de");
 
   // PDF Upload states

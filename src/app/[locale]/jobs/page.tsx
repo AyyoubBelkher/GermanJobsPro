@@ -86,6 +86,8 @@ export default async function JobsPage({
     languageReq: string | null;
     salary: string | null;
     applyUrl: string;
+    contactEmail: string | null;
+    requirements: string | null;
     descriptionRaw: string | null;
     publishedAt: Date;
   }> = [];
@@ -121,6 +123,8 @@ export default async function JobsPage({
     languageReq: j.languageReq,
     salary: j.salary,
     applyUrl: j.applyUrl,
+    contactEmail: j.contactEmail,
+    requirements: j.requirements,
     descriptionRaw: j.descriptionRaw,
     publishedAt: j.publishedAt instanceof Date ? j.publishedAt.toISOString() : String(j.publishedAt),
   }));
