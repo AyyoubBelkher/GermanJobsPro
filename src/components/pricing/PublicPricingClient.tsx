@@ -39,7 +39,7 @@ export default function PublicPricingClient({
   const isPro = user?.plan === "PRO" && (!user.planExpiresAt || new Date(user.planExpiresAt) > new Date());
   const isTrial = user?.plan === "TRIAL";
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (!user) {
       router.push(`/${locale}/auth/login?redirect=/${locale}/pricing`);
       return;
@@ -49,21 +49,18 @@ export default function PublicPricingClient({
     setCheckoutError(null);
 
     try {
-      const res = await fetch("/api/payments/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planType: "PRO_PASS" }),
-      });
+      const baseUrl = "https://germanjobspro.gumroad.com/l/pro-pass";
+      const params: string[] = [];
 
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || (isAr ? "فشل تجهيز عملية الدفع" : "Failed to initiate checkout"));
+      if (user?.email) {
+        params.push(`email=${encodeURIComponent(user.email)}`);
+      }
+      if (user?.id) {
+        params.push(`custom_fields[userId]=${encodeURIComponent(user.id)}`);
       }
 
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      }
+      const redirectUrl = params.length > 0 ? `${baseUrl}?${params.join("&")}` : baseUrl;
+      window.location.href = redirectUrl;
     } catch (err: unknown) {
       setCheckoutError(err instanceof Error ? err.message : "Payment error");
       setIsCheckingOut(false);
@@ -131,10 +128,10 @@ export default function PublicPricingClient({
         ? "Welche Zahlungsmethoden werden unterstützt?"
         : "What payment methods are supported?",
       answer: isAr
-        ? "نوفر الدفع الآمن والمشفر بنسبة 100% عبر بوابة Lemon Squeezy العالمية. يمكنك الدفع باستخدام البطاقات الائتمانية والبنكية (Visa, Mastercard, American Express)، بالإضافة إلى Apple Pay و Google Pay و PayPal."
+        ? "نوفر الدفع الآمن والمشفر بنسبة 100% عبر بوابة Gumroad العالمية. يمكنك الدفع باستخدام البطاقات الائتمانية والبنكية (Visa, Mastercard, American Express)، بالإضافة إلى Apple Pay و Google Pay و PayPal."
         : isDe
-        ? "Wir unterstützen alle gängigen Kreditkarten (Visa, Mastercard, Amex), Apple Pay, Google Pay sowie PayPal über unsere sichere Lemon Squeezy Zahlungsabwicklung."
-        : "We support all major credit/debit cards (Visa, MasterCard, Amex), Apple Pay, Google Pay, and PayPal with 100% bank-grade encryption via Lemon Squeezy.",
+        ? "Wir unterstützen alle gängigen Kreditkarten (Visa, Mastercard, Amex), Apple Pay, Google Pay sowie PayPal über unsere sichere Gumroad Zahlungsabwicklung."
+        : "We support all major credit/debit cards (Visa, MasterCard, Amex), Apple Pay, Google Pay, and PayPal with 100% bank-grade encryption via Gumroad.",
     },
     {
       question: isAr
@@ -552,7 +549,7 @@ export default function PublicPricingClient({
         <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
           <div className="text-2xl">🔒</div>
           <h4 className="font-bold text-white text-xs sm:text-sm">{isAr ? "دفع آمن 100%" : "100% Secure Checkout"}</h4>
-          <p className="text-[11px] text-slate-400">{isAr ? "تشفير بنكي عبر Lemon Squeezy" : "Bank-grade 256-bit encryption"}</p>
+          <p className="text-[11px] text-slate-400">{isAr ? "تشفير بنكي عبر Gumroad" : "Bank-grade 256-bit encryption via Gumroad"}</p>
         </div>
         <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
           <div className="text-2xl">⚡</div>

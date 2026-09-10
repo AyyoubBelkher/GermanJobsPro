@@ -62,26 +62,23 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
     }
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     setIsCheckingOut(true);
     setCheckoutError(null);
 
     try {
-      const res = await fetch("/api/payments/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planType: "PRO_PASS" }),
-      });
+      const baseUrl = "https://germanjobspro.gumroad.com/l/pro-pass";
+      const params: string[] = [];
 
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "فشل تجهيز عملية الدفع");
+      if (user?.email) {
+        params.push(`email=${encodeURIComponent(user.email)}`);
+      }
+      if (user?.id) {
+        params.push(`custom_fields[userId]=${encodeURIComponent(user.id)}`);
       }
 
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      }
+      const redirectUrl = params.length > 0 ? `${baseUrl}?${params.join("&")}` : baseUrl;
+      window.location.href = redirectUrl;
     } catch (err: unknown) {
       setCheckoutError(err instanceof Error ? err.message : "Payment error");
       setIsCheckingOut(false);

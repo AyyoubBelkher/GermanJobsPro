@@ -55,6 +55,10 @@ model User {
   name           String?
   plan           String        @default("FREE") // "FREE" | "TRIAL" | "PRO"
   planExpiresAt  DateTime?
+  subscriptionPlan      String?       @default("free") // "free" | "pro"
+  subscriptionStatus    String?       @default("inactive") // "active" | "inactive" | "refunded"
+  subscriptionExpiresAt DateTime?
+  dailyAiCredits        Int?          @default(20)
   emailVerified  Boolean       @default(false)
   aiCredits      Int           @default(3) // 3 free starter AI credits
   dailyAiCreditsUsed Int           @default(0)
