@@ -384,7 +384,7 @@ export default function SignupPage({
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder={isAr ? "أيوب بلكخير" : "Max Mustermann"}
+                    placeholder={isAr ? "مثال: أحمد محمد" : isDe ? "z. B. Max Mustermann" : "e.g., John Doe"}
                     className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm transition-all"
                   />
                 </div>
