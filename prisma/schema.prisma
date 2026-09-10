@@ -342,8 +342,10 @@ model SupportTicket {
   category  String
   subject   String
   message   String
-  status    String   @default("PENDING")
-  createdAt DateTime @default(now())
+  status     String    @default("PENDING")
+  adminReply String?
+  repliedAt  DateTime?
+  createdAt  DateTime  @default(now())
 
   @@index([email])
   @@index([status])

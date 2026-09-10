@@ -263,6 +263,14 @@ export default function AdminDashboardPage() {
 
           <div className="flex flex-wrap items-center gap-2.5">
             <Link
+              href={`/${locale}/admin/support`}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs sm:text-sm font-medium transition"
+            >
+              <span>📩</span>
+              <span>{isAr ? "تذاكر الدعم" : "Support Tickets"}</span>
+            </Link>
+
+            <Link
               href={`/${locale}/admin/subscribers`}
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs sm:text-sm font-medium transition"
             >

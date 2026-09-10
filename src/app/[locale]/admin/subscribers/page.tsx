@@ -134,6 +134,13 @@ export default function AdminSubscribersPage() {
               >
                 ⚡ لوحة إدارة المستخدمين
               </Link>
+              <span className="text-slate-600">•</span>
+              <Link
+                href={`/${locale}/admin/support`}
+                className="text-xs text-blue-400 hover:underline flex items-center gap-1"
+              >
+                📩 تذاكر الدعم والرد السريع
+              </Link>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
               <span>📧 لوحة إدارة المشتركين في النشرة البريدية</span>
