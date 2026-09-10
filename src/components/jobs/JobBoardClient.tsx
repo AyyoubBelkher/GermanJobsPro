@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useTransition, useCallback } from "react";
 import Link from "next/link";
+import { extractGermanJobTitle } from "@/lib/cover-letter";
 
 export interface JobItem {
   id: string;
@@ -394,7 +395,7 @@ export default function JobBoardClient({
                         {/* Generate Anschreiben */}
                         <Link
                           href={`/${locale}/dashboard/cover-letters/new?jobTitle=${encodeURIComponent(
-                            job.title
+                            extractGermanJobTitle(job.title) || job.title
                           )}&companyName=${encodeURIComponent(
                             job.company
                           )}&jobDescription=${encodeURIComponent(job.requirements || job.descriptionRaw || "")}`}
@@ -480,7 +481,7 @@ export default function JobBoardClient({
                 <div className="grid grid-cols-2 gap-2">
                   <Link
                     href={`/${locale}/dashboard/cover-letters/new?jobTitle=${encodeURIComponent(
-                      job.title
+                      extractGermanJobTitle(job.title) || job.title
                     )}&companyName=${encodeURIComponent(
                       job.company
                     )}&jobDescription=${encodeURIComponent(job.requirements || job.descriptionRaw || "")}`}

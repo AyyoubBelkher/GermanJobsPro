@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { stripHtml } from "@/components/jobs/JobBoardClient";
+import { extractGermanJobTitle } from "@/lib/cover-letter";
 
 export interface JobDetailData {
   id: string;
@@ -51,9 +52,11 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
     }
   }
 
+  const germanTitle = extractGermanJobTitle(job.title) || job.title;
+
   // إعداد روابط التوجيه لأدوات الذكاء الاصطناعي مع التعبئة المسبقة
   const coverLetterUrl = `/${locale}/dashboard/cover-letters/new?jobTitle=${encodeURIComponent(
-    job.title
+    germanTitle
   )}&companyName=${encodeURIComponent(job.company)}&jobDescription=${encodeURIComponent(
     job.requirements || job.descriptionRaw || ""
   )}`;
@@ -79,10 +82,10 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
     }
   };
 
-  const emailSubject = `Bewerbung als ${job.title} - [Ihr Name / Your Name]`;
+  const emailSubject = `Bewerbung als ${germanTitle} - [Ihr Name / Your Name]`;
   const emailBody = `Sehr geehrte Damen und Herren,
 
-mit großem Interesse bewerbe ich mich hiermit um die ausgeschriebene Stelle als ${job.title} bei ${job.company}.
+mit großem Interesse bewerbe ich mich hiermit um die ausgeschriebene Stelle als ${germanTitle} bei ${job.company}.
 
 Anbei finden Sie meine vollständigen Bewerbungsunterlagen (Lebenslauf nach DIN 5008, Anschreiben sowie relevante Zeugnisse).
 

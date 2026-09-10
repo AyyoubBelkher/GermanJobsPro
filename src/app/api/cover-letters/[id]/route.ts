@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { verifyUserSession } from "@/lib/user-session";
 import { coverLetterUpdateSchema } from "@/lib/validations/cover-letter";
+import { extractGermanJobTitle } from "@/lib/cover-letter";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -138,7 +139,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       where: { id },
       data: {
         title: data.title,
-        jobTitle: data.jobTitle,
+        jobTitle: data.jobTitle !== undefined ? (extractGermanJobTitle(data.jobTitle) || data.jobTitle) : undefined,
         companyName: data.companyName,
         recipientName: data.recipientName !== undefined ? (data.recipientName || null) : undefined,
         jobDescriptionRaw: data.jobDescriptionRaw !== undefined ? (data.jobDescriptionRaw || null) : undefined,

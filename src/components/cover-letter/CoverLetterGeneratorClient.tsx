@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { extractGermanJobTitle } from "@/lib/cover-letter";
 
 interface CvOption {
   id: string;
@@ -26,7 +27,7 @@ export default function CoverLetterGeneratorClient({
 }: CoverLetterGeneratorClientProps) {
   const router = useRouter();
 
-  const [jobTitle, setJobTitle] = useState(initialJobTitle);
+  const [jobTitle, setJobTitle] = useState(extractGermanJobTitle(initialJobTitle));
   const [companyName, setCompanyName] = useState(initialCompanyName);
   const [recipientName, setRecipientName] = useState("");
   const [jobDescriptionRaw, setJobDescriptionRaw] = useState(initialJobDescription);
@@ -68,8 +69,9 @@ export default function CoverLetterGeneratorClient({
     setError(null);
 
     try {
+      const cleanJobTitle = extractGermanJobTitle(jobTitle.trim()) || jobTitle.trim();
       const formData = new FormData();
-      formData.append("jobTitle", jobTitle.trim());
+      formData.append("jobTitle", cleanJobTitle);
       formData.append("companyName", companyName.trim());
       if (recipientName.trim()) {
         formData.append("recipientName", recipientName.trim());
@@ -116,12 +118,13 @@ export default function CoverLetterGeneratorClient({
     setError(null);
 
     try {
+      const cleanJobTitle = extractGermanJobTitle(jobTitle.trim()) || jobTitle.trim();
       const res = await fetch("/api/cover-letters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: `Anschreiben - ${jobTitle} (${companyName})`,
-          jobTitle: jobTitle.trim(),
+          title: `Anschreiben - ${cleanJobTitle} (${companyName})`,
+          jobTitle: cleanJobTitle,
           companyName: companyName.trim(),
           recipientName: recipientName.trim() || null,
           jobDescriptionRaw: jobDescriptionRaw.trim() || null,

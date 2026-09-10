@@ -8,6 +8,20 @@ import { verifyUserSession } from "@/lib/user-session";
 import { prisma } from "@/lib/prisma";
 import CoverLetterGeneratorClient from "@/components/cover-letter/CoverLetterGeneratorClient";
 
+export function extractGermanJobTitle(rawTitle: string): string {
+  if (!rawTitle) return "";
+  
+  // إذا كان العنوان يحتوي على المسمى الأصلي بين قوسين، استخرجه
+  const match = rawTitle.match(/\(([^)]+)\)/);
+  if (match && /[a-zA-Z]/.test(match[1])) {
+    return match[1].trim();
+  }
+  
+  // أو قم بإزالة أي أحرف عربية والإبقاء على الحروف اللاتينية
+  const latinOnly = rawTitle.replace(/[\u0600-\u06FF]/g, "").replace(/^[-–—:\s]+|[-–—:\s]+$/g, "").trim();
+  return latinOnly || rawTitle;
+}
+
 export default async function NewCoverLetterPage({
   params,
   searchParams,
@@ -39,6 +53,9 @@ export default async function NewCoverLetterPage({
     orderBy: { updatedAt: "desc" },
   });
 
+  const rawJobTitle = resolvedSearchParams.jobTitle || "";
+  const initialJobTitle = extractGermanJobTitle(rawJobTitle);
+
   return (
     <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between">
       <Navbar locale={locale} />
@@ -63,7 +80,7 @@ export default async function NewCoverLetterPage({
         <CoverLetterGeneratorClient
           userCvs={userCvs}
           locale={locale}
-          initialJobTitle={resolvedSearchParams.jobTitle || ""}
+          initialJobTitle={initialJobTitle}
           initialCompanyName={resolvedSearchParams.companyName || ""}
           initialJobDescription={resolvedSearchParams.jobDescription || ""}
         />

@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { verifyUserSession } from "@/lib/user-session";
 import { renderToBuffer, DocumentProps } from "@react-pdf/renderer";
-import { CoverLetterDocument } from "@/lib/pdf/cover-letter-template";
+import { CoverLetterDocument, extractGermanJobTitle } from "@/lib/pdf/cover-letter-template";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const pdfElement = React.createElement(CoverLetterDocument, {
       data: {
         title: coverLetter.title,
-        jobTitle: coverLetter.jobTitle,
+        jobTitle: extractGermanJobTitle(coverLetter.jobTitle),
         companyName: coverLetter.companyName,
         recipientName: coverLetter.recipientName,
         language: coverLetter.language,

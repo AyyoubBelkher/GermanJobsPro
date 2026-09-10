@@ -12,6 +12,7 @@ import {
 import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
 import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 import { extractText } from "unpdf";
+import { extractGermanJobTitle } from "@/lib/cover-letter";
 
 const MAX_PDF_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -297,8 +298,9 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+      const cleanJobTitle = extractGermanJobTitle(jobTitle) || jobTitle;
       const generatedContent = await generateCoverLetterAI({
-        jobTitle,
+        jobTitle: cleanJobTitle,
         companyName,
         recipientName,
         jobDescriptionRaw,

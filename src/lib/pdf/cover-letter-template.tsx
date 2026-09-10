@@ -1,5 +1,8 @@
 import React from "react";
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { extractGermanJobTitle } from "@/lib/cover-letter";
+
+export { extractGermanJobTitle };
 
 export interface CoverLetterPdfData {
   title: string;
@@ -276,7 +279,7 @@ export function CoverLetterDocument({ data }: { data: CoverLetterPdfData }) {
 
         {/* Betreffzeile (Bold Subject Line) */}
         <Text style={styles.subjectLine}>
-          Bewerbung als {data.jobTitle}
+          Bewerbung als {extractGermanJobTitle(data.jobTitle)}
         </Text>
 
         {/* Body Paragraphs */}

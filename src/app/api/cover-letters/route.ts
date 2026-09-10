@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { verifyUserSession } from "@/lib/user-session";
 import { coverLetterSchema } from "@/lib/validations/cover-letter";
+import { extractGermanJobTitle } from "@/lib/cover-letter";
 
 /**
  * GET /api/cover-letters
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
         userId: authResult.user.id,
         cvId: data.cvId || null,
         title: data.title,
-        jobTitle: data.jobTitle,
+        jobTitle: extractGermanJobTitle(data.jobTitle) || data.jobTitle,
         companyName: data.companyName,
         recipientName: data.recipientName || null,
         jobDescriptionRaw: data.jobDescriptionRaw || null,

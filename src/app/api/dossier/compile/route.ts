@@ -7,7 +7,7 @@ import {
   DossierAttachment,
 } from "@/lib/pdf/dossier-compiler";
 import { CvPdfData } from "@/lib/pdf/cv-template";
-import { CoverLetterPdfData } from "@/lib/pdf/cover-letter-template";
+import { CoverLetterPdfData, extractGermanJobTitle } from "@/lib/pdf/cover-letter-template";
 import { DeckblattData } from "@/lib/pdf/deckblatt-template";
 import { extractApplicantInfoAI } from "@/lib/gemini";
 import { extractText } from "unpdf";
@@ -212,12 +212,12 @@ export async function POST(request: NextRequest) {
         if (coverLetter) {
           deckblattMetadata.companyName = coverLetter.companyName;
           if (coverLetter.jobTitle) {
-            deckblattMetadata.targetJobTitle = coverLetter.jobTitle;
+            deckblattMetadata.targetJobTitle = extractGermanJobTitle(coverLetter.jobTitle);
           }
 
           coverLetterData = {
             title: coverLetter.title,
-            jobTitle: coverLetter.jobTitle,
+            jobTitle: extractGermanJobTitle(coverLetter.jobTitle),
             companyName: coverLetter.companyName,
             recipientName: coverLetter.recipientName,
             language: coverLetter.language,
@@ -280,7 +280,7 @@ export async function POST(request: NextRequest) {
         if (coverLetter) {
           coverLetterData = {
             title: coverLetter.title,
-            jobTitle: coverLetter.jobTitle,
+            jobTitle: extractGermanJobTitle(coverLetter.jobTitle),
             companyName: coverLetter.companyName,
             recipientName: coverLetter.recipientName,
             language: coverLetter.language,

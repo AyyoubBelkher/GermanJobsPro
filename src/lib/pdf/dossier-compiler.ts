@@ -2,7 +2,7 @@ import React from "react";
 import { PDFDocument, ParseSpeeds } from "pdf-lib";
 import { renderToBuffer, DocumentProps } from "@react-pdf/renderer";
 import { CvDocument, CvPdfData } from "./cv-template";
-import { CoverLetterDocument, CoverLetterPdfData } from "./cover-letter-template";
+import { CoverLetterDocument, CoverLetterPdfData, extractGermanJobTitle } from "./cover-letter-template";
 import { DeckblattDocument, DeckblattData } from "./deckblatt-template";
 
 export interface DossierAttachment {
@@ -55,7 +55,7 @@ export async function compileBewerbungsmappe({
       phone: cvData?.personalInfo?.phone,
       address: cvData?.personalInfo?.address,
       photoUrl: cvData?.personalInfo?.photoUrl,
-      targetJobTitle: coverLetterData?.jobTitle || cvData?.personalInfo?.targetJobTitle,
+      targetJobTitle: (coverLetterData?.jobTitle ? extractGermanJobTitle(coverLetterData.jobTitle) : undefined) || cvData?.personalInfo?.targetJobTitle,
       companyName: coverLetterData?.companyName,
       linkedinUrl: cvData?.personalInfo?.linkedinUrl,
       xingUrl: cvData?.personalInfo?.xingUrl,
