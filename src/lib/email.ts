@@ -1,17 +1,22 @@
+import { Resend } from "resend";
+
+export const resend = new Resend(process.env.RESEND_API_KEY || "re_placeholder");
+
 interface SendEmailParams {
   to: string;
   subject: string;
   html: string;
   text?: string;
   replyTo?: string;
+  from?: string;
 }
 
 /**
  * Sends an email using the Resend API (or logs to console if API key is not configured).
  */
-export async function sendEmail({ to, subject, html, text, replyTo }: SendEmailParams): Promise<{ success: boolean; error?: string }> {
+export async function sendEmail({ to, subject, html, text, replyTo, from }: SendEmailParams): Promise<{ success: boolean; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.EMAIL_FROM || "GermanJobsPro <support@germanjobspro.com>";
+  const fromEmail = from || "GermanJobsPro Support <onboarding@resend.dev>";
 
   if (!apiKey || apiKey.trim() === "") {
     console.log("=================================================");
@@ -27,26 +32,18 @@ export async function sendEmail({ to, subject, html, text, replyTo }: SendEmailP
   }
 
   try {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey.trim()}`,
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: [to],
-        subject,
-        html,
-        text,
-        reply_to: replyTo || undefined,
-      }),
+    const { error } = await resend.emails.send({
+      from: fromEmail,
+      to: [to],
+      subject,
+      html,
+      text,
+      replyTo: replyTo || undefined,
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error("[Resend API Error]:", errorData);
-      return { success: false, error: errorData?.message || "Failed to send email" };
+    if (error) {
+      console.error("[Resend API Error]:", error);
+      return { success: false, error: error.message || "Failed to send email" };
     }
 
     return { success: true };
@@ -433,14 +430,40 @@ export async function sendSupportAlertEmail(ticket: {
   subject: string;
   message: string;
 }): Promise<{ success: boolean; error?: string }> {
-  const adminEmail = process.env.ADMIN_SUPPORT_EMAIL || "support@germanjobspro.com";
+  const adminEmail = process.env.ADMIN_EMAIL || "ayyoubbelkher1@gmail.com";
   const { subject, html, text } = getSupportTicketEmailHtml(ticket);
-  return sendEmail({
-    to: adminEmail,
-    subject,
-    html,
-    text,
-    replyTo: ticket.email,
-  });
+
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey || apiKey.trim() === "") {
+    console.log("=================================================");
+    console.log("[SUPPORT ALERT EMAIL - DEV/LOG MODE (NO RESEND_API_KEY)]");
+    console.log(`To: ${adminEmail}`);
+    console.log("From: GermanJobsPro Support <onboarding@resend.dev>");
+    console.log(`Reply-To: ${ticket.email}`);
+    console.log(`Subject: ${subject}`);
+    console.log("=================================================");
+    return { success: true };
+  }
+
+  try {
+    const { error } = await resend.emails.send({
+      from: "GermanJobsPro Support <onboarding@resend.dev>",
+      to: adminEmail,
+      replyTo: ticket.email,
+      subject,
+      html,
+      text,
+    });
+
+    if (error) {
+      console.error("[Resend API Error in sendSupportAlertEmail]:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("[Send Support Alert Email Exception]:", error instanceof Error ? error.message : error);
+    return { success: false, error: error instanceof Error ? error.message : "Internal error sending email" };
+  }
 }
 
