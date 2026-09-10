@@ -16,7 +16,7 @@ interface SendEmailParams {
  */
 export async function sendEmail({ to, subject, html, text, replyTo, from }: SendEmailParams): Promise<{ success: boolean; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
-  const fromEmail = from || "GermanJobsPro Support <onboarding@resend.dev>";
+  const fromEmail = from || "GermanJobsPro Support <support@germanjobspro.com>";
 
   if (!apiKey || apiKey.trim() === "") {
     console.log("=================================================");
@@ -438,7 +438,7 @@ export async function sendSupportAlertEmail(ticket: {
     console.log("=================================================");
     console.log("[SUPPORT ALERT EMAIL - DEV/LOG MODE (NO RESEND_API_KEY)]");
     console.log(`To: ${adminEmail}`);
-    console.log("From: GermanJobsPro Support <onboarding@resend.dev>");
+    console.log("From: GermanJobsPro Support <support@germanjobspro.com>");
     console.log(`Reply-To: ${ticket.email}`);
     console.log(`Subject: ${subject}`);
     console.log("=================================================");
@@ -447,7 +447,7 @@ export async function sendSupportAlertEmail(ticket: {
 
   try {
     const { error } = await resend.emails.send({
-      from: "GermanJobsPro Support <onboarding@resend.dev>",
+      from: "GermanJobsPro Support <support@germanjobspro.com>",
       to: adminEmail,
       replyTo: ticket.email,
       subject,

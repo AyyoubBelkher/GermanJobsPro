@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     if (apiKey && apiKey.trim() !== "") {
       try {
         const { error: sendError } = await resend.emails.send({
-          from: "GermanJobsPro Support <onboarding@resend.dev>",
+          from: "GermanJobsPro Support <support@germanjobspro.com>",
           to: adminEmail,
           replyTo: trimmedEmail,
           subject: `[Contact Form] ${trimmedSubject} - GermanJobsPro`,
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
       console.log("=================================================");
       console.log("[CONTACT FORM - DEV/LOG MODE (NO RESEND_API_KEY)]");
       console.log(`To: ${adminEmail}`);
-      console.log("From: GermanJobsPro Support <onboarding@resend.dev>");
+      console.log("From: GermanJobsPro Support <support@germanjobspro.com>");
       console.log(`Reply-To: ${trimmedEmail}`);
       console.log(`Subject: [Contact Form] ${trimmedSubject}`);
       console.log("Message:", trimmedMessage);
