@@ -35,6 +35,48 @@ const extractGermanTitle = (rawTitle: string): string => {
   return latinOnly.length > 2 ? latinOnly : rawTitle;
 };
 
+const GERMAN_CITIES_MAP: Record<string, string> = {
+  "برلين": "Berlin",
+  "ميونخ": "München",
+  "ميونيخ": "München",
+  "هامبورغ": "Hamburg",
+  "فرانكفورت": "Frankfurt am Main",
+  "كولونيا": "Köln",
+  "كولن": "Köln",
+  "دوسلدورف": "Düsseldorf",
+  "شتوتغارت": "Stuttgart",
+  "لايبزيغ": "Leipzig",
+  "دورتموند": "Dortmund",
+  "إسن": "Essen",
+  "إيسن": "Essen",
+  "بريمن": "Bremen",
+  "درسدن": "Dresden",
+  "هانوفر": "Hannover",
+  "نورنبرغ": "Nürnberg",
+  "بون": "Bonn",
+  "مانهايم": "Mannheim",
+  "كارلسروه": "Karlsruhe",
+  "أوغسبورغ": "Augsburg",
+  "فيسبادن": "Wiesbaden",
+  "ألمانيا": "Deutschland",
+};
+
+const extractGermanCity = (rawCity?: string | null): string => {
+  if (!rawCity) return "Deutschland";
+  const trimmed = rawCity.trim();
+  if (GERMAN_CITIES_MAP[trimmed]) {
+    return GERMAN_CITIES_MAP[trimmed];
+  }
+  for (const [ar, de] of Object.entries(GERMAN_CITIES_MAP)) {
+    if (trimmed.includes(ar)) return de;
+  }
+  if (/[\u0600-\u06FF]/.test(trimmed)) {
+    const latinOnly = trimmed.replace(/[\u0600-\u06FF:،–—]/g, "").trim();
+    return latinOnly.length > 2 ? latinOnly : "Deutschland";
+  }
+  return trimmed;
+};
+
 export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
   const isAr = locale === "ar";
   const isDe = locale === "de";
@@ -63,11 +105,13 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
   }
 
   const germanTitle = extractGermanTitle(job.title);
+  const germanCity = extractGermanCity(job.city);
+  const cleanCompany = job.company?.replace(/[\u0600-\u06FF]/g, "").trim() || job.company;
 
   // إعداد روابط التوجيه لأدوات الذكاء الاصطناعي مع التعبئة المسبقة
   const coverLetterUrl = `/${locale}/dashboard/cover-letters/new?jobTitle=${encodeURIComponent(
     germanTitle
-  )}&companyName=${encodeURIComponent(job.company)}&jobDescription=${encodeURIComponent(
+  )}&companyName=${encodeURIComponent(cleanCompany)}&jobDescription=${encodeURIComponent(
     job.requirements || job.descriptionRaw || ""
   )}`;
 
@@ -121,12 +165,12 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
     }
   };
 
-  const emailSubject = `Bewerbung als ${germanTitle} - ${job.company}`;
+  const emailSubject = `Bewerbung als ${germanTitle} - ${cleanCompany}`;
   const LRM = "\u200E";
   const emailBody = [
     `${LRM}Sehr geehrte Damen und Herren,${LRM}`,
     "",
-    `${LRM}hiermit bewerbe ich mich auf die von Ihnen ausgeschriebene Stelle als ${germanTitle} in ${job.city || "Deutschland"}.${LRM}`,
+    `${LRM}hiermit bewerbe ich mich auf die von Ihnen ausgeschriebene Stelle als ${germanTitle} in ${germanCity}.${LRM}`,
     "",
     `${LRM}Anbei sende ich Ihnen meine vollständigen Bewerbungsunterlagen (Lebenslauf und Anschreiben nach DIN 5008).${LRM}`,
     "",
@@ -152,7 +196,7 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
     setTimeout(() => setToast(null), 4500);
 
     // 3. Open Gmail Web Compose in a new browser tab with prefilled parameters
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&hl=en&to=${encodeURIComponent(
       job.contactEmail
     )}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
 
@@ -195,8 +239,8 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
 
             {/* عنوان الوظيفة واسم الشركة */}
             <div dir={isAr ? "rtl" : "ltr"} className={`space-y-2 ${isAr ? "text-right" : "text-left"}`}>
-              <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-snug">
-                {job.title}
+              <h1 dir="ltr" className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-snug text-start">
+                <bdi>{job.title}</bdi>
               </h1>
               <div className="flex items-center gap-4 text-sm sm:text-base text-slate-300 flex-wrap">
                 <span className="font-bold text-blue-400 flex items-center gap-1.5">
@@ -438,7 +482,7 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
             ) : (
               <div className="space-y-3">
                 <a
-                  href={mailtoLink || `mailto:info@${job.company.toLowerCase().replace(/[^a-z0-9]/g, '')}.de`}
+                  href={mailtoLink || `mailto:info@${cleanCompany.toLowerCase().replace(/[^a-z0-9]/g, '')}.de`}
                   className="w-full py-4 px-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm text-center shadow-xl shadow-blue-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>✉️</span>
