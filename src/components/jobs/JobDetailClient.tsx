@@ -122,7 +122,19 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
   };
 
   const emailSubject = `Bewerbung als ${germanTitle} - ${job.company}`;
-  const emailBody = `Sehr geehrte Damen und Herren,\n\nhiermit bewerbe ich mich auf die von Ihnen ausgeschriebene Stelle als ${germanTitle} in ${job.city || "Deutschland"}.\n\nAnbei finden Sie meine vollständigen Bewerbungsunterlagen (Lebenslauf und Anschreiben nach DIN 5008).\n\nMit freundlichen Grüßen,\n[Ihr Name]`;
+  const LRM = "\u200E";
+  const emailBody = [
+    `${LRM}Sehr geehrte Damen und Herren,${LRM}`,
+    "",
+    `${LRM}hiermit bewerbe ich mich auf die von Ihnen ausgeschriebene Stelle als ${germanTitle} in ${job.city || "Deutschland"}.${LRM}`,
+    "",
+    `${LRM}Anbei sende ich Ihnen meine vollständigen Bewerbungsunterlagen (Lebenslauf und Anschreiben nach DIN 5008).${LRM}`,
+    "",
+    `${LRM}Über eine Einladung zu einem persönlichen Gespräch freue ich mich sehr.${LRM}`,
+    "",
+    `${LRM}Mit freundlichen Grüßen,${LRM}`,
+    `${LRM}[Ihr Vorname und Nachname]${LRM}`,
+  ].join("\n");
 
   const handleSmartMailSend = async () => {
     if (!job.contactEmail) return;
