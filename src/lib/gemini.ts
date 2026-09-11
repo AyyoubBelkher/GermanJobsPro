@@ -16,7 +16,7 @@ const getGeminiClient = () => {
 const FALLBACK_MODELS = [
   process.env.GEMINI_MODEL || "gemini-3.6-flash",
   "gemini-2.5-flash",
-  "gemini-2.5-pro",
+  "gemini-3.6-flash",
 ];
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
