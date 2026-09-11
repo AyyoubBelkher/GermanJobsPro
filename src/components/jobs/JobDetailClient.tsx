@@ -33,6 +33,7 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   // تنظيف وتقسيم الشروط واستبعاد النقاط والشرطات المكررة في بداية كل سطر
   let parsedRequirements: string[] = [];
@@ -67,33 +68,77 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
 
   const cleanedDescription = stripHtml(job.descriptionRaw);
 
-  const handleCopyEmail = () => {
+  const copyToClipboard = async (text: string): Promise<boolean> => {
+    if (typeof window === "undefined") return false;
+    try {
+      if (navigator?.clipboard?.writeText && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (err) {
+      console.warn("navigator.clipboard failed, attempting execCommand fallback:", err);
+    }
+
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
+      return successful;
+    } catch (err) {
+      console.warn("Fallback clipboard copy failed:", err);
+      return false;
+    }
+  };
+
+  const handleCopyEmail = async () => {
     if (!job.contactEmail) return;
-    navigator.clipboard.writeText(job.contactEmail);
+    await copyToClipboard(job.contactEmail);
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 2500);
   };
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     if (typeof window !== "undefined") {
-      navigator.clipboard.writeText(window.location.href);
+      await copyToClipboard(window.location.href);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2500);
     }
   };
 
-  const emailSubject = `Bewerbung als ${germanTitle} - [Ihr Name / Your Name]`;
-  const emailBody = `Sehr geehrte Damen und Herren,
+  const emailSubject = `Bewerbung als ${job.title} - ${job.company}`;
+  const emailBody = `Sehr geehrte Damen und Herren,\n\nhiermit bewerbe ich mich auf die von Ihnen ausgeschriebene Stelle als ${job.title} in ${job.city || "Deutschland"}.\n\nAnbei finden Sie meine vollständigen Bewerbungsunterlagen (Lebenslauf und Anschreiben nach DIN 5008).\n\nMit freundlichen Grüßen,\n[Ihr Name]`;
 
-mit großem Interesse bewerbe ich mich hiermit um die ausgeschriebene Stelle als ${germanTitle} bei ${job.company}.
+  const handleSmartMailSend = async () => {
+    if (!job.contactEmail) return;
 
-Anbei finden Sie meine vollständigen Bewerbungsunterlagen (Lebenslauf nach DIN 5008, Anschreiben sowie relevante Zeugnisse).
+    // 1. Copy contact email with graceful fallback
+    await copyToClipboard(job.contactEmail);
+    setCopiedEmail(true);
+    setTimeout(() => setCopiedEmail(false), 3000);
 
-Über eine Einladung zu einem persönlichen Vorstellungsgespräch freue ich mich sehr.
+    // 2. Show notification
+    const toastMessage = isAr
+      ? "✓ تم نسخ بريد الشركة وفتح مسودة التقديم!"
+      : "✓ E-Mail kopiert & Bewerbungsentwurf geöffnet!";
+    setToast(toastMessage);
+    setTimeout(() => setToast(null), 4500);
 
-Mit freundlichen Grüßen,
-[Ihr vollständiger Name]
-[Ihre Telefonnummer]`;
+    // 3. Open Gmail Web Compose in a new browser tab with prefilled parameters
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+      job.contactEmail
+    )}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+
+    if (typeof window !== "undefined") {
+      window.open(gmailUrl, "_blank", "noopener,noreferrer");
+    }
+  };
 
   const mailtoLink = job.contactEmail
     ? `mailto:${job.contactEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`
@@ -317,14 +362,47 @@ Mit freundlichen Grüßen,
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-2">
-                  <a
-                    href={mailtoLink}
-                    className="w-full py-3.5 px-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm text-center shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <span>✉️</span>
-                    <span>{isAr ? "إرسال بريد التقديم المباشر" : isDe ? "Per E-Mail bewerben" : "Apply via Email"}</span>
-                  </a>
+                {toast && (
+                  <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2 animate-fadeIn shadow-inner">
+                    <span className="text-sm shrink-0">✓</span>
+                    <span className="leading-snug">{toast}</span>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSmartMailSend}
+                      className="flex-1 py-3.5 px-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm text-center shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                    >
+                      <span>✉️</span>
+                      <span>{isAr ? "إرسال بريد التقديم المباشر" : isDe ? "Per E-Mail bewerben" : "Apply via Email"}</span>
+                    </button>
+
+                    <a
+                      href={mailtoLink}
+                      title={isAr ? "فتح في تطبيق البريد بالجهاز (Mailto)" : isDe ? "Standard-Mailprogramm öffnen" : "Open native mail app"}
+                      className="p-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all flex items-center justify-center cursor-pointer shrink-0"
+                    >
+                      <span className="text-base" aria-hidden="true">📱</span>
+                      <span className="sr-only">Mailto</span>
+                    </a>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
+                    <span className="text-slate-500 flex items-center gap-1">
+                      <span>🚀</span>
+                      <span>{isAr ? "يفتح في Gmail وينسخ البريد" : "Opens Gmail Web Compose"}</span>
+                    </span>
+                    <a
+                      href={mailtoLink}
+                      className="text-blue-400 hover:text-blue-300 hover:underline flex items-center gap-1 font-medium transition-colors"
+                    >
+                      <span>{isAr ? "تطبيق البريد (Mailto)" : "Native Mail App"}</span>
+                      <span>↗</span>
+                    </a>
+                  </div>
 
                   <button
                     type="button"
@@ -490,8 +568,8 @@ Mit freundlichen Grüßen,
             <div className="flex items-center gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(`${emailSubject}\n\n${emailBody}`);
+                onClick={async () => {
+                  await copyToClipboard(`${emailSubject}\n\n${emailBody}`);
                   setCopiedEmail(true);
                   setTimeout(() => setCopiedEmail(false), 2500);
                 }}
@@ -501,15 +579,27 @@ Mit freundlichen Grüßen,
                 <span>{copiedEmail ? (isAr ? "✓ تم نسخ النموذج!" : "Copied!") : (isAr ? "نسخ النموذج بالكامل" : "Copy Template")}</span>
               </button>
 
-              <a
-                href={mailtoLink}
+              <button
+                type="button"
+                onClick={() => {
+                  handleSmartMailSend();
+                  setShowEmailModal(false);
+                }}
                 className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold text-center shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-1 cursor-pointer"
               >
                 <span>✉️</span>
-                <span>{isAr ? "فتح في برنامج البريد" : "Open Mail Client"}</span>
-              </a>
+                <span>{isAr ? "فتح في Gmail" : "Open in Gmail"}</span>
+              </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* إشعار عائم لتأكيد نسخ البريد وفتح المسودة */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-emerald-600 text-white font-bold text-xs sm:text-sm shadow-2xl border border-emerald-400/40 backdrop-blur-md animate-fadeIn">
+          <span className="text-base sm:text-lg shrink-0">📬</span>
+          <span>{toast}</span>
         </div>
       )}
 
