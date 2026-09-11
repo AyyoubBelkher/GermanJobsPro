@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { stripHtml } from "@/components/jobs/JobBoardClient";
-import { extractGermanJobTitle } from "@/lib/cover-letter";
 
 export interface JobDetailData {
   id: string;
@@ -25,6 +24,16 @@ interface JobDetailClientProps {
   job: JobDetailData;
   locale: string;
 }
+
+// Extracts Latin/German title inside parentheses e.g. "مدير تسويق (Marketing Manager)" -> "Marketing Manager"
+const extractGermanTitle = (rawTitle: string): string => {
+  const match = rawTitle.match(/\(([A-Za-z0-9\s/&+\-_.,]+)\)/);
+  if (match && match[1]?.trim()) {
+    return match[1].trim();
+  }
+  const latinOnly = rawTitle.replace(/[\u0600-\u06FF:،–—]/g, "").trim();
+  return latinOnly.length > 2 ? latinOnly : rawTitle;
+};
 
 export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
   const isAr = locale === "ar";
@@ -53,7 +62,7 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
     }
   }
 
-  const germanTitle = extractGermanJobTitle(job.title) || job.title;
+  const germanTitle = extractGermanTitle(job.title);
 
   // إعداد روابط التوجيه لأدوات الذكاء الاصطناعي مع التعبئة المسبقة
   const coverLetterUrl = `/${locale}/dashboard/cover-letters/new?jobTitle=${encodeURIComponent(
@@ -112,8 +121,8 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
     }
   };
 
-  const emailSubject = `Bewerbung als ${job.title} - ${job.company}`;
-  const emailBody = `Sehr geehrte Damen und Herren,\n\nhiermit bewerbe ich mich auf die von Ihnen ausgeschriebene Stelle als ${job.title} in ${job.city || "Deutschland"}.\n\nAnbei finden Sie meine vollständigen Bewerbungsunterlagen (Lebenslauf und Anschreiben nach DIN 5008).\n\nMit freundlichen Grüßen,\n[Ihr Name]`;
+  const emailSubject = `Bewerbung als ${germanTitle} - ${job.company}`;
+  const emailBody = `Sehr geehrte Damen und Herren,\n\nhiermit bewerbe ich mich auf die von Ihnen ausgeschriebene Stelle als ${germanTitle} in ${job.city || "Deutschland"}.\n\nAnbei finden Sie meine vollständigen Bewerbungsunterlagen (Lebenslauf und Anschreiben nach DIN 5008).\n\nMit freundlichen Grüßen,\n[Ihr Name]`;
 
   const handleSmartMailSend = async () => {
     if (!job.contactEmail) return;
