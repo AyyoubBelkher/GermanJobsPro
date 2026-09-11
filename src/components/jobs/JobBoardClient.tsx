@@ -77,7 +77,6 @@ export default function JobBoardClient({
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [language, setLanguage] = useState("all");
-  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
 
   const [isPending, startTransition] = useTransition();
 
@@ -171,7 +170,7 @@ export default function JobBoardClient({
 
         {/* Search Bar & Dropdowns */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-          <div className="md:col-span-6 relative">
+          <div className="md:col-span-8 relative">
             <input
               type="text"
               value={search}
@@ -188,7 +187,7 @@ export default function JobBoardClient({
             <span className="absolute left-4 top-4 text-slate-500 text-base">🔍</span>
           </div>
 
-          <div className="md:col-span-3">
+          <div className="md:col-span-4">
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
@@ -200,35 +199,6 @@ export default function JobBoardClient({
                 </option>
               ))}
             </select>
-          </div>
-
-          <div className="md:col-span-3 flex items-center gap-2">
-            <div className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl p-1 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setViewMode("table")}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  viewMode === "table"
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <span>📊</span>
-                <span className="hidden sm:inline">{isAr ? "جدول" : "Table"}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("cards")}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  viewMode === "cards"
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <span>🗂️</span>
-                <span className="hidden sm:inline">{isAr ? "بطاقات" : "Cards"}</span>
-              </button>
-            </div>
           </div>
         </div>
 
@@ -311,117 +281,6 @@ export default function JobBoardClient({
           >
             {isAr ? "إعادة ضبط الفلاتر" : "Reset Filters"}
           </button>
-        </div>
-      ) : viewMode === "table" ? (
-        /* TABLE VIEW */
-        <div className="bg-slate-900/70 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-sm">
-              <thead className="bg-slate-950/80 text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-800">
-                <tr>
-                  <th className="py-4 px-6">{isAr ? "المسمى الوظيفي والشركة" : "Job & Company"}</th>
-                  <th className="py-4 px-4">{isAr ? "المدينة" : "Location"}</th>
-                  <th className="py-4 px-4">{isAr ? "المجال" : "Category"}</th>
-                  <th className="py-4 px-4">{isAr ? "مستوى اللغة" : "Language"}</th>
-                  <th className="py-4 px-4">{isAr ? "تاريخ النشر" : "Date"}</th>
-                  <th className="py-4 px-6 text-center">{isAr ? "إجراءات التقديم والذكاء الاصطناعي" : "Actions"}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {jobs.map((job) => (
-                  <tr
-                    key={job.id}
-                    className="hover:bg-slate-800/40 transition-colors group"
-                  >
-                    {/* Job Title & Company */}
-                    <td className="py-4 px-6">
-                      <div className="space-y-0.5" dir="ltr">
-                        <Link
-                          href={`/${locale}/jobs/${job.id}`}
-                          className="font-bold text-white hover:text-blue-400 transition-colors text-sm sm:text-base flex items-center gap-1.5 text-start"
-                        >
-                          <span className="truncate">{job.title}</span>
-                          <span className="text-slate-500 text-xs group-hover:text-blue-400 shrink-0">→</span>
-                        </Link>
-                        <p className="text-xs text-slate-400 flex items-center gap-2 text-start">
-                          <span className="font-semibold text-slate-300 truncate">🏢 {job.company}</span>
-                          {job.salary && (
-                            <span className="text-emerald-400 font-medium shrink-0">💰 {job.salary}</span>
-                          )}
-                        </p>
-                      </div>
-                    </td>
-
-                    {/* City */}
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-xs font-semibold text-slate-300">
-                        <span>📍</span>
-                        <span>{job.city || "Germany"}</span>
-                      </span>
-                    </td>
-
-                    {/* Category */}
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold">
-                        {job.category}
-                      </span>
-                    </td>
-
-                    {/* Language Requirement */}
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
-                        <span>🇩🇪</span>
-                        <span>{job.languageReq || "B1/B2"}</span>
-                      </span>
-                    </td>
-
-                    {/* Date */}
-                    <td className="py-4 px-4 whitespace-nowrap text-xs text-slate-400">
-                      {formatDate(job.publishedAt)}
-                    </td>
-
-                    {/* Action Buttons */}
-                    <td className="py-4 px-6 whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-2">
-                        {/* View Details & Apply internally */}
-                        <Link
-                          href={`/${locale}/jobs/${job.id}`}
-                          className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition-all flex items-center gap-1 cursor-pointer"
-                        >
-                          <span>{isAr ? "التفاصيل والتقديم" : isDe ? "Details" : "View & Apply"}</span>
-                          <span>→</span>
-                        </Link>
-
-                        {/* Generate Anschreiben */}
-                        <Link
-                          href={`/${locale}/dashboard/cover-letters/new?jobTitle=${encodeURIComponent(
-                            extractGermanJobTitle(job.title) || job.title
-                          )}&companyName=${encodeURIComponent(
-                            job.company
-                          )}&jobDescription=${encodeURIComponent(job.requirements || job.descriptionRaw || "")}`}
-                          title={isAr ? "توليد خطاب تغطية بالذكاء الاصطناعي لهذه الوظيفة" : "Generate Cover Letter with AI"}
-                          className="p-2 rounded-xl bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/20 transition-all cursor-pointer"
-                        >
-                          <span className="text-xs">✨ Anschreiben</span>
-                        </Link>
-
-                        {/* ATS Analyzer */}
-                        <Link
-                          href={`/${locale}/dashboard/ats-analyzer?jobDescription=${encodeURIComponent(
-                            job.requirements || job.descriptionRaw || ""
-                          )}`}
-                          title={isAr ? "فحص ملاءمة السيرة الذاتية (ATS)" : "Check ATS Resume"}
-                          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all cursor-pointer"
-                        >
-                          <span className="text-xs">🔍 ATS</span>
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
       ) : (
         /* CARDS GRID VIEW */
