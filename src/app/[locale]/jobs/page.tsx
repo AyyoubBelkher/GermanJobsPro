@@ -73,6 +73,11 @@ export default async function JobsPage({
     });
   }
 
+  // Only display verified active jobs on the board
+  whereConditions.push({
+    status: "ACTIVE",
+  });
+
   const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
 
   let total = 0;

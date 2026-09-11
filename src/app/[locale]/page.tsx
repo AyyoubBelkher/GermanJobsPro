@@ -92,6 +92,7 @@ export default async function LandingPage({
   try {
     const [jobs, posts, a1Posts] = await Promise.all([
       prisma.job.findMany({
+        where: { status: "ACTIVE" },
         orderBy: { publishedAt: "desc" },
         take: 3,
       }),

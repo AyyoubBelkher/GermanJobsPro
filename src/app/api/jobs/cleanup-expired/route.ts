@@ -41,22 +41,65 @@ async function handleCleanup(request: NextRequest) {
       );
     }
 
-    // 30 days cutoff
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const { searchParams } = new URL(request.url);
+    const mode = searchParams.get("mode") || "archive"; // "archive" (mark EXPIRED) or "delete"
 
-    const { count } = await prisma.job.deleteMany({
+    // 1. Purge non-job entries or Google News aggregator entries
+    const nonJobPurgeResult = await prisma.job.deleteMany({
       where: {
-        publishedAt: {
-          lt: thirtyDaysAgo,
-        },
+        OR: [
+          { applyUrl: { contains: "news.google" } },
+          { applyUrl: { contains: "google.com/url" } },
+          { applyUrl: { contains: "google.com/rss" } },
+          { applyUrl: { contains: "news.ycombinator.com" } },
+          { company: { equals: "Google News", mode: "insensitive" } },
+          { company: { equals: "Unknown", mode: "insensitive" } },
+          { title: { equals: "" } },
+        ],
       },
     });
+
+    // 2. 30 days cutoff or explicit expiresAt reached
+    const now = new Date();
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const expiredWhere = {
+      OR: [
+        { expiresAt: { lt: now } },
+        { publishedAt: { lt: thirtyDaysAgo } },
+      ],
+      status: "ACTIVE",
+    };
+
+    let expiredCount = 0;
+    if (mode === "delete" || request.method === "DELETE") {
+      const deleteResult = await prisma.job.deleteMany({
+        where: {
+          OR: [
+            { expiresAt: { lt: now } },
+            { publishedAt: { lt: thirtyDaysAgo } },
+          ],
+        },
+      });
+      expiredCount = deleteResult.count;
+    } else {
+      // Mark as EXPIRED rather than hard deleting
+      const updateResult = await prisma.job.updateMany({
+        where: expiredWhere,
+        data: {
+          status: "EXPIRED",
+        },
+      });
+      expiredCount = updateResult.count;
+    }
 
     return NextResponse.json(
       {
         success: true,
-        message: `Deleted ${count} expired jobs older than 30 days.`,
-        deletedCount: count,
+        message: `Cleanup completed. Purged ${nonJobPurgeResult.count} non-job entries. ${mode === "delete" ? "Deleted" : "Expired"} ${expiredCount} expired jobs.`,
+        purgedNonJobsCount: nonJobPurgeResult.count,
+        expiredJobsCount: expiredCount,
+        mode,
         cutoffDate: thirtyDaysAgo.toISOString(),
       },
       { status: 200 }

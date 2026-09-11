@@ -69,6 +69,18 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    const statusParam = searchParams.get("status")?.trim();
+    if (statusParam && statusParam !== "all" && statusParam !== "All") {
+      whereConditions.push({
+        status: statusParam.toUpperCase(),
+      });
+    } else if (!statusParam) {
+      // Default to ACTIVE jobs in listings
+      whereConditions.push({
+        status: "ACTIVE",
+      });
+    }
+
     const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
 
     const [total, jobs] = await Promise.all([
@@ -142,43 +154,116 @@ export async function POST(request: NextRequest) {
       requirements,
       descriptionRaw,
       publishedAt,
+      expiresAt,
+      status,
+      isVerified,
     } = body;
 
-    if (!title || typeof title !== "string" || !title.trim()) {
+    // 1. Validate Title
+    if (!title || typeof title !== "string" || title.trim().length < 3) {
       return NextResponse.json(
-        { success: false, error: "Job title is required." },
+        { success: false, error: "Valid job title is required (minimum 3 characters)." },
         { status: 400 }
       );
     }
 
-    if (!company || typeof company !== "string" || !company.trim()) {
+    // 2. Validate Company
+    if (!company || typeof company !== "string" || company.trim().length < 2) {
       return NextResponse.json(
-        { success: false, error: "Company is required." },
+        { success: false, error: "Valid company name is required (minimum 2 characters)." },
         { status: 400 }
       );
     }
 
-    if (!applyUrl || typeof applyUrl !== "string" || !applyUrl.trim()) {
+    const companyLower = company.trim().toLowerCase();
+    if (companyLower === "google news" || companyLower === "unknown") {
       return NextResponse.json(
-        { success: false, error: "Application URL (applyUrl) is required." },
+        { success: false, error: "Invalid company name. Generic news or unknown sources are rejected." },
         { status: 400 }
       );
     }
+
+    // 3. Validate Application Method (applyUrl or contactEmail)
+    const rawApplyUrl = typeof applyUrl === "string" ? applyUrl.trim() : "";
+    const rawContactEmail = typeof contactEmail === "string" ? contactEmail.trim() : "";
+
+    // Reject Google News and aggregator redirect links
+    const GOOGLE_NEWS_DOMAINS = [
+      "news.google.",
+      "google.com/url",
+      "google.com/rss",
+      "news.ycombinator.com",
+    ];
+
+    for (const domain of GOOGLE_NEWS_DOMAINS) {
+      if (rawApplyUrl.toLowerCase().includes(domain)) {
+        return NextResponse.json(
+          { success: false, error: "Google News aggregator URLs are not allowed as job application links." },
+          { status: 400 }
+        );
+      }
+    }
+
+    const hasValidUrl =
+      rawApplyUrl.startsWith("http://") ||
+      rawApplyUrl.startsWith("https://") ||
+      rawApplyUrl.startsWith("mailto:");
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const hasValidEmail = emailRegex.test(rawContactEmail);
+
+    if (!hasValidUrl && !hasValidEmail) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "A valid application method is required: provide either a valid applyUrl (http/https) or contactEmail.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const finalApplyUrl = hasValidUrl ? rawApplyUrl : `mailto:${rawContactEmail}`;
+    const finalContactEmail = hasValidEmail ? rawContactEmail : null;
+
+    // Deduplication check
+    const existingJob = await prisma.job.findUnique({
+      where: { applyUrl: finalApplyUrl },
+    });
+
+    if (existingJob) {
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Job already exists in database (skipped duplicate).",
+          skipped: true,
+          job: existingJob,
+        },
+        { status: 200 }
+      );
+    }
+
+    const validStatus =
+      status && ["ACTIVE", "EXPIRED", "ARCHIVED"].includes(String(status).toUpperCase())
+        ? String(status).toUpperCase()
+        : "ACTIVE";
 
     const newJob = await prisma.job.create({
       data: {
         title: title.trim(),
         company: company.trim(),
-        applyUrl: applyUrl.trim(),
+        applyUrl: finalApplyUrl,
+        contactEmail: finalContactEmail,
         city: city !== undefined && city !== null && String(city).trim() ? String(city).trim() : "Germany",
         category: category !== undefined && category !== null && String(category).trim() ? String(category).trim() : "General",
         jobType: jobType !== undefined && jobType !== null && String(jobType).trim() ? String(jobType).trim() : "Full-time",
         languageReq: languageReq !== undefined && languageReq !== null && String(languageReq).trim() ? String(languageReq).trim() : "B1/B2",
         salary: salary !== undefined && salary !== null && String(salary).trim() ? String(salary).trim() : null,
-        contactEmail: contactEmail !== undefined && contactEmail !== null && String(contactEmail).trim() ? String(contactEmail).trim() : null,
         requirements: requirements !== undefined && requirements !== null && String(requirements).trim() ? String(requirements).trim() : null,
         descriptionRaw: descriptionRaw !== undefined && descriptionRaw !== null && String(descriptionRaw).trim() ? String(descriptionRaw).trim() : null,
         publishedAt: publishedAt ? new Date(publishedAt as string | number | Date) : new Date(),
+        expiresAt: expiresAt ? new Date(expiresAt as string | number | Date) : null,
+        status: validStatus,
+        isVerified: typeof isVerified === "boolean" ? isVerified : true,
       },
     });
 

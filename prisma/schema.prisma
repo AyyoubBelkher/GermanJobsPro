@@ -270,25 +270,29 @@ model CoverLetter {
 // ==========================================
 
 model Job {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   title          String
   company        String
-  city           String?  @default("Germany")
-  category       String   @default("General")
-  jobType        String?  @default("Full-time")
-  languageReq    String?  @default("B1/B2")
+  city           String?   @default("Germany")
+  category       String    @default("General")
+  jobType        String?   @default("Full-time")
+  languageReq    String?   @default("B1/B2")
   salary         String?
-  applyUrl       String   @unique
+  applyUrl       String    @unique
   contactEmail   String?
   requirements   String?
   descriptionRaw String?
-  publishedAt    DateTime @default(now())
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  publishedAt    DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  status         String    @default("ACTIVE") // ACTIVE, EXPIRED, ARCHIVED
+  expiresAt      DateTime?
+  isVerified     Boolean   @default(true)
 
   @@index([category])
   @@index([city])
   @@index([publishedAt])
+  @@index([status])
 }
 
 // ==========================================

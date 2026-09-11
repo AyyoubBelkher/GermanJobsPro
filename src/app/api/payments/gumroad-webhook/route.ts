@@ -93,6 +93,39 @@ export async function POST(request: NextRequest) {
       orderNumber,
     });
 
+    const eventName = isRefunded
+      ? "gumroad_refund"
+      : isDisputed
+      ? "gumroad_dispute"
+      : "gumroad_sale";
+
+    const rawEventId = saleId || orderNumber;
+    const eventId = rawEventId
+      ? (isRefunded || isDisputed ? `${eventName}_${rawEventId}` : String(rawEventId))
+      : `${eventName}_${email || "unknown"}_${priceStr || ""}`;
+
+    // 1. Idempotency Check: Prevent duplicate extensions / processing if webhook ping is redelivered
+    const existingEvent = await prisma.processedWebhookEvent.findFirst({
+      where: {
+        OR: [
+          { eventId },
+          ...(saleId && !isRefunded && !isDisputed
+            ? [{ eventId: saleId }, { eventId: `gumroad_sale_${saleId}` }]
+            : []),
+        ],
+      },
+    });
+
+    if (existingEvent) {
+      console.log(
+        `[Gumroad Webhook Duplicate Ignored]: Event ${eventId} (Sale ID: ${saleId}) was already processed.`
+      );
+      return NextResponse.json(
+        { received: true, message: "Event already processed (idempotent)" },
+        { status: 200 }
+      );
+    }
+
     // Locate the user: custom_fields[userId] first, falling back to email
     let user = null;
 
@@ -108,21 +141,30 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Handle refund or dispute: downgrade or deactivate PRO status
+    // Handle refund or dispute: downgrade or deactivate PRO status atomically
     if (isRefunded || isDisputed) {
       if (user) {
         const now = new Date();
-        await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            subscriptionPlan: "free",
-            subscriptionStatus: isRefunded ? "refunded" : "disputed",
-            subscriptionExpiresAt: now,
-            plan: "FREE",
-            planExpiresAt: now,
-            updatedAt: now,
-          },
-        });
+        await prisma.$transaction([
+          prisma.user.update({
+            where: { id: user.id },
+            data: {
+              subscriptionPlan: "free",
+              subscriptionStatus: isRefunded ? "refunded" : "disputed",
+              subscriptionExpiresAt: now,
+              plan: "FREE",
+              planExpiresAt: now,
+              updatedAt: now,
+            },
+          }),
+          prisma.processedWebhookEvent.create({
+            data: {
+              eventId,
+              eventName,
+              userId: user.id,
+            },
+          }),
+        ]);
 
         console.log(
           `[Gumroad Webhook]: Downgraded PRO status for user ${user.id} (${user.email}) due to ${
@@ -133,12 +175,20 @@ export async function POST(request: NextRequest) {
         console.warn(
           `[Gumroad Webhook]: Refund/Dispute notification for non-existing user (email: ${email}, userId: ${userId})`
         );
+
+        await prisma.processedWebhookEvent.create({
+          data: {
+            eventId,
+            eventName,
+            userId: null,
+          },
+        });
       }
 
       return NextResponse.json({ received: true }, { status: 200 });
     }
 
-    // Handle successful purchase
+    // Handle successful purchase: wrap plan upgrade and event record in an atomic transaction
     if (user) {
       const now = new Date();
       // Extend 90 days from the current date (or extend from active future date if already subscribed)
@@ -151,19 +201,28 @@ export async function POST(request: NextRequest) {
 
       const ninetyDaysFromDate = new Date(baseTime + 90 * 24 * 60 * 60 * 1000);
 
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          subscriptionPlan: "pro",
-          subscriptionStatus: "active",
-          subscriptionExpiresAt: ninetyDaysFromDate,
-          dailyAiCredits: 20,
-          dailyAiCreditsUsed: 0,
-          plan: "PRO",
-          planExpiresAt: ninetyDaysFromDate,
-          updatedAt: new Date(),
-        },
-      });
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: user.id },
+          data: {
+            subscriptionPlan: "pro",
+            subscriptionStatus: "active",
+            subscriptionExpiresAt: ninetyDaysFromDate,
+            dailyAiCredits: 20,
+            dailyAiCreditsUsed: 0,
+            plan: "PRO",
+            planExpiresAt: ninetyDaysFromDate,
+            updatedAt: new Date(),
+          },
+        }),
+        prisma.processedWebhookEvent.create({
+          data: {
+            eventId,
+            eventName,
+            userId: user.id,
+          },
+        }),
+      ]);
 
       console.log(
         `[Gumroad Webhook]: User ${user.email} (ID: ${user.id}) upgraded to PRO PASS until ${ninetyDaysFromDate.toISOString()}`
@@ -172,6 +231,14 @@ export async function POST(request: NextRequest) {
       console.warn(
         `[Gumroad Webhook]: Purchase received or test ping verified without matching user in DB (email: "${email}", userId: "${userId}")`
       );
+
+      await prisma.processedWebhookEvent.create({
+        data: {
+          eventId,
+          eventName,
+          userId: null,
+        },
+      });
     }
 
     // Always return 200 OK to satisfy Gumroad's Ping verification check
