@@ -1508,11 +1508,11 @@ export default function LessonContentRenderer({
   };
 
   return (
-    <div className={`prose-container space-y-6 ${isAr ? "text-right" : "text-left"}`}>
+    <div className="prose-container space-y-6 text-start" dir="auto">
       <ReactMarkdown
         components={{
           h1: ({ children }) => (
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white mt-12 mb-6 leading-tight border-b border-slate-200 dark:border-slate-800 pb-4 text-right" dir="rtl">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white mt-12 mb-6 leading-tight border-b border-slate-200 dark:border-slate-800 pb-4 text-start" dir="auto">
               {children}
             </h1>
           ),
@@ -1572,8 +1572,8 @@ export default function LessonContentRenderer({
             else if (headingText.includes("حلول")) badgeIcon = "🎯";
 
             return (
-              <div className="mt-12 mb-6 pt-4" dir="rtl">
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug flex items-center gap-3 text-right">
+              <div className="mt-12 mb-6 pt-4" dir="auto">
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug flex items-center gap-3 text-start">
                   {isLessonSection && (
                     <span className="w-9 h-9 rounded-xl bg-blue-600/15 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 border border-blue-300/40 dark:border-blue-800/50 flex items-center justify-center text-lg shrink-0">
                       {badgeIcon}
@@ -1599,8 +1599,8 @@ export default function LessonContentRenderer({
             if (isCtaSection) {
               return (
                 <div
-                  className="mt-10 mb-5 p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-blue-900/30 via-slate-900/70 to-emerald-900/30 border border-blue-500/30 dark:border-blue-800/60 shadow-md text-right"
-                  dir="rtl"
+                  className="mt-10 mb-5 p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-blue-900/30 via-slate-900/70 to-emerald-900/30 border border-blue-500/30 dark:border-blue-800/60 shadow-md text-start"
+                  dir="auto"
                 >
                   <div className="flex items-center gap-3">
                     <span className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-emerald-600 text-white flex items-center justify-center text-xl shrink-0 shadow-sm select-none">
@@ -1616,8 +1616,8 @@ export default function LessonContentRenderer({
 
             return (
               <h3
-                className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mt-8 mb-4 leading-snug flex items-center gap-2 text-right"
-                dir="rtl"
+                className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mt-8 mb-4 leading-snug flex items-center gap-2 text-start"
+                dir="auto"
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0" />
                 <span>{children}</span>
@@ -1625,7 +1625,7 @@ export default function LessonContentRenderer({
             );
           },
           h4: ({ children }) => (
-            <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mt-6 mb-3 text-right" dir="rtl">
+            <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mt-6 mb-3 text-start" dir="auto">
               {children}
             </h4>
           ),
@@ -1840,8 +1840,8 @@ export default function LessonContentRenderer({
 
             return (
               <p
-                className="text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed sm:leading-loose mb-6 font-normal text-right"
-                dir={isAr ? "rtl" : "ltr"}
+                className="text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed sm:leading-loose mb-6 font-normal text-start"
+                dir="auto"
               >
                 {renderInlineContent(children)}
               </p>
@@ -1892,8 +1892,8 @@ export default function LessonContentRenderer({
               // Generic list item containing non-tool links (keep link fully interactive)
               return (
                 <li
-                  className="text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed my-2 text-right list-none"
-                  dir={isAr ? "rtl" : "ltr"}
+                  className="text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed my-2 text-start list-none"
+                  dir="auto"
                 >
                   <div className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-blue-500 mt-2.5 shrink-0" />
@@ -1966,8 +1966,8 @@ export default function LessonContentRenderer({
             // Generic Bullet Item (Arabic notes/explanations)
             return (
               <li
-                className="text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed my-2 text-right"
-                dir="rtl"
+                className="text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed my-2 text-start"
+                dir="auto"
               >
                 {renderInlineContent(children)}
               </li>
@@ -1975,10 +1975,8 @@ export default function LessonContentRenderer({
           },
           blockquote: ({ children }) => (
             <blockquote
-              className={`${
-                isAr ? "border-r-4 rounded-l-2xl text-right" : "border-l-4 rounded-r-2xl text-left"
-              } border-blue-500 bg-blue-50/60 dark:bg-blue-950/30 text-slate-700 dark:text-slate-300 p-6 my-8 shadow-2xs text-base sm:text-lg leading-relaxed`}
-              dir={isAr ? "rtl" : "ltr"}
+              className="border-s-4 rounded-e-2xl text-start border-blue-500 bg-blue-50/60 dark:bg-blue-950/30 text-slate-700 dark:text-slate-300 p-6 my-8 shadow-2xs text-base sm:text-lg leading-relaxed"
+              dir="auto"
             >
               {children}
             </blockquote>

@@ -689,10 +689,10 @@ export default async function LandingPage({
                       </span>
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors truncate">
+                      <h3 dir="auto" className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors truncate text-start">
                         {job.title}
                       </h3>
-                      <p className="text-xs text-slate-400 font-medium">
+                      <p dir="auto" className="text-xs text-slate-400 font-medium text-start">
                         {job.company} • {job.city || "Deutschland"}
                       </p>
                     </div>

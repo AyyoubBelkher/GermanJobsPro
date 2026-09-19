@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { stripHtml } from "@/components/jobs/JobBoardClient";
+import { getDictionary, isValidLocale, DEFAULT_LOCALE, LOCALE_METADATA, type Locale } from "@/lib/i18n";
 
 export interface JobDetailData {
   id: string;
@@ -77,16 +78,21 @@ const extractGermanCity = (rawCity?: string | null): string => {
   return trimmed;
 };
 
+const isArabicText = (text: string) => /[\u0600-\u06FF]/.test(text);
+
 export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
-  const isAr = locale === "ar";
-  const isDe = locale === "de";
+  const activeLocale: Locale = isValidLocale(locale) ? locale : DEFAULT_LOCALE;
+  const dict = getDictionary(activeLocale);
+  const currentMeta = LOCALE_METADATA[activeLocale];
+  const isAr = activeLocale === "ar";
+  const dir = currentMeta.dir;
 
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  // تنظيف وتقسيم الشروط واستبعاد النقاط والشرطات المكررة في بداية كل سطر
+  // Clean and parse requirements
   let parsedRequirements: string[] = [];
   if (job.requirements) {
     try {
@@ -108,14 +114,13 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
   const germanCity = extractGermanCity(job.city);
   const cleanCompany = job.company?.replace(/[\u0600-\u06FF]/g, "").trim() || job.company;
 
-  // إعداد روابط التوجيه لأدوات الذكاء الاصطناعي مع التعبئة المسبقة
-  const coverLetterUrl = `/${locale}/dashboard/cover-letters/new?jobTitle=${encodeURIComponent(
+  const coverLetterUrl = `/${activeLocale}/dashboard/cover-letters/new?jobTitle=${encodeURIComponent(
     germanTitle
   )}&companyName=${encodeURIComponent(cleanCompany)}&jobDescription=${encodeURIComponent(
     job.requirements || job.descriptionRaw || ""
   )}`;
 
-  const atsAnalyzerUrl = `/${locale}/dashboard/ats-analyzer?jobDescription=${encodeURIComponent(
+  const atsAnalyzerUrl = `/${activeLocale}/dashboard/ats-analyzer?jobDescription=${encodeURIComponent(
     job.requirements || job.descriptionRaw || ""
   )}`;
 
@@ -183,19 +188,14 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
   const handleSmartMailSend = async () => {
     if (!job.contactEmail) return;
 
-    // 1. Copy contact email with graceful fallback
     await copyToClipboard(job.contactEmail);
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 3000);
 
-    // 2. Show notification
-    const toastMessage = isAr
-      ? "✓ تم نسخ بريد الشركة وفتح مسودة التقديم!"
-      : "✓ E-Mail kopiert & Bewerbungsentwurf geöffnet!";
+    const toastMessage = dict.jobs.details.emailDraftToast;
     setToast(toastMessage);
     setTimeout(() => setToast(null), 4500);
 
-    // 3. Open Gmail Web Compose in a new browser tab with prefilled parameters
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&hl=en&to=${encodeURIComponent(
       job.contactEmail
     )}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
@@ -210,20 +210,20 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
     : "";
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10" dir={dir}>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {/* العمود الرئيسي: تفاصيل الوظيفة والشروط */}
+        {/* Main Column: Details & Requirements */}
         <div className="lg:col-span-8 space-y-8">
           
           <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl backdrop-blur-xl">
-            {/* وسوم الوظيفة */}
+            {/* Job Tags */}
             <div className="flex items-center gap-2.5 flex-wrap">
               <span className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
                 {job.category}
               </span>
               <span className="px-3 py-1 rounded-full bg-slate-800 text-slate-300 text-xs font-medium">
-                {job.jobType || (isAr ? "دوام كامل" : "Vollzeit")}
+                {job.jobType || dict.jobs.details.fullTime}
               </span>
               <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-1">
                 <span>🇩🇪</span>
@@ -237,42 +237,34 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
               )}
             </div>
 
-            {/* عنوان الوظيفة واسم الشركة */}
-            <div dir={isAr ? "rtl" : "ltr"} className={`space-y-2 ${isAr ? "text-right" : "text-left"}`}>
-              <h1 dir="ltr" className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-snug text-start">
+            {/* Job Title & Company */}
+            <div dir={dir} className={`space-y-2 ${isAr ? "text-right" : "text-left"}`}>
+              <h1 dir="auto" className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-snug text-start">
                 <bdi>{job.title}</bdi>
               </h1>
               <div className="flex items-center gap-4 text-sm sm:text-base text-slate-300 flex-wrap">
-                <span className="font-bold text-blue-400 flex items-center gap-1.5">
+                <span className="font-bold text-blue-400 flex items-center gap-1.5" dir="auto">
                   <span>🏢</span>
                   <span>{job.company}</span>
                 </span>
                 <span className="text-slate-400 flex items-center gap-1.5">
                   <span>📍</span>
-                  <span>{job.city || (isAr ? "ألمانيا" : "Deutschland")}</span>
+                  <span>{job.city || dict.jobs.details.germany}</span>
                 </span>
               </div>
             </div>
 
-            {/* بانر التقديم السريع بالذكاء الاصطناعي */}
+            {/* Quick AI Apply Banner */}
             <div className="p-4 sm:p-5 rounded-2xl bg-blue-950/40 border border-blue-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">⚡</span>
                   <span className="font-bold text-white text-sm">
-                    {isAr
-                      ? "هل ترغب بالتقديم السريع على هذه الوظيفة؟"
-                      : isDe
-                      ? "Möchten Sie sich direkt auf diese Stelle bewerben?"
-                      : "Ready to apply for this job in Germany?"}
+                    {dict.jobs.details.quickAiApplyBanner}
                   </span>
                 </div>
                 <p className="text-xs text-slate-300">
-                  {isAr
-                    ? "استخدم أدوات الذكاء الاصطناعي لتوليد خطاب الدافع وفحص توافق سيرتك الذاتية بضغطة واحدة."
-                    : isDe
-                    ? "Nutzen Sie unsere KI für ein maßgeschneidertes Anschreiben und den ATS-Check."
-                    : "Generate a DIN 5008 cover letter and audit your ATS match with 1 click."}
+                  {dict.jobs.details.quickAiApplyDesc}
                 </p>
               </div>
 
@@ -282,59 +274,60 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
                   className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/25 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <span>✨</span>
-                  <span>{isAr ? "توليد خطاب الدافع" : isDe ? "Anschreiben erstellen" : "Draft Cover Letter"}</span>
+                  <span>{dict.jobs.details.draftCoverLetter}</span>
                 </Link>
               </div>
             </div>
 
-            {/* نبذة وتفاصيل الوظيفة */}
+            {/* Job Description */}
             <div className="space-y-4 pt-4 border-t border-slate-800">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <span>📄</span>
-                <span>{isAr ? "نبذة وتفاصيل الوظيفة" : isDe ? "Stellenbeschreibung" : "Job Description"}</span>
+                <span>{dict.jobs.details.jobDescription}</span>
               </h3>
 
               {cleanedDescription ? (
                 <div
-                  dir={isAr ? "rtl" : "ltr"}
-                  className={`text-sm text-slate-300 leading-relaxed space-y-3 whitespace-pre-line font-normal ${
-                    isAr ? "text-right" : "text-left"
-                  }`}
+                  dir="auto"
+                  className="text-sm text-slate-300 leading-relaxed space-y-3 whitespace-pre-line font-normal text-start"
                 >
                   {cleanedDescription}
                 </div>
               ) : (
                 <p className="text-xs text-slate-400">
-                  {isAr
-                    ? "لم يتم إدراج وصف تفصيلي إضافي، يمكنك الاطلاع على متطلبات التقديم المباشرة أدناه."
-                    : "Keine ausführliche Beschreibung hinterlegt."}
+                  {dict.jobs.details.noDescription}
                 </p>
               )}
             </div>
 
-            {/* شروط ومتطلبات الوظيفة */}
+            {/* Job Requirements */}
             {(parsedRequirements.length > 0 || job.requirements) && (
               <div className="space-y-4 pt-6 border-t border-slate-800">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <span>🎯</span>
-                  <span>{isAr ? "شروط ومتطلبات الوظيفة" : isDe ? "Anforderungen & Qualifikationen" : "Requirements & Qualifications"}</span>
+                  <span>{dict.jobs.details.requirements}</span>
                 </h3>
 
                 {parsedRequirements.length > 0 ? (
-                  <ul className="space-y-2.5 text-sm text-slate-200" dir={isAr ? "rtl" : "ltr"}>
-                    {parsedRequirements.map((req, idx) => (
-                      <li key={idx} className={`flex items-start gap-3 ${isAr ? "text-right" : "text-left"}`}>
-                        <span className="text-blue-400 font-bold shrink-0 mt-0.5 select-none">✓</span>
-                        <span className="leading-relaxed flex-1">{req}</span>
-                      </li>
-                    ))}
+                  <ul className="space-y-2.5 text-sm text-slate-300 text-start">
+                    {parsedRequirements.map((req, idx) => {
+                      const isRtl = isArabicText(req);
+                      return (
+                        <li
+                          key={idx}
+                          dir={isRtl ? "rtl" : "ltr"}
+                          className="flex items-start gap-2.5 text-sm text-slate-300 leading-relaxed text-start"
+                        >
+                          <span className="text-blue-400 mt-1 shrink-0 select-none">✓</span>
+                          <span className="flex-1">{req}</span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : (
                   <div
-                    dir={isAr ? "rtl" : "ltr"}
-                    className={`text-sm text-slate-300 leading-relaxed whitespace-pre-line ${
-                      isAr ? "text-right" : "text-left"
-                    }`}
+                    dir={isArabicText(job.requirements || "") ? "rtl" : "ltr"}
+                    className="text-sm text-slate-300 leading-relaxed whitespace-pre-line text-start"
                   >
                     {job.requirements}
                   </div>
@@ -342,42 +335,24 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
               </div>
             )}
 
-            {/* نصائح ملف التقديم الألماني */}
+            {/* Application Success Tips */}
             <div className="rounded-2xl bg-slate-950 border border-slate-800/80 p-5 space-y-3">
               <h4 className="font-bold text-white text-xs sm:text-sm flex items-center gap-2">
                 <span>🇩🇪</span>
-                <span>
-                  {isAr
-                    ? "نصائح GermanJobsPro لقبول ملفك لدى صاحب العمل الألماني"
-                    : isDe
-                    ? "Erfolgstipps für Ihre Bewerbung in Deutschland"
-                    : "GermanJobsPro Tips for German Employer Success"}
-                </span>
+                <span>{dict.jobs.details.successTipsTitle}</span>
               </h4>
               <ul className="space-y-2 text-xs text-slate-400">
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-400 font-bold">1.</span>
-                  <span>
-                    {isAr
-                      ? "اعتمد تنسيق السيرة الذاتية القياسي DIN 5008 مع ترتيب زمني عكسي وصورة شخصية مهنية."
-                      : "Verwenden Sie einen tabellarischen Lebenslauf nach DIN 5008 im umgekehrt chronologischen Format."}
-                  </span>
+                  <span>{dict.jobs.details.tip1}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-400 font-bold">2.</span>
-                  <span>
-                    {isAr
-                      ? "قم بتضمين خطاب دافع (Anschreiben) مخصص لهذه الوظيفة يركز على متطلبات الشركة."
-                      : "Fügen Sie ein individuelles Anschreiben bei, das genau auf die Anforderungen dieser Position eingeht."}
-                  </span>
+                  <span>{dict.jobs.details.tip2}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-400 font-bold">3.</span>
-                  <span>
-                    {isAr
-                      ? "اجمع كافة مستنداتك في ملف PDF واحد متكامل (Bewerbungsmappe) لا يتجاوز حجمه 5-10 ميغابايت."
-                      : "Fassen Sie Lebenslauf, Anschreiben und Zeugnisse zu einer vollständigen Bewerbungsmappe im PDF-Format zusammen."}
-                  </span>
+                  <span>{dict.jobs.details.tip3}</span>
                 </li>
               </ul>
             </div>
@@ -386,22 +361,20 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
 
         </div>
 
-        {/* الشريط الجانبي: التقديم المباشر وأدوات الذكاء الاصطناعي */}
+        {/* Sidebar: Direct Application & AI Tools */}
         <div className="lg:col-span-4 space-y-6 sticky top-24">
           
-          {/* بطاقة التقديم المباشر بالإيميل */}
+          {/* Direct Email Application Card */}
           <div className="rounded-3xl bg-slate-900 border-2 border-blue-500/40 p-6 space-y-5 shadow-2xl">
             <div className="space-y-1">
               <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider">
-                {isAr ? "مركز التقديم الفوري" : isDe ? "Bewerbungsportal" : "Application Hub"}
+                {dict.jobs.details.applyTitle}
               </span>
               <h3 className="text-lg font-black text-white">
-                {isAr ? "التقديم على هذه الفرصة" : isDe ? "Jetzt bewerben" : "Apply for this Role"}
+                {dict.jobs.details.applyTitle}
               </h3>
               <p className="text-xs text-slate-400">
-                {isAr
-                  ? "تواصل مباشرة مع قسم التوظيف في الشركة عبر البريد الإلكتروني الرسمي."
-                  : "Bewerben Sie sich direkt per E-Mail bei der Personalabteilung."}
+                {dict.jobs.details.applySubtitle}
               </p>
             </div>
 
@@ -409,10 +382,10 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
               <div className="space-y-3">
                 <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-400 font-medium">{isAr ? "بريد الشركة المباشر:" : "Company Email:"}</span>
+                    <span className="text-slate-400 font-medium">{dict.jobs.details.companyEmail}</span>
                     <span className="text-emerald-400 font-bold flex items-center gap-1">
                       <span>✓</span>
-                      <span>{isAr ? "تقديم مباشر" : "Direct"}</span>
+                      <span>{dict.jobs.details.directApplyBadge}</span>
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-2 bg-slate-900 px-3 py-2 rounded-xl border border-slate-800 font-mono text-xs text-white" dir="ltr">
@@ -422,7 +395,7 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
                       onClick={handleCopyEmail}
                       className="text-blue-400 hover:text-white shrink-0 cursor-pointer font-sans text-[11px] font-bold"
                     >
-                      {copiedEmail ? (isAr ? "✓ تم النسخ" : "Copied!") : (isAr ? "نسخ" : "Copy")}
+                      {copiedEmail ? dict.jobs.details.copiedSuccess : dict.common.copy}
                     </button>
                   </div>
                 </div>
@@ -442,12 +415,12 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
                       className="flex-1 py-3.5 px-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm text-center shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
                     >
                       <span>✉️</span>
-                      <span>{isAr ? "إرسال بريد التقديم المباشر" : isDe ? "Per E-Mail bewerben" : "Apply via Email"}</span>
+                      <span>{dict.jobs.details.sendDirectEmail}</span>
                     </button>
 
                     <a
                       href={mailtoLink}
-                      title={isAr ? "فتح في تطبيق البريد بالجهاز (Mailto)" : isDe ? "Standard-Mailprogramm öffnen" : "Open native mail app"}
+                      title={dict.jobs.details.openMailApp}
                       className="p-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all flex items-center justify-center cursor-pointer shrink-0"
                     >
                       <span className="text-base" aria-hidden="true">📱</span>
@@ -458,13 +431,13 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
                   <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
                     <span className="text-slate-500 flex items-center gap-1">
                       <span>🚀</span>
-                      <span>{isAr ? "يفتح في Gmail وينسخ البريد" : "Opens Gmail Web Compose"}</span>
+                      <span>{dict.jobs.details.gmailNotice}</span>
                     </span>
                     <a
                       href={mailtoLink}
                       className="text-blue-400 hover:text-blue-300 hover:underline flex items-center gap-1 font-medium transition-colors"
                     >
-                      <span>{isAr ? "تطبيق البريد (Mailto)" : "Native Mail App"}</span>
+                      <span>{dict.jobs.details.mailAppNotice}</span>
                       <span>↗</span>
                     </a>
                   </div>
@@ -475,28 +448,28 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
                     className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs text-center transition-all cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <span>📝</span>
-                    <span>{isAr ? "عرض نموذج الرسالة الألمانية الجاهزة" : "Show German Email Template"}</span>
+                    <span>{dict.jobs.details.showTemplate}</span>
                   </button>
                 </div>
               </div>
             ) : (
               <div className="space-y-3">
                 <a
-                  href={mailtoLink || `mailto:info@${cleanCompany.toLowerCase().replace(/[^a-z0-9]/g, '')}.de`}
+                  href={mailtoLink || `mailto:info@${cleanCompany.toLowerCase().replace(/[^a-z0-9]/g, "")}.de`}
                   className="w-full py-4 px-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm text-center shadow-xl shadow-blue-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>✉️</span>
-                  <span>{isAr ? "التقديم المباشر للشركة" : "Direct Email Apply"}</span>
+                  <span>{dict.jobs.details.directEmailApply}</span>
                 </a>
               </div>
             )}
           </div>
 
-          {/* بطاقات أدوات الذكاء الاصطناعي */}
+          {/* AI Tools Cards */}
           <div className="rounded-3xl bg-slate-900/80 border border-slate-800 p-6 space-y-4 shadow-xl">
             <h4 className="font-bold text-white text-sm flex items-center gap-2">
               <span>⚡</span>
-              <span>{isAr ? "أدوات الذكاء الاصطناعي لهذه الوظيفة" : isDe ? "KI-Integrationen für diesen Job" : "AI Tools for this Role"}</span>
+              <span>{dict.jobs.details.aiToolsTitle}</span>
             </h4>
 
             <Link
@@ -506,14 +479,12 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
               <div className="flex items-center justify-between text-white font-bold text-xs group-hover:text-blue-400 transition-colors">
                 <div className="flex items-center gap-2">
                   <span className="text-base">✨</span>
-                  <span>{isAr ? "تجهيز خطاب التقديم (Anschreiben)" : isDe ? "Anschreiben generieren" : "Generate Cover Letter"}</span>
+                  <span>{dict.jobs.details.aiCoverLetterTitle}</span>
                 </div>
-                <span>→</span>
+                <span className={dir === "rtl" ? "rotate-180" : ""}>→</span>
               </div>
               <p className="text-[11px] text-slate-400 leading-relaxed">
-                {isAr
-                  ? "توليد خطاب دافع بالذكاء الاصطناعي معبأ مسبقاً بمسمى الوظيفة واسم الشركة ومتطلباتها طبقاً لمعايير DIN 5008."
-                  : "Prefills job title, company, and requirements into our AI cover letter builder."}
+                {dict.jobs.details.aiCoverLetterDesc}
               </p>
             </Link>
 
@@ -524,45 +495,43 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
               <div className="flex items-center justify-between text-white font-bold text-xs group-hover:text-blue-400 transition-colors">
                 <div className="flex items-center gap-2">
                   <span className="text-base">🔍</span>
-                  <span>{isAr ? "فحص توافق السيرة (ATS) مع الوظيفة" : isDe ? "ATS-Check für diese Stelle" : "Run ATS Match Audit"}</span>
+                  <span>{dict.jobs.details.aiAtsTitle}</span>
                 </div>
-                <span>→</span>
+                <span className={dir === "rtl" ? "rotate-180" : ""}>→</span>
               </div>
               <p className="text-[11px] text-slate-400 leading-relaxed">
-                {isAr
-                  ? "فحص نسبة تطابق سيرتك الذاتية مع متطلبات وشروط هذه الوظيفة، واكتشاف الكلمات المفتاحية الناقصة."
-                  : "Checks your CV against this specific job's keywords and requirements."}
+                {dict.jobs.details.aiAtsDesc}
               </p>
             </Link>
           </div>
 
-          {/* بطاقة ملخص المعلومات */}
+          {/* Quick Overview Card */}
           <div className="rounded-3xl bg-slate-900/60 border border-slate-800 p-6 space-y-4 text-xs">
             <h4 className="font-bold text-white text-sm flex items-center gap-2">
               <span>ℹ️</span>
-              <span>{isAr ? "بطاقة معلومات سريعة" : "Job Overview"}</span>
+              <span>{dict.jobs.details.overviewTitle}</span>
             </h4>
 
             <div className="space-y-2.5 text-slate-300">
               <div className="flex justify-between py-1 border-b border-slate-800/80">
-                <span className="text-slate-400">{isAr ? "الشركة:" : "Company:"}</span>
+                <span className="text-slate-400">{dict.jobs.details.company}</span>
                 <span className="font-semibold text-white">{job.company}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-800/80">
-                <span className="text-slate-400">{isAr ? "المدينة:" : "City:"}</span>
-                <span className="font-semibold text-white">{job.city || (isAr ? "ألمانيا" : "Germany")}</span>
+                <span className="text-slate-400">{dict.jobs.details.city}</span>
+                <span className="font-semibold text-white">{job.city || dict.jobs.details.germany}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-800/80">
-                <span className="text-slate-400">{isAr ? "نوع العمل:" : "Job Type:"}</span>
-                <span className="font-semibold text-white">{job.jobType || "Full-time"}</span>
+                <span className="text-slate-400">{dict.jobs.details.jobType}</span>
+                <span className="font-semibold text-white">{job.jobType || dict.jobs.details.fullTime}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-800/80">
-                <span className="text-slate-400">{isAr ? "مستوى اللغة:" : "Language:"}</span>
+                <span className="text-slate-400">{dict.jobs.details.languageLevel}</span>
                 <span className="font-semibold text-emerald-400 font-mono">{job.languageReq || "B1/B2"}</span>
               </div>
               {job.salary && (
                 <div className="flex justify-between py-1 border-b border-slate-800/80">
-                  <span className="text-slate-400">{isAr ? "الراتب التقديري:" : "Salary:"}</span>
+                  <span className="text-slate-400">{dict.jobs.details.salary}</span>
                   <span className="font-semibold text-amber-300">{job.salary}</span>
                 </div>
               )}
@@ -575,7 +544,7 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
                 className="w-full py-2.5 px-3 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-all text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>🔗</span>
-                <span>{copiedLink ? (isAr ? "✓ تم نسخ رابط الوظيفة!" : "Link Copied!") : (isAr ? "مشاركة رابط الوظيفة" : "Share Job Link")}</span>
+                <span>{copiedLink ? dict.jobs.details.linkCopied : dict.jobs.details.shareJob}</span>
               </button>
             </div>
           </div>
@@ -584,7 +553,7 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
 
       </div>
 
-      {/* نافذة نموذج رسالة التقديم بالألمانية */}
+      {/* German Application Email Modal */}
       {showEmailModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
           <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 max-w-xl w-full space-y-5 shadow-2xl">
@@ -592,7 +561,7 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
               <div className="flex items-center gap-2.5">
                 <span className="text-2xl">📝</span>
                 <h3 className="text-base sm:text-lg font-bold text-white">
-                  {isAr ? "نموذج رسالة التقديم بالألمانية (Email Template)" : "German Email Application Template"}
+                  {dict.jobs.details.templateModalTitle}
                 </h3>
               </div>
               <button
@@ -606,7 +575,7 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
 
             <div className="space-y-2">
               <label className="block text-xs font-bold text-slate-400">
-                {isAr ? "عنوان الرسالة (Betreff):" : "Subject:"}
+                {dict.jobs.details.subject}
               </label>
               <input
                 type="text"
@@ -619,7 +588,7 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
 
             <div className="space-y-2">
               <label className="block text-xs font-bold text-slate-400">
-                {isAr ? "نص الرسالة (Text):" : "Body text:"}
+                {dict.jobs.details.bodyText}
               </label>
               <textarea
                 readOnly
@@ -641,7 +610,7 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
                 className="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <span>📋</span>
-                <span>{copiedEmail ? (isAr ? "✓ تم نسخ النموذج!" : "Copied!") : (isAr ? "نسخ النموذج بالكامل" : "Copy Template")}</span>
+                <span>{copiedEmail ? dict.jobs.details.copiedSuccess : dict.jobs.details.copyTemplate}</span>
               </button>
 
               <button
@@ -653,14 +622,14 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
                 className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold text-center shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-1 cursor-pointer"
               >
                 <span>✉️</span>
-                <span>{isAr ? "فتح في Gmail" : "Open in Gmail"}</span>
+                <span>{dict.jobs.details.openGmail}</span>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* إشعار عائم لتأكيد نسخ البريد وفتح المسودة */}
+      {/* Toast Notification */}
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-emerald-600 text-white font-bold text-xs sm:text-sm shadow-2xl border border-emerald-400/40 backdrop-blur-md animate-fadeIn">
           <span className="text-base sm:text-lg shrink-0">📬</span>

@@ -314,7 +314,7 @@ export default async function SinglePostPage({
             </span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 leading-tight">
+          <h1 dir="auto" className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 leading-tight text-start">
             {post.title}
           </h1>
 
@@ -368,7 +368,7 @@ export default async function SinglePostPage({
         )}
 
         {/* Enhanced Article Content Renderer (German A1 aware & general markdown) */}
-        <div className={`prose prose-slate dark:prose-invert prose-lg max-w-none leading-relaxed text-slate-800 dark:text-slate-200 ${isAr ? "text-right" : "text-left"}`}>
+        <div dir="auto" className="prose prose-slate dark:prose-invert prose-lg max-w-none leading-relaxed text-slate-800 dark:text-slate-200 text-start">
           <LessonContentRenderer
             content={stripLeadingH1(post.markdown_content)}
             category={post.category}

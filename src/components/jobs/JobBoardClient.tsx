@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useTransition, useCallback } from "react";
 import Link from "next/link";
 import { extractGermanJobTitle } from "@/lib/cover-letter";
+import { getDictionary, isValidLocale, DEFAULT_LOCALE, LOCALE_METADATA, type Locale } from "@/lib/i18n";
 
 export interface JobItem {
   id: string;
@@ -42,23 +43,6 @@ interface JobBoardClientProps {
   locale: string;
 }
 
-const CATEGORIES = [
-  { id: "all", labelAr: "جميع المجالات", labelDe: "Alle Kategorien", labelEn: "All Categories", icon: "🌐" },
-  { id: "IT", labelAr: "تقنية المعلومات والبرمجة", labelDe: "IT & Software", labelEn: "IT & Tech", icon: "💻" },
-  { id: "Healthcare", labelAr: "التمريض والرعاية الصحية", labelDe: "Pflege & Medizin", labelEn: "Healthcare", icon: "🏥" },
-  { id: "Ausbildung", labelAr: "عقود الأوسبيلدونغ (Ausbildung)", labelDe: "Ausbildung", labelEn: "Apprenticeship", icon: "🎓" },
-  { id: "Engineering", labelAr: "الهندسة والصناعة", labelDe: "Ingenieurwesen", labelEn: "Engineering", icon: "⚙️" },
-  { id: "General", labelAr: "وظائف أخرى", labelDe: "Sonstige", labelEn: "General", icon: "💼" },
-];
-
-const LANGUAGES = [
-  { id: "all", label: "All Languages / كل اللغات" },
-  { id: "English", label: "🇬🇧 English" },
-  { id: "B1", label: "🇩🇪 Deutsch B1" },
-  { id: "B2", label: "🇩🇪 Deutsch B2" },
-  { id: "C1", label: "🇩🇪 Deutsch C1" },
-];
-
 export default function JobBoardClient({
   initialJobs,
   total: initialTotal,
@@ -66,8 +50,27 @@ export default function JobBoardClient({
   totalPages: initialTotalPages,
   locale,
 }: JobBoardClientProps) {
-  const isAr = locale === "ar";
-  const isDe = locale === "de";
+  const activeLocale: Locale = isValidLocale(locale) ? locale : DEFAULT_LOCALE;
+  const dict = getDictionary(activeLocale);
+  const currentMeta = LOCALE_METADATA[activeLocale];
+  const dir = currentMeta.dir;
+
+  const categories = [
+    { id: "all", label: dict.jobs.categories.all, icon: "🌐" },
+    { id: "IT", label: dict.jobs.categories.it, icon: "💻" },
+    { id: "Healthcare", label: dict.jobs.categories.healthcare, icon: "🏥" },
+    { id: "Ausbildung", label: dict.jobs.categories.ausbildung, icon: "🎓" },
+    { id: "Engineering", label: dict.jobs.categories.engineering, icon: "⚙️" },
+    { id: "General", label: dict.jobs.categories.general, icon: "💼" },
+  ];
+
+  const languages = [
+    { id: "all", label: dict.jobs.allLanguages },
+    { id: "English", label: "🇬🇧 English" },
+    { id: "B1", label: "🇩🇪 Deutsch B1" },
+    { id: "B2", label: "🇩🇪 Deutsch B2" },
+    { id: "C1", label: "🇩🇪 Deutsch C1" },
+  ];
 
   const [jobs, setJobs] = useState<JobItem[]>(initialJobs);
   const [total, setTotal] = useState(initialTotal);
@@ -128,43 +131,43 @@ export default function JobBoardClient({
     const diffHours = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60));
 
     if (diffHours < 24) {
-      return isAr ? "اليوم" : isDe ? "Heute" : "Today";
+      return dict.jobs.dateToday;
     }
     const diffDays = Math.floor(diffHours / 24);
     if (diffDays === 1) {
-      return isAr ? "منذ يوم" : isDe ? "Gestern" : "1 day ago";
+      return dict.jobs.dateYesterday;
     }
     if (diffDays < 7) {
-      return isAr ? `منذ ${diffDays} أيام` : isDe ? `Vor ${diffDays} Tagen` : `${diffDays} days ago`;
+      return dict.jobs.dateDaysAgo.replace("{days}", String(diffDays));
     }
-    return d.toLocaleDateString(isAr ? "ar-EG" : isDe ? "de-DE" : "en-US", {
+    const localeCode =
+      activeLocale === "ar"
+        ? "ar-EG"
+        : activeLocale === "de"
+        ? "de-DE"
+        : activeLocale === "fr"
+        ? "fr-FR"
+        : "en-US";
+    return d.toLocaleDateString(localeCode, {
       month: "short",
       day: "numeric",
     });
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" dir={dir}>
       {/* Search & Header Section */}
       <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl backdrop-blur-md">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
             <span>🇩🇪</span>
-            <span>{isAr ? "سوق العمل الألماني المباشر" : isDe ? "Aktuelle Stellenangebote" : "German Job Market"}</span>
+            <span>{dict.jobs.marketBadge}</span>
           </div>
           <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-            {isAr
-              ? "💼 فرص العمل وعقود التدريب في ألمانيا"
-              : isDe
-              ? "💼 Jobs & Ausbildungsplätze in Deutschland"
-              : "💼 Jobs & Apprenticeships in Germany"}
+            {dict.jobs.title}
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
-            {isAr
-              ? "تصفح أحدث الوظائف المحدثة يومياً مع إمكانية توليد خطاب الدافع (Anschreiben) وفحص سيرتك الذاتية بضغطة واحدة لكل وظيفة."
-              : isDe
-              ? "Finden Sie aktuelle Jobs in Deutschland mit 1-Klick Anschreiben-Generator und ATS-Lebenslauf-Check."
-              : "Browse verified jobs in Germany with 1-click AI cover letter generator and ATS resume audit."}
+            {dict.jobs.subtitle}
           </p>
         </div>
 
@@ -175,13 +178,7 @@ export default function JobBoardClient({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={
-                isAr
-                  ? "🔍 ابحث بالمسمى الوظيفي، اسم الشركة، أو المدينة (مثل: Software, Berlin, Pflege)..."
-                  : isDe
-                  ? "🔍 Jobtitel, Unternehmen oder Stadt suchen..."
-                  : "🔍 Search by title, company, or city..."
-              }
+              placeholder={dict.jobs.searchPlaceholder}
               className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-white text-sm placeholder:text-slate-500 focus:border-blue-500 focus:outline-hidden transition-all shadow-inner"
             />
             <span className="absolute left-4 top-4 text-slate-500 text-base">🔍</span>
@@ -193,7 +190,7 @@ export default function JobBoardClient({
               onChange={(e) => setLanguage(e.target.value)}
               className="w-full px-4 py-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden transition-all cursor-pointer"
             >
-              {LANGUAGES.map((l) => (
+              {languages.map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.label}
                 </option>
@@ -204,7 +201,7 @@ export default function JobBoardClient({
 
         {/* Category Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {CATEGORIES.map((cat) => {
+          {categories.map((cat) => {
             const active = category === cat.id;
             return (
               <button
@@ -218,7 +215,7 @@ export default function JobBoardClient({
                 }`}
               >
                 <span>{cat.icon}</span>
-                <span>{isAr ? cat.labelAr : isDe ? cat.labelDe : cat.labelEn}</span>
+                <span>{cat.label}</span>
               </button>
             );
           })}
@@ -234,22 +231,16 @@ export default function JobBoardClient({
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
-              <span>{isAr ? "جاري التحديث..." : "Updating..."}</span>
+              <span>{dict.jobs.updating}</span>
             </span>
           ) : (
-            <span>
-              {isAr
-                ? `تم العثور على ${total} فرصة عمل متاحة`
-                : isDe
-                ? `${total} Stellenangebote gefunden`
-                : `Found ${total} job openings`}
-            </span>
+            <span>{dict.jobs.foundJobs.replace("{count}", String(total))}</span>
           )}
         </div>
 
         {totalPages > 1 && (
           <span>
-            {isAr ? `صفحة ${page} من ${totalPages}` : `Page ${page} of ${totalPages}`}
+            {dict.jobs.pageOf.replace("{page}", String(page)).replace("{totalPages}", String(totalPages))}
           </span>
         )}
       </div>
@@ -262,12 +253,10 @@ export default function JobBoardClient({
           </div>
           <div className="space-y-1">
             <h3 className="text-lg font-bold text-white">
-              {isAr ? "لم يتم العثور على نتائج" : "No jobs found"}
+              {dict.jobs.noJobsFound}
             </h3>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              {isAr
-                ? "جرب تغيير مصطلحات البحث أو إزالة الفلاتر لعرض مزيد من الفرص."
-                : "Try adjusting your search query or removing filters."}
+              {dict.jobs.noJobsDesc}
             </p>
           </div>
           <button
@@ -279,7 +268,7 @@ export default function JobBoardClient({
             }}
             className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all cursor-pointer"
           >
-            {isAr ? "إعادة ضبط الفلاتر" : "Reset Filters"}
+            {dict.jobs.resetFilters}
           </button>
         </div>
       ) : (
@@ -298,18 +287,18 @@ export default function JobBoardClient({
                   <span className="text-[11px] text-slate-500">{formatDate(job.publishedAt)}</span>
                 </div>
 
-                <div dir="ltr" className="text-start">
-                  <h3 className="font-extrabold text-white text-base leading-snug hover:text-blue-400 transition-colors">
-                    <Link href={`/${locale}/jobs/${job.id}`} className="block text-start">
+                <div dir="auto" className="text-start">
+                  <h3 dir="auto" className="font-extrabold text-white text-base leading-snug hover:text-blue-400 transition-colors text-start">
+                    <Link href={`/${activeLocale}/jobs/${job.id}`} className="block text-start" dir="auto">
                       {job.title}
                     </Link>
                   </h3>
-                  <p className="text-xs text-slate-400 mt-1 text-start">🏢 {job.company}</p>
+                  <p dir="auto" className="text-xs text-slate-400 mt-1 text-start">🏢 {job.company}</p>
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap text-xs">
                   <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 font-medium">
-                    📍 {job.city || "Germany"}
+                    📍 {job.city || dict.jobs.details.germany}
                   </span>
                   <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium">
                     🇩🇪 {job.languageReq || "B1/B2"}
@@ -322,7 +311,7 @@ export default function JobBoardClient({
                 </div>
 
                 {job.descriptionRaw && (
-                  <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed text-start" dir="ltr">
+                  <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed text-start" dir="auto">
                     {stripHtml(job.descriptionRaw)}
                   </p>
                 )}
@@ -330,16 +319,16 @@ export default function JobBoardClient({
 
               <div className="pt-4 border-t border-slate-800/80 space-y-2">
                 <Link
-                  href={`/${locale}/jobs/${job.id}`}
+                  href={`/${activeLocale}/jobs/${job.id}`}
                   className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs text-center transition-all shadow-md shadow-blue-600/20 flex items-center justify-center gap-1 cursor-pointer"
                 >
-                  <span>{isAr ? "تفاصيل الوظيفة والتقديم" : isDe ? "Details & Bewerben" : "View Details & Apply"}</span>
-                  <span>→</span>
+                  <span>{dict.jobs.viewDetailsAndApply}</span>
+                  <span className={dir === "rtl" ? "rotate-180" : ""}>→</span>
                 </Link>
 
                 <div className="grid grid-cols-2 gap-2">
                   <Link
-                    href={`/${locale}/dashboard/cover-letters/new?jobTitle=${encodeURIComponent(
+                    href={`/${activeLocale}/dashboard/cover-letters/new?jobTitle=${encodeURIComponent(
                       extractGermanJobTitle(job.title) || job.title
                     )}&companyName=${encodeURIComponent(
                       job.company
@@ -347,17 +336,17 @@ export default function JobBoardClient({
                     className="py-2 px-3 rounded-xl bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/20 font-bold text-xs text-center transition-all flex items-center justify-center gap-1"
                   >
                     <span>✨</span>
-                    <span>Anschreiben</span>
+                    <span>{dict.jobs.generateAnschreiben}</span>
                   </Link>
 
                   <Link
-                    href={`/${locale}/dashboard/ats-analyzer?jobDescription=${encodeURIComponent(
+                    href={`/${activeLocale}/dashboard/ats-analyzer?jobDescription=${encodeURIComponent(
                       job.requirements || job.descriptionRaw || ""
                     )}`}
                     className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs text-center transition-all flex items-center justify-center gap-1"
                   >
                     <span>🔍</span>
-                    <span>{isAr ? "فحص الـ CV" : "ATS Audit"}</span>
+                    <span>{dict.jobs.auditAts}</span>
                   </Link>
                 </div>
               </div>
@@ -375,7 +364,7 @@ export default function JobBoardClient({
             disabled={page <= 1}
             className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white disabled:opacity-30 text-xs font-bold transition-all cursor-pointer"
           >
-            {isAr ? "السابق" : "Previous"}
+            {dict.jobs.previous}
           </button>
 
           <div className="flex items-center gap-1">
@@ -404,7 +393,7 @@ export default function JobBoardClient({
             disabled={page >= totalPages}
             className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white disabled:opacity-30 text-xs font-bold transition-all cursor-pointer"
           >
-            {isAr ? "التالي" : "Next"}
+            {dict.jobs.next}
           </button>
         </div>
       )}

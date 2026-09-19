@@ -123,7 +123,7 @@ export default async function JobDetailPage({
             {isAr ? "فرص العمل في ألمانيا" : isDe ? "Jobs" : "Jobs"}
           </Link>
           <span>/</span>
-          <span className="text-slate-200 truncate max-w-xs font-semibold" dir="ltr">
+          <span className="text-slate-200 truncate max-w-xs font-semibold" dir="auto">
             {job.title}
           </span>
         </div>

@@ -1,56 +1,67 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifySessionToken } from "@/lib/session";
+import { DEFAULT_LOCALE, isValidLocale, type Locale } from "@/lib/i18n";
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
 
-  // 1. Protect all admin routes: /:locale/admin/* and /admin/* except /login
-  const localizedAdminMatch = pathname.match(/^\/([^/]+)\/admin(\/.*)?$/);
-  const rootAdminMatch = pathname.match(/^\/admin(\/.*)?$/);
+  // Extract the first segment after root
+  const segments = pathname.split("/");
+  const potentialLocale = segments[1];
 
-  if (localizedAdminMatch || rootAdminMatch) {
-    const locale = localizedAdminMatch ? localizedAdminMatch[1] : "ar";
-    const subPath = localizedAdminMatch ? localizedAdminMatch[2] || "" : rootAdminMatch![1] || "";
+  // If path lacks a valid locale prefix or contains an unsupported locale, redirect using a 307 temporary redirect
+  if (!potentialLocale || !isValidLocale(potentialLocale)) {
+    const targetPath = `/${DEFAULT_LOCALE}${pathname === "/" ? "" : pathname}${search}`;
+    return NextResponse.redirect(new URL(targetPath, request.url), 307);
+  }
 
-    // Allow login route
-    if (subPath === "/login") {
-      return NextResponse.next();
-    }
+  const locale = potentialLocale as Locale;
 
-    const adminSession = request.cookies.get("admin_session")?.value;
-    if (!(await verifySessionToken(adminSession))) {
-      const loginUrl = new URL(`/${locale}/admin/login`, request.url);
-      return NextResponse.redirect(loginUrl);
+  // 1. Protect localized admin routes: /:locale/admin/* except /:locale/admin/login
+  const localizedAdminMatch = pathname.match(new RegExp(`^/${locale}/admin(/.*)?$`));
+  if (localizedAdminMatch) {
+    const subPath = localizedAdminMatch[1] || "";
+    if (subPath !== "/login") {
+      const adminSession = request.cookies.get("admin_session")?.value;
+      if (!(await verifySessionToken(adminSession))) {
+        const loginUrl = new URL(`/${locale}/admin/login`, request.url);
+        return NextResponse.redirect(loginUrl);
+      }
     }
   }
 
-  // 2. Protect all user dashboard routes: /:locale/dashboard/* and /dashboard/*
-  const localizedDashboardMatch = pathname.match(/^\/([^/]+)\/dashboard(\/.*)?$/);
-  const rootDashboardMatch = pathname.match(/^\/dashboard(\/.*)?$/);
-
-  if (localizedDashboardMatch || rootDashboardMatch) {
-    const locale = localizedDashboardMatch ? localizedDashboardMatch[1] : "ar";
+  // 2. Protect localized user dashboard routes: /:locale/dashboard/*
+  const localizedDashboardMatch = pathname.match(new RegExp(`^/${locale}/dashboard(/.*)?$`));
+  if (localizedDashboardMatch) {
     const userSession = request.cookies.get("user_session")?.value;
-
     if (!userSession || userSession.trim() === "") {
       const loginUrl = new URL(`/${locale}/auth/login`, request.url);
       return NextResponse.redirect(loginUrl);
     }
   }
 
-  return NextResponse.next();
+  // If a valid locale prefix is present, allow the request to proceed and pass x-locale in request headers
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-locale", locale);
+
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
 
 export const config = {
   matcher: [
-    "/:locale/admin/:path*",
-    "/:locale/admin",
-    "/admin/:path*",
-    "/admin",
-    "/:locale/dashboard/:path*",
-    "/:locale/dashboard",
-    "/dashboard/:path*",
-    "/dashboard",
+    /*
+     * Match all request paths except:
+     * - /_next/* (Next.js internals)
+     * - /api/* (API routes)
+     * - /images/* (images directory)
+     * - *.svg, *.ico, *.png, *.jpg (static files)
+     * - robots.txt, sitemap.xml
+     */
+    "/((?!api|_next|images|robots\\.txt|sitemap\\.xml|.*\\.(?:svg|ico|png|jpg|jpeg)$).*)",
   ],
 };

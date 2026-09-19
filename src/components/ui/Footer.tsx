@@ -1,24 +1,26 @@
 import React from "react";
 import Link from "next/link";
+import { getDictionary, isValidLocale, DEFAULT_LOCALE, LOCALE_METADATA, type Locale } from "@/lib/i18n";
 
 interface FooterProps {
   locale?: string;
 }
 
 export default function Footer({ locale = "ar" }: FooterProps) {
-  const isAr = locale === "ar";
-  const isDe = locale === "de";
-  const dir = isAr ? "rtl" : "ltr";
+  const activeLocale: Locale = isValidLocale(locale) ? locale : DEFAULT_LOCALE;
+  const dict = getDictionary(activeLocale);
+  const currentMeta = LOCALE_METADATA[activeLocale];
+  const dir = currentMeta.dir;
 
-  const homeLink = `/${locale}`;
-  const jobsLink = `/${locale}/jobs`;
-  const blogLink = `/${locale}/blog`;
-  const pricingLink = `/${locale}/pricing`;
-  const contactLink = `/${locale}/contact`;
-  const cvLink = `/${locale}/dashboard/cv`;
-  const termsLink = `/${locale}/terms`;
-  const privacyLink = `/${locale}/privacy`;
-  const refundLink = `/${locale}/refund`;
+  const homeLink = `/${activeLocale}`;
+  const jobsLink = `/${activeLocale}/jobs`;
+  const blogLink = `/${activeLocale}/blog`;
+  const pricingLink = `/${activeLocale}/pricing`;
+  const contactLink = `/${activeLocale}/contact`;
+  const cvLink = `/${activeLocale}/dashboard/cv`;
+  const termsLink = `/${activeLocale}/terms`;
+  const privacyLink = `/${activeLocale}/privacy`;
+  const refundLink = `/${activeLocale}/refund`;
 
   return (
     <footer className="bg-slate-950 border-t border-slate-800/80 mt-20 transition-colors" dir={dir}>
@@ -40,11 +42,7 @@ export default function Footer({ locale = "ar" }: FooterProps) {
               </span>
             </div>
             <p className="text-sm text-slate-400 leading-relaxed">
-              {isAr
-                ? "المنصة الرائدة لتأهيل وتنسيق السير الذاتية بمعايير DIN 5008 الألمانية وتوليد ملفات الترشيح بالذكاء الاصطناعي."
-                : isDe
-                ? "Ihre führende Plattform für DIN 5008 Lebensläufe, KI-Anschreiben und vollständige Bewerbungsmappen in Deutschland."
-                : "The leading platform for German DIN 5008 resume generation, AI cover letters, and application dossiers."}
+              {dict.footer.brandDescription}
             </p>
             <div className="pt-1">
               <a
@@ -60,27 +58,27 @@ export default function Footer({ locale = "ar" }: FooterProps) {
           {/* Quick Links */}
           <div className="space-y-3">
             <h4 className="text-sm font-bold text-slate-200 uppercase tracking-wider">
-              {isAr ? "روابط سريعة" : isDe ? "Schnellzugriff" : "Quick Links"}
+              {dict.footer.quickLinks}
             </h4>
             <ul className="space-y-2 text-sm font-medium text-slate-400">
               <li>
                 <Link href={homeLink} className="hover:text-blue-400 transition-colors">
-                  {isAr ? "الرئيسية" : isDe ? "Startseite" : "Home"}
+                  {dict.footer.home}
                 </Link>
               </li>
               <li>
                 <Link href={jobsLink} className="hover:text-blue-400 transition-colors">
-                  {isAr ? "فرص العمل في ألمانيا" : isDe ? "Jobs in Deutschland" : "Jobs in Germany"}
+                  {dict.footer.jobsInGermany}
                 </Link>
               </li>
               <li>
                 <Link href={blogLink} className="hover:text-blue-400 transition-colors">
-                  {isAr ? "دليل ومقالات التوظيف" : isDe ? "Karriere-Ratgeber" : "Career Blog & Visa"}
+                  {dict.footer.careerBlog}
                 </Link>
               </li>
               <li>
                 <Link href={cvLink} className="hover:text-blue-400 transition-colors">
-                  {isAr ? "منشئ السيرة الذاتية (DIN 5008)" : isDe ? "DIN 5008 Generator" : "DIN 5008 Builder"}
+                  {dict.footer.din5008Builder}
                 </Link>
               </li>
             </ul>
@@ -89,19 +87,19 @@ export default function Footer({ locale = "ar" }: FooterProps) {
           {/* Support & Pricing Links */}
           <div className="space-y-3">
             <h4 className="text-sm font-bold text-slate-200 uppercase tracking-wider">
-              {isAr ? "الاشتراكات والدعم" : isDe ? "Tarife & Support" : "Pricing & Support"}
+              {dict.footer.subscriptionsAndSupport}
             </h4>
             <ul className="space-y-2 text-sm font-medium text-slate-400">
               <li>
                 <Link href={pricingLink} className="hover:text-amber-400 transition-colors flex items-center gap-1.5 text-amber-400 font-semibold">
                   <span>💎</span>
-                  <span>{isAr ? "الأسعار وباقة PRO Pass ($9.99)" : isDe ? "Preise & PRO Pass ($9.99)" : "Pricing & PRO Pass ($9.99)"}</span>
+                  <span>{dict.footer.pricingAndPro}</span>
                 </Link>
               </li>
               <li>
                 <Link href={contactLink} className="hover:text-blue-400 transition-colors flex items-center gap-1.5">
                   <span>✉️</span>
-                  <span>{isAr ? "تواصل معنا ومركز المساعدة" : isDe ? "Kontakt & Hilfe" : "Contact & Support"}</span>
+                  <span>{dict.footer.contactAndHelp}</span>
                 </Link>
               </li>
               <li>
@@ -119,25 +117,25 @@ export default function Footer({ locale = "ar" }: FooterProps) {
           {/* Legal & Compliance Links */}
           <div className="space-y-3">
             <h4 className="text-sm font-bold text-slate-200 uppercase tracking-wider">
-              {isAr ? "الامتثال والشفافية" : isDe ? "Rechtliches & DSGVO" : "Legal & Compliance"}
+              {dict.footer.complianceAndLegal}
             </h4>
             <ul className="space-y-2 text-sm font-medium text-slate-400">
               <li>
                 <Link href={termsLink} className="hover:text-blue-400 transition-colors flex items-center gap-1.5">
                   <span>⚖️</span>
-                  <span>{isAr ? "شروط الاستخدام والخدمة" : isDe ? "Nutzungsbedingungen (AGB)" : "Terms of Service"}</span>
+                  <span>{dict.footer.termsOfService}</span>
                 </Link>
               </li>
               <li>
                 <Link href={privacyLink} className="hover:text-blue-400 transition-colors flex items-center gap-1.5">
                   <span>🛡️</span>
-                  <span>{isAr ? "سياسة الخصوصية (GDPR)" : isDe ? "Datenschutz (DSGVO)" : "Privacy Policy (GDPR)"}</span>
+                  <span>{dict.footer.privacyPolicy}</span>
                 </Link>
               </li>
               <li>
                 <Link href={refundLink} className="hover:text-blue-400 transition-colors flex items-center gap-1.5">
                   <span>🔄</span>
-                  <span>{isAr ? "سياسة الاسترجاع والضمان" : isDe ? "Rückerstattungsrichtlinie" : "Refund Policy"}</span>
+                  <span>{dict.footer.refundPolicy}</span>
                 </Link>
               </li>
             </ul>
@@ -146,23 +144,23 @@ export default function Footer({ locale = "ar" }: FooterProps) {
 
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <p>© {new Date().getFullYear()} GermanJobsPro. {isAr ? "جميع الحقوق محفوظة." : "All rights reserved."}</p>
+          <p>© {new Date().getFullYear()} GermanJobsPro. {dict.footer.allRightsReserved}</p>
           
           <div className="flex items-center gap-4 text-xs">
             <Link href={termsLink} className="hover:text-slate-200 transition-colors">
-              {isAr ? "شروط الاستخدام" : isDe ? "AGB" : "Terms"}
+              {dict.footer.terms}
             </Link>
             <span>•</span>
             <Link href={privacyLink} className="hover:text-slate-200 transition-colors">
-              {isAr ? "الخصوصية (GDPR)" : isDe ? "Datenschutz" : "Privacy"}
+              {dict.footer.privacy}
             </Link>
             <span>•</span>
             <Link href={refundLink} className="hover:text-slate-200 transition-colors">
-              {isAr ? "سياسة الاسترجاع" : isDe ? "Widerruf" : "Refunds"}
+              {dict.footer.refunds}
             </Link>
           </div>
 
-          <p>{isAr ? "دليلك الشامل للعمل والعيش في ألمانيا 🇩🇪" : "Your All-in-One Gateway to Germany 🇩🇪"}</p>
+          <p>{dict.footer.tagline}</p>
         </div>
       </div>
     </footer>
