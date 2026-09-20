@@ -26,6 +26,22 @@ interface NavbarProps {
   initialUser?: NavbarUser | null;
 }
 
+function buildSwitchLocaleUrl(
+  pathname: string | null,
+  searchParamsString: string | null | undefined,
+  targetLocale: Locale
+) {
+  if (!pathname) return `/${targetLocale}`;
+  const segments = pathname.split("/");
+  if (isValidLocale(segments[1])) {
+    segments[1] = targetLocale;
+  } else {
+    segments.splice(1, 0, targetLocale);
+  }
+  const newPath = segments.join("/") || `/${targetLocale}`;
+  return `${newPath}${searchParamsString ? `?${searchParamsString}` : ""}`;
+}
+
 function LanguageSwitcherDesktop({ activeLocale, isAr }: { activeLocale: Locale; isAr: boolean }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -33,18 +49,8 @@ function LanguageSwitcherDesktop({ activeLocale, isAr }: { activeLocale: Locale;
   const langDropdownRef = useRef<HTMLDivElement>(null);
   const currentLocaleMeta = LOCALE_METADATA[activeLocale];
 
-  const getSwitchLocaleUrl = (targetLocale: Locale) => {
-    if (!pathname) return `/${targetLocale}`;
-    const segments = pathname.split("/");
-    if (isValidLocale(segments[1])) {
-      segments[1] = targetLocale;
-    } else {
-      segments.splice(1, 0, targetLocale);
-    }
-    const newPath = segments.join("/") || `/${targetLocale}`;
-    const search = searchParams?.toString();
-    return `${newPath}${search ? `?${search}` : ""}`;
-  };
+  const getSwitchLocaleUrl = (targetLocale: Locale) =>
+    buildSwitchLocaleUrl(pathname, searchParams?.toString(), targetLocale);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -116,6 +122,155 @@ function LanguageSwitcherDesktop({ activeLocale, isAr }: { activeLocale: Locale;
   );
 }
 
+function LanguageSwitcherHeaderMobile({
+  activeLocale,
+  isAr,
+  onOpen,
+}: {
+  activeLocale: Locale;
+  isAr: boolean;
+  onOpen?: () => void;
+}) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+  const langDropdownRef = useRef<HTMLDivElement>(null);
+
+  const getSwitchLocaleUrl = (targetLocale: Locale) =>
+    buildSwitchLocaleUrl(pathname, searchParams?.toString(), targetLocale);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
+      if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
+        setLangDropdownOpen(false);
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setLangDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  const handleToggle = () => {
+    setLangDropdownOpen((prev) => {
+      const next = !prev;
+      if (next && onOpen) {
+        onOpen();
+      }
+      return next;
+    });
+  };
+
+  return (
+    <div className="relative" ref={langDropdownRef}>
+      <button
+        type="button"
+        onClick={handleToggle}
+        className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 text-xs font-bold transition-all cursor-pointer focus:outline-none active:scale-95"
+        aria-expanded={langDropdownOpen}
+        aria-label="Language selector"
+      >
+        <svg
+          className="w-4 h-4 text-blue-400 shrink-0"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+          <path d="M2 12h20" />
+        </svg>
+        <span className="uppercase text-xs font-mono font-bold tracking-wider text-slate-200">
+          {activeLocale}
+        </span>
+        <svg
+          className={`w-3 h-3 text-slate-400 transition-transform duration-200 ${
+            langDropdownOpen ? "rotate-180 text-blue-400" : ""
+          }`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+        </svg>
+      </button>
+
+      {langDropdownOpen && (
+        <div
+          className={`absolute top-full mt-2 w-48 rounded-2xl bg-slate-900/98 backdrop-blur-2xl border border-slate-800 shadow-2xl p-1.5 z-50 space-y-1 text-xs animate-fadeIn ${
+            isAr ? "left-0 text-right" : "right-0 text-left"
+          }`}
+        >
+          {LOCALES.map((loc) => {
+            const meta = LOCALE_METADATA[loc];
+            const isActive = loc === activeLocale;
+            return (
+              <Link
+                key={loc}
+                href={getSwitchLocaleUrl(loc)}
+                onClick={() => setLangDropdownOpen(false)}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition-colors ${
+                  isActive
+                    ? "bg-blue-600/20 text-blue-400 font-bold border border-blue-500/30"
+                    : "text-slate-300 hover:text-white hover:bg-slate-800"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <span className="text-base leading-none">{meta.flag}</span>
+                  <span className="font-semibold text-xs">{meta.label}</span>
+                </span>
+                <span className="text-[11px] font-mono opacity-60 uppercase">({loc})</span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LanguageSwitcherHeaderMobileFallback({ activeLocale }: { activeLocale: Locale }) {
+  return (
+    <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 text-xs font-bold opacity-80">
+      <svg
+        className="w-4 h-4 text-blue-400 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+        <path d="M2 12h20" />
+      </svg>
+      <span className="uppercase text-xs font-mono font-bold tracking-wider text-slate-200">
+        {activeLocale}
+      </span>
+      <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+      </svg>
+    </div>
+  );
+}
+
 function LanguageSwitcherFallback({ activeLocale }: { activeLocale: Locale }) {
   const meta = LOCALE_METADATA[activeLocale];
   return (
@@ -137,18 +292,8 @@ function LanguageSwitcherMobile({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const getSwitchLocaleUrl = (targetLocale: Locale) => {
-    if (!pathname) return `/${targetLocale}`;
-    const segments = pathname.split("/");
-    if (isValidLocale(segments[1])) {
-      segments[1] = targetLocale;
-    } else {
-      segments.splice(1, 0, targetLocale);
-    }
-    const newPath = segments.join("/") || `/${targetLocale}`;
-    const search = searchParams?.toString();
-    return `${newPath}${search ? `?${search}` : ""}`;
-  };
+  const getSwitchLocaleUrl = (targetLocale: Locale) =>
+    buildSwitchLocaleUrl(pathname, searchParams?.toString(), targetLocale);
 
   return (
     <div className="grid grid-cols-2 gap-2">
@@ -488,8 +633,19 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
           )}
         </div>
 
-        {/* Mobile Header Right (Menu Toggle) */}
+        {/* Mobile Header Right (Quick Language Switcher & Menu Toggle) */}
         <div className="lg:hidden flex items-center gap-2">
+          {/* Quick Language Switcher (visible on mobile viewport < sm) */}
+          <div className="sm:hidden">
+            <Suspense fallback={<LanguageSwitcherHeaderMobileFallback activeLocale={activeLocale} />}>
+              <LanguageSwitcherHeaderMobile
+                activeLocale={activeLocale}
+                isAr={isAr}
+                onOpen={() => setMobileMenuOpen(false)}
+              />
+            </Suspense>
+          </div>
+
           {/* Mobile Menu Toggle Button */}
           <button
             type="button"
@@ -537,6 +693,16 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
               </span>
             </div>
           )}
+
+          {/* Mobile Language Switcher Section (at TOP of drawer navigation) */}
+          <div className="space-y-2 pb-3 border-b border-slate-800/80">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
+              🌐 {activeLocale === "ar" ? "اللغة / Language" : activeLocale === "de" ? "Sprache wählen" : activeLocale === "fr" ? "Langue" : "Language"}
+            </p>
+            <Suspense fallback={<div className="h-20 rounded-xl bg-slate-900/60 animate-pulse border border-slate-800" />}>
+              <LanguageSwitcherMobile activeLocale={activeLocale} onSelect={() => setMobileMenuOpen(false)} />
+            </Suspense>
+          </div>
 
           {/* Navigation Links */}
           <nav className="flex flex-col space-y-1 text-sm font-semibold text-slate-300">
@@ -644,16 +810,6 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
               </>
             )}
           </nav>
-
-          {/* Mobile Language Switcher Section */}
-          <div className="pt-3 border-t border-slate-800/80 space-y-2">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
-              🌐 {activeLocale === "ar" ? "اللغة / Language" : activeLocale === "de" ? "Sprache wählen" : activeLocale === "fr" ? "Langue" : "Language"}
-            </p>
-            <Suspense fallback={<div className="h-20 rounded-xl bg-slate-900/60 animate-pulse border border-slate-800" />}>
-              <LanguageSwitcherMobile activeLocale={activeLocale} onSelect={() => setMobileMenuOpen(false)} />
-            </Suspense>
-          </div>
 
           {/* Action CTAs in Mobile */}
           <div className="pt-3 border-t border-slate-800/80 space-y-2">
