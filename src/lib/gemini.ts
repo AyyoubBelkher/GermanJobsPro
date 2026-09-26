@@ -357,6 +357,11 @@ Please generate the optimized ATS bullet points.`;
   return cleanedText;
 }
 
+function safeScore(val: unknown, fallback = 70): number {
+  const num = Number(val);
+  return Number.isFinite(num) ? Math.min(100, Math.max(0, Math.round(num))) : fallback;
+}
+
 /**
  * Analyzes a CV for German ATS compatibility and DIN 5008 standards.
  */
@@ -407,9 +412,9 @@ Security & Delimiters:
   try {
     const parsed = JSON.parse(cleanedText);
     return {
-      overallScore: Math.min(100, Math.max(0, Number(parsed.overallScore) || 70)),
-      din5008Score: Math.min(100, Math.max(0, Number(parsed.din5008Score) || 70)),
-      keywordMatchScore: Math.min(100, Math.max(0, Number(parsed.keywordMatchScore) || 70)),
+      overallScore: safeScore(parsed.overallScore),
+      din5008Score: safeScore(parsed.din5008Score),
+      keywordMatchScore: safeScore(parsed.keywordMatchScore),
       summary: String(parsed.summary || "Analyse abgeschlossen."),
       strengths: Array.isArray(parsed.strengths) ? parsed.strengths.map(String) : [],
       weaknesses: Array.isArray(parsed.weaknesses) ? parsed.weaknesses.map(String) : [],

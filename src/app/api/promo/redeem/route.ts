@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     const now = Date.now();
     const isCurrentlyActivePro =
-      currentUser.plan === "PRO" &&
+      (currentUser.plan === "PRO" || currentUser.plan === "SPRINT") &&
       currentUser.planExpiresAt !== null &&
       currentUser.planExpiresAt.getTime() > now;
 

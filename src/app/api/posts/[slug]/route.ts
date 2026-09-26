@@ -1,35 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import {
-  verifySessionToken,
-  timingSafeCompare,
-  decodeSlugParam,
-  isValidHttpUrl,
-} from "@/lib/session";
+import { decodeSlugParam, isValidHttpUrl } from "@/lib/session";
+import { requireAdmin, verifyAutomationSecret } from "@/lib/admin-auth";
 
 /**
- * Helper function to verify admin session cookie or Authorization header.
- * Enforces least privilege (only admin_session cookie or MY_SECRET_AUTOMATION_KEY bearer token).
+ * Helper function to verify admin session cookie or standard automation headers.
  * Delays 1000ms on authentication failure to prevent brute-force attacks.
  */
 async function verifyAdminAuth(request: NextRequest): Promise<boolean> {
-  // 1. Check HTTP-only cookie
-  const cookieStore = await cookies();
-  const session = cookieStore.get("admin_session")?.value;
-  if (await verifySessionToken(session)) {
+  const admin = await requireAdmin(request);
+  if (admin) {
     return true;
   }
 
-  // 2. Fallback check Authorization header against MY_SECRET_AUTOMATION_KEY only
-  const authHeader = request.headers.get("Authorization");
-  const secretKey = process.env.MY_SECRET_AUTOMATION_KEY;
-
-  if (
-    secretKey &&
-    (timingSafeCompare(authHeader, secretKey) ||
-      timingSafeCompare(authHeader, `Bearer ${secretKey}`))
-  ) {
+  if (verifyAutomationSecret(request)) {
     return true;
   }
 

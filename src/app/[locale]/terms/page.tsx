@@ -181,17 +181,17 @@ export default async function TermsPage({
             <div className="space-y-2">
               <p>
                 {isAr
-                  ? "توفر المنصة باقة مجانية للبدء وباقة للمحترفين PRO Pass بسعر 9.99 دولار أمريكي ($9.99 USD) تمنح صلاحية استخدام لمدة 90 يوماً متواصلة (دورة التقديم الكاملة) بدون أي اشتراكات دورية تلقائية غير مرغوب فيها أو رسوم مخفية."
+                  ? "توفر المنصة باقة مجانية للبدء، بالإضافة إلى خيارات PRO المدفوعة لمرة واحدة: باقة Quick Sprint بسعر 9.99 دولار (30 يوماً) وباقة PRO Job Pass بسعر 19.99 دولار (90 يوماً لدورة التقديم الكاملة) بدون أي اشتراكات دورية تلقائية أو رسوم مخفية."
                   : isDe
-                  ? "GermanJobsPro bietet einen kostenlosen Starter-Tarif sowie den PRO Pass für einmalig 9,99 USD an, gültig für 90 Tage (voller Bewerbungszyklus) ohne automatische Verlängerung oder versteckte Zusatzkosten."
-                  : "GermanJobsPro offers a free starter tier and a PRO Pass priced at $9.99 USD, providing full premium access for 90 consecutive days (a standard job application cycle) with no recurring hidden fees or unwanted auto-billing."}
+                  ? "GermanJobsPro bietet einen kostenlosen Starter-Tarif sowie PRO-Optionen als Einmalzahlung an: den Quick Sprint (9,99 USD für 30 Tage) und den PRO Job Pass (19,99 USD für 90 Tage) ohne automatische Verlängerung oder versteckte Zusatzkosten."
+                  : "GermanJobsPro offers a free starter tier alongside one-time PRO pass options: Quick Sprint ($9.99 for 30 days) and PRO Job Pass ($19.99 for 90 days covering the full hiring cycle) with no recurring hidden fees or unwanted auto-billing."}
               </p>
               <p>
                 {isAr
-                  ? "تتم جميع المعاملات المالية بالدولار الأمريكي ($) عبر بوابات الدفع العالمية المعتمدة والمتوافقة مع معايير PCI-DSS وأمان المعاملات المصرفية. لتفاصيل الاسترجاع، راجع سياسة الاسترجاع المخصصة."
+                  ? "تتم جميع المعاملات المالية بالدولار الأمريكي ($) عبر بوابة Gumroad المعتمدة والمتوافقة مع معايير PCI-DSS وأمان المعاملات المصرفية كتاجر رسمي معتمد (Merchant of Record). عند إتمام عملية الشراء، يخضع الدفع لشروط وأحكام منصة Gumroad. لتفاصيل الاسترجاع، راجع سياسة الاسترجاع المخصصة."
                   : isDe
-                  ? "Alle Zahlungen erfolgen in US-Dollar ($) über zertifizierte, PCI-DSS-konforme Zahlungsdienstleister. Einzelheiten entnehmen Sie unserer Rückerstattungsrichtlinie."
-                  : "All transactions are billed in USD ($) via certified, PCI-DSS-compliant global payment processors. For return terms, consult our dedicated Refund Policy."}
+                  ? "Alle Zahlungen erfolgen in US-Dollar ($) über unseren autorisierten Merchant of Record Gumroad (PCI-DSS Level 1 zertifiziert). Beim Checkout gelten ergänzend die Nutzungsbedingungen von Gumroad. Einzelheiten entnehmen Sie unserer Rückerstattungsrichtlinie."
+                  : "All transactions are billed in USD ($) via Gumroad as our authorized Merchant of Record (PCI-DSS Level 1 certified). Purchases are subject to Gumroad's terms of service and checkout policies. For return terms, consult our dedicated Refund Policy."}
               </p>
             </div>
           </section>

@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { verifySessionToken } from "@/lib/session";
+import { requireAdmin } from "@/lib/admin-auth";
 
-async function isAdmin(): Promise<boolean> {
-  const cookieStore = await cookies();
-  const session = cookieStore.get("admin_session")?.value;
-  return await verifySessionToken(session);
-}
-
-export async function GET() {
-  if (!(await isAdmin())) {
+export async function GET(request: NextRequest) {
+  const admin = await requireAdmin(request);
+  if (!admin) {
     return NextResponse.json(
       { error: "Unauthorized" },
       { status: 401 }
@@ -36,7 +30,8 @@ export async function GET() {
 }
 
 export async function DELETE(req: NextRequest) {
-  if (!(await isAdmin())) {
+  const admin = await requireAdmin(req);
+  if (!admin) {
     return NextResponse.json(
       { success: false, error: "Unauthorized" },
       { status: 401 }
@@ -89,7 +84,8 @@ export async function DELETE(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await isAdmin())) {
+  const admin = await requireAdmin(req);
+  if (!admin) {
     return NextResponse.json(
       { success: false, error: "Unauthorized" },
       { status: 401 }

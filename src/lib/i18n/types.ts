@@ -13,6 +13,7 @@ export interface NavDictionary {
   createCv: string;
   createCvFree: string;
   mainDashboard: string;
+  applications: string;
   myResumes: string;
   completeDossier: string;
   upgradePro: string;
@@ -131,6 +132,7 @@ export interface JobsDictionary {
 export interface DashboardDictionary {
   title: string;
   overview: string;
+  applications: string;
   myResumes: string;
   coverLetters: string;
   atsAnalyzer: string;

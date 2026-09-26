@@ -4,6 +4,7 @@ import { verifyUserSession } from "@/lib/user-session";
 import { interviewCvAI, InterviewCvParams, isRateLimitError } from "@/lib/gemini";
 import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
 import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
+import { logAiUsage } from "@/lib/ai-telemetry";
 
 /**
  * POST /api/ai/cv-interview
@@ -69,15 +70,36 @@ export async function POST(request: NextRequest) {
       history: Array.isArray(history) ? history : [],
     };
 
-    const aiResult = await interviewCvAI(params);
+    const aiStartTime = performance.now();
+    try {
+      const aiResult = await interviewCvAI(params);
 
-    return NextResponse.json({
-      success: true,
-      message: aiResult.message,
-      proposedData: aiResult.proposedData,
-      nextStep: aiResult.nextStep,
-      actions: aiResult.actions,
-    });
+      const latencyMs = performance.now() - aiStartTime;
+      logAiUsage({
+        userId: authResult.user.id,
+        operation: "CV_INTERVIEW",
+        latencyMs,
+        success: true,
+      }).catch(() => {});
+
+      return NextResponse.json({
+        success: true,
+        message: aiResult.message,
+        proposedData: aiResult.proposedData,
+        nextStep: aiResult.nextStep,
+        actions: aiResult.actions,
+      });
+    } catch (aiErr) {
+      const latencyMs = performance.now() - aiStartTime;
+      logAiUsage({
+        userId: authResult.user.id,
+        operation: "CV_INTERVIEW",
+        latencyMs,
+        success: false,
+        errorMessage: aiErr instanceof Error ? aiErr.message : String(aiErr),
+      }).catch(() => {});
+      throw aiErr;
+    }
   } catch (error: unknown) {
     console.error("[CV Interview AI Error]:", error);
 

@@ -6,6 +6,12 @@ import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
 import BlogCategoryTabs from "@/components/blog/BlogCategoryTabs";
 import { prisma } from "@/lib/prisma";
+import {
+  isGermanA1Category,
+  extractLessonNumber,
+  parseLessonTitle,
+  calculateReadTime,
+} from "@/lib/courseUtils";
 
 export const revalidate = 60;
 
@@ -14,11 +20,11 @@ export default async function BlogPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ page?: string; category?: string }>;
+  searchParams: Promise<{ page?: string; category?: string; sort?: string }>;
 }) {
   const { locale } = await params;
   const resolvedSearchParams = await searchParams;
-  const { page: pageStr, category: rawCategory } = resolvedSearchParams;
+  const { page: pageStr, category: rawCategory, sort: sortParam } = resolvedSearchParams;
 
   const isAr = locale === 'ar';
   const isDe = locale === 'de';
@@ -26,15 +32,24 @@ export default async function BlogPage({
   const dir = isAr ? 'rtl' : 'ltr';
 
   const selectedCategory = rawCategory?.trim() || "all";
+  const isGermanA1Selected = isGermanA1Category(selectedCategory);
+
+  // Determine sort mode for German A1:
+  // Default is "sequence" (ascending by lesson number extracted from title).
+  // Can be toggled to "chronological" (newest first).
+  const sortMode = isGermanA1Selected
+    ? (sortParam === "chronological" || sortParam === "date" ? "chronological" : "sequence")
+    : "chronological";
+
+  const pageSize = isGermanA1Selected ? 24 : 12;
   const page = Math.max(1, parseInt(pageStr || '1', 10) || 1);
-  const pageSize = 12;
   const skip = (page - 1) * pageSize;
   const take = pageSize;
 
   // Build category filter condition
   let categoryFilter: Record<string, any> = {};
   if (selectedCategory !== "all") {
-    if (selectedCategory.toLowerCase() === "german a1") {
+    if (isGermanA1Selected) {
       categoryFilter = {
         OR: [
           { category: { equals: "German A1", mode: "insensitive" } },
@@ -86,16 +101,7 @@ export default async function BlogPage({
   let countsMap: Record<string, number> = { total: 0, "German A1": 0, Jobs: 0, General: 0 };
 
   try {
-    const [fetchedPosts, count, totalAll, a1Count, jobsCount, generalCount] = await Promise.all([
-      prisma.post.findMany({
-        where: whereCondition,
-        orderBy: { createdAt: "desc" },
-        skip,
-        take,
-      }),
-      prisma.post.count({
-        where: whereCondition,
-      }),
+    const [totalAll, a1Count, jobsCount, generalCount] = await Promise.all([
       prisma.post.count({ where: { published: true } }),
       prisma.post.count({
         where: {
@@ -126,14 +132,49 @@ export default async function BlogPage({
       }),
     ]);
 
-    dbPosts = fetchedPosts;
-    totalPosts = count;
     countsMap = {
       total: totalAll,
       "German A1": a1Count,
       Jobs: jobsCount,
       General: generalCount,
     };
+
+    if (isGermanA1Selected) {
+      // In German A1 learning mode, fetch matching posts to sort accurately by parsed lesson number
+      const allA1Posts = await prisma.post.findMany({
+        where: whereCondition,
+      });
+
+      totalPosts = allA1Posts.length;
+
+      if (sortMode === "sequence") {
+        allA1Posts.sort((a, b) => {
+          const numA = extractLessonNumber(a.title, a.slug, a.markdown_content);
+          const numB = extractLessonNumber(b.title, b.slug, b.markdown_content);
+          return numA - numB;
+        });
+      } else {
+        // Chronological: newest first
+        allA1Posts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      }
+
+      dbPosts = allA1Posts.slice(skip, skip + take);
+    } else {
+      const [fetchedPosts, count] = await Promise.all([
+        prisma.post.findMany({
+          where: whereCondition,
+          orderBy: { createdAt: "desc" },
+          skip,
+          take,
+        }),
+        prisma.post.count({
+          where: whereCondition,
+        }),
+      ]);
+
+      dbPosts = fetchedPosts;
+      totalPosts = count;
+    }
   } catch (error) {
     console.warn("[BlogPage] Database query failed during prerendering:", error instanceof Error ? error.message : error);
   }
@@ -159,6 +200,7 @@ export default async function BlogPage({
         : (isAr ? "إدارة التحرير" : "Editorial Team"),
       tags: [post.category],
       created_at: post.createdAt.toISOString(),
+      markdown_content: post.markdown_content,
     };
   });
 
@@ -169,6 +211,7 @@ export default async function BlogPage({
       title: string;
       subtitle: string;
       readMore: string;
+      startLesson: string;
       noPosts: string;
       noPostsDesc: string;
       noGermanA1Title: string;
@@ -179,12 +222,20 @@ export default async function BlogPage({
       next: string;
       page: string;
       of: string;
+      sortSequence: string;
+      sortChronological: string;
+      sortLabel: string;
+      courseHubTitle: string;
+      courseHubBadge: string;
+      courseHubDesc: string;
+      lessonCountText: string;
     }
   > = {
     ar: {
       title: 'المدونة ودليل التوظيف واللغة',
       subtitle: 'دليلك الشامل ومقالاتنا الحصرية حول تعلم اللغة الألمانية، التأشيرات، والعمل والاستقرار في ألمانيا 🇩🇪',
-      readMore: 'اقرأ المزيد',
+      readMore: 'اقرأ المزيد ←',
+      startLesson: 'ابدأ الدرس ←',
       noPosts: 'لم يتم العثور على مقالات في هذا القسم.',
       noPostsDesc: 'جرب اختيار تصنيف آخر أو تصفح جميع المقالات المنشورة.',
       noGermanA1Title: 'دروس ومقالات المستوى A1 قيد التجهيز 🇩🇪',
@@ -195,11 +246,19 @@ export default async function BlogPage({
       next: 'التالي',
       page: 'صفحة',
       of: 'من',
+      sortSequence: 'من البداية (تصاعدي)',
+      sortChronological: 'الترتيب الزمني',
+      sortLabel: 'ترتيب الدروس:',
+      courseHubTitle: 'مسار تعلم اللغة الألمانية A1 — خطوة بخطوة',
+      courseHubBadge: '🇩🇪 منهاج شامل معتمد للمبتدئين',
+      courseHubDesc: 'دروس متسلسلة ومبسطة من الصفر تبدأ بأساسيات النطق والتعريف بالنفس وحتى محادثات السفر والتسوق وقواعد Goethe A1.',
+      lessonCountText: 'درساً تعليمياً متسلسلاً',
     },
     en: {
       title: 'German Career & Language Blog',
       subtitle: 'Your complete guide to learning German, visa procedures, and building a career in Germany 🇩🇪',
-      readMore: 'Read More',
+      readMore: 'Read More →',
+      startLesson: 'Start Lesson →',
       noPosts: 'No articles found in this category.',
       noPostsDesc: 'Try choosing another category or browsing all published articles.',
       noGermanA1Title: 'German A1 Lessons Coming Soon 🇩🇪',
@@ -210,11 +269,19 @@ export default async function BlogPage({
       next: 'Next',
       page: 'Page',
       of: 'of',
+      sortSequence: 'From the beginning (Ascending)',
+      sortChronological: 'Chronological',
+      sortLabel: 'Lesson Order:',
+      courseHubTitle: 'German A1 Course Curriculum — Step by Step',
+      courseHubBadge: '🇩🇪 Structured Beginner Track',
+      courseHubDesc: 'Sequential bite-sized lessons covering greetings, daily routines, workplace dialogues, and Goethe A1 exam prep.',
+      lessonCountText: 'Structured Lessons',
     },
     de: {
       title: 'Ratgeber, Karriere & Deutsch Blog',
       subtitle: 'Ihr umfassender Leitfaden für Deutschlernen, Visa, Leben und Arbeiten in Deutschland 🇩🇪',
-      readMore: 'Weiterlesen',
+      readMore: 'Weiterlesen →',
+      startLesson: 'Lektion starten →',
       noPosts: 'Keine Beiträge in dieser Kategorie gefunden.',
       noPostsDesc: 'Wählen Sie eine andere Kategorie oder durchsuchen Sie alle Beiträge.',
       noGermanA1Title: 'Deutsch A1 Lektionen in Kürze verfügbar 🇩🇪',
@@ -225,11 +292,19 @@ export default async function BlogPage({
       next: 'Weiter',
       page: 'Seite',
       of: 'von',
+      sortSequence: 'Von Beginn an (Aufsteigend)',
+      sortChronological: 'Chronologisch',
+      sortLabel: 'Lektionsfolge:',
+      courseHubTitle: 'Deutsch A1 Kurslehrplan — Schritt für Schritt',
+      courseHubBadge: '🇩🇪 Strukturierter A1-Kurs',
+      courseHubDesc: 'Strukturierte Lektionen für Anfänger von den Grundlagen bis zur Goethe A1 Prüfungsvorbereitung.',
+      lessonCountText: 'Lektionen',
     },
     fr: {
       title: 'Blog Carrière & Allemand',
       subtitle: 'Votre guide complet pour apprendre l\'allemand, obtenir un visa et travailler en Allemagne 🇩🇪',
-      readMore: 'Lire la suite',
+      readMore: 'Lire la suite →',
+      startLesson: 'Commencer la leçon →',
       noPosts: 'Aucun article trouvé dans cette catégorie.',
       noPostsDesc: 'Essayez de choisir une autre catégorie ou consultez tous les articles.',
       noGermanA1Title: 'Leçons d\'allemand A1 bientôt disponibles 🇩🇪',
@@ -240,11 +315,32 @@ export default async function BlogPage({
       next: 'Suivant',
       page: 'Page',
       of: 'sur',
+      sortSequence: 'Depuis le début (Ordre croissant)',
+      sortChronological: 'Chronologique',
+      sortLabel: 'Ordre des leçons :',
+      courseHubTitle: 'Programme du cours d\'allemand A1 — Étape par étape',
+      courseHubBadge: '🇩🇪 Cours structuré A1',
+      courseHubDesc: 'Leçons progressives du niveau débutant jusqu\'à la préparation de l\'examen Goethe A1.',
+      lessonCountText: 'Leçons progressives',
     },
   };
 
   const ui = labels[locale] || labels.en;
-  const isGermanA1Selected = selectedCategory.toLowerCase() === "german a1";
+
+  const buildPageUrl = (targetPage: number) => {
+    const q = new URLSearchParams();
+    if (targetPage > 1) {
+      q.set("page", String(targetPage));
+    }
+    if (selectedCategory !== "all") {
+      q.set("category", selectedCategory);
+    }
+    if (isGermanA1Selected && sortMode !== "sequence") {
+      q.set("sort", sortMode);
+    }
+    const qs = q.toString();
+    return qs ? `/${locale}/blog?${qs}` : `/${locale}/blog`;
+  };
 
   return (
     <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
@@ -272,6 +368,72 @@ export default async function BlogPage({
           activeCategory={selectedCategory}
           counts={countsMap}
         />
+
+        {/* German A1 Course Hub Banner & Student Sorting Toggle */}
+        {isGermanA1Selected && (
+          <div className="mb-10 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-blue-950/70 to-slate-900 border border-blue-500/30 shadow-2xl backdrop-blur-xl">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold border border-blue-400/30">
+                  <span>{ui.courseHubBadge}</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                  {ui.courseHubTitle}
+                </h2>
+                <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
+                  {ui.courseHubDesc}
+                </p>
+                <div className="flex flex-wrap items-center gap-3 pt-1 text-xs font-semibold text-blue-300">
+                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600/20 border border-blue-500/30">
+                    <span>📚</span>
+                    <span>{totalPosts} {ui.lessonCountText}</span>
+                  </span>
+                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-slate-300">
+                    <span>🎯</span>
+                    <span>Goethe-Zertifikat A1</span>
+                  </span>
+                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-slate-300">
+                    <span>🆓</span>
+                    <span>100% Free & Open</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Student Sorting Toggle */}
+              <div className="shrink-0 flex flex-col sm:flex-row items-start sm:items-center gap-2.5 bg-slate-950/90 p-2 rounded-2xl border border-slate-800 shadow-inner">
+                <span className="text-xs text-slate-400 font-bold px-2 whitespace-nowrap">
+                  {ui.sortLabel}
+                </span>
+                <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+                  <Link
+                    href={`/${locale}/blog?category=German+A1&sort=sequence`}
+                    scroll={false}
+                    className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
+                      sortMode === "sequence"
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                    }`}
+                  >
+                    <span>🚀</span>
+                    <span>{ui.sortSequence}</span>
+                  </Link>
+                  <Link
+                    href={`/${locale}/blog?category=German+A1&sort=chronological`}
+                    scroll={false}
+                    className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
+                      sortMode === "chronological"
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                    }`}
+                  >
+                    <span>⏱️</span>
+                    <span>{ui.sortChronological}</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Posts grid / Empty State */}
         {posts.length === 0 ? (
@@ -303,7 +465,9 @@ export default async function BlogPage({
           <>
             <BlogGrid columns={3}>
               {posts.map((post) => {
-                const displayTitle = post.title;
+                const isA1 = isGermanA1Category(post.tags[0]);
+                const parsed = isA1 ? parseLessonTitle(post.title, post.markdown_content) : null;
+                const displayTitle = parsed?.fullTitle || post.title;
                 const displayExcerpt = post.excerpt;
 
                 const formattedDate = new Date(post.created_at).toLocaleDateString(locale, {
@@ -313,6 +477,7 @@ export default async function BlogPage({
                 });
 
                 const category = post.tags[0] || (locale === 'ar' ? 'ألمانيا' : 'Germany');
+                const readTime = calculateReadTime(post.markdown_content, locale);
 
                 return (
                   <PostCard
@@ -322,8 +487,13 @@ export default async function BlogPage({
                     category={category}
                     date={formattedDate}
                     imageUrl={post.cover_image}
-                    readMoreText={ui.readMore}
+                    readMoreText={isA1 ? ui.startLesson : ui.readMore}
                     href={`/${locale}/blog/${post.slug}`}
+                    locale={locale}
+                    lessonNumber={parsed?.lessonNumber}
+                    germanTitle={parsed?.germanTitle}
+                    arabicSubtitle={parsed?.arabicSubtitle}
+                    readTime={readTime}
                   />
                 );
               })}
@@ -334,7 +504,7 @@ export default async function BlogPage({
               <div className="mt-14 flex items-center justify-center gap-3">
                 {page > 1 ? (
                   <Link
-                    href={`/${locale}/blog?page=${page - 1}${selectedCategory !== 'all' ? `&category=${encodeURIComponent(selectedCategory)}` : ''}`}
+                    href={buildPageUrl(page - 1)}
                     className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-bold transition-all border border-slate-800 shadow-sm"
                   >
                     {ui.previous}
@@ -351,7 +521,7 @@ export default async function BlogPage({
 
                 {page < totalPages ? (
                   <Link
-                    href={`/${locale}/blog?page=${page + 1}${selectedCategory !== 'all' ? `&category=${encodeURIComponent(selectedCategory)}` : ''}`}
+                    href={buildPageUrl(page + 1)}
                     className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-bold transition-all border border-slate-800 shadow-sm"
                   >
                     {ui.next}

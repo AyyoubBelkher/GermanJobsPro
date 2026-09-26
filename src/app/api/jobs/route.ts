@@ -1,28 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { timingSafeCompare } from "@/lib/session";
+import { verifyAutomationSecret } from "@/lib/admin-auth";
 
 function isAuthorized(request: NextRequest): boolean {
-  const authHeader = request.headers.get("authorization") || request.headers.get("Authorization");
-  const customHeader = request.headers.get("x-automation-key");
-  if (!authHeader && !customHeader) return false;
-
-  const validKeys = [
-    process.env.AUTOMATION_SECRET_KEY,
-    process.env.MY_SECRET_AUTOMATION_KEY,
-  ].filter((k): k is string => Boolean(k && k.trim()));
-
-  for (const key of validKeys) {
-    if (
-      timingSafeCompare(authHeader, `Bearer ${key}`) ||
-      timingSafeCompare(authHeader, key) ||
-      timingSafeCompare(customHeader, key)
-    ) {
-      return true;
-    }
-  }
-
-  return false;
+  return verifyAutomationSecret(request);
 }
 
 export async function GET(request: NextRequest) {

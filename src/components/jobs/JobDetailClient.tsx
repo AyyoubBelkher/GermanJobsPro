@@ -24,6 +24,16 @@ export interface JobDetailData {
 interface JobDetailClientProps {
   job: JobDetailData;
   locale: string;
+  initialUser?: {
+    id: string;
+    email: string;
+    name: string | null;
+    plan: string;
+  } | null;
+  initialApplication?: {
+    id: string;
+    status: string;
+  } | null;
 }
 
 // Extracts Latin/German title inside parentheses e.g. "مدير تسويق (Marketing Manager)" -> "Marketing Manager"
@@ -80,17 +90,27 @@ const extractGermanCity = (rawCity?: string | null): string => {
 
 const isArabicText = (text: string) => /[\u0600-\u06FF]/.test(text);
 
-export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
+export default function JobDetailClient({
+  job,
+  locale,
+  initialUser,
+  initialApplication,
+}: JobDetailClientProps) {
   const activeLocale: Locale = isValidLocale(locale) ? locale : DEFAULT_LOCALE;
   const dict = getDictionary(activeLocale);
   const currentMeta = LOCALE_METADATA[activeLocale];
   const isAr = activeLocale === "ar";
+  const isDe = activeLocale === "de";
   const dir = currentMeta.dir;
 
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [trackedStatus, setTrackedStatus] = useState<string | null>(
+    initialApplication?.status || null
+  );
+  const [trackingLoading, setTrackingLoading] = useState(false);
 
   // Clean and parse requirements
   let parsedRequirements: string[] = [];
@@ -188,6 +208,11 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
   const handleSmartMailSend = async () => {
     if (!job.contactEmail) return;
 
+    // Auto-track as APPLIED if user is logged in and not already APPLIED
+    if (initialUser && trackedStatus !== "APPLIED") {
+      handleTrackApplication("APPLIED");
+    }
+
     await copyToClipboard(job.contactEmail);
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 3000);
@@ -208,6 +233,60 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
   const mailtoLink = job.contactEmail
     ? `mailto:${job.contactEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`
     : "";
+
+  const handleTrackApplication = async (newStatus: "SAVED" | "APPLIED" = "SAVED") => {
+    if (!initialUser) {
+      window.location.href = `/${activeLocale}/auth/login?redirect=${encodeURIComponent(
+        `/${activeLocale}/jobs/${job.id}`
+      )}`;
+      return;
+    }
+
+    setTrackingLoading(true);
+    try {
+      const res = await fetch("/api/applications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          jobId: job.id,
+          companyName: cleanCompany,
+          jobTitle: germanTitle,
+          location: germanCity || job.city || "Deutschland",
+          status: newStatus,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setTrackedStatus(data.application.status);
+        setToast(
+          isAr
+            ? newStatus === "APPLIED"
+              ? "تم تسجيل تقديمك وتتبع طلبك بنجاح!"
+              : "تم حفظ الوظيفة في قائمة تقديماتك بنجاح!"
+            : isDe
+            ? newStatus === "APPLIED"
+              ? "Bewerbung erfolgreich erfasst!"
+              : "Job in deinen Bewerbungen gespeichert!"
+            : newStatus === "APPLIED"
+            ? "Application successfully tracked as Applied!"
+            : "Job successfully saved to your Applications!"
+        );
+        setTimeout(() => setToast(null), 5000);
+      } else {
+        setToast(data.error || "Failed to track application");
+        setTimeout(() => setToast(null), 5000);
+      }
+    } catch (err) {
+      console.error("[Track Application Error]:", err);
+      setToast(isAr ? "حدث خطأ أثناء حفظ التقديم." : "Failed to track application.");
+      setTimeout(() => setToast(null), 5000);
+    } finally {
+      setTrackingLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-10" dir={dir}>
@@ -268,7 +347,38 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => handleTrackApplication(trackedStatus === "SAVED" ? "APPLIED" : "SAVED")}
+                  disabled={trackingLoading}
+                  className={`w-full sm:w-auto px-4 py-2.5 rounded-xl font-bold text-xs transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer ${
+                    trackedStatus === "APPLIED"
+                      ? "bg-emerald-600/30 text-emerald-300 border border-emerald-500/40"
+                      : trackedStatus === "SAVED"
+                      ? "bg-blue-600/30 text-blue-300 border border-blue-500/40"
+                      : "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
+                  }`}
+                >
+                  <span>{trackedStatus === "APPLIED" ? "✅" : trackedStatus === "SAVED" ? "📌" : "💼"}</span>
+                  <span>
+                    {trackingLoading
+                      ? isAr
+                        ? "جاري الحفظ..."
+                        : "Saving..."
+                      : trackedStatus === "APPLIED"
+                      ? isAr
+                        ? "تم التقديم"
+                        : "Applied"
+                      : trackedStatus === "SAVED"
+                      ? isAr
+                        ? "محفوظ في التقديمات"
+                        : "Saved"
+                      : isAr
+                      ? "حفظ في قائمة تقديماتي / Track Application"
+                      : "Track Application"}
+                  </span>
+                </button>
                 <Link
                   href={coverLetterUrl}
                   className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/25 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
@@ -450,6 +560,64 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
                     <span>📝</span>
                     <span>{dict.jobs.details.showTemplate}</span>
                   </button>
+
+                  {/* Application OS Direct Track Action */}
+                  <div className="pt-3 border-t border-slate-800/80 space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => handleTrackApplication(trackedStatus === "SAVED" ? "APPLIED" : "SAVED")}
+                      disabled={trackingLoading}
+                      className={`w-full py-3 px-4 rounded-2xl font-bold text-xs text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
+                        trackedStatus === "APPLIED"
+                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30"
+                          : trackedStatus === "SAVED"
+                          ? "bg-blue-500/20 text-blue-300 border border-blue-500/40 hover:bg-blue-500/30"
+                          : "bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 hover:border-slate-600"
+                      }`}
+                    >
+                      <span>{trackedStatus === "APPLIED" ? "✅" : trackedStatus === "SAVED" ? "📌" : "💼"}</span>
+                      <span>
+                        {trackingLoading
+                          ? isAr
+                            ? "جاري الحفظ في التقديمات..."
+                            : isDe
+                            ? "Wird gespeichert..."
+                            : "Saving to Tracker..."
+                          : trackedStatus === "APPLIED"
+                          ? isAr
+                            ? "تم التقديم (مسجل في قائمة تقديماتك)"
+                            : isDe
+                            ? "✓ Als beworben erfasst"
+                            : "✓ Applied (In Tracker)"
+                          : trackedStatus === "SAVED"
+                          ? isAr
+                            ? "محفوظ في قائمة تقديماتي (اضغط للتعيين كتم التقديم)"
+                            : isDe
+                            ? "✓ Gespeichert (Klick für Beworben)"
+                            : "✓ Saved (Click to set as Applied)"
+                          : isAr
+                          ? "حفظ في قائمة تقديماتي / Track Application"
+                          : isDe
+                          ? "In Bewerbungen speichern / Tracken"
+                          : "Track Application"}
+                      </span>
+                    </button>
+
+                    {trackedStatus && (
+                      <div className="text-center">
+                        <Link
+                          href={`/${activeLocale}/dashboard`}
+                          className="text-[11px] text-blue-400 hover:text-blue-300 underline font-medium transition-colors"
+                        >
+                          {isAr
+                            ? "متابعة حالة التقديم في لوحة التحكم ←"
+                            : isDe
+                            ? "Bewerbungsstatus im Dashboard ansehen ←"
+                            : "Manage applications in Dashboard →"}
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : (
@@ -461,6 +629,62 @@ export default function JobDetailClient({ job, locale }: JobDetailClientProps) {
                   <span>✉️</span>
                   <span>{dict.jobs.details.directEmailApply}</span>
                 </a>
+
+                {/* Application OS Direct Track Action */}
+                <button
+                  type="button"
+                  onClick={() => handleTrackApplication(trackedStatus === "SAVED" ? "APPLIED" : "SAVED")}
+                  disabled={trackingLoading}
+                  className={`w-full py-3 px-4 rounded-2xl font-bold text-xs text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
+                    trackedStatus === "APPLIED"
+                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30"
+                      : trackedStatus === "SAVED"
+                      ? "bg-blue-500/20 text-blue-300 border border-blue-500/40 hover:bg-blue-500/30"
+                      : "bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 hover:border-slate-600"
+                  }`}
+                >
+                  <span>{trackedStatus === "APPLIED" ? "✅" : trackedStatus === "SAVED" ? "📌" : "💼"}</span>
+                  <span>
+                    {trackingLoading
+                      ? isAr
+                        ? "جاري الحفظ في التقديمات..."
+                        : isDe
+                        ? "Wird gespeichert..."
+                        : "Saving to Tracker..."
+                      : trackedStatus === "APPLIED"
+                      ? isAr
+                        ? "تم التقديم (مسجل في قائمة تقديماتك)"
+                        : isDe
+                        ? "✓ Als beworben erfasst"
+                        : "✓ Applied (In Tracker)"
+                      : trackedStatus === "SAVED"
+                      ? isAr
+                        ? "محفوظ في قائمة تقديماتي (اضغط للتعيين كتم التقديم)"
+                        : isDe
+                        ? "✓ Gespeichert (Klick für Beworben)"
+                        : "✓ Saved (Click to set as Applied)"
+                      : isAr
+                      ? "حفظ في قائمة تقديماتي / Track Application"
+                      : isDe
+                      ? "In Bewerbungen speichern / Tracken"
+                      : "Track Application"}
+                  </span>
+                </button>
+
+                {trackedStatus && (
+                  <div className="text-center">
+                    <Link
+                      href={`/${activeLocale}/dashboard`}
+                      className="text-[11px] text-blue-400 hover:text-blue-300 underline font-medium transition-colors"
+                    >
+                      {isAr
+                        ? "متابعة حالة التقديم في لوحة التحكم ←"
+                        : isDe
+                        ? "Bewerbungsstatus im Dashboard ansehen ←"
+                        : "Manage applications in Dashboard →"}
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
           </div>

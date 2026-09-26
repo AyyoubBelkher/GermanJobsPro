@@ -414,7 +414,9 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
     }
   };
 
-  const isPro = user?.plan === "PRO" && (!user.planExpiresAt || new Date(user.planExpiresAt) > new Date());
+  const isPro =
+    (user?.plan === "PRO" || user?.plan === "SPRINT") &&
+    (!user.planExpiresAt || new Date(user.planExpiresAt) > new Date());
   const userInitial = user?.name?.trim()?.[0]?.toUpperCase() || user?.email?.trim()?.[0]?.toUpperCase() || "U";
   const displayName = user?.name?.trim() || user?.email?.split("@")[0] || "User";
 
@@ -423,6 +425,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
   const blogLink = `/${activeLocale}/blog`;
   const germanA1Link = `/${activeLocale}/blog?category=German+A1`;
   const dashboardLink = `/${activeLocale}/dashboard`;
+  const applicationsLink = `/${activeLocale}/dashboard/applications`;
   const atsLink = `/${activeLocale}/dashboard/ats-analyzer`;
   const dossierLink = `/${activeLocale}/dashboard/dossier`;
   const cvLink = `/${activeLocale}/dashboard/cv`;
@@ -475,6 +478,10 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
           {/* Conditional links based on auth */}
           {user ? (
             <>
+              <Link href={applicationsLink} className="hover:text-blue-400 transition-colors flex items-center gap-1.5">
+                <span>💼</span>
+                <span>{dict.nav.applications}</span>
+              </Link>
               <Link href={atsLink} className="hover:text-emerald-400 transition-colors flex items-center gap-1">
                 <span className="text-emerald-400">🔍</span>
                 <span>{dict.nav.atsCheck}</span>
@@ -522,7 +529,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                 {/* Quick CV Action */}
                 <Link
                   href={newCvLink}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-extrabold shadow-md shadow-blue-600/20 transition-all hover:scale-[1.02] active:scale-95"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold shadow-lg shadow-blue-600/20 transition-all hover:scale-[1.02] active:scale-95"
                 >
                   <span>✨</span>
                   <span>{dict.nav.newCv}</span>
@@ -566,6 +573,15 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                       >
                         <span>📊</span>
                         <span>{dict.nav.mainDashboard}</span>
+                      </Link>
+
+                      <Link
+                        href={applicationsLink}
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                      >
+                        <span>💼</span>
+                        <span>{dict.nav.applications}</span>
                       </Link>
 
                       <Link
@@ -621,7 +637,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
 
                 <Link
                   href={signupLink}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-extrabold shadow-md shadow-blue-600/20 transition-all hover:scale-[1.02] active:scale-95"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold shadow-lg shadow-blue-600/20 transition-all hover:scale-[1.02] active:scale-95"
                 >
                   <span>{dict.nav.createCv}</span>
                 </Link>
@@ -753,6 +769,15 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                 </Link>
 
                 <Link
+                  href={applicationsLink}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-2.5 rounded-xl hover:bg-slate-900 hover:text-white transition-colors flex items-center gap-2"
+                >
+                  <span>💼</span>
+                  <span>{dict.nav.applications}</span>
+                </Link>
+
+                <Link
                   href={cvLink}
                   onClick={() => setMobileMenuOpen(false)}
                   className="px-3 py-2.5 rounded-xl hover:bg-slate-900 hover:text-white transition-colors flex items-center gap-2"
@@ -818,7 +843,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                 <Link
                   href={newCvLink}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold text-xs text-center flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/20"
+                  className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs text-center flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/20 transition-all"
                 >
                   <span>✨</span>
                   <span>{dict.nav.newCv}</span>
@@ -836,7 +861,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
               <Link
                 href={signupLink}
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold text-xs text-center flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/20"
+                className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs text-center flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/20 transition-all"
               >
                 <span>{dict.nav.createCvFree}</span>
               </Link>

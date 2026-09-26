@@ -91,6 +91,9 @@ export default function BlogCategoryTabs({
       params.set("category", categoryId);
     }
     params.delete("page"); // Reset to page 1 on category switch
+    if (categoryId.toLowerCase() !== "german a1") {
+      params.delete("sort"); // Clear A1 course sorting when navigating to other categories
+    }
 
     const queryString = params.toString();
     const newPath = queryString ? `/${locale}/blog?${queryString}` : `/${locale}/blog`;

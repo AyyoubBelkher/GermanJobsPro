@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { verifySessionToken } from "@/lib/session";
+import { requireAdmin } from "@/lib/admin-auth";
 
-async function isAuthorized(): Promise<boolean> {
-  const cookieStore = await cookies();
-  const adminCookie = cookieStore.get("admin_session")?.value;
-  return Boolean(adminCookie && (await verifySessionToken(adminCookie)));
+async function isAuthorized(request: NextRequest): Promise<boolean> {
+  const admin = await requireAdmin(request);
+  return Boolean(admin);
 }
 
 /**
  * GET /api/admin/promo
  * Lists all promo codes and their usage stats.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const isAuth = await isAuthorized();
+    const isAuth = await isAuthorized(request);
     if (!isAuth) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -37,7 +35,7 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
-    const isAuth = await isAuthorized();
+    const isAuth = await isAuthorized(request);
     if (!isAuth) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -87,7 +85,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const isAuth = await isAuthorized();
+    const isAuth = await isAuthorized(request);
     if (!isAuth) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -136,7 +134,7 @@ export async function DELETE(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const isAuth = await isAuthorized();
+    const isAuth = await isAuthorized(request);
     if (!isAuth) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }

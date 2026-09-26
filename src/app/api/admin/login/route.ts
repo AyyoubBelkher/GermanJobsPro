@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createSessionToken, timingSafeCompare, verifySessionToken } from "@/lib/session";
+import { createSessionToken, timingSafeCompare } from "@/lib/session";
+import { requireAdmin } from "@/lib/admin-auth";
 import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
@@ -72,12 +73,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get("admin_session")?.value;
+    const admin = await requireAdmin(request);
 
-    if (!sessionToken || !(await verifySessionToken(sessionToken))) {
+    if (!admin) {
       return NextResponse.json(
         {
           authenticated: false,

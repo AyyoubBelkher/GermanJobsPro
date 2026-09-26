@@ -5,6 +5,7 @@ import { verifyUserSession } from "@/lib/user-session";
 import { extractText } from "unpdf";
 import { magicImportCvAI } from "@/lib/gemini";
 import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
+import { logAiUsage } from "@/lib/ai-telemetry";
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 
@@ -188,13 +189,31 @@ export async function POST(request: NextRequest) {
 
     // 2. Execute AI Magic Import & DIN 5008 Optimization
     let parsedCv;
+    const aiStartTime = performance.now();
     try {
       parsedCv = await magicImportCvAI({
         rawCvText,
         targetJobTitle,
         locale,
       });
+
+      const latencyMs = performance.now() - aiStartTime;
+      logAiUsage({
+        userId: authResult.user.id,
+        operation: "CV_MAGIC_IMPORT",
+        latencyMs,
+        success: true,
+      }).catch(() => {});
     } catch (aiErr) {
+      const latencyMs = performance.now() - aiStartTime;
+      logAiUsage({
+        userId: authResult.user.id,
+        operation: "CV_MAGIC_IMPORT",
+        latencyMs,
+        success: false,
+        errorMessage: aiErr instanceof Error ? aiErr.message : String(aiErr),
+      }).catch(() => {});
+
       await refundAiCredit(authResult.user.id);
       console.error("[Magic Import AI Generation Error]:", aiErr);
       return NextResponse.json(

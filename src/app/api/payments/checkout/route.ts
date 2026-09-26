@@ -1,15 +1,23 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifyUserSession } from "@/lib/user-session";
 
 /**
  * POST /api/payments/checkout
  * Initiates a checkout session for GermanJobsPro PRO PASS ($9.99 USD / 90-day application cycle).
+ * Points directly to the verified Gumroad product checkout URL with user email prefilled.
  */
-export async function POST() {
+export async function POST(req?: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("user_session")?.value;
+    let token = req?.cookies.get("user_session")?.value;
+    if (!token) {
+      try {
+        const cookieStore = await cookies();
+        token = cookieStore.get("user_session")?.value;
+      } catch {
+        // Fallback for execution outside request scope
+      }
+    }
     const authResult = await verifyUserSession(token);
 
     if (!authResult) {
@@ -19,11 +27,36 @@ export async function POST() {
       );
     }
 
-    // Construct Gumroad PRO PASS Checkout URL
-    const baseUrl = "https://germanjobspro.gumroad.com/l/pro-pass";
-    const gumroadCheckoutUrl = `${baseUrl}?email=${encodeURIComponent(
-      authResult.user.email
-    )}&custom_fields[userId]=${encodeURIComponent(authResult.user.id)}`;
+    // Check if variant/version parameter was passed
+    let variantName = "";
+    if (req) {
+      try {
+        const url = new URL(req.url);
+        variantName = url.searchParams.get("variant") || url.searchParams.get("Version") || "";
+        if (!variantName && req.headers.get("content-type")?.includes("application/json")) {
+          const body = await req.json().catch(() => ({}));
+          variantName = body.variant || body.Version || "";
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    // Construct Gumroad Checkout URL with prefilled user email and optional variant
+    const baseUrl =
+      process.env.NEXT_PUBLIC_GUMROAD_PRODUCT_URL ||
+      "https://germanjobspro.gumroad.com/l/pro-pass";
+
+    const params = new URLSearchParams();
+    if (variantName) {
+      params.set("variant", variantName);
+      params.set("Version", variantName);
+      params.set("wanted", "true");
+    }
+    params.set("email", authResult.user.email);
+    params.set("custom_fields[userId]", authResult.user.id);
+
+    const gumroadCheckoutUrl = `${baseUrl}?${params.toString()}`;
 
     return NextResponse.json({
       success: true,
@@ -37,4 +70,8 @@ export async function POST() {
       { status: 500 }
     );
   }
+}
+
+export async function GET(req?: NextRequest) {
+  return POST(req);
 }

@@ -71,6 +71,8 @@ model User {
   cvs            Cv[]
   coverLetters   CoverLetter[]
   promoRedemptions UserPromoRedemption[]
+  applications   Application[]
+  aiUsages       AiUsage[]
 }
 
 model UserSession {
@@ -128,6 +130,7 @@ model Cv {
   certifications  CvCertification[]
   projects        CvProject[]
   coverLetters    CoverLetter[]
+  applications    Application[]
 
   @@index([userId])
 }
@@ -260,6 +263,7 @@ model CoverLetter {
 
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   cv                Cv?      @relation(fields: [cvId], references: [id], onDelete: SetNull)
+  applications      Application[]
 
   @@index([userId])
   @@index([cvId])
@@ -288,6 +292,7 @@ model Job {
   status         String    @default("ACTIVE") // ACTIVE, EXPIRED, ARCHIVED
   expiresAt      DateTime?
   isVerified     Boolean   @default(true)
+  applications   Application[]
 
   @@index([category])
   @@index([city])
@@ -355,6 +360,59 @@ model SupportTicket {
   @@index([status])
 }
 
+// ==========================================
+// APPLICATION OS & AI USAGE TELEMETRY
+// ==========================================
 
+enum ApplicationStatus {
+  SAVED
+  APPLIED
+  SCREENING
+  INTERVIEW
+  OFFER
+  REJECTED
+  WITHDRAWN
+}
 
+model Application {
+  id            String            @id @default(cuid())
+  userId        String
+  jobId         String?
+  cvId          String?
+  coverLetterId String?
+  companyName   String
+  jobTitle      String
+  location      String?
+  status        ApplicationStatus @default(SAVED)
+  appliedAt     DateTime?
+  notes         String?
+  followUpAt    DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job         Job?         @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  cv          Cv?          @relation(fields: [cvId], references: [id], onDelete: SetNull)
+  coverLetter CoverLetter? @relation(fields: [coverLetterId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([userId, createdAt])
+}
+
+model AiUsage {
+  id             String   @id @default(cuid())
+  userId         String
+  operation      String   // e.g. "COVER_LETTER_GEN", "ATS_ANALYSIS", "BULLET_OPTIMIZE"
+  model          String   // e.g. "gemini-1.5-flash"
+  inputTokens    Int?
+  outputTokens   Int?
+  latencyMs      Int?
+  success        Boolean  @default(true)
+  errorMessage   String?
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([operation, createdAt])
+}

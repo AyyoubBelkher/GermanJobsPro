@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { verifySessionToken } from "@/lib/session";
+import { requireAdmin } from "@/lib/admin-auth";
 
-async function isAuthorizedAdmin(): Promise<boolean> {
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get("admin_session")?.value;
-  return Boolean(sessionToken && (await verifySessionToken(sessionToken)));
+async function isAuthorizedAdmin(request: NextRequest): Promise<boolean> {
+  const admin = await requireAdmin(request);
+  return Boolean(admin);
 }
 
 /**
  * GET /api/admin/users
  * Returns platform statistics and the complete list of users ordered by creation date descending.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    if (!(await isAuthorizedAdmin())) {
+    if (!(await isAuthorizedAdmin(request))) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
@@ -82,7 +80,7 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
-    if (!(await isAuthorizedAdmin())) {
+    if (!(await isAuthorizedAdmin(request))) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
@@ -112,7 +110,7 @@ export async function POST(request: NextRequest) {
       case "toggle_pro":
       case "TOGGLE_PRO": {
         const isCurrentlyPro =
-          existingUser.plan === "PRO" &&
+          (existingUser.plan === "PRO" || existingUser.plan === "SPRINT") &&
           (!existingUser.planExpiresAt || existingUser.planExpiresAt > new Date());
 
         if (isCurrentlyPro) {
@@ -235,7 +233,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    if (!(await isAuthorizedAdmin())) {
+    if (!(await isAuthorizedAdmin(request))) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 

@@ -25,10 +25,10 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
   const [promoSuccess, setPromoSuccess] = useState<string | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
 
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
-  const isPro = user.plan === "PRO";
+  const isPro = user.plan === "PRO" || user.plan === "SPRINT";
   const isTrial = user.plan === "TRIAL";
 
   const handleRedeemPromo = async (e: React.FormEvent) => {
@@ -62,26 +62,34 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
     }
   };
 
-  const handleCheckout = () => {
-    setIsCheckingOut(true);
+  const handleCheckout = (variantName: string) => {
+    setIsCheckingOut(variantName);
     setCheckoutError(null);
 
     try {
-      const baseUrl = "https://germanjobspro.gumroad.com/l/pro-pass";
-      const params: string[] = [];
+      const baseUrl =
+        process.env.NEXT_PUBLIC_GUMROAD_PRODUCT_URL ||
+        "https://germanjobspro.gumroad.com/l/pro-pass";
+      const params = new URLSearchParams();
+
+      if (variantName) {
+        params.set("variant", variantName);
+        params.set("Version", variantName);
+        params.set("wanted", "true");
+      }
 
       if (user?.email) {
-        params.push(`email=${encodeURIComponent(user.email)}`);
+        params.set("email", user.email);
       }
       if (user?.id) {
-        params.push(`custom_fields[userId]=${encodeURIComponent(user.id)}`);
+        params.set("custom_fields[userId]", user.id);
       }
 
-      const redirectUrl = params.length > 0 ? `${baseUrl}?${params.join("&")}` : baseUrl;
+      const redirectUrl = `${baseUrl}?${params.toString()}`;
       window.location.href = redirectUrl;
     } catch (err: unknown) {
       setCheckoutError(err instanceof Error ? err.message : "Payment error");
-      setIsCheckingOut(false);
+      setIsCheckingOut(null);
     }
   };
 
@@ -112,10 +120,10 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
         </h1>
         <p className="text-sm text-slate-400 leading-relaxed">
           {isAr
-            ? "احصل على وصول غير محدود لتوليد خطابات التغطية وفحص الـ ATS وتجميع ملف الترشيح الكامل (Bewerbungsmappe)."
+            ? "احصل على ترخيص متكامل لتوليد خطابات الدافع، فحص الـ ATS، وتتبع تقديماتك للعمل في ألمانيا."
             : isDe
-            ? "Unbegrenzter Zugriff auf AI Anschreiben, ATS-Check und Bewerbungsmappe Studio."
-            : "Get unlimited AI cover letters, ATS audits, and full Bewerbungsmappe dossier compilation."}
+            ? "Komplettzugang zu DIN 5008 Anschreiben, ATS-Check und Bewerbungs-Tracker für Deutschland."
+            : "Get full access to AI cover letters, ATS resume audits, and application tracking for the German job market."}
         </p>
       </div>
 
@@ -125,7 +133,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
         <div className="md:col-span-6 bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-7 space-y-4 shadow-xl flex flex-col justify-between">
           <div className="space-y-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              {isAr ? "حالة حسابك الحالية" : "Current Account Status"}
+              {isAr ? "حالة حسابك الحالية" : isDe ? "Aktueller Kontostatus" : "Current Account Status"}
             </span>
             <div className="flex items-center gap-3">
               <span className="text-2xl font-black text-white">
@@ -145,7 +153,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
             </div>
             {user.planExpiresAt && (
               <p className="text-xs text-slate-400">
-                {isAr ? "ينتهي في: " : "Valid until: "}
+                {isAr ? "ينتهي في: " : isDe ? "Gültig bis: " : "Valid until: "}
                 <span className="text-slate-200 font-bold">{formatExpiry(user.planExpiresAt)}</span>
               </p>
             )}
@@ -155,7 +163,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
             <div className="flex items-center gap-2">
               <span className="text-lg">⚡</span>
               <span className="text-xs font-bold text-slate-300">
-                {isAr ? "رصيد الذكاء الاصطناعي (AI Credits):" : "Remaining AI Credits:"}
+                {isAr ? "رصيد الذكاء الاصطناعي (AI Credits):" : isDe ? "KI-Guthaben:" : "Remaining AI Credits:"}
               </span>
             </div>
             <span className="text-base font-black text-emerald-400">
@@ -165,7 +173,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                     : isDe
                     ? "20 täglich (automatisch erneuert)"
                     : "20 Daily Requests (auto-renewed)")
-                : `${user.aiCredits} ${isAr ? "رصيد" : "Credits"}`}
+                : `${user.aiCredits} ${isAr ? "رصيد" : isDe ? "Guthaben" : "Credits"}`}
             </span>
           </div>
         </div>
@@ -175,14 +183,16 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
           <div className="space-y-1">
             <span className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1">
               <span>🎁</span>
-              <span>{isAr ? "هل لديك كود ترويجي أو تجريبي؟" : "Have a Promo or Trial Code?"}</span>
+              <span>{isAr ? "هل لديك كود ترويجي أو تجريبي؟" : isDe ? "Haben Sie einen Gutscheincode?" : "Have a Promo or Trial Code?"}</span>
             </span>
             <h3 className="text-base font-bold text-white">
-              {isAr ? "تفعيل كود الهدية / التجربة" : "Redeem Gift / Trial Code"}
+              {isAr ? "تفعيل كود الهدية / التجربة" : isDe ? "Gutscheincode einlösen" : "Redeem Gift / Trial Code"}
             </h3>
             <p className="text-xs text-slate-400">
               {isAr
                 ? "أدخل كود التخفيض أو المنحة الممنوحة من شركائنا لترقية حسابك فوراً."
+                : isDe
+                ? "Geben Sie Ihren Rabattcode ein, um Ihr Guthaben sofort aufzuladen."
                 : "Enter your promotional code to instantly grant credits and trial access."}
             </p>
           </div>
@@ -193,7 +203,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                 type="text"
                 value={promoCode}
                 onChange={(e) => setPromoCode(e.target.value)}
-                placeholder={isAr ? "أدخل الكود هنا (مثال: GERMAN2026)" : "Enter code (e.g. PROMO2026)"}
+                placeholder={isAr ? "أدخل الكود هنا (مثال: GERMAN2026)" : "Enter code (e.g. GERMAN2026)"}
                 className="flex-1 px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs sm:text-sm uppercase font-mono tracking-wider focus:border-blue-500 focus:outline-hidden"
               />
               <button
@@ -201,7 +211,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                 disabled={isRedeeming || !promoCode.trim()}
                 className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition-all disabled:opacity-50 shrink-0 cursor-pointer shadow-md shadow-blue-600/20"
               >
-                {isRedeeming ? (isAr ? "جاري التفعيل..." : "Redeeming...") : isAr ? "تفعيل" : "Redeem"}
+                {isRedeeming ? (isAr ? "جاري التفعيل..." : isDe ? "Wird aktiviert..." : "Redeeming...") : isAr ? "تفعيل" : isDe ? "Einlösen" : "Redeem"}
               </button>
             </div>
 
@@ -226,46 +236,92 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
         </div>
       )}
 
-      {/* Pricing Tiers Comparison Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch pt-4">
+      {/* Pricing Tiers Comparison Grid (3 Tiers) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-7xl mx-auto items-stretch pt-4">
         {/* Tier 1: Free Starter */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-8 space-y-6 flex flex-col justify-between">
-          <div className="space-y-4">
-            <div className="space-y-1">
+        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-7 space-y-6 flex flex-col justify-between">
+          <div className="space-y-5">
+            <div className="space-y-1.5">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                {isAr ? "المستوى المجاني" : "Free Plan"}
+                {isAr ? "المستوى المجاني" : isDe ? "Kostenlos" : "Free Plan"}
               </span>
-              <h3 className="text-xl font-bold text-white">Starter</h3>
-              <p className="text-xs text-slate-400">
-                {isAr ? "لبناء سيرة ذاتية احترافية واستكشاف الوظائف" : "For building standard CVs and browsing jobs"}
+              <h3 className="text-2xl font-black text-white">Starter</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                {isAr
+                  ? "لبناء سيرة ذاتية قياسية واستكشاف الوظائف في ألمانيا"
+                  : isDe
+                  ? "Für den Einstieg und die Jobsuche in Deutschland"
+                  : "For building standard CVs and browsing German jobs"}
               </p>
             </div>
 
-            <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-black text-white">$0</span>
-              <span className="text-xs text-slate-400">{isAr ? "/ دائماً" : "/ forever"}</span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-4xl sm:text-5xl font-black text-white">$0</span>
+              <span className="text-xs text-slate-400 font-medium">
+                {isAr ? "/ دائماً" : isDe ? "/ dauerhaft" : "/ forever"}
+              </span>
             </div>
 
-            <ul className="space-y-3 text-xs text-slate-300 pt-4 border-t border-slate-800">
-              <li className="flex items-center gap-2">
-                <span className="text-emerald-400 font-bold">✓</span>
-                <span>{isAr ? "3 أرصدة ذكاء اصطناعي مجانية للبدء" : "3 Free Starter AI Credits"}</span>
+            <ul className="space-y-3.5 text-xs text-slate-300 pt-5 border-t border-slate-800">
+              <li className="flex items-start gap-2.5">
+                <span className="text-emerald-400 font-bold text-sm">✓</span>
+                <span>
+                  {isAr
+                    ? "إنشاء سيرة ذاتية أساسية (1 سيرة بمعايير DIN 5008)"
+                    : isDe
+                    ? "Basis-Lebenslauf (1 DIN 5008 Lebenslauf)"
+                    : "Basic resume creation (1 CV DIN 5008)"}
+                </span>
               </li>
-              <li className="flex items-center gap-2">
-                <span className="text-emerald-400 font-bold">✓</span>
-                <span>{isAr ? "إنشاء سيرة ذاتية واحدة وفق معيار DIN 5008" : "1 DIN 5008 German Resume"}</span>
+              <li className="flex items-start gap-2.5">
+                <span className="text-emerald-400 font-bold text-sm">✓</span>
+                <span>
+                  {isAr
+                    ? "البحث في الوظائف وحفظ الفرص المفضلة"
+                    : isDe
+                    ? "Jobsuche & Lesezeichen"
+                    : "Job search & bookmarks"}
+                </span>
               </li>
-              <li className="flex items-center gap-2">
-                <span className="text-emerald-400 font-bold">✓</span>
-                <span>{isAr ? "تصفح أحدث الوظائف وعقود التدريب" : "Browse all German job postings"}</span>
+              <li className="flex items-start gap-2.5">
+                <span className="text-emerald-400 font-bold text-sm">✓</span>
+                <span>
+                  {isAr
+                    ? "3 أرصدة ذكاء اصطناعي أولية للبدء"
+                    : isDe
+                    ? "3 anfängliche KI-Guthaben"
+                    : "3 initial AI credits"}
+                </span>
               </li>
-              <li className="flex items-center gap-2 text-slate-500">
-                <span>✕</span>
-                <span>{isAr ? "تصدير ملف الترشيح الكامل (Bewerbungsmappe)" : "Full Bewerbungsmappe Compiler"}</span>
+              <li className="flex items-start gap-2.5 text-slate-500">
+                <span className="text-slate-600 font-bold text-sm">✕</span>
+                <span>
+                  {isAr
+                    ? "تصدير ملف الترشيح الكامل (Bewerbungsmappe)"
+                    : isDe
+                    ? "Vollständige Bewerbungsmappe"
+                    : "Full Bewerbungsmappe Dossier Compiler"}
+                </span>
               </li>
-              <li className="flex items-center gap-2 text-slate-500">
-                <span>✕</span>
-                <span>{isAr ? "توليد خطابات Anschreiben غير محدودة" : "Unlimited AI Cover Letters"}</span>
+              <li className="flex items-start gap-2.5 text-slate-500">
+                <span className="text-slate-600 font-bold text-sm">✕</span>
+                <span>
+                  {isAr
+                    ? "خطابات Anschreiben متقدمة يومياً"
+                    : isDe
+                    ? "Tägliche erweiterte Anschreiben"
+                    : "Daily advanced AI Cover Letters"}
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5 text-slate-500">
+                <span className="text-slate-600 font-bold text-sm">✕</span>
+                <span>
+                  {isAr
+                    ? "تتبع متقدم لمراحل التقديم والمقابلات"
+                    : isDe
+                    ? "Erweiterter Bewerbungs-Tracker & Interview-Notizen"
+                    : "Advanced application pipeline & interview tracking"}
+                </span>
               </li>
             </ul>
           </div>
@@ -273,81 +329,237 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
           <button
             type="button"
             disabled
-            className="w-full py-3 rounded-2xl bg-slate-800 text-slate-400 font-bold text-xs text-center cursor-not-allowed"
+            className="w-full py-3.5 rounded-2xl bg-slate-800 text-slate-400 font-bold text-xs text-center cursor-not-allowed border border-slate-700/50"
           >
-            {isAr ? "خطتك الحالية" : "Current Plan"}
+            {user.plan === "FREE"
+              ? (isAr ? "خطتك الحالية" : isDe ? "Aktueller Tarif" : "Current Plan")
+              : (isAr ? "مشمول مجاناً" : isDe ? "Im Starter enthalten" : "Included in Free")}
           </button>
         </div>
 
-        {/* Tier 2: Job Seeker PRO PASS (Featured) */}
-        <div className="relative bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-blue-500 rounded-3xl p-8 space-y-6 shadow-2xl shadow-blue-500/10 flex flex-col justify-between">
-          <div className="absolute -top-3.5 right-6 px-3.5 py-1 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold text-[11px] shadow-lg shadow-blue-600/30">
-            {isAr ? "الأكثر طلباً للتقديم 🇩🇪" : "Most Popular 🇩🇪"}
-          </div>
-
-          <div className="space-y-4">
-            <div className="space-y-1">
+        {/* Tier 2: Quick Sprint ($9.99 / 30 يوماً) */}
+        <div className="bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-3xl p-7 space-y-6 flex flex-col justify-between shadow-xl transition-all">
+          <div className="space-y-5">
+            <div className="space-y-1.5">
               <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
-                {isAr ? "جواز الباحث عن عمل" : "Full Access Pass"}
+                {isAr ? "تصريح الـ 30 يوماً" : isDe ? "30-Tage-Pass" : "30-Day Sprint Pass"}
               </span>
-              <h3 className="text-xl font-bold text-white">Job Seeker PRO</h3>
-              <p className="text-xs text-slate-400">
-                {isAr ? "كل الأدوات للترشيح المباشر والقبول في الشركات الألمانية" : "Everything needed for direct German hiring"}
+              <h3 className="text-2xl font-black text-white">Quick Sprint</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                {isAr
+                  ? "صلاحية 30 يوماً للتقديمات السريعة والمكثفة على الوظائف"
+                  : isDe
+                  ? "30 Tage Gültigkeit für schnelle und zielgerichtete Bewerbungen"
+                  : "30 days validity for fast applications"}
               </p>
             </div>
 
             <div className="space-y-1">
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black text-white">$9.99</span>
-                <span className="text-xs text-slate-400">{isAr ? "صلاحية 90 يوماً (دورة التقديم)" : isDe ? "für 90 Tage" : "for 90 days (Application Cycle)"}</span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-4xl sm:text-5xl font-black text-white">$9.99</span>
+                <span className="text-xs text-slate-400 font-medium">
+                  {isAr ? "/ 30 يوماً" : isDe ? "/ 30 Tage" : "/ 30 days"}
+                </span>
               </div>
               <p className="text-[11px] text-emerald-400 font-semibold">
-                {isAr ? "دفع لمرة واحدة • بدون اشتراك متكرر أو رسوم خفية" : isDe ? "Einmalzahlung • Keine wiederkehrenden Gebühren" : "One-time payment • No recurring fees"}
+                {isAr
+                  ? "دفع لمرة واحدة • تفعيل فوري"
+                  : isDe
+                  ? "Einmalzahlung • Sofortige Freischaltung"
+                  : "One-time payment • Instant activation"}
               </p>
             </div>
 
-            <ul className="space-y-3 text-xs text-slate-200 pt-4 border-t border-slate-800">
-              <li className="flex items-center gap-2">
-                <span className="text-blue-400 font-bold">✓</span>
-                <span className="font-bold">
+            <ul className="space-y-3.5 text-xs text-slate-200 pt-5 border-t border-slate-800">
+              <li className="flex items-start gap-2.5">
+                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span className="font-semibold text-white">
                   {isAr
-                    ? "20 طلب ذكاء اصطناعي يومياً (متجددة تلقائياً)"
+                    ? "صلاحية 30 يوماً للتقديم السريع على الوظائف"
                     : isDe
-                    ? "20 KI-Anfragen täglich (automatisch erneuert)"
-                    : "20 Daily AI Requests (auto-renewed)"}
+                    ? "30 Tage Gültigkeit für schnelle Bewerbungen"
+                    : "30 days validity for fast applications"}
                 </span>
               </li>
-              <li className="flex items-center gap-2">
-                <span className="text-blue-400 font-bold">✓</span>
-                <span>{isAr ? "تجميع وتحميل ملف الترشيح الكامل (Bewerbungsmappe)" : "Full Dossier Studio (Deckblatt + CV + Zeugnisse)"}</span>
+              <li className="flex items-start gap-2.5">
+                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span className="font-semibold text-white">
+                  {isAr
+                    ? "20 طلب ذكاء اصطناعي يومياً (الاستخدام العادل)"
+                    : isDe
+                    ? "20 tägliche KI-Anfragen (Fair Use)"
+                    : "20 daily AI requests (Fair Use)"}
+                </span>
               </li>
-              <li className="flex items-center gap-2">
-                <span className="text-blue-400 font-bold">✓</span>
-                <span>{isAr ? "فاحص الـ ATS وتحليل الفجوات والكلمات المفتاحية" : "Full ATS & DIN 5008 Audit Engine"}</span>
+              <li className="flex items-start gap-2.5">
+                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span>
+                  {isAr
+                    ? "منشئ السير الذاتية DIN 5008 وفحص الـ ATS"
+                    : isDe
+                    ? "DIN 5008 CV-Builder & ATS-Checks"
+                    : "DIN 5008 CV builder & ATS checks"}
+                </span>
               </li>
-              <li className="flex items-center gap-2">
-                <span className="text-blue-400 font-bold">✓</span>
-                <span>{isAr ? "تصدير غير محدود لسير ذاتية متعددة بتنسيق PDF رسمي" : "Unlimited high-res PDF exports"}</span>
+              <li className="flex items-start gap-2.5">
+                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span>
+                  {isAr
+                    ? "تصدير غير محدود لسير ذاتية بصيغة PDF رسمية"
+                    : isDe
+                    ? "Unbegrenzter offizieller PDF-Export"
+                    : "Unlimited official DIN 5008 PDF exports"}
+                </span>
               </li>
-              <li className="flex items-center gap-2">
-                <span className="text-blue-400 font-bold">✓</span>
-                <span>{isAr ? "دعم دفع آمن بـ Visa / Mastercard / Apple Pay" : "Secure Visa / Mastercard / Apple Pay"}</span>
+              <li className="flex items-start gap-2.5">
+                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span>
+                  {isAr
+                    ? "دفع آمن ورابط مباشر عبر Gumroad"
+                    : isDe
+                    ? "Direkter Checkout via Gumroad"
+                    : "Direct checkout link to Gumroad"}
+                </span>
               </li>
             </ul>
           </div>
 
           <button
             type="button"
-            onClick={handleCheckout}
-            disabled={isCheckingOut}
+            onClick={() => handleCheckout("Quick Sprint (30 Days)")}
+            disabled={isCheckingOut !== null}
+            className="w-full py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 border border-slate-700"
+          >
+            {isCheckingOut === "Quick Sprint (30 Days)" ? (
+              <span>{isAr ? "جاري تحويلك لبوابة الدفع..." : isDe ? "Weiterleitung..." : "Redirecting..."}</span>
+            ) : isPro ? (
+              <span>{isAr ? "تمديد 30 يوماً (Quick Sprint) ⚡" : isDe ? "30 Tage verlängern ⚡" : "Extend 30 Days (Quick Sprint) ⚡"}</span>
+            ) : (
+              <span>{isAr ? "اختيار Quick Sprint ⚡" : isDe ? "Quick Sprint wählen ⚡" : "Choose Quick Sprint ⚡"}</span>
+            )}
+          </button>
+        </div>
+
+        {/* Tier 3: PRO Job Pass ($19.99 / 90 يوماً - شارة "الأكثر طلباً / وفر 35%") */}
+        <div className="relative bg-gradient-to-b from-slate-900 via-blue-950/40 to-slate-950 border-2 border-blue-500 rounded-3xl p-7 space-y-6 shadow-2xl shadow-blue-500/10 flex flex-col justify-between transition-all">
+          {/* Badge */}
+          <div className="absolute -top-3.5 start-6 px-3.5 py-1 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold text-[11px] shadow-lg shadow-blue-600/30 flex items-center gap-1.5">
+            <span>⭐</span>
+            <span>{isAr ? "الأكثر طلباً • وفر 35%" : isDe ? "Bestseller • 35% Sparen" : "Most Popular • Save 35%"}</span>
+          </div>
+
+          <div className="space-y-5 pt-1">
+            <div className="space-y-1.5">
+              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
+                {isAr ? "جواز الباحث عن عمل" : isDe ? "Komplett-Pass" : "Full Career Pass"}
+              </span>
+              <h3 className="text-2xl font-black text-white flex items-center gap-2">
+                <span>PRO Job Pass</span>
+                <span className="text-xl">💎</span>
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                {isAr
+                  ? "تغطية كاملة لدورة التوظيف الألمانية مع جميع الأدوات الاحترافية"
+                  : isDe
+                  ? "Deckt den gesamten deutschen Bewerbungszyklus mit allen Premium-Tools ab"
+                  : "Complete coverage for the entire German hiring cycle"}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-200">
+                  $19.99
+                </span>
+                <span className="text-xs text-slate-400 font-medium">
+                  {isAr ? "/ 90 يوماً" : isDe ? "/ 90 Tage" : "/ 90 days"}
+                </span>
+              </div>
+              <p className="text-[11px] text-emerald-400 font-semibold">
+                {isAr
+                  ? "دفع لمرة واحدة • بدون اشتراك متكرر أو رسوم خفية"
+                  : isDe
+                  ? "Einmalzahlung • Keine wiederkehrenden Gebühren"
+                  : "One-time payment • No recurring fees"}
+              </p>
+            </div>
+
+            <ul className="space-y-3.5 text-xs text-slate-200 pt-5 border-t border-slate-800">
+              <li className="flex items-start gap-2.5">
+                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span className="font-semibold text-white">
+                  {isAr
+                    ? "90 يوماً كاملة تغطي دورة التوظيف الألمانية بالكامل"
+                    : isDe
+                    ? "Volle 90 Tage für den gesamten deutschen Bewerbungszyklus"
+                    : "90 full days covering the entire German hiring cycle"}
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span className="font-semibold text-white">
+                  {isAr
+                    ? "متتبع التقديمات المتكامل وملاحظات المقابلات"
+                    : isDe
+                    ? "Vollständiger Bewerbungs-Tracker & Interview-Notizen"
+                    : "Full Application Tracker & interview notes"}
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span className="font-semibold text-white">
+                  {isAr
+                    ? "تجميع ملف الترشيح الكامل (Bewerbungsmappe: غلاف + سيرة + خطاب)"
+                    : isDe
+                    ? "Bewerbungsmappe-Dossier-Studio (Deckblatt + CV + Anschreiben)"
+                    : "Bewerbungsmappe full dossier compiler (Cover + CV + Anschreiben)"}
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span className="font-semibold text-white">
+                  {isAr
+                    ? "20 طلب ذكاء اصطناعي يومياً (الاستخدام العادل)"
+                    : isDe
+                    ? "20 tägliche KI-Anfragen (Fair Use)"
+                    : "20 daily AI requests (Fair Use)"}
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span>
+                  {isAr
+                    ? "فحص عميق للـ ATS ومطابقة الكلمات المفتاحية"
+                    : isDe
+                    ? "Tiefer ATS-Check & Keyword-Lückenanalyse"
+                    : "Deep ATS audit & keyword gap analysis"}
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span>
+                  {isAr
+                    ? "دفع آمن ورابط مباشر عبر Gumroad"
+                    : isDe
+                    ? "Direkter Checkout via Gumroad"
+                    : "Direct checkout link to Gumroad"}
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleCheckout("PRO Job Pass (90 Days)")}
+            disabled={isCheckingOut !== null}
             className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-sm sm:text-base transition-all shadow-xl shadow-blue-600/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            {isCheckingOut ? (
-              <span>{isAr ? "جاري تحويلك لبوابة الدفع..." : "Redirecting..."}</span>
+            {isCheckingOut === "PRO Job Pass (90 Days)" ? (
+              <span>{isAr ? "جاري تحويلك لبوابة الدفع..." : isDe ? "Weiterleitung..." : "Redirecting..."}</span>
             ) : isPro ? (
-              <span>{isAr ? "تمديد اشتراك PRO 🚀" : "Extend PRO Pass 🚀"}</span>
+              <span>{isAr ? "تمديد اشتراك PRO (90 يوماً) 🚀" : isDe ? "90 Tage verlängern 🚀" : "Extend PRO Pass (90 Days) 🚀"}</span>
             ) : (
-              <span>{isAr ? "ترقية الحساب الآن إلى PRO 🚀" : "Upgrade to PRO Now 🚀"}</span>
+              <span>{isAr ? "احصل على PRO Job Pass 🚀" : isDe ? "PRO Job Pass sichern 🚀" : "Get PRO Job Pass 🚀"}</span>
             )}
           </button>
         </div>

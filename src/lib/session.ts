@@ -44,6 +44,33 @@ export function isValidImageUrl(urlStr?: string | null): boolean {
   return trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("/");
 }
 
+const globalAdminRevocations = globalThis as unknown as {
+  __revokedAdminTokens?: Set<string>;
+};
+
+/**
+ * Computes SHA-256 hex digest of a token using Web Crypto API.
+ */
+export async function hashToken(token: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(token.trim());
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export function isSessionTokenRevokedInMemory(tokenHash: string): boolean {
+  return Boolean(globalAdminRevocations.__revokedAdminTokens?.has(tokenHash));
+}
+
+export function markSessionTokenRevokedInMemory(tokenHash: string): void {
+  if (!globalAdminRevocations.__revokedAdminTokens) {
+    globalAdminRevocations.__revokedAdminTokens = new Set<string>();
+  }
+  globalAdminRevocations.__revokedAdminTokens.add(tokenHash);
+}
+
 export async function createSessionToken(): Promise<string> {
   const secret = process.env.ADMIN_SESSION_SECRET;
   if (!secret) {
@@ -51,6 +78,13 @@ export async function createSessionToken(): Promise<string> {
   }
 
   const timestamp = Date.now().toString();
+  const randomBytes = new Uint8Array(16);
+  crypto.getRandomValues(randomBytes);
+  const sessionId = Array.from(randomBytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  const payload = `${timestamp}.${sessionId}`;
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     "raw",
@@ -63,14 +97,14 @@ export async function createSessionToken(): Promise<string> {
   const signatureBuffer = await crypto.subtle.sign(
     "HMAC",
     key,
-    encoder.encode(timestamp)
+    encoder.encode(payload)
   );
 
   const signature = Array.from(new Uint8Array(signatureBuffer))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 
-  return `${timestamp}.${signature}`;
+  return `${timestamp}.${sessionId}.${signature}`;
 }
 
 export async function verifySessionToken(token?: string | null): Promise<boolean> {
@@ -84,11 +118,14 @@ export async function verifySessionToken(token?: string | null): Promise<boolean
   }
 
   const parts = token.split(".");
-  if (parts.length !== 2) {
+  if (parts.length !== 2 && parts.length !== 3) {
     return false;
   }
 
-  const [timestamp, signature] = parts;
+  const timestamp = parts[0];
+  const signature = parts[parts.length - 1];
+  const payload = parts.length === 3 ? `${parts[0]}.${parts[1]}` : parts[0];
+
   if (!timestamp || !signature) {
     return false;
   }
@@ -96,6 +133,12 @@ export async function verifySessionToken(token?: string | null): Promise<boolean
   const tokenAge = Date.now() - Number(timestamp);
   const maxAge = 7 * 24 * 60 * 60 * 1000;
   if (isNaN(tokenAge) || tokenAge > maxAge || tokenAge < 0) {
+    return false;
+  }
+
+  // Check in-memory revocation
+  const tokenHash = await hashToken(token);
+  if (isSessionTokenRevokedInMemory(tokenHash)) {
     return false;
   }
 
@@ -120,7 +163,7 @@ export async function verifySessionToken(token?: string | null): Promise<boolean
       "HMAC",
       key,
       signatureBytes,
-      encoder.encode(timestamp)
+      encoder.encode(payload)
     );
   } catch {
     return false;

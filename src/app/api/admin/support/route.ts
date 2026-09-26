@@ -1,43 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { verifySessionToken } from "@/lib/session";
-import { verifyUserSession } from "@/lib/user-session";
-
-async function isAuthorizedAdmin(request: NextRequest): Promise<boolean> {
-  const cookieHeader = request.headers.get("cookie") || "";
-  const adminMatch = cookieHeader.match(/(?:^|;\s*)admin_session=([^;]*)/);
-  const sessionToken = adminMatch ? decodeURIComponent(adminMatch[1]) : undefined;
-
-  if (sessionToken && (await verifySessionToken(sessionToken))) {
-    return true;
-  }
-
-  const userMatch = cookieHeader.match(/(?:^|;\s*)user_session=([^;]*)/);
-  const userToken = userMatch ? decodeURIComponent(userMatch[1]) : undefined;
-  if (userToken) {
-    const authResult = await verifyUserSession(userToken);
-    if (
-      authResult?.user?.email &&
-      process.env.ADMIN_EMAIL &&
-      authResult.user.email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase()
-    ) {
-      return true;
-    }
-  }
-
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("admin_session")?.value;
-    if (token && (await verifySessionToken(token))) {
-      return true;
-    }
-  } catch {
-    // Ignore outside request context
-  }
-
-  return false;
-}
+import { requireAdmin } from "@/lib/admin-auth";
 
 /**
  * GET /api/admin/support
@@ -46,7 +9,8 @@ async function isAuthorizedAdmin(request: NextRequest): Promise<boolean> {
  */
 export async function GET(request: NextRequest) {
   try {
-    if (!(await isAuthorizedAdmin(request))) {
+    const admin = await requireAdmin(request);
+    if (!admin) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }
@@ -89,7 +53,8 @@ export async function GET(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    if (!(await isAuthorizedAdmin(request))) {
+    const admin = await requireAdmin(request);
+    if (!admin) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }

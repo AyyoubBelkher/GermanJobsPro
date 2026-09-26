@@ -102,7 +102,7 @@ html_content = """<!DOCTYPE html>
     <td>
       • نشر الحاويات على سيرفر CapRover VPS مع شهادات SSL الإجبارية وتأمين الجلسات.<br>
       • ربط قاعدة بيانات Neon PostgreSQL عبر Connection Pooler للحماية أثناء الضغط و DIRECT_URL للترحيلات.<br>
-      • ربط بوابة الدفع Lemon Squeezy لتجديد الاشتراكات والأرصدة بالـ Webhooks.
+      • ربط بوابة الدفع Gumroad لتجديد الاشتراكات والأرصدة بالـ Webhooks.
     </td>
     <td><span class="badge-done">مكتملة 100%</span></td>
   </tr>

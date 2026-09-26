@@ -210,10 +210,10 @@ export default async function PrivacyPage({
               <li>
                 <strong>{isAr ? "بيانات المدفوعات:" : isDe ? "Zahlungsdaten:" : "Payment Data:"}</strong>{" "}
                 {isAr
-                  ? "تتم معالجة بطاقات الدفع وتأكيد العمليات عبر بوابة Lemon Squeezy العالمية المتوافقة مع أعلى معايير أمان البنوك (PCI-DSS). نحن لا نخزن أرقام البطاقات الائتمانية في خوادمنا نهائياً."
+                  ? "تتم معالجة بطاقات الدفع وتأكيد العمليات عبر بوابة Gumroad العالمية المتوافقة مع أعلى معايير أمان البنوك (PCI-DSS). نحن لا نخزن أرقام البطاقات الائتمانية في خوادمنا نهائياً."
                   : isDe
-                  ? "Zahlungen werden vollständig über den zertifizierten Zahlungsanbieter Lemon Squeezy (PCI-DSS) abgewickelt. Wir speichern keine Kreditkartennummern auf unseren Servern."
-                  : "Transactions are processed entirely by Lemon Squeezy (PCI-DSS Level 1 certified). We never store payment card numbers on our servers."}
+                  ? "Zahlungen werden vollständig über den zertifizierten Zahlungsanbieter Gumroad (PCI-DSS) abgewickelt. Wir speichern keine Kreditkartennummern auf unseren Servern."
+                  : "Transactions are processed entirely by Gumroad (PCI-DSS Level 1 certified). We never store payment card numbers on our servers."}
               </li>
             </ul>
           </section>

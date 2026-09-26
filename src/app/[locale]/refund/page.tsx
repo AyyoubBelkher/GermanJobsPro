@@ -100,10 +100,10 @@ export default async function RefundPage({
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 {isAr
-                  ? "باقة PRO Pass ($9.99 USD) • صلاحية 90 يوماً كاملة • بدون اشتراكات متكررة خفية"
+                  ? "باقات PRO المعتمدة (Quick Sprint و PRO Job Pass) • بدون اشتراكات متكررة خفية"
                   : isDe
-                  ? "PRO Pass (9,99 USD) • 90 Tage volle Laufzeit • Keine Abofalle"
-                  : "PRO Pass ($9.99 USD) • 90 Full Days of Access • No Hidden Recurring Subscriptions"}
+                  ? "PRO-Pässe (Quick Sprint & PRO Job Pass) • Keine Abofalle"
+                  : "PRO Passes (Quick Sprint & PRO Job Pass) • No Hidden Recurring Subscriptions"}
               </p>
             </div>
           </div>
@@ -230,10 +230,10 @@ export default async function RefundPage({
             </h3>
             <p>
               {isAr
-                ? "تتم مراجعة كافة الطلبات من قِبل الفريق المالي والتقني خلال 1 إلى 3 أيام عمل. في حال الموافقة، يتم إرسال المبلغ المسترد فورياً عبر بوابة الدفع المعتمدة (Lemon Squeezy) إلى نفس وسيلة الدفع الأصلية التي استخدمتها (بطاقة الائتمان، Apple Pay، أو PayPal). يستغرق ظهور المبلغ في كشف حسابك البنكي عادةً بين 5 إلى 10 أيام عمل وفقاً للإجراءات المصرفية الخاصة بالبنك المصدر لبطاقتك."
+                ? "تتم مراجعة كافة الطلبات من قِبل الفريق المالي والتقني خلال 1 إلى 3 أيام عمل. في حال الموافقة، يتم إرسال المبلغ المسترد فورياً عبر بوابة الدفع المعتمدة (Gumroad) إلى نفس وسيلة الدفع الأصلية التي استخدمتها (بطاقة الائتمان، Apple Pay، أو PayPal). يستغرق ظهور المبلغ في كشف حسابك البنكي عادةً بين 5 إلى 10 أيام عمل وفقاً للإجراءات المصرفية الخاصة بالبنك المصدر لبطاقتك."
                 : isDe
-                ? "Erstattungsanträge werden innerhalb von 1–3 Werktagen geprüft. Nach Genehmigung erfolgt die Gutschrift automatisch über das ursprüngliche Zahlungsmittel (Kreditkarte, Apple Pay, PayPal) via Lemon Squeezy. Die Banklaufzeit beträgt in der Regel 5–10 Werktage."
-                : "Refund requests are reviewed within 1 to 3 business days. Approved refunds are credited directly back to your original payment method (Credit Card, Apple Pay, Google Pay, or PayPal via Lemon Squeezy). Bank crediting typically takes 5 to 10 business days depending on your financial institution."}
+                ? "Erstattungsanträge werden innerhalb von 1–3 Werktagen geprüft. Nach Genehmigung erfolgt die Gutschrift automatisch über das ursprüngliche Zahlungsmittel (Kreditkarte, Apple Pay, PayPal) via Gumroad. Die Banklaufzeit beträgt in der Regel 5–10 Werktage."
+                : "Refund requests are reviewed within 1 to 3 business days. Approved refunds are credited directly back to your original payment method (Credit Card, Apple Pay, Google Pay, or PayPal via Gumroad). Bank crediting typically takes 5 to 10 business days depending on your financial institution."}
             </p>
           </section>
 

@@ -1,156 +1,295 @@
 import { prisma } from "@/lib/prisma";
 
+export const DAILY_LIMIT = 20;
 export const DAILY_PRO_LIMIT = 20;
+
+export interface CanUseAiResult {
+  allowed: boolean;
+  isPaid?: boolean;
+  usedToday?: number;
+  dailyLimit?: number;
+  remainingToday?: number;
+  remainingCredits?: number;
+  error?: string;
+  // Aliases for compatibility
+  requestsToday?: number;
+  limit?: number;
+  dailyRemaining?: number;
+  resetsAt?: Date;
+  reason?: string;
+}
 
 export interface AiCreditResult {
   success: boolean;
+  allowed: boolean;
   isPro: boolean;
+  isPaid: boolean;
+  usedToday?: number;
+  dailyLimit?: number;
+  remainingToday?: number;
   remainingCredits?: number;
-  dailyRemaining?: number;
   error?: string;
+  // Aliases for compatibility
+  requestsToday?: number;
+  limit?: number;
+  dailyRemaining?: number;
+  resetsAt?: Date;
+  reason?: string;
 }
 
 /**
- * Checks whether a date belongs to a previous day or is > 24 hours old compared to now.
+ * Checks whether a user is an active paid subscriber (PRO or SPRINT).
  */
-function shouldResetDailyQuota(lastReset: Date, now: Date = new Date()): boolean {
-  const isDifferentDay =
-    now.getFullYear() !== lastReset.getFullYear() ||
-    now.getMonth() !== lastReset.getMonth() ||
-    now.getDate() !== lastReset.getDate();
-  const isOlderThan24Hours = now.getTime() - lastReset.getTime() >= 24 * 60 * 60 * 1000;
-  return isDifferentDay || isOlderThan24Hours;
+export function isPaidUser(user: {
+  plan: string;
+  planExpiresAt?: Date | string | null;
+}): boolean {
+  return Boolean(
+    (user.plan === "PRO" || user.plan === "SPRINT") &&
+    user.planExpiresAt &&
+    new Date(user.planExpiresAt) > new Date()
+  );
 }
 
 /**
- * Atomically reserves/decrements 1 AI credit for a user if they have credits available,
- * or enforces the daily fair-use quota (DAILY_PRO_LIMIT) if user has an active PRO subscription.
- * Prevents race conditions with concurrent requests.
+ * Calculates start of the current calendar day (00:00:00) and the reset timestamp (next 00:00:00).
+ */
+export function getDailyQuotaWindow(): { startOfToday: Date; resetsAt: Date } {
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const resetsAt = new Date();
+  resetsAt.setHours(24, 0, 0, 0);
+
+  return { startOfToday, resetsAt };
+}
+
+/**
+ * Checks if a user is allowed to perform an AI request without decrementing credits.
+ */
+export async function canUseAi(userId: string): Promise<CanUseAiResult> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, plan: true, planExpiresAt: true, aiCredits: true }
+  });
+  if (!user) return { allowed: false, error: "User not found" };
+
+  const isPaidActive = (user.plan === "PRO" || user.plan === "SPRINT") &&
+                       user.planExpiresAt && user.planExpiresAt > new Date();
+
+  if (isPaidActive) {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const usedToday = await prisma.aiUsage.count({
+      where: {
+        userId: user.id,
+        success: true,
+        createdAt: { gte: startOfToday }
+      }
+    });
+
+    const DAILY_LIMIT = 20;
+    if (usedToday >= DAILY_LIMIT) {
+      const resetsAt = new Date();
+      resetsAt.setHours(24, 0, 0, 0);
+
+      return {
+        allowed: false,
+        isPaid: true,
+        usedToday,
+        dailyLimit: DAILY_LIMIT,
+        remainingToday: 0,
+        requestsToday: usedToday,
+        limit: DAILY_LIMIT,
+        dailyRemaining: 0,
+        resetsAt,
+        reason: "DAILY_LIMIT_REACHED",
+        error: "DAILY_LIMIT_REACHED"
+      };
+    }
+
+    const remainingToday = DAILY_LIMIT - usedToday;
+    return {
+      allowed: true,
+      isPaid: true,
+      usedToday,
+      dailyLimit: DAILY_LIMIT,
+      remainingToday,
+      requestsToday: usedToday,
+      limit: DAILY_LIMIT,
+      dailyRemaining: remainingToday,
+    };
+  }
+
+  // If FREE or Expired:
+  if (user.aiCredits <= 0) {
+    return {
+      allowed: false,
+      isPaid: false,
+      remainingCredits: 0,
+      reason: "NO_CREDITS",
+      error: "NO_CREDITS",
+    };
+  }
+
+  return {
+    allowed: true,
+    isPaid: false,
+    remainingCredits: user.aiCredits,
+  };
+}
+
+/**
+ * Consumes/authorizes an AI request:
+ * - For PAID users (PRO or SPRINT with active planExpiresAt):
+ *   Checks that successful requests today < 20 via prisma.aiUsage.
+ *   Does NOT decrement user.aiCredits to zero (keeps it untouched).
+ * - For FREE or Expired users:
+ *   Requires user.aiCredits > 0 and atomically decrements user.aiCredits by 1.
  */
 export async function consumeAiCredit(
   userId: string
 ): Promise<AiCreditResult> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: {
-      plan: true,
-      planExpiresAt: true,
-      aiCredits: true,
-      dailyAiCreditsUsed: true,
-      lastCreditResetAt: true,
-    },
+    select: { id: true, plan: true, planExpiresAt: true, aiCredits: true }
   });
-
   if (!user) {
-    return { success: false, isPro: false, error: "User not found" };
+    return {
+      success: false,
+      allowed: false,
+      isPro: false,
+      isPaid: false,
+      error: "User not found"
+    };
   }
 
-  const isPro = user.plan === "PRO" && (!user.planExpiresAt || user.planExpiresAt > new Date());
+  const isPaidActive = (user.plan === "PRO" || user.plan === "SPRINT") &&
+                       user.planExpiresAt && user.planExpiresAt > new Date();
 
-  if (isPro) {
-    const now = new Date();
-    let currentDailyUsed = user.dailyAiCreditsUsed ?? 0;
+  if (isPaidActive) {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
 
-    // Reset quota if last reset was on a previous day or > 24h ago
-    if (shouldResetDailyQuota(user.lastCreditResetAt ?? new Date(0), now)) {
-      await prisma.user.updateMany({
-        where: { id: userId },
-        data: {
-          dailyAiCreditsUsed: 0,
-          lastCreditResetAt: now,
-        },
-      });
-    }
-
-    // Atomic conditional increment of dailyAiCreditsUsed: only succeeds if dailyAiCreditsUsed < DAILY_PRO_LIMIT
-    const updated = await prisma.user.updateMany({
+    const usedToday = await prisma.aiUsage.count({
       where: {
-        id: userId,
-        dailyAiCreditsUsed: { lt: DAILY_PRO_LIMIT },
-      },
-      data: {
-        dailyAiCreditsUsed: { increment: 1 },
-      },
+        userId: user.id,
+        success: true,
+        createdAt: { gte: startOfToday }
+      }
     });
 
-    if (updated.count === 0) {
+    const DAILY_LIMIT = 20;
+    if (usedToday >= DAILY_LIMIT) {
+      const resetsAt = new Date();
+      resetsAt.setHours(24, 0, 0, 0);
+
       return {
         success: false,
+        allowed: false,
         isPro: true,
+        isPaid: true,
+        usedToday,
+        dailyLimit: DAILY_LIMIT,
+        remainingToday: 0,
+        requestsToday: usedToday,
+        limit: DAILY_LIMIT,
         dailyRemaining: 0,
-        error: "لقد استنفدت حد الاستخدام اليومي العادل (20 طلباً في اليوم). سيتجدد رصيدك تلقائياً غداً ⏳",
+        resetsAt,
+        reason: "DAILY_LIMIT_REACHED",
+        error: "DAILY_LIMIT_REACHED"
       };
     }
 
-    const refreshed = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { dailyAiCreditsUsed: true },
-    });
-
-    const currentUsed = refreshed?.dailyAiCreditsUsed ?? DAILY_PRO_LIMIT;
-    const dailyRemaining = Math.max(0, DAILY_PRO_LIMIT - currentUsed);
-    return { success: true, isPro: true, dailyRemaining };
+    // For paid active users: do NOT decrement aiCredits to zero (keep it untouched)
+    const remainingToday = Math.max(0, DAILY_LIMIT - (usedToday + 1));
+    return {
+      success: true,
+      allowed: true,
+      isPro: true,
+      isPaid: true,
+      usedToday: usedToday + 1,
+      dailyLimit: DAILY_LIMIT,
+      remainingToday,
+      requestsToday: usedToday + 1,
+      limit: DAILY_LIMIT,
+      dailyRemaining: remainingToday,
+    };
   }
 
-  // Atomic decrement for FREE / TRIAL: Only decrements if aiCredits > 0
+  // If FREE or Expired:
+  // Require user.aiCredits > 0 and atomically decrement user.aiCredits by 1
   const updated = await prisma.user.updateMany({
     where: {
       id: userId,
-      aiCredits: { gt: 0 },
+      aiCredits: { gt: 0 }
     },
     data: {
-      aiCredits: { decrement: 1 },
-    },
+      aiCredits: { decrement: 1 }
+    }
   });
 
   if (updated.count === 0) {
     return {
       success: false,
+      allowed: false,
       isPro: false,
-      error: "نفد رصيد الذكاء الاصطناعي الخاص بك. يرجى الترقية إلى Pro أو إدخال كود ترويجي.",
+      isPaid: false,
+      reason: "NO_CREDITS",
+      remainingCredits: 0,
+      error: "NO_CREDITS"
     };
   }
 
   const refreshed = await prisma.user.findUnique({
     where: { id: userId },
-    select: { aiCredits: true },
+    select: { aiCredits: true }
   });
 
-  return { success: true, isPro: false, remainingCredits: refreshed?.aiCredits };
+  const remaining = refreshed?.aiCredits ?? 0;
+  return {
+    success: true,
+    allowed: true,
+    isPro: false,
+    isPaid: false,
+    remainingCredits: remaining
+  };
 }
 
 /**
- * Refunds 1 AI credit (or restores 1 daily fair-use credit for PRO users) if downstream AI generation fails unexpectedly.
+ * Refunds 1 AI credit if downstream AI generation fails unexpectedly.
+ * - For PAID users: Requests are tracked via successful AiUsage entries.
+ *   Failed operations log success: false and are not counted towards the 20 daily limit.
+ *   Hence, no counter is corrupted and no balance needs refunding.
+ * - For FREE users: Restores the single decremented static credit.
  */
 export async function refundAiCredit(userId: string): Promise<void> {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { plan: true, planExpiresAt: true },
+      select: { plan: true, planExpiresAt: true }
     });
 
     if (!user) return;
 
-    const isPro = user.plan === "PRO" && (!user.planExpiresAt || user.planExpiresAt > new Date());
+    const isPaidActive = Boolean(
+      (user.plan === "PRO" || user.plan === "SPRINT") &&
+      user.planExpiresAt &&
+      user.planExpiresAt > new Date()
+    );
 
-    if (isPro) {
-      await prisma.user.updateMany({
-        where: {
-          id: userId,
-          dailyAiCreditsUsed: { gt: 0 },
-        },
-        data: {
-          dailyAiCreditsUsed: { decrement: 1 },
-        },
-      });
+    // Paid active users do not have aiCredits decremented, so nothing to restore
+    if (isPaidActive) {
       return;
     }
 
+    // For FREE or expired users, restore the single decremented credit
     await prisma.user.update({
       where: { id: userId },
       data: {
-        aiCredits: { increment: 1 },
-      },
+        aiCredits: { increment: 1 }
+      }
     });
   } catch (err) {
     console.error("[refundAiCredit Error]:", err);

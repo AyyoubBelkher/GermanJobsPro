@@ -23,8 +23,10 @@ export async function generateMetadata({
       ? "Preise & Tarife (PRO Pass) 💎 | GermanJobsPro 🇩🇪"
       : "Pricing & Plans (PRO Pass) 💎 | GermanJobsPro 🇩🇪",
     description: isAr
-      ? "استثمر في مستقبلك المهني في ألمانيا. خطط وأسعار شفافة تمنحك وصولاً غير محدود لأدوات الذكاء الاصطناعي والتحويل الفوري (1-Click PDF) وتجميع ملف الترشيح الكامل (DIN 5008)."
-      : "Transparente Preise für Ihren DIN 5008 Lebenslauf, KI-Anschreiben und vollständige Bewerbungsmappe.",
+      ? "احصل على ترخيص متكامل لتوليد خطابات الدافع، فحص الـ ATS، وتتبع تقديماتك للعمل في ألمانيا."
+      : isDe
+      ? "Komplettzugang zu DIN 5008 Anschreiben, ATS-Check und Bewerbungs-Tracker für Deutschland."
+      : "Get full access to AI cover letters, ATS resume audits, and application tracking for the German job market.",
   };
 }
 
@@ -86,10 +88,10 @@ export default async function PublicPricingPage({
 
           <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal">
             {isAr
-              ? "اختر الخطة المناسبة لك واجتز فلاتر التوظيف الألمانية باحترافية مع أدوات الذكاء الاصطناعي والتكييف الذكي (DIN 5008)."
+              ? "احصل على ترخيص متكامل لتوليد خطابات الدافع، فحص الـ ATS، وتتبع تقديماتك للعمل في ألمانيا."
               : isDe
-              ? "Wählen Sie den passenden Plan und überzeugen Sie deutsche Arbeitgeber mit DIN 5008 konformen Bewerbungsunterlagen."
-              : "Choose the plan that fits your career goals and pass German ATS filters with our certified DIN 5008 AI toolkit."}
+              ? "Komplettzugang zu DIN 5008 Anschreiben, ATS-Check und Bewerbungs-Tracker für Deutschland."
+              : "Get full access to AI cover letters, ATS resume audits, and application tracking for the German job market."}
           </p>
         </div>
 

@@ -1,63 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import {
-  timingSafeCompare,
-  isValidHttpUrl,
-  isValidImageUrl,
-  verifySessionToken,
-} from "@/lib/session";
-
-/**
- * Helper to verify automation secret API keys, webhook headers, or admin session cookie.
- */
-async function isAuthorized(request: NextRequest): Promise<boolean> {
-  const authHeader = request.headers.get("authorization") || request.headers.get("Authorization");
-  const customHeader =
-    request.headers.get("x-automation-key") ||
-    request.headers.get("x-api-key") ||
-    request.headers.get("x-secret-key");
-
-  const { searchParams } = new URL(request.url);
-  const queryKey =
-    searchParams.get("key") ||
-    searchParams.get("secret") ||
-    searchParams.get("api_key") ||
-    searchParams.get("automation_key");
-
-  const validKeys = [
-    process.env.AUTOMATION_SECRET_KEY,
-    process.env.MY_SECRET_AUTOMATION_KEY,
-    process.env.ADMIN_API_KEY,
-    process.env.CRON_SECRET,
-  ].filter((k): k is string => Boolean(k && k.trim() !== ""));
-
-  if (validKeys.length > 0) {
-    for (const key of validKeys) {
-      if (
-        timingSafeCompare(authHeader, `Bearer ${key}`) ||
-        timingSafeCompare(authHeader, key) ||
-        timingSafeCompare(customHeader, key) ||
-        timingSafeCompare(queryKey, key)
-      ) {
-        return true;
-      }
-    }
-  }
-
-  // Validate admin session cookie
-  try {
-    const cookieStore = await cookies();
-    const adminCookie = cookieStore.get("admin_session")?.value;
-    if (adminCookie && (await verifySessionToken(adminCookie))) {
-      return true;
-    }
-  } catch {
-    // Ignore cookie retrieval errors in webhook contexts
-  }
-
-  return false;
-}
+import { isValidHttpUrl, isValidImageUrl } from "@/lib/session";
+import { verifyAutomationSecret } from "@/lib/admin-auth";
 
 /**
  * Interface representing the expected structure of the incoming automation webhook payload.
@@ -97,18 +41,18 @@ interface CreatePostPayload {
 }
 
 /**
- * POST handler to create new blog posts via n8n automation webhooks or admin panel.
+ * POST handler to create new blog posts via n8n automation webhooks.
  * Accepts title, slug, markdown_content (or content), category, image_url (or imageUrl), source_link.
  * Returns 201 Created with { success: true, post } on success.
  */
 export async function POST(request: NextRequest) {
   try {
-    // 1. Verify Authentication
-    if (!(await isAuthorized(request))) {
+    // 1. Verify Authentication strictly from headers (query parameters rejected)
+    if (!verifyAutomationSecret(request)) {
       return NextResponse.json(
         {
           success: false,
-          error: "Unauthorized: Missing or invalid API key or admin session.",
+          error: "Unauthorized",
         },
         { status: 401 }
       );

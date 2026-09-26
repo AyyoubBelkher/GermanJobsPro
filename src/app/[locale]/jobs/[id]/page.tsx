@@ -89,6 +89,20 @@ export default async function JobDetailPage({
   const authResult = await getUserSession();
   const user = authResult ? authResult.user : null;
 
+  let initialApplication = null;
+  if (user) {
+    initialApplication = await prisma.application.findFirst({
+      where: {
+        userId: user.id,
+        jobId: job.id,
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+  }
+
   const jobData: JobDetailData = {
     id: job.id,
     title: job.title,
@@ -129,7 +143,12 @@ export default async function JobDetailPage({
         </div>
 
         {/* Interactive Job Detail Client */}
-        <JobDetailClient job={jobData} locale={locale} />
+        <JobDetailClient
+          job={jobData}
+          locale={locale}
+          initialUser={user}
+          initialApplication={initialApplication}
+        />
       </main>
 
       <Footer locale={locale} />

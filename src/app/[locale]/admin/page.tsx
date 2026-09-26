@@ -215,7 +215,7 @@ export default function AdminDashboardPage() {
 
       if (planFilter === "ALL") return true;
       if (planFilter === "PRO") {
-        const isPro = u.plan === "PRO" && (!u.planExpiresAt || new Date(u.planExpiresAt) > new Date());
+        const isPro = (u.plan === "PRO" || u.plan === "SPRINT") && (!u.planExpiresAt || new Date(u.planExpiresAt) > new Date());
         return isPro;
       }
       if (planFilter === "FREE") {
@@ -560,7 +560,7 @@ export default function AdminDashboardPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
                   {filteredUsers.map((user) => {
-                    const isPro = user.plan === "PRO" && (!user.planExpiresAt || new Date(user.planExpiresAt) > new Date());
+                    const isPro = (user.plan === "PRO" || user.plan === "SPRINT") && (!user.planExpiresAt || new Date(user.planExpiresAt) > new Date());
                     const isActionLoading = actionLoadingId?.includes(user.id);
                     const formattedDate = new Date(user.createdAt).toLocaleDateString(isAr ? "ar-EG" : "en-US", {
                       year: "numeric",

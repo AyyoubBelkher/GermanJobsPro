@@ -199,14 +199,17 @@ export async function revokeUserSession(token?: string | null): Promise<boolean>
 /**
  * Convenience helper to read user_session cookie and verify session in Server Components and Route Handlers.
  */
-export async function getUserSession() {
-  try {
-    const { cookies } = await import("next/headers");
-    const cookieStore = await cookies();
-    const token = cookieStore.get("user_session")?.value;
-    return verifyUserSession(token);
-  } catch {
-    return null;
+export async function getUserSession(req?: { cookies?: { get: (name: string) => { value?: string } | undefined } } | null) {
+  let token = req?.cookies?.get("user_session")?.value;
+  if (!token) {
+    try {
+      const { cookies } = await import("next/headers");
+      const cookieStore = await cookies();
+      token = cookieStore.get("user_session")?.value;
+    } catch {
+      return null;
+    }
   }
+  return verifyUserSession(token);
 }
 

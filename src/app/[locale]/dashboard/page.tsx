@@ -27,11 +27,22 @@ export default async function DashboardPage({
   }
 
   const { user } = authResult;
-  const isPro = user.plan === "PRO" && (!user.planExpiresAt || new Date(user.planExpiresAt) > new Date());
+  const isPro =
+    (user.plan === "PRO" || user.plan === "SPRINT") &&
+    (!user.planExpiresAt || new Date(user.planExpiresAt) > new Date());
   const displayName = user.name || user.email.split("@")[0];
 
-  // Fetch real user CVs and Cover Letters
-  const [cvs, coverLetters] = await Promise.all([
+  // Fetch real user CVs, Cover Letters, and Application KPIs
+  const [
+    cvs,
+    coverLetters,
+    totalApplications,
+    interviewCount,
+    offerCount,
+    savedCount,
+    appliedCount,
+    recentApplications,
+  ] = await Promise.all([
     prisma.cv.findMany({
       where: { userId: user.id },
       include: {
@@ -43,7 +54,75 @@ export default async function DashboardPage({
       where: { userId: user.id },
       orderBy: { updatedAt: "desc" },
     }),
+    prisma.application.count({
+      where: { userId: user.id },
+    }),
+    prisma.application.count({
+      where: { userId: user.id, status: "INTERVIEW" },
+    }),
+    prisma.application.count({
+      where: { userId: user.id, status: "OFFER" },
+    }),
+    prisma.application.count({
+      where: { userId: user.id, status: "SAVED" },
+    }),
+    prisma.application.count({
+      where: { userId: user.id, status: "APPLIED" },
+    }),
+    prisma.application.findMany({
+      where: { userId: user.id },
+      orderBy: { updatedAt: "desc" },
+      take: 3,
+      select: {
+        id: true,
+        companyName: true,
+        jobTitle: true,
+        location: true,
+        status: true,
+        updatedAt: true,
+      },
+    }),
   ]);
+
+  const responseRate =
+    totalApplications > 0
+      ? Math.round(((interviewCount + offerCount) / totalApplications) * 100)
+      : 0;
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "SAVED":
+        return {
+          label: isAr ? "محفوظة" : isDe ? "Gespeichert" : "Saved",
+          cls: "bg-slate-800 text-slate-300 border-slate-700",
+        };
+      case "APPLIED":
+        return {
+          label: isAr ? "تم التقديم" : isDe ? "Beworben" : "Applied",
+          cls: "bg-blue-500/15 text-blue-400 border-blue-500/30",
+        };
+      case "INTERVIEW":
+        return {
+          label: isAr ? "مقابلة عمل" : isDe ? "Interview" : "Interview",
+          cls: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+        };
+      case "OFFER":
+        return {
+          label: isAr ? "عرض عمل 🎉" : isDe ? "Angebot 🎉" : "Offer 🎉",
+          cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+        };
+      case "REJECTED":
+        return {
+          label: isAr ? "مرفوضة" : isDe ? "Abgelehnt" : "Rejected",
+          cls: "bg-rose-500/15 text-rose-400 border-rose-500/30",
+        };
+      default:
+        return {
+          label: status,
+          cls: "bg-slate-800 text-slate-300 border-slate-700",
+        };
+    }
+  };
 
   return (
     <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between">
@@ -114,7 +193,31 @@ export default async function DashboardPage({
         </div>
 
         {/* Quick Action Banner */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <Link
+            href={`/${locale}/dashboard/applications`}
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600/25 to-blue-500/20 border border-blue-500/40 p-5 hover:border-blue-400 transition-all hover:shadow-lg hover:shadow-blue-500/10 flex items-center justify-between"
+          >
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider">
+                {isAr ? "متابعة الوظائف" : isDe ? "Bewerbungs-Pipeline" : "Job Pipeline"}
+              </span>
+              <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-blue-300 transition-colors">
+                {isAr ? "💼 تتبع التقديمات" : isDe ? "💼 Bewerbungen" : "💼 Job Tracker"}
+              </h3>
+              <p className="text-xs text-slate-400">
+                {isAr
+                  ? `${totalApplications} تقديم مسجل`
+                  : isDe
+                  ? `${totalApplications} erfasste Stellen`
+                  : `${totalApplications} tracked`}
+              </p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform shrink-0">
+              💼
+            </div>
+          </Link>
+
           <Link
             href={`/${locale}/dashboard/cv/new`}
             className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/30 p-5 hover:border-blue-400 transition-all hover:shadow-lg hover:shadow-blue-500/10 flex items-center justify-between"
@@ -194,6 +297,173 @@ export default async function DashboardPage({
               📑
             </div>
           </Link>
+        </div>
+
+        {/* Prominent Application Tracker & Pipeline KPI Section */}
+        <div className="bg-slate-900/80 border border-slate-800/80 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 text-xl">
+                💼
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">
+                  {isAr
+                    ? "تتبع التقديمات والوظائف (Application Tracker)"
+                    : isDe
+                    ? "Bewerbungs-Tracker & Pipeline"
+                    : "Application Tracker & Pipeline"}
+                </h2>
+                <p className="text-xs text-slate-400">
+                  {isAr
+                    ? "متابعة فورية لمراحل طلبات التوظيف ومعدل التفاعل مع مسؤولي التوظيف في ألمانيا"
+                    : isDe
+                    ? "Status Ihrer Bewerbungen, Vorstellungsgespräche und Rückmeldequote im Überblick"
+                    : "Real-time tracking of German job applications, interviews, and recruiter response rates"}
+                </p>
+              </div>
+            </div>
+
+            <Link
+              href={`/${locale}/dashboard/applications`}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition-all hover:scale-[1.02] active:scale-95 shrink-0"
+            >
+              <span>{isAr ? "إدارة التقديمات وتحديث الحالات ←" : isDe ? "Bewerbungen verwalten →" : "Manage Applications →"}</span>
+            </Link>
+          </div>
+
+          {/* 3 Application KPI Metrics */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* KPI 1: Total Applications */}
+            <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-xs font-semibold text-slate-400">
+                  {isAr ? "إجمالي التقديمات" : isDe ? "Gesamte Bewerbungen" : "Total Applications"}
+                </span>
+                <p className="text-3xl font-extrabold text-white font-mono">
+                  {totalApplications}
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  {isAr
+                    ? `${savedCount} محفوظة • ${appliedCount} تم إرسالها`
+                    : isDe
+                    ? `${savedCount} gespeichert • ${appliedCount} gesendet`
+                    : `${savedCount} saved • ${appliedCount} sent`}
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl shrink-0">
+                📋
+              </div>
+            </div>
+
+            {/* KPI 2: Active Interviews */}
+            <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-xs font-semibold text-slate-400">
+                  {isAr ? "مقابلات عمل نشطة" : isDe ? "Aktive Interviews" : "Active Interviews"}
+                </span>
+                <p className="text-3xl font-extrabold text-amber-400 font-mono">
+                  {interviewCount}
+                </p>
+                <p className="text-[11px] text-amber-300/70">
+                  {interviewCount > 0
+                    ? isAr
+                      ? "🎯 مقابلات عمل جارية أو قادمة"
+                      : isDe
+                      ? "🎯 Anstehende Gespräche"
+                      : "🎯 Scheduled or upcoming"
+                    : isAr
+                    ? "لا توجد مقابلات حالياً"
+                    : isDe
+                    ? "Aktuell keine Interviews"
+                    : "No active interviews"}
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center text-2xl shrink-0">
+                💼
+              </div>
+            </div>
+
+            {/* KPI 3: Response Rate % */}
+            <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-xs font-semibold text-slate-400">
+                  {isAr ? "معدل الاستجابة الإيجابي" : isDe ? "Rückmeldequote" : "Response Rate"}
+                </span>
+                <p className="text-3xl font-extrabold text-emerald-400 font-mono">
+                  {responseRate}%
+                </p>
+                <p className="text-[11px] text-emerald-300/70">
+                  {isAr
+                    ? "نسبة المقابلات وعروض العمل"
+                    : isDe
+                    ? "(Interviews + Angebote) / Gesamt"
+                    : "(Interviews + Offers) / Total"}
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl shrink-0">
+                📈
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Applications Snapshot or Empty State */}
+          {recentApplications.length > 0 ? (
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between text-xs text-slate-400">
+                <span className="font-semibold">
+                  {isAr ? "أحدث التقديمات المسجلة:" : isDe ? "Zuletzt erfasste Bewerbungen:" : "Recent Applications:"}
+                </span>
+                <Link
+                  href={`/${locale}/dashboard/applications`}
+                  className="text-blue-400 hover:text-blue-300 underline font-semibold"
+                >
+                  {isAr ? "عرض الكل في متتبع التقديمات ←" : isDe ? "Alle im Tracker öffnen →" : "Open all in Tracker →"}
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {recentApplications.map((app) => {
+                  const badge = getStatusBadge(app.status);
+                  return (
+                    <Link
+                      key={app.id}
+                      href={`/${locale}/dashboard/applications`}
+                      className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-700 transition-all flex items-center justify-between gap-3 group"
+                    >
+                      <div className="min-w-0 space-y-0.5">
+                        <p className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors truncate">
+                          {app.jobTitle}
+                        </p>
+                        <p className="text-[11px] text-slate-400 truncate">
+                          🏢 {app.companyName} {app.location ? `• 📍 ${app.location}` : ""}
+                        </p>
+                      </div>
+                      <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold shrink-0 border ${badge.cls}`}>
+                        {badge.label}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="py-4 px-5 rounded-2xl bg-slate-950/50 border border-dashed border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <p className="text-xs text-slate-400">
+                {isAr
+                  ? "ابدأ بتتبع طلبات التقديم على الوظائف الألمانية لحساب معدل استجابتك وتنظيم المقابلات."
+                  : isDe
+                  ? "Starten Sie das Tracking Ihrer Bewerbungen, um den Überblick über alle Rückmeldungen zu behalten."
+                  : "Start tracking your German job applications to calculate your response rate and organize interviews."}
+              </p>
+              <Link
+                href={`/${locale}/jobs`}
+                className="px-4 py-2 rounded-xl bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/20 font-bold text-xs transition-colors shrink-0 text-center"
+              >
+                {isAr ? "استكشاف الوظائف ←" : isDe ? "Jobs durchsuchen →" : "Explore Jobs →"}
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Dynamic Dual-Column Content: CVs & Cover Letters */}

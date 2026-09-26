@@ -6,6 +6,7 @@ import { analyzeCvAtsSchema } from "@/lib/validations/ai";
 import { analyzeCvAtsAI } from "@/lib/gemini";
 import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
 import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
+import { logAiUsage } from "@/lib/ai-telemetry";
 
 /**
  * POST /api/ai/analyze-cv-ats
@@ -149,12 +150,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const aiStartTime = performance.now();
     try {
       const analysis = await analyzeCvAtsAI({
         cvText: finalCvText,
         jobDescription: jobDescription || null,
         language: language || "de",
       });
+
+      const latencyMs = performance.now() - aiStartTime;
+      logAiUsage({
+        userId: authResult.user.id,
+        operation: "ATS_ANALYSIS",
+        latencyMs,
+        success: true,
+      }).catch(() => {});
 
       return NextResponse.json(
         {
@@ -166,6 +176,15 @@ export async function POST(request: NextRequest) {
         { status: 200 }
       );
     } catch (aiError) {
+      const latencyMs = performance.now() - aiStartTime;
+      logAiUsage({
+        userId: authResult.user.id,
+        operation: "ATS_ANALYSIS",
+        latencyMs,
+        success: false,
+        errorMessage: aiError instanceof Error ? aiError.message : String(aiError),
+      }).catch(() => {});
+
       await refundAiCredit(authResult.user.id);
       throw aiError;
     }
