@@ -237,7 +237,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       title: "Pourquoi 80% des candidatures étrangères sont rejetées en Allemagne",
       subtitle: "Comparatif entre un CV classique non conforme et un dossier DIN 5008 optimisé.",
       negativeBadge: "CV classique non conforme / Rejeté",
-      negativeRate: "~80% Rejection Rate",
+      negativeRate: "Format non conforme",
       negativePoints: [
         "Traductions littérales sans verbes d'action",
         "Chronologie non standard perturbant les ATS",
@@ -245,7 +245,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         "Absence d'Anschreiben ou de Deckblatt",
       ],
       positiveBadge: "GermanJobsPro DIN 5008 optimisé",
-      positiveRate: "Top 5% Interview Callback",
+      positiveRate: "Conforme DIN 5008 & Validé ATS",
       positivePoints: [
         "Formulation allemande rigoureuse en Substantivstil",
         "Mise en page tabulaire 100% DIN 5008 validée ATS",
@@ -451,7 +451,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       title: "لماذا تُرفض 80% من طلبات التوظيف الأجنبية؟",
       subtitle: "مقارنة حقيقية توضح الفارق بين السيرة الذاتية التقليدية وملف الترشيح المعتمد بمعيار DIN 5008.",
       negativeBadge: "سيرة عادية / مرفوضة",
-      negativeRate: "~80% Rejection Rate",
+      negativeRate: "تنسيق عشوائي معرض للرفض",
       negativePoints: [
         "ترجمة حرفية ركيكة وصياغة سلبية للمهام دون أفعال إنجاز.",
         "تنسيق عشوائي غير متطابق مع معيار DIN 5008 يفشل في فلاتر ATS.",
@@ -459,7 +459,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         "تقديم سيرة منفصلة بدون خطاب دافع (Anschreiben) أو غلاف (Deckblatt).",
       ],
       positiveBadge: "ملف GermanJobsPro المعتمد",
-      positiveRate: "Top 5% Interview Callback",
+      positiveRate: "تنسيق معتمد ومطابق لـ DIN 5008",
       positivePoints: [
         "صياغة احترافية بأسلوب الأسماء الفعلية الألمانية (Substantivstil).",
         "تنسيق جدولي قياسي 100% متوافق مع DIN 5008 وأنظمة ATS.",
@@ -574,8 +574,8 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       readMore: "اقرأ المزيد",
     },
     legal: {
-      title: "إخلاء مسؤولية قانوني وشفافية الخدمة",
-      text: "منصة GermanJobsPro هي أداة برمجية ذكية لتنسيق المستندات المهنية وإعداد ملفات الترشيح وفق معايير DIN 5008 الألمانية وتوفير مصادر تعليمية للمستوى A1. نحن لسنا وكالة توظيف أو مكتب محاماة أو جهة حكومية أو تمثيلية دبلوماسية. لا نضمن الحصول على وظيفة أو تأشيرة، حيث يعود القرار النهائي للجهات المختصة وأصحاب العمل.",
+      title: "إخلاء المسؤولية القانونية",
+      text: "منصة GermanJobsPro هي أداة برمجية رقمية لتنسيق المستندات المهنية وإعداد ملفات الترشيح وفق معايير DIN 5008 الألمانية وتوفير مصادر تعليمية للمستوى A1. المنصة ليست وكالة توظيف أو مكتب محاماة أو جهة حكومية أو تمثيلية قنصلية، ولا تضمن الحصول على وظيفة أو تأشيرة، حيث يعود القرار النهائي حصرياً للجهات المختصة وأصحاب العمل.",
     },
     faq: {
       badge: "الأسئلة الشائعة",
@@ -665,7 +665,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       title: "Warum 80% ausländischer Bewerbungen scheitern",
       subtitle: "Der entscheidende Unterschied zwischen einem Standard-Lebenslauf und einer DIN 5008 Bewerbung.",
       negativeBadge: "Standard-CV / Abgelehnt",
-      negativeRate: "~80% Rejection Rate",
+      negativeRate: "Formatierungsrisiko",
       negativePoints: [
         "Wörtliche Übersetzungen ohne aktive deutsche Handlungssubstantive.",
         "Nicht-standardisiertes Layout mit Parsing-Fehlern im ATS.",
@@ -673,7 +673,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         "Isolierter Lebenslauf ohne Anschreiben oder Deckblatt.",
       ],
       positiveBadge: "GermanJobsPro DIN 5008",
-      positiveRate: "Top 5% Interview Callback",
+      positiveRate: "DIN 5008 Standard & ATS-geprüft",
       positivePoints: [
         "Präziser deutscher Substantivstil mit aktiven Handlungssubstantiven.",
         "100% DIN 5008 tabellarischer Aufbau für fehlerfreie ATS-Erkennung.",
@@ -879,7 +879,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       title: "Why 80% of Foreign Applications Get Rejected",
       subtitle: "A side-by-side breakdown between a generic resume and a compliant DIN 5008 German dossier.",
       negativeBadge: "Generic CV / Rejected",
-      negativeRate: "~80% Rejection Rate",
+      negativeRate: "Non-Compliant Format",
       negativePoints: [
         "Literal translations lacking German active action nouns.",
         "Unstructured timeline causing ATS parsing errors.",
@@ -887,7 +887,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         "No cover letter (Anschreiben) or cover page (Deckblatt).",
       ],
       positiveBadge: "GermanJobsPro DIN 5008",
-      positiveRate: "Top 5% Interview Callback",
+      positiveRate: "DIN 5008 & ATS-Optimized",
       positivePoints: [
         "Flawless German Substantivstil action-oriented formulations.",
         "100% DIN 5008 standard tabular structure passing all ATS.",
