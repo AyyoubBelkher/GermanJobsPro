@@ -175,9 +175,32 @@ export default function JobDetailClient({
     }
   };
 
-  const handleCopyEmail = async () => {
-    if (!job.contactEmail) return;
-    await copyToClipboard(job.contactEmail);
+  const effectiveEmail =
+    job.contactEmail?.trim() ||
+    (job.applyUrl?.startsWith("mailto:") ? job.applyUrl.replace(/^mailto:/i, "").trim() : null);
+
+  const isApplyUrlWeb = Boolean(
+    job.applyUrl &&
+      (job.applyUrl.startsWith("http://") ||
+        job.applyUrl.startsWith("https://") ||
+        (!job.applyUrl.startsWith("mailto:") && job.applyUrl.includes(".")))
+  );
+
+  const hasPortal = Boolean(job.applyUrl && isApplyUrlWeb);
+  const hasEmail = Boolean(effectiveEmail && effectiveEmail.length > 0);
+
+  // Dynamic Application Cases:
+  // Case A: Portal present, no email
+  // Case B: Email present, no portal
+  // Case C: Both portal and email present
+  const isCaseC = hasPortal && hasEmail;
+  const isCaseB = !hasPortal && hasEmail;
+  const isCaseA = !isCaseB && !isCaseC;
+
+  const handleCopyEmail = async (emailToCopy?: string | null) => {
+    const target = emailToCopy || effectiveEmail || job.contactEmail;
+    if (!target) return;
+    await copyToClipboard(target);
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 2500);
   };
@@ -205,15 +228,16 @@ export default function JobDetailClient({
     `${LRM}[Ihr Vorname und Nachname]${LRM}`,
   ].join("\n");
 
-  const handleSmartMailSend = async () => {
-    if (!job.contactEmail) return;
+  const handleSmartMailSend = async (emailToSend?: string | null) => {
+    const target = emailToSend || effectiveEmail || job.contactEmail;
+    if (!target) return;
 
     // Auto-track as APPLIED if user is logged in and not already APPLIED
     if (initialUser && trackedStatus !== "APPLIED") {
       handleTrackApplication("APPLIED");
     }
 
-    await copyToClipboard(job.contactEmail);
+    await copyToClipboard(target);
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 3000);
 
@@ -222,7 +246,7 @@ export default function JobDetailClient({
     setTimeout(() => setToast(null), 4500);
 
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&hl=en&to=${encodeURIComponent(
-      job.contactEmail
+      target
     )}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
 
     if (typeof window !== "undefined") {
@@ -230,8 +254,8 @@ export default function JobDetailClient({
     }
   };
 
-  const mailtoLink = job.contactEmail
-    ? `mailto:${job.contactEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`
+  const mailtoLink = effectiveEmail
+    ? `mailto:${effectiveEmail}?subject=Bewerbung%20als%20${encodeURIComponent(job.title)}`
     : "";
 
   const handleTrackApplication = async (newStatus: "SAVED" | "APPLIED" = "SAVED") => {
@@ -287,6 +311,8 @@ export default function JobDetailClient({
       setTrackingLoading(false);
     }
   };
+
+  const handleSaveToTracker = handleTrackApplication;
 
   return (
     <div className="space-y-10" dir={dir}>
@@ -474,219 +500,370 @@ export default function JobDetailClient({
         {/* Sidebar: Direct Application & AI Tools */}
         <div className="lg:col-span-4 space-y-6 sticky top-24">
           
-          {/* Direct Email Application Card */}
-          <div className="rounded-3xl bg-slate-900 border-2 border-blue-500/40 p-6 space-y-5 shadow-2xl">
-            <div className="space-y-1">
-              <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider">
-                {dict.jobs.details.applyTitle}
-              </span>
+          {/* Dynamic Application Card (Conditional Rendering) */}
+          <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-6 space-y-5 shadow-2xl text-slate-100 backdrop-blur-xl">
+            {/* Card Header & Dynamic Badges */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                {isCaseB ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-bold text-emerald-400">
+                    {isAr ? "✉️ التقديم المباشر بالبريد" : isDe ? "✉️ Direkte E-Mail-Bewerbung" : "✉️ Direct Email Application"}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[11px] font-bold text-blue-400">
+                    {isAr ? "🌐 التقديم عبر البوابة الرسمية" : isDe ? "🌐 Offizielles Portal" : "🌐 Official Portal"}
+                  </span>
+                )}
+              </div>
+
               <h3 className="text-lg font-black text-white">
-                {dict.jobs.details.applyTitle}
+                {isAr ? "التقديم على هذه الفرصة" : isDe ? "Auf dieses Angebot bewerben" : "Apply for this Role"}
               </h3>
-              <p className="text-xs text-slate-400">
-                {dict.jobs.details.applySubtitle}
+
+              <p className="text-xs text-slate-400 leading-relaxed">
+                {isCaseB
+                  ? isAr
+                    ? "أرسل ملف ترشيحك الموحد (DIN 5008) مباشرة لقسم الموارد البشرية بالشركة."
+                    : isDe
+                    ? "Senden Sie Ihre vollständigen Unterlagen (DIN 5008) direkt an die Personalabteilung."
+                    : "Send your unified DIN 5008 application dossier directly to the employer's HR team."
+                  : isCaseC
+                  ? isAr
+                    ? "يتم التقديم إلكترونياً عبر البوابة الرسمية المعتمدة لجهة العمل أو وكالة العمل الألمانية، كما يمكنك مراسلة الموارد البشرية مباشرة."
+                    : isDe
+                    ? "Die Bewerbung erfolgt elektronisch über das offizielle Portal oder direkt per E-Mail an die Personalabteilung."
+                    : "Applications are submitted electronically via the official employer portal, or directly via email."
+                  : isAr
+                  ? "يتم التقديم إلكترونياً عبر البوابة الرسمية المعتمدة لجهة العمل أو وكالة العمل الألمانية."
+                  : isDe
+                  ? "Die Bewerbung erfolgt elektronisch über das offizielle Portal des Arbeitgebers oder der Bundesagentur für Arbeit."
+                  : "Applications are submitted electronically via the official employer portal or the Federal Employment Agency."}
               </p>
             </div>
 
-            {job.contactEmail ? (
+            {/* Application Actions */}
+            {/* Case A: Primary German Portal / Arbeitsagentur */}
+            {isCaseA && (
               <div className="space-y-3">
-                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-400 font-medium">{dict.jobs.details.companyEmail}</span>
-                    <span className="text-emerald-400 font-bold flex items-center gap-1">
-                      <span>✓</span>
-                      <span>{dict.jobs.details.directApplyBadge}</span>
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2 bg-slate-900 px-3 py-2 rounded-xl border border-slate-800 font-mono text-xs text-white" dir="ltr">
-                    <span className="truncate">{job.contactEmail}</span>
-                    <button
-                      type="button"
-                      onClick={handleCopyEmail}
-                      className="text-blue-400 hover:text-white shrink-0 cursor-pointer font-sans text-[11px] font-bold"
-                    >
-                      {copiedEmail ? dict.jobs.details.copiedSuccess : dict.common.copy}
-                    </button>
-                  </div>
-                </div>
+                <a
+                  href={job.applyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => {
+                    if (initialUser && trackedStatus !== "APPLIED") {
+                      handleSaveToTracker("APPLIED");
+                    }
+                  }}
+                  className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-400 text-white font-extrabold text-sm sm:text-base text-center shadow-xl shadow-blue-600/30 hover:shadow-indigo-600/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>
+                    {isAr
+                      ? "التقديم عبر البوابة الرسمية (Arbeitsagentur) ↗"
+                      : isDe
+                      ? "Über offizielles Portal bewerben (Arbeitsagentur) ↗"
+                      : "Apply via Official Portal (Arbeitsagentur) ↗"}
+                  </span>
+                </a>
+              </div>
+            )}
 
-                {toast && (
-                  <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2 animate-fadeIn shadow-inner">
-                    <span className="text-sm shrink-0">✓</span>
-                    <span className="leading-snug">{toast}</span>
+            {/* Case B: Direct Email Only */}
+            {isCaseB && (
+              <div className="space-y-3">
+                {effectiveEmail && (
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-400 font-medium">
+                        {isAr ? "بريد الشركة المباشر:" : isDe ? "E-Mail der Personalabteilung:" : "Company Email:"}
+                      </span>
+                      <span className="text-emerald-400 font-bold flex items-center gap-1">
+                        <span>✓</span>
+                        <span>{isAr ? "تقديم مباشر" : isDe ? "Direkt" : "Direct"}</span>
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 bg-slate-900 px-3 py-2 rounded-xl border border-slate-800 font-mono text-xs text-white" dir="ltr">
+                      <span className="truncate">{effectiveEmail}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyEmail(effectiveEmail)}
+                        className="text-blue-400 hover:text-white shrink-0 cursor-pointer font-sans text-[11px] font-bold"
+                      >
+                        {copiedEmail ? (isAr ? "✓ تم النسخ!" : "Copied!") : (isAr ? "نسخ" : "Copy")}
+                      </button>
+                    </div>
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleSmartMailSend}
-                      className="flex-1 py-3.5 px-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm text-center shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
-                    >
-                      <span>✉️</span>
-                      <span>{dict.jobs.details.sendDirectEmail}</span>
-                    </button>
+                <a
+                  href={mailtoLink}
+                  onClick={() => {
+                    if (initialUser && trackedStatus !== "APPLIED") {
+                      handleSaveToTracker("APPLIED");
+                    }
+                  }}
+                  className="w-full py-4 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm sm:text-base text-center shadow-xl shadow-emerald-600/25 hover:shadow-emerald-600/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>
+                    {isAr
+                      ? "إرسال السيرة الذاتية عبر الإيميل ✉️"
+                      : isDe
+                      ? "Bewerbung per E-Mail senden ✉️"
+                      : "Send Application via Email ✉️"}
+                  </span>
+                </a>
 
-                    <a
-                      href={mailtoLink}
-                      title={dict.jobs.details.openMailApp}
-                      className="p-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all flex items-center justify-center cursor-pointer shrink-0"
-                    >
-                      <span className="text-base" aria-hidden="true">📱</span>
-                      <span className="sr-only">Mailto</span>
-                    </a>
-                  </div>
-
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
-                    <span className="text-slate-500 flex items-center gap-1">
-                      <span>🚀</span>
-                      <span>{dict.jobs.details.gmailNotice}</span>
-                    </span>
-                    <a
-                      href={mailtoLink}
-                      className="text-blue-400 hover:text-blue-300 hover:underline flex items-center gap-1 font-medium transition-colors"
-                    >
-                      <span>{dict.jobs.details.mailAppNotice}</span>
-                      <span>↗</span>
-                    </a>
-                  </div>
-
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSmartMailSend(effectiveEmail)}
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs text-center transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <span>🚀</span>
+                    <span>{isAr ? "فتح في Gmail" : isDe ? "In Gmail öffnen" : "Open in Gmail"}</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => setShowEmailModal(true)}
-                    className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs text-center transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs text-center transition-all cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <span>📝</span>
-                    <span>{dict.jobs.details.showTemplate}</span>
+                    <span>{isAr ? "عرض النموذج الألماني" : isDe ? "Muster anzeigen" : "Show Template"}</span>
                   </button>
-
-                  {/* Application OS Direct Track Action */}
-                  <div className="pt-3 border-t border-slate-800/80 space-y-2">
-                    <button
-                      type="button"
-                      onClick={() => handleTrackApplication(trackedStatus === "SAVED" ? "APPLIED" : "SAVED")}
-                      disabled={trackingLoading}
-                      className={`w-full py-3 px-4 rounded-2xl font-bold text-xs text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
-                        trackedStatus === "APPLIED"
-                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30"
-                          : trackedStatus === "SAVED"
-                          ? "bg-blue-500/20 text-blue-300 border border-blue-500/40 hover:bg-blue-500/30"
-                          : "bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 hover:border-slate-600"
-                      }`}
-                    >
-                      <span>{trackedStatus === "APPLIED" ? "✅" : trackedStatus === "SAVED" ? "📌" : "💼"}</span>
-                      <span>
-                        {trackingLoading
-                          ? isAr
-                            ? "جاري الحفظ في التقديمات..."
-                            : isDe
-                            ? "Wird gespeichert..."
-                            : "Saving to Tracker..."
-                          : trackedStatus === "APPLIED"
-                          ? isAr
-                            ? "تم التقديم (مسجل في قائمة تقديماتك)"
-                            : isDe
-                            ? "✓ Als beworben erfasst"
-                            : "✓ Applied (In Tracker)"
-                          : trackedStatus === "SAVED"
-                          ? isAr
-                            ? "محفوظ في قائمة تقديماتي (اضغط للتعيين كتم التقديم)"
-                            : isDe
-                            ? "✓ Gespeichert (Klick für Beworben)"
-                            : "✓ Saved (Click to set as Applied)"
-                          : isAr
-                          ? "حفظ في قائمة تقديماتي / Track Application"
-                          : isDe
-                          ? "In Bewerbungen speichern / Tracken"
-                          : "Track Application"}
-                      </span>
-                    </button>
-
-                    {trackedStatus && (
-                      <div className="text-center">
-                        <Link
-                          href={`/${activeLocale}/dashboard`}
-                          className="text-[11px] text-blue-400 hover:text-blue-300 underline font-medium transition-colors"
-                        >
-                          {isAr
-                            ? "متابعة حالة التقديم في لوحة التحكم ←"
-                            : isDe
-                            ? "Bewerbungsstatus im Dashboard ansehen ←"
-                            : "Manage applications in Dashboard →"}
-                        </Link>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
-            ) : (
+            )}
+
+            {/* Case C: Both Portal & Email Exist */}
+            {isCaseC && (
               <div className="space-y-3">
+                {/* Primary Action: Official Portal */}
                 <a
-                  href={mailtoLink || `mailto:info@${cleanCompany.toLowerCase().replace(/[^a-z0-9]/g, "")}.de`}
-                  className="w-full py-4 px-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm text-center shadow-xl shadow-blue-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  href={job.applyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => {
+                    if (initialUser && trackedStatus !== "APPLIED") {
+                      handleSaveToTracker("APPLIED");
+                    }
+                  }}
+                  className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-400 text-white font-extrabold text-sm sm:text-base text-center shadow-xl shadow-blue-600/30 hover:shadow-indigo-600/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <span>✉️</span>
-                  <span>{dict.jobs.details.directEmailApply}</span>
+                  <span>
+                    {isAr
+                      ? "التقديم عبر البوابة الرسمية (Arbeitsagentur) ↗"
+                      : isDe
+                      ? "Über offizielles Portal bewerben (Arbeitsagentur) ↗"
+                      : "Apply via Official Portal (Arbeitsagentur) ↗"}
+                  </span>
                 </a>
 
-                {/* Application OS Direct Track Action */}
-                <button
-                  type="button"
-                  onClick={() => handleTrackApplication(trackedStatus === "SAVED" ? "APPLIED" : "SAVED")}
-                  disabled={trackingLoading}
-                  className={`w-full py-3 px-4 rounded-2xl font-bold text-xs text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
-                    trackedStatus === "APPLIED"
-                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30"
-                      : trackedStatus === "SAVED"
-                      ? "bg-blue-500/20 text-blue-300 border border-blue-500/40 hover:bg-blue-500/30"
-                      : "bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 hover:border-slate-600"
-                  }`}
+                {/* Secondary Action: Direct Email */}
+                <a
+                  href={mailtoLink}
+                  onClick={() => {
+                    if (initialUser && trackedStatus !== "APPLIED") {
+                      handleSaveToTracker("APPLIED");
+                    }
+                  }}
+                  className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 hover:border-slate-600 font-bold text-xs sm:text-sm text-center transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <span>{trackedStatus === "APPLIED" ? "✅" : trackedStatus === "SAVED" ? "📌" : "💼"}</span>
                   <span>
-                    {trackingLoading
-                      ? isAr
-                        ? "جاري الحفظ في التقديمات..."
-                        : isDe
-                        ? "Wird gespeichert..."
-                        : "Saving to Tracker..."
-                      : trackedStatus === "APPLIED"
-                      ? isAr
-                        ? "تم التقديم (مسجل في قائمة تقديماتك)"
-                        : isDe
-                        ? "✓ Als beworben erfasst"
-                        : "✓ Applied (In Tracker)"
-                      : trackedStatus === "SAVED"
-                      ? isAr
-                        ? "محفوظ في قائمة تقديماتي (اضغط للتعيين كتم التقديم)"
-                        : isDe
-                        ? "✓ Gespeichert (Klick für Beworben)"
-                        : "✓ Saved (Click to set as Applied)"
-                      : isAr
-                      ? "حفظ في قائمة تقديماتي / Track Application"
+                    {isAr
+                      ? "إرسال السيرة الذاتية عبر الإيميل ✉️"
                       : isDe
-                      ? "In Bewerbungen speichern / Tracken"
-                      : "Track Application"}
+                      ? "Bewerbung per E-Mail senden ✉️"
+                      : "Send Application via Email ✉️"}
                   </span>
-                </button>
+                </a>
 
-                {trackedStatus && (
-                  <div className="text-center">
-                    <Link
-                      href={`/${activeLocale}/dashboard`}
-                      className="text-[11px] text-blue-400 hover:text-blue-300 underline font-medium transition-colors"
-                    >
-                      {isAr
-                        ? "متابعة حالة التقديم في لوحة التحكم ←"
-                        : isDe
-                        ? "Bewerbungsstatus im Dashboard ansehen ←"
-                        : "Manage applications in Dashboard →"}
-                    </Link>
-                  </div>
-                )}
+                <div className="flex items-center justify-between text-[11px] text-slate-400 px-1 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => handleCopyEmail(effectiveEmail)}
+                    className="text-blue-400 hover:text-blue-300 hover:underline flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <span>📋</span>
+                    <span>{copiedEmail ? (isAr ? "تم نسخ البريد!" : "Copied!") : (isAr ? "نسخ بريد التوظيف" : "Copy HR Email")}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowEmailModal(true)}
+                    className="text-slate-400 hover:text-slate-200 hover:underline flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <span>📝</span>
+                    <span>{isAr ? "عرض النموذج الألماني" : "Show Template"}</span>
+                  </button>
+                </div>
               </div>
             )}
+
+            {/* In-Card Toast Notification */}
+            {toast && (
+              <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2 animate-fadeIn shadow-inner">
+                <span className="text-sm shrink-0">✓</span>
+                <span className="leading-snug">{toast}</span>
+              </div>
+            )}
+
+            {/* Step-by-Step Educational Guidance Box ("دليل التقديم الذاتي") */}
+            <div className="rounded-2xl bg-slate-950/70 border border-slate-800/80 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-base select-none">💡</span>
+                <h4 className="font-bold text-white text-xs sm:text-sm">
+                  {isAr
+                    ? "كيف أقدّم على هذه الوظيفة بدون وسيط؟"
+                    : isDe
+                    ? "Wie bewerbe ich mich direkt ohne Vermittler?"
+                    : "How to apply directly without intermediaries?"}
+                </h4>
+              </div>
+
+              <ol className="space-y-2.5 text-xs text-slate-300">
+                <li className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">
+                    1
+                  </span>
+                  <div className="leading-relaxed">
+                    <span className="font-bold text-white">
+                      {isAr ? "تجهيز الملف: " : isDe ? "Unterlagen vorbereiten: " : "Prepare Documents: "}
+                    </span>
+                    <span className="text-slate-300">
+                      {isAr
+                        ? "أنشئ سيرتك الذاتية الألمانية المعيارية (DIN 5008) وخطاب الدافع وحمّلهما بصيغة PDF من حسابك."
+                        : isDe
+                        ? "Erstellen Sie Ihren DIN 5008 Lebenslauf und das Anschreiben und laden Sie beide als PDF herunter."
+                        : "Create your standardized DIN 5008 resume and cover letter, then download them as PDF from your account."}
+                    </span>
+                  </div>
+                </li>
+
+                <li className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">
+                    2
+                  </span>
+                  <div className="leading-relaxed">
+                    <span className="font-bold text-white">
+                      {isAr
+                        ? hasPortal
+                          ? "فتح البوابة: "
+                          : "تجهيز الإيميل: "
+                        : isDe
+                        ? hasPortal
+                          ? "Portal öffnen: "
+                          : "E-Mail vorbereiten: "
+                        : hasPortal
+                        ? "Open Portal: "
+                        : "Prepare Email: "}
+                    </span>
+                    <span className="text-slate-300">
+                      {isAr
+                        ? hasPortal
+                          ? "اضغط على زر التقديم بالأعلى للانتقال لصفحة الإعلان الرسمية على بوابة وكالة العمل الألمانية."
+                          : "اضغط على زر إرسال الإيميل بالأعلى أو انسخ بريد قسم الموارد البشرية."
+                        : isDe
+                        ? hasPortal
+                          ? "Klicken Sie oben auf den Bewerbungs-Button, um zur offiziellen Stellenausschreibung der Arbeitsagentur zu gelangen."
+                          : "Klicken Sie auf den E-Mail-Button oder kopieren Sie die E-Mail der Personalabteilung."
+                        : hasPortal
+                        ? "Click the apply button above to open the official job listing on the German Employment Agency portal."
+                        : "Click the email button above or copy the HR department email address."}
+                    </span>
+                  </div>
+                </li>
+
+                <li className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">
+                    3
+                  </span>
+                  <div className="leading-relaxed">
+                    <span className="font-bold text-white">
+                      {isAr
+                        ? hasPortal
+                          ? "رفع الترشيح: "
+                          : "إرسال الترشيح: "
+                        : isDe
+                        ? hasPortal
+                          ? "Bewerbung einreichen: "
+                          : "Bewerbung absenden: "
+                        : hasPortal
+                        ? "Submit Application: "
+                        : "Send Application: "}
+                    </span>
+                    <span className="text-slate-300">
+                      {isAr
+                        ? hasPortal
+                          ? "في الصفحة الألمانية، ابحث عن زر (Bewerben / Online bewerben) وارفع ملفك مباشرة لقسم التوظيف."
+                          : "أرفق ملف سيرتك الذاتية وخطاب الدافع بصيغة PDF وأرسل الرسالة مباشرة لقسم الموارد البشرية بالشركة."
+                        : isDe
+                        ? hasPortal
+                          ? "Klicken Sie auf der deutschen Seite auf „Bewerben / Online bewerben“ und laden Sie Ihre Unterlagen direkt hoch."
+                          : "Fügen Sie Ihre PDF-Unterlagen bei und senden Sie die Nachricht direkt an die Personalabteilung."
+                        : hasPortal
+                        ? "On the German page, look for the 'Bewerben / Online bewerben' button and upload your documents directly."
+                        : "Attach your PDF dossier and send the message directly to the employer's HR team."}
+                    </span>
+                  </div>
+                </li>
+              </ol>
+            </div>
+
+            {/* Application OS Direct Track Action */}
+            <div className="pt-3 border-t border-slate-800/80 space-y-2">
+              <button
+                type="button"
+                onClick={() => handleSaveToTracker(trackedStatus === "SAVED" ? "APPLIED" : "SAVED")}
+                disabled={trackingLoading}
+                className={`w-full py-3 px-4 rounded-2xl font-bold text-xs text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
+                  trackedStatus === "APPLIED"
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30"
+                    : trackedStatus === "SAVED"
+                    ? "bg-blue-500/20 text-blue-300 border border-blue-500/40 hover:bg-blue-500/30"
+                    : "bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 hover:border-slate-600"
+                }`}
+              >
+                <span>{trackedStatus === "APPLIED" ? "✅" : trackedStatus === "SAVED" ? "📌" : "💼"}</span>
+                <span>
+                  {trackingLoading
+                    ? isAr
+                      ? "جاري الحفظ في التقديمات..."
+                      : isDe
+                      ? "Wird gespeichert..."
+                      : "Saving to Tracker..."
+                    : trackedStatus === "APPLIED"
+                    ? isAr
+                      ? "تم التقديم (مسجل في قائمة تقديماتك)"
+                      : isDe
+                      ? "✓ Als beworben erfasst"
+                      : "✓ Applied (In Tracker)"
+                    : trackedStatus === "SAVED"
+                    ? isAr
+                      ? "محفوظ في قائمة تقديماتي (اضغط للتعيين كتم التقديم)"
+                      : isDe
+                      ? "✓ Gespeichert (Klick für Beworben)"
+                      : "✓ Saved (Click to set as Applied)"
+                    : isAr
+                    ? "حفظ في قائمة تقديماتي / Track Application"
+                    : isDe
+                    ? "In Bewerbungen speichern / Tracken"
+                    : "Track Application"}
+                </span>
+              </button>
+
+              {trackedStatus && (
+                <div className="text-center">
+                  <Link
+                    href={`/${activeLocale}/dashboard`}
+                    className="text-[11px] text-blue-400 hover:text-blue-300 underline font-medium transition-colors"
+                  >
+                    {isAr
+                      ? "متابعة حالة التقديم في لوحة التحكم ←"
+                      : isDe
+                      ? "Bewerbungsstatus im Dashboard ansehen ←"
+                      : "Manage applications in Dashboard →"}
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* AI Tools Cards */}
