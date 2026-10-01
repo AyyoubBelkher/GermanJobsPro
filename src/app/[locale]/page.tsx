@@ -227,7 +227,10 @@ export default async function LandingPage({
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Pillar 1: DIN 5008 CV Builder */}
-            <div className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6">
+            <Link
+              href={`/${locale}/dashboard/cv/new`}
+              className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6 cursor-pointer"
+            >
               <div className="space-y-4">
                 <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   📄
@@ -244,14 +247,17 @@ export default async function LandingPage({
 
               <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
                 <span className="text-[11px] font-mono text-emerald-400 font-bold">{t.pillars.pillar1.tag}</span>
-                <Link href={`/${locale}/dashboard/cv/new`} className="text-xs font-bold text-blue-400 hover:text-blue-300">
+                <span className="text-xs font-bold text-blue-400 group-hover:text-blue-300 transition-colors">
                   {t.pillars.pillar1.cta}
-                </Link>
+                </span>
               </div>
-            </div>
+            </Link>
 
             {/* Pillar 2: Bewerbungsmappe Studio */}
-            <div className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6">
+            <Link
+              href={`/${locale}/dashboard/dossier`}
+              className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6 cursor-pointer"
+            >
               <div className="space-y-4">
                 <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   📑
@@ -268,14 +274,17 @@ export default async function LandingPage({
 
               <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
                 <span className="text-[11px] font-mono text-blue-400 font-bold">{t.pillars.pillar2.tag}</span>
-                <Link href={`/${locale}/dashboard/dossier`} className="text-xs font-bold text-blue-400 hover:text-blue-300">
+                <span className="text-xs font-bold text-blue-400 group-hover:text-blue-300 transition-colors">
                   {t.pillars.pillar2.cta}
-                </Link>
+                </span>
               </div>
-            </div>
+            </Link>
 
             {/* Pillar 3: Application Pipeline Tracker */}
-            <div className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6">
+            <Link
+              href={`/${locale}/dashboard/applications`}
+              className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6 cursor-pointer"
+            >
               <div className="space-y-4">
                 <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   📊
@@ -292,14 +301,17 @@ export default async function LandingPage({
 
               <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
                 <span className="text-[11px] font-mono text-emerald-400 font-bold">{t.pillars.pillar3.tag}</span>
-                <Link href={`/${locale}/dashboard/applications`} className="text-xs font-bold text-blue-400 hover:text-blue-300">
+                <span className="text-xs font-bold text-blue-400 group-hover:text-blue-300 transition-colors">
                   {t.pillars.pillar3.cta}
-                </Link>
+                </span>
               </div>
-            </div>
+            </Link>
 
             {/* Pillar 4: German A1 Career Academy */}
-            <div className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6">
+            <Link
+              href={`/${locale}/blog?category=German+A1`}
+              className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6 cursor-pointer"
+            >
               <div className="space-y-4">
                 <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   🇩🇪
@@ -316,11 +328,11 @@ export default async function LandingPage({
 
               <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
                 <span className="text-[11px] font-mono text-blue-400 font-bold">{t.pillars.pillar4.tag}</span>
-                <Link href={`/${locale}/blog?category=German+A1`} className="text-xs font-bold text-blue-400 hover:text-blue-300">
+                <span className="text-xs font-bold text-blue-400 group-hover:text-blue-300 transition-colors">
                   {t.pillars.pillar4.cta}
-                </Link>
+                </span>
               </div>
-            </div>
+            </Link>
           </div>
         </section>
 

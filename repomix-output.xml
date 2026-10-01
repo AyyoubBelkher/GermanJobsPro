@@ -40236,7 +40236,10 @@ export default async function LandingPage({
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Pillar 1: DIN 5008 CV Builder */}
-            <div className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6">
+            <Link
+              href={`/${locale}/dashboard/cv/new`}
+              className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6 cursor-pointer"
+            >
               <div className="space-y-4">
                 <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   📄
@@ -40253,14 +40256,17 @@ export default async function LandingPage({
 
               <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
                 <span className="text-[11px] font-mono text-emerald-400 font-bold">{t.pillars.pillar1.tag}</span>
-                <Link href={`/${locale}/dashboard/cv/new`} className="text-xs font-bold text-blue-400 hover:text-blue-300">
+                <span className="text-xs font-bold text-blue-400 group-hover:text-blue-300 transition-colors">
                   {t.pillars.pillar1.cta}
-                </Link>
+                </span>
               </div>
-            </div>
+            </Link>
 
             {/* Pillar 2: Bewerbungsmappe Studio */}
-            <div className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6">
+            <Link
+              href={`/${locale}/dashboard/dossier`}
+              className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6 cursor-pointer"
+            >
               <div className="space-y-4">
                 <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   📑
@@ -40277,14 +40283,17 @@ export default async function LandingPage({
 
               <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
                 <span className="text-[11px] font-mono text-blue-400 font-bold">{t.pillars.pillar2.tag}</span>
-                <Link href={`/${locale}/dashboard/dossier`} className="text-xs font-bold text-blue-400 hover:text-blue-300">
+                <span className="text-xs font-bold text-blue-400 group-hover:text-blue-300 transition-colors">
                   {t.pillars.pillar2.cta}
-                </Link>
+                </span>
               </div>
-            </div>
+            </Link>
 
             {/* Pillar 3: Application Pipeline Tracker */}
-            <div className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6">
+            <Link
+              href={`/${locale}/dashboard/applications`}
+              className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6 cursor-pointer"
+            >
               <div className="space-y-4">
                 <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   📊
@@ -40301,14 +40310,17 @@ export default async function LandingPage({
 
               <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
                 <span className="text-[11px] font-mono text-emerald-400 font-bold">{t.pillars.pillar3.tag}</span>
-                <Link href={`/${locale}/dashboard/applications`} className="text-xs font-bold text-blue-400 hover:text-blue-300">
+                <span className="text-xs font-bold text-blue-400 group-hover:text-blue-300 transition-colors">
                   {t.pillars.pillar3.cta}
-                </Link>
+                </span>
               </div>
-            </div>
+            </Link>
 
             {/* Pillar 4: German A1 Career Academy */}
-            <div className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6">
+            <Link
+              href={`/${locale}/blog?category=German+A1`}
+              className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6 cursor-pointer"
+            >
               <div className="space-y-4">
                 <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   🇩🇪
@@ -40325,11 +40337,11 @@ export default async function LandingPage({
 
               <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
                 <span className="text-[11px] font-mono text-blue-400 font-bold">{t.pillars.pillar4.tag}</span>
-                <Link href={`/${locale}/blog?category=German+A1`} className="text-xs font-bold text-blue-400 hover:text-blue-300">
+                <span className="text-xs font-bold text-blue-400 group-hover:text-blue-300 transition-colors">
                   {t.pillars.pillar4.cta}
-                </Link>
+                </span>
               </div>
-            </div>
+            </Link>
           </div>
         </section>
 
@@ -41001,6 +41013,59 @@ export default async function LandingPage({
       <Footer locale={locale} />
     </div>
   );
+}
+</file>
+
+<file path="package.json">
+{
+  "name": "german",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@google/genai": "^2.18.0",
+    "@neondatabase/serverless": "^1.1.0",
+    "@next/third-parties": "^16.3.4",
+    "@prisma/adapter-better-sqlite3": "^7.8.0",
+    "@prisma/adapter-neon": "^7.10.0",
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.8.0",
+    "@react-pdf/renderer": "^4.6.1",
+    "@types/ws": "^8.18.1",
+    "better-sqlite3": "^12.11.1",
+    "next": "16.2.10",
+    "next-intl": "^4.13.1",
+    "pdf-lib": "^1.17.1",
+    "pdf-parse": "^2.4.5",
+    "pg": "^8.23.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-markdown": "^10.1.0",
+    "resend": "^6.27.0",
+    "unpdf": "^1.8.1",
+    "ws": "^8.21.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@tailwindcss/typography": "^0.5.20",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^20",
+    "@types/pdf-parse": "^1.1.5",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.10",
+    "prisma": "^7.8.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
 }
 </file>
 
@@ -42047,59 +42112,6 @@ export default function JobDetailClient({
 
     </div>
   );
-}
-</file>
-
-<file path="package.json">
-{
-  "name": "german",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "@google/genai": "^2.18.0",
-    "@neondatabase/serverless": "^1.1.0",
-    "@next/third-parties": "^16.3.4",
-    "@prisma/adapter-better-sqlite3": "^7.8.0",
-    "@prisma/adapter-neon": "^7.10.0",
-    "@prisma/adapter-pg": "^7.10.0",
-    "@prisma/client": "^7.8.0",
-    "@react-pdf/renderer": "^4.6.1",
-    "@types/ws": "^8.18.1",
-    "better-sqlite3": "^12.11.1",
-    "next": "16.2.10",
-    "next-intl": "^4.13.1",
-    "pdf-lib": "^1.17.1",
-    "pdf-parse": "^2.4.5",
-    "pg": "^8.23.0",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "react-markdown": "^10.1.0",
-    "resend": "^6.27.0",
-    "unpdf": "^1.8.1",
-    "ws": "^8.21.3",
-    "zod": "^4.4.3"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@tailwindcss/typography": "^0.5.20",
-    "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^20",
-    "@types/pdf-parse": "^1.1.5",
-    "@types/pg": "^8.23.1",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.10",
-    "prisma": "^7.8.0",
-    "tailwindcss": "^4",
-    "typescript": "^5"
-  }
 }
 </file>
 
