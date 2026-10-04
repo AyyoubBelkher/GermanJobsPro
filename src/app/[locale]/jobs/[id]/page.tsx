@@ -117,6 +117,7 @@ export default async function JobDetailPage({
     requirements: job.requirements,
     descriptionRaw: job.descriptionRaw,
     publishedAt: job.publishedAt instanceof Date ? job.publishedAt.toISOString() : String(job.publishedAt),
+    isVerified: job.isVerified ?? true,
   };
 
   return (
