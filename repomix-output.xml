@@ -205,6 +205,8 @@ src/
           route.ts
         create/
           route.ts
+        fetch-ba/
+          route.ts
         route.ts
       newsletter/
         subscribe/
@@ -20527,167 +20529,6 @@ export default function SignupPage({
 }
 </file>
 
-<file path="src/app/[locale]/jobs/[id]/page.tsx">
-import React from "react";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { Metadata } from "next";
-import Navbar from "@/components/ui/Navbar";
-import Footer from "@/components/ui/Footer";
-import { prisma } from "@/lib/prisma";
-import { getUserSession } from "@/lib/user-session";
-import JobDetailClient, { JobDetailData } from "@/components/jobs/JobDetailClient";
-import { stripHtml } from "@/components/jobs/JobBoardClient";
-
-export const revalidate = 60;
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string; id: string }>;
-}): Promise<Metadata> {
-  const { locale, id } = await params;
-  const isAr = locale === "ar";
-  const isDe = locale === "de";
-
-  try {
-    const job = await prisma.job.findUnique({
-      where: { id },
-      select: {
-        title: true,
-        company: true,
-        city: true,
-        category: true,
-        descriptionRaw: true,
-        requirements: true,
-      },
-    });
-
-    if (!job) {
-      return {
-        title: isAr
-          ? "الوظيفة غير موجودة | GermanJobsPro 🇩🇪"
-          : "Job not found | GermanJobsPro 🇩🇪",
-      };
-    }
-
-    const shortDesc = stripHtml(job.requirements || job.descriptionRaw || "").slice(0, 160);
-
-    return {
-      title: isAr
-        ? `${job.title} في شركة ${job.company} (${job.city || "ألمانيا"}) | GermanJobsPro 🇩🇪`
-        : isDe
-        ? `${job.title} bei ${job.company} in ${job.city || "Deutschland"} | GermanJobsPro 🇩🇪`
-        : `${job.title} at ${job.company} (${job.city || "Germany"}) | GermanJobsPro 🇩🇪`,
-      description:
-        shortDesc ||
-        (isAr
-          ? `تفاصيل وظيفة ${job.title} في شركة ${job.company}. قدم الآن مع إمكانية توليد خطاب الدافع Anschreiben وفحص التوافق ATS.`
-          : `Stellenangebot für ${job.title} bei ${job.company}. Jetzt mit KI-Anschreiben bewerben.`),
-    };
-  } catch {
-    return {
-      title: "Job Details | GermanJobsPro 🇩🇪",
-    };
-  }
-}
-
-export default async function JobDetailPage({
-  params,
-}: {
-  params: Promise<{ locale: string; id: string }>;
-}) {
-  const { locale, id } = await params;
-  const isAr = locale === "ar";
-  const isDe = locale === "de";
-  const dir = isAr ? "rtl" : "ltr";
-
-  // Fetch job details
-  let job = null;
-  try {
-    job = await prisma.job.findUnique({
-      where: { id },
-    });
-  } catch (error) {
-    console.error("[JobDetailPage] Error fetching job:", error);
-  }
-
-  if (!job) {
-    notFound();
-  }
-
-  const authResult = await getUserSession();
-  const user = authResult ? authResult.user : null;
-
-  let initialApplication = null;
-  if (user) {
-    initialApplication = await prisma.application.findFirst({
-      where: {
-        userId: user.id,
-        jobId: job.id,
-      },
-      select: {
-        id: true,
-        status: true,
-      },
-    });
-  }
-
-  const jobData: JobDetailData = {
-    id: job.id,
-    title: job.title,
-    company: job.company,
-    city: job.city,
-    category: job.category,
-    jobType: job.jobType,
-    languageReq: job.languageReq,
-    salary: job.salary,
-    applyUrl: job.applyUrl,
-    contactEmail: job.contactEmail,
-    requirements: job.requirements,
-    descriptionRaw: job.descriptionRaw,
-    publishedAt: job.publishedAt instanceof Date ? job.publishedAt.toISOString() : String(job.publishedAt),
-    isVerified: job.isVerified ?? true,
-  };
-
-  return (
-    <div
-      dir={dir}
-      className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white"
-    >
-      <Navbar locale={locale} initialUser={user} />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 w-full flex-1 space-y-8">
-        {/* Breadcrumb Navigation */}
-        <div className="flex items-center gap-2 text-xs text-slate-400 font-medium flex-wrap">
-          <Link href={`/${locale}`} className="hover:text-blue-400 transition-colors">
-            {isAr ? "الرئيسية" : isDe ? "Startseite" : "Home"}
-          </Link>
-          <span>/</span>
-          <Link href={`/${locale}/jobs`} className="hover:text-blue-400 transition-colors">
-            {isAr ? "فرص العمل في ألمانيا" : isDe ? "Jobs" : "Jobs"}
-          </Link>
-          <span>/</span>
-          <span className="text-slate-200 truncate max-w-xs font-semibold" dir="auto">
-            {job.title}
-          </span>
-        </div>
-
-        {/* Interactive Job Detail Client */}
-        <JobDetailClient
-          job={jobData}
-          locale={locale}
-          initialUser={user}
-          initialApplication={initialApplication}
-        />
-      </main>
-
-      <Footer locale={locale} />
-    </div>
-  );
-}
-</file>
-
 <file path="src/app/[locale]/pricing/page.tsx">
 import React from "react";
 import Link from "next/link";
@@ -26890,6 +26731,167 @@ export default async function NewCoverLetterPage({
 }
 </file>
 
+<file path="src/app/[locale]/jobs/[id]/page.tsx">
+import React from "react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { Metadata } from "next";
+import Navbar from "@/components/ui/Navbar";
+import Footer from "@/components/ui/Footer";
+import { prisma } from "@/lib/prisma";
+import { getUserSession } from "@/lib/user-session";
+import JobDetailClient, { JobDetailData } from "@/components/jobs/JobDetailClient";
+import { stripHtml } from "@/components/jobs/JobBoardClient";
+
+export const revalidate = 60;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}): Promise<Metadata> {
+  const { locale, id } = await params;
+  const isAr = locale === "ar";
+  const isDe = locale === "de";
+
+  try {
+    const job = await prisma.job.findUnique({
+      where: { id },
+      select: {
+        title: true,
+        company: true,
+        city: true,
+        category: true,
+        descriptionRaw: true,
+        requirements: true,
+      },
+    });
+
+    if (!job) {
+      return {
+        title: isAr
+          ? "الوظيفة غير موجودة | GermanJobsPro 🇩🇪"
+          : "Job not found | GermanJobsPro 🇩🇪",
+      };
+    }
+
+    const shortDesc = stripHtml(job.requirements || job.descriptionRaw || "").slice(0, 160);
+
+    return {
+      title: isAr
+        ? `${job.title} في شركة ${job.company} (${job.city || "ألمانيا"}) | GermanJobsPro 🇩🇪`
+        : isDe
+        ? `${job.title} bei ${job.company} in ${job.city || "Deutschland"} | GermanJobsPro 🇩🇪`
+        : `${job.title} at ${job.company} (${job.city || "Germany"}) | GermanJobsPro 🇩🇪`,
+      description:
+        shortDesc ||
+        (isAr
+          ? `تفاصيل وظيفة ${job.title} في شركة ${job.company}. قدم الآن مع إمكانية توليد خطاب الدافع Anschreiben وفحص التوافق ATS.`
+          : `Stellenangebot für ${job.title} bei ${job.company}. Jetzt mit KI-Anschreiben bewerben.`),
+    };
+  } catch {
+    return {
+      title: "Job Details | GermanJobsPro 🇩🇪",
+    };
+  }
+}
+
+export default async function JobDetailPage({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}) {
+  const { locale, id } = await params;
+  const isAr = locale === "ar";
+  const isDe = locale === "de";
+  const dir = isAr ? "rtl" : "ltr";
+
+  // Fetch job details
+  let job = null;
+  try {
+    job = await prisma.job.findUnique({
+      where: { id },
+    });
+  } catch (error) {
+    console.error("[JobDetailPage] Error fetching job:", error);
+  }
+
+  if (!job) {
+    notFound();
+  }
+
+  const authResult = await getUserSession();
+  const user = authResult ? authResult.user : null;
+
+  let initialApplication = null;
+  if (user) {
+    initialApplication = await prisma.application.findFirst({
+      where: {
+        userId: user.id,
+        jobId: job.id,
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+  }
+
+  const jobData: JobDetailData = {
+    id: job.id,
+    title: job.title,
+    company: job.company,
+    city: job.city,
+    category: job.category,
+    jobType: job.jobType,
+    languageReq: job.languageReq,
+    salary: job.salary,
+    applyUrl: job.applyUrl,
+    contactEmail: job.contactEmail,
+    requirements: job.requirements,
+    descriptionRaw: job.descriptionRaw,
+    publishedAt: job.publishedAt instanceof Date ? job.publishedAt.toISOString() : String(job.publishedAt),
+    isVerified: job.isVerified ?? true,
+  };
+
+  return (
+    <div
+      dir={dir}
+      className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white"
+    >
+      <Navbar locale={locale} initialUser={user} />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 w-full flex-1 space-y-8">
+        {/* Breadcrumb Navigation */}
+        <div className="flex items-center gap-2 text-xs text-slate-400 font-medium flex-wrap">
+          <Link href={`/${locale}`} className="hover:text-blue-400 transition-colors">
+            {isAr ? "الرئيسية" : isDe ? "Startseite" : "Home"}
+          </Link>
+          <span>/</span>
+          <Link href={`/${locale}/jobs`} className="hover:text-blue-400 transition-colors">
+            {isAr ? "فرص العمل في ألمانيا" : isDe ? "Jobs" : "Jobs"}
+          </Link>
+          <span>/</span>
+          <span className="text-slate-200 truncate max-w-xs font-semibold" dir="auto">
+            {job.title}
+          </span>
+        </div>
+
+        {/* Interactive Job Detail Client */}
+        <JobDetailClient
+          job={jobData}
+          locale={locale}
+          initialUser={user}
+          initialApplication={initialApplication}
+        />
+      </main>
+
+      <Footer locale={locale} />
+    </div>
+  );
+}
+</file>
+
 <file path="src/app/[locale]/jobs/page.tsx">
 import React from "react";
 import { Metadata } from "next";
@@ -28845,6 +28847,91 @@ export async function POST(request: NextRequest) {
       { success: false, error: "Internal Server Error" },
       { status: 500 }
     );
+  }
+}
+</file>
+
+<file path="src/app/api/jobs/fetch-ba/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { verifyAutomationSecret } from "@/lib/admin-auth";
+
+export const dynamic = "force-dynamic";
+
+export async function GET(request: NextRequest) {
+  // 1. التحقق من مفتاح الأمان لحماية المسار
+  if (!verifyAutomationSecret(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const size = parseInt(searchParams.get("size") || "10", 10);
+
+  try {
+    const res = await fetch("https://www.arbeitnow.com/api/job-board-api", {
+      headers: {
+        "User-Agent": "GermanJobsPro-Bot/1.0",
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      return NextResponse.json(
+        { error: `Upstream service error: ${res.status}`, jobs: [] },
+        { status: 502 }
+      );
+    }
+
+    const data = await res.json();
+    const allJobs = data.data || [];
+
+    // 2. فرز وأولوية لفرص التكوين والتدريب العملي والبدايات المهنية في ألمانيا
+    const trainingKeywords = [
+      "ausbildung",
+      "azubi",
+      "trainee",
+      "praktikum",
+      "praktikant",
+      "werkstudent",
+      "junior",
+      "entry",
+      "duales",
+      "berufseinstieg",
+    ];
+
+    let matchedJobs = allJobs.filter((j: any) => {
+      const fullText = `${j.title || ""} ${j.description || ""}`.toLowerCase();
+      return trainingKeywords.some((kw) => fullText.includes(kw));
+    });
+
+    // في حال عدم توفر إعلانات تدريب بحرفيتها في هذه اللحظة، جلب أحدث الوظائف المؤكدة لضمان استمرار الأتمتة
+    if (matchedJobs.length === 0) {
+      matchedJobs = allJobs;
+    }
+
+    const formattedJobs = matchedJobs.map((j: any) => {
+      const rawDesc = j.description || "";
+      const cleanDesc = rawDesc.replace(/<[^>]*>?/gm, " ").trim();
+
+      return {
+        id: j.slug || String(Math.floor(Math.random() * 1000000)),
+        title: j.title || "فرصة مهنية في ألمانيا",
+        company: j.company_name || "German Employer",
+        city: j.location || "Deutschland",
+        applyUrl: j.url,
+        description: cleanDesc.substring(0, 4000),
+        source: "Verified German Employer Network",
+      };
+    });
+
+    return NextResponse.json({
+      success: true,
+      total: formattedJobs.length,
+      jobs: formattedJobs.slice(0, size),
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal Server Error";
+    return NextResponse.json({ error: message, jobs: [] }, { status: 500 });
   }
 }
 </file>
@@ -41070,6 +41157,427 @@ export default async function LandingPage({
 }
 </file>
 
+<file path="prisma/schema.prisma">
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Post {
+  id               String    @id @default(cuid())
+  title            String
+  slug             String    @unique
+  markdown_content String
+  category         String
+  image_url        String?
+  source_link      String?
+  generated_by_ai  Boolean   @default(false)
+  published        Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  comments         Comment[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  name      String
+  email     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId])
+  @@index([createdAt])
+}
+
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id             String        @id @default(cuid())
+  email          String        @unique
+  passwordHash   String
+  name           String?
+  plan           String        @default("FREE") // "FREE" | "TRIAL" | "PRO"
+  planExpiresAt  DateTime?
+  subscriptionPlan      String?       @default("free") // "free" | "pro"
+  subscriptionStatus    String?       @default("inactive") // "active" | "inactive" | "refunded"
+  subscriptionExpiresAt DateTime?
+  dailyAiCredits        Int?          @default(20)
+  emailVerified  Boolean       @default(false)
+  aiCredits      Int           @default(3) // 3 free starter AI credits
+  dailyAiCreditsUsed Int           @default(0)
+  lastCreditResetAt  DateTime      @default(now())
+  customerId     String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  sessions       UserSession[]
+  passwordResetTokens PasswordResetToken[]
+  cvs            Cv[]
+  coverLetters   CoverLetter[]
+  promoRedemptions UserPromoRedemption[]
+  applications   Application[]
+  aiUsages       AiUsage[]
+}
+
+model UserSession {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model EmailVerificationCode {
+  id        String   @id @default(cuid())
+  email     String
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ==========================================
+// P1: CV & RESUME BUILDER MODELS
+// ==========================================
+
+model Cv {
+  id              String           @id @default(cuid())
+  userId          String
+  title           String           @default("Lebenslauf")
+  language        String           @default("de")
+  isDraft         Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  personalInfo    CvPersonalInfo?
+  experiences     CvExperience[]
+  educations      CvEducation[]
+  skills          CvSkill[]
+  languages       CvLanguage[]
+  certifications  CvCertification[]
+  projects        CvProject[]
+  coverLetters    CoverLetter[]
+  applications    Application[]
+
+  @@index([userId])
+}
+
+model CvPersonalInfo {
+  id              String    @id @default(cuid())
+  cvId            String    @unique
+  fullName        String
+  email           String
+  phone           String?
+  address         String?
+  photoUrl        String?
+  birthDate       DateTime?
+  birthPlace      String?
+  nationality     String?
+  targetJobTitle  String?
+  linkedinUrl     String?
+  xingUrl         String?
+  summary         String?
+
+  cv              Cv        @relation(fields: [cvId], references: [id], onDelete: Cascade)
+}
+
+model CvExperience {
+  id              String    @id @default(cuid())
+  cvId            String
+  company         String
+  position        String
+  city            String?
+  country         String?   @default("Germany")
+  startDate       DateTime
+  endDate         DateTime?
+  isCurrent       Boolean   @default(false)
+  description     String?
+  order           Int       @default(0)
+
+  cv              Cv        @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId, order])
+}
+
+model CvEducation {
+  id              String    @id @default(cuid())
+  cvId            String
+  institution     String
+  degree          String
+  fieldOfStudy    String?
+  city            String?
+  country         String?
+  startDate       DateTime
+  endDate         DateTime?
+  isCurrent       Boolean   @default(false)
+  grade           String?
+  description     String?
+  order           Int       @default(0)
+
+  cv              Cv        @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId, order])
+}
+
+model CvSkill {
+  id              String   @id @default(cuid())
+  cvId            String
+  name            String
+  category        String?
+  level           String?
+  order           Int      @default(0)
+
+  cv              Cv       @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId, order])
+}
+
+model CvLanguage {
+  id              String   @id @default(cuid())
+  cvId            String
+  language        String
+  proficiency     String
+  order           Int      @default(0)
+
+  cv              Cv       @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId, order])
+}
+
+model CvCertification {
+  id              String    @id @default(cuid())
+  cvId            String
+  name            String
+  issuer          String
+  issueDate       DateTime?
+  expiryDate      DateTime?
+  credentialUrl   String?
+  order           Int       @default(0)
+
+  cv              Cv        @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId, order])
+}
+
+model CvProject {
+  id              String   @id @default(cuid())
+  cvId            String
+  title           String
+  role            String?
+  url             String?
+  description     String?
+  order           Int      @default(0)
+
+  cv              Cv       @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId, order])
+}
+
+model CoverLetter {
+  id                String   @id @default(cuid())
+  userId            String
+  cvId              String?
+  title             String   @default("Anschreiben")
+  jobTitle          String
+  companyName       String
+  recipientName     String?
+  jobDescriptionRaw String?
+  language          String   @default("de")
+  tone              String   @default("professional")
+  generatedContent  String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cv                Cv?      @relation(fields: [cvId], references: [id], onDelete: SetNull)
+  applications      Application[]
+
+  @@index([userId])
+  @@index([cvId])
+}
+
+// ==========================================
+// P2: GERMAN JOB BOARD MODELS
+// ==========================================
+
+model Job {
+  id             String    @id @default(cuid())
+  title          String
+  company        String
+  city           String?   @default("Germany")
+  category       String    @default("General")
+  jobType        String?   @default("Full-time")
+  languageReq    String?   @default("B1/B2")
+  salary         String?
+  applyUrl       String    @unique
+  contactEmail   String?
+  requirements   String?
+  descriptionRaw String?
+  publishedAt    DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  status         String    @default("ACTIVE") // ACTIVE, EXPIRED, ARCHIVED
+  expiresAt      DateTime?
+  isVerified     Boolean   @default(true)
+  applications   Application[]
+
+  @@index([category])
+  @@index([city])
+  @@index([publishedAt])
+  @@index([status])
+}
+
+// ==========================================
+// P2: MONETIZATION & PROMO CODES
+// ==========================================
+
+model PromoCode {
+  id             String    @id @default(cuid())
+  code           String    @unique
+  planGranted    String    @default("TRIAL") // "TRIAL" | "PRO"
+  durationDays   Int       @default(7)
+  creditsGranted Int       @default(15)
+  maxUses        Int       @default(10)
+  timesUsed      Int       @default(0)
+  expiresAt      DateTime?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+
+  redemptions    UserPromoRedemption[]
+}
+
+model UserPromoRedemption {
+  id          String    @id @default(cuid())
+  userId      String
+  promoCodeId String
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, promoCodeId])
+  @@index([userId])
+}
+
+model ProcessedWebhookEvent {
+  id        String   @id @default(cuid())
+  eventId   String   @unique
+  eventName String
+  userId    String?
+  createdAt DateTime @default(now())
+}
+
+// ==========================================
+// SUPPORT & CONTACT TICKETS
+// ==========================================
+
+model SupportTicket {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  category  String
+  subject   String
+  message   String
+  status     String    @default("PENDING")
+  adminReply String?
+  repliedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([email])
+  @@index([status])
+}
+
+// ==========================================
+// APPLICATION OS & AI USAGE TELEMETRY
+// ==========================================
+
+enum ApplicationStatus {
+  SAVED
+  APPLIED
+  SCREENING
+  INTERVIEW
+  OFFER
+  REJECTED
+  WITHDRAWN
+}
+
+model Application {
+  id            String            @id @default(cuid())
+  userId        String
+  jobId         String?
+  cvId          String?
+  coverLetterId String?
+  companyName   String
+  jobTitle      String
+  location      String?
+  status        ApplicationStatus @default(SAVED)
+  appliedAt     DateTime?
+  notes         String?
+  followUpAt    DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job         Job?         @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  cv          Cv?          @relation(fields: [cvId], references: [id], onDelete: SetNull)
+  coverLetter CoverLetter? @relation(fields: [coverLetterId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([userId, createdAt])
+}
+
+model AiUsage {
+  id             String   @id @default(cuid())
+  userId         String
+  operation      String   // e.g. "COVER_LETTER_GEN", "ATS_ANALYSIS", "BULLET_OPTIMIZE"
+  model          String   // e.g. "gemini-1.5-flash"
+  inputTokens    Int?
+  outputTokens   Int?
+  latencyMs      Int?
+  success        Boolean  @default(true)
+  errorMessage   String?
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([operation, createdAt])
+}
+</file>
+
 <file path="src/components/jobs/JobDetailClient.tsx">
 "use client";
 
@@ -42755,427 +43263,6 @@ export default function JobDetailClient({
 
     </div>
   );
-}
-</file>
-
-<file path="prisma/schema.prisma">
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
-generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
-}
-
-datasource db {
-  provider = "postgresql"
-}
-
-model Post {
-  id               String    @id @default(cuid())
-  title            String
-  slug             String    @unique
-  markdown_content String
-  category         String
-  image_url        String?
-  source_link      String?
-  generated_by_ai  Boolean   @default(false)
-  published        Boolean   @default(true)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  comments         Comment[]
-}
-
-model Comment {
-  id        String   @id @default(cuid())
-  postId    String
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  name      String
-  email     String
-  content   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([postId])
-  @@index([createdAt])
-}
-
-model Subscriber {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-}
-
-model User {
-  id             String        @id @default(cuid())
-  email          String        @unique
-  passwordHash   String
-  name           String?
-  plan           String        @default("FREE") // "FREE" | "TRIAL" | "PRO"
-  planExpiresAt  DateTime?
-  subscriptionPlan      String?       @default("free") // "free" | "pro"
-  subscriptionStatus    String?       @default("inactive") // "active" | "inactive" | "refunded"
-  subscriptionExpiresAt DateTime?
-  dailyAiCredits        Int?          @default(20)
-  emailVerified  Boolean       @default(false)
-  aiCredits      Int           @default(3) // 3 free starter AI credits
-  dailyAiCreditsUsed Int           @default(0)
-  lastCreditResetAt  DateTime      @default(now())
-  customerId     String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  sessions       UserSession[]
-  passwordResetTokens PasswordResetToken[]
-  cvs            Cv[]
-  coverLetters   CoverLetter[]
-  promoRedemptions UserPromoRedemption[]
-  applications   Application[]
-  aiUsages       AiUsage[]
-}
-
-model UserSession {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-}
-
-model EmailVerificationCode {
-  id        String   @id @default(cuid())
-  email     String
-  codeHash  String
-  expiresAt DateTime
-  attempts  Int      @default(0)
-  createdAt DateTime @default(now())
-
-  @@index([email])
-}
-
-model PasswordResetToken {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-}
-
-// ==========================================
-// P1: CV & RESUME BUILDER MODELS
-// ==========================================
-
-model Cv {
-  id              String           @id @default(cuid())
-  userId          String
-  title           String           @default("Lebenslauf")
-  language        String           @default("de")
-  isDraft         Boolean          @default(true)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-
-  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  personalInfo    CvPersonalInfo?
-  experiences     CvExperience[]
-  educations      CvEducation[]
-  skills          CvSkill[]
-  languages       CvLanguage[]
-  certifications  CvCertification[]
-  projects        CvProject[]
-  coverLetters    CoverLetter[]
-  applications    Application[]
-
-  @@index([userId])
-}
-
-model CvPersonalInfo {
-  id              String    @id @default(cuid())
-  cvId            String    @unique
-  fullName        String
-  email           String
-  phone           String?
-  address         String?
-  photoUrl        String?
-  birthDate       DateTime?
-  birthPlace      String?
-  nationality     String?
-  targetJobTitle  String?
-  linkedinUrl     String?
-  xingUrl         String?
-  summary         String?
-
-  cv              Cv        @relation(fields: [cvId], references: [id], onDelete: Cascade)
-}
-
-model CvExperience {
-  id              String    @id @default(cuid())
-  cvId            String
-  company         String
-  position        String
-  city            String?
-  country         String?   @default("Germany")
-  startDate       DateTime
-  endDate         DateTime?
-  isCurrent       Boolean   @default(false)
-  description     String?
-  order           Int       @default(0)
-
-  cv              Cv        @relation(fields: [cvId], references: [id], onDelete: Cascade)
-
-  @@index([cvId, order])
-}
-
-model CvEducation {
-  id              String    @id @default(cuid())
-  cvId            String
-  institution     String
-  degree          String
-  fieldOfStudy    String?
-  city            String?
-  country         String?
-  startDate       DateTime
-  endDate         DateTime?
-  isCurrent       Boolean   @default(false)
-  grade           String?
-  description     String?
-  order           Int       @default(0)
-
-  cv              Cv        @relation(fields: [cvId], references: [id], onDelete: Cascade)
-
-  @@index([cvId, order])
-}
-
-model CvSkill {
-  id              String   @id @default(cuid())
-  cvId            String
-  name            String
-  category        String?
-  level           String?
-  order           Int      @default(0)
-
-  cv              Cv       @relation(fields: [cvId], references: [id], onDelete: Cascade)
-
-  @@index([cvId, order])
-}
-
-model CvLanguage {
-  id              String   @id @default(cuid())
-  cvId            String
-  language        String
-  proficiency     String
-  order           Int      @default(0)
-
-  cv              Cv       @relation(fields: [cvId], references: [id], onDelete: Cascade)
-
-  @@index([cvId, order])
-}
-
-model CvCertification {
-  id              String    @id @default(cuid())
-  cvId            String
-  name            String
-  issuer          String
-  issueDate       DateTime?
-  expiryDate      DateTime?
-  credentialUrl   String?
-  order           Int       @default(0)
-
-  cv              Cv        @relation(fields: [cvId], references: [id], onDelete: Cascade)
-
-  @@index([cvId, order])
-}
-
-model CvProject {
-  id              String   @id @default(cuid())
-  cvId            String
-  title           String
-  role            String?
-  url             String?
-  description     String?
-  order           Int      @default(0)
-
-  cv              Cv       @relation(fields: [cvId], references: [id], onDelete: Cascade)
-
-  @@index([cvId, order])
-}
-
-model CoverLetter {
-  id                String   @id @default(cuid())
-  userId            String
-  cvId              String?
-  title             String   @default("Anschreiben")
-  jobTitle          String
-  companyName       String
-  recipientName     String?
-  jobDescriptionRaw String?
-  language          String   @default("de")
-  tone              String   @default("professional")
-  generatedContent  String
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  cv                Cv?      @relation(fields: [cvId], references: [id], onDelete: SetNull)
-  applications      Application[]
-
-  @@index([userId])
-  @@index([cvId])
-}
-
-// ==========================================
-// P2: GERMAN JOB BOARD MODELS
-// ==========================================
-
-model Job {
-  id             String    @id @default(cuid())
-  title          String
-  company        String
-  city           String?   @default("Germany")
-  category       String    @default("General")
-  jobType        String?   @default("Full-time")
-  languageReq    String?   @default("B1/B2")
-  salary         String?
-  applyUrl       String    @unique
-  contactEmail   String?
-  requirements   String?
-  descriptionRaw String?
-  publishedAt    DateTime  @default(now())
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  status         String    @default("ACTIVE") // ACTIVE, EXPIRED, ARCHIVED
-  expiresAt      DateTime?
-  isVerified     Boolean   @default(true)
-  applications   Application[]
-
-  @@index([category])
-  @@index([city])
-  @@index([publishedAt])
-  @@index([status])
-}
-
-// ==========================================
-// P2: MONETIZATION & PROMO CODES
-// ==========================================
-
-model PromoCode {
-  id             String    @id @default(cuid())
-  code           String    @unique
-  planGranted    String    @default("TRIAL") // "TRIAL" | "PRO"
-  durationDays   Int       @default(7)
-  creditsGranted Int       @default(15)
-  maxUses        Int       @default(10)
-  timesUsed      Int       @default(0)
-  expiresAt      DateTime?
-  isActive       Boolean   @default(true)
-  createdAt      DateTime  @default(now())
-
-  redemptions    UserPromoRedemption[]
-}
-
-model UserPromoRedemption {
-  id          String    @id @default(cuid())
-  userId      String
-  promoCodeId String
-  createdAt   DateTime  @default(now())
-
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, promoCodeId])
-  @@index([userId])
-}
-
-model ProcessedWebhookEvent {
-  id        String   @id @default(cuid())
-  eventId   String   @unique
-  eventName String
-  userId    String?
-  createdAt DateTime @default(now())
-}
-
-// ==========================================
-// SUPPORT & CONTACT TICKETS
-// ==========================================
-
-model SupportTicket {
-  id        String   @id @default(cuid())
-  name      String
-  email     String
-  category  String
-  subject   String
-  message   String
-  status     String    @default("PENDING")
-  adminReply String?
-  repliedAt  DateTime?
-  createdAt  DateTime  @default(now())
-
-  @@index([email])
-  @@index([status])
-}
-
-// ==========================================
-// APPLICATION OS & AI USAGE TELEMETRY
-// ==========================================
-
-enum ApplicationStatus {
-  SAVED
-  APPLIED
-  SCREENING
-  INTERVIEW
-  OFFER
-  REJECTED
-  WITHDRAWN
-}
-
-model Application {
-  id            String            @id @default(cuid())
-  userId        String
-  jobId         String?
-  cvId          String?
-  coverLetterId String?
-  companyName   String
-  jobTitle      String
-  location      String?
-  status        ApplicationStatus @default(SAVED)
-  appliedAt     DateTime?
-  notes         String?
-  followUpAt    DateTime?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  job         Job?         @relation(fields: [jobId], references: [id], onDelete: SetNull)
-  cv          Cv?          @relation(fields: [cvId], references: [id], onDelete: SetNull)
-  coverLetter CoverLetter? @relation(fields: [coverLetterId], references: [id], onDelete: SetNull)
-
-  @@index([userId, status])
-  @@index([userId, createdAt])
-}
-
-model AiUsage {
-  id             String   @id @default(cuid())
-  userId         String
-  operation      String   // e.g. "COVER_LETTER_GEN", "ATS_ANALYSIS", "BULLET_OPTIMIZE"
-  model          String   // e.g. "gemini-1.5-flash"
-  inputTokens    Int?
-  outputTokens   Int?
-  latencyMs      Int?
-  success        Boolean  @default(true)
-  errorMessage   String?
-  createdAt      DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, createdAt])
-  @@index([operation, createdAt])
 }
 </file>
 
