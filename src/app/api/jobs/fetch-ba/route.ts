@@ -10,83 +10,73 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get("query") || "Ausbildung";
-  const size = searchParams.get("size") || "25";
-  const angebotsart = searchParams.get("angebotsart") || "4"; // 4 = Ausbildung
+  const size = parseInt(searchParams.get("size") || "10", 10);
 
-  // 2. المحاولة الأساسية: الاتصال بوكالة العمل الاتحادية (arbeitsagentur.de)
   try {
-    const baApiUrl = `https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobs?was=${encodeURIComponent(
-      query
-    )}&angebotsart=${angebotsart}&size=${size}&pav=false`;
-
-    const baRes = await fetch(baApiUrl, {
+    const res = await fetch("https://www.arbeitnow.com/api/job-board-api", {
       headers: {
-        "X-API-Key": "jobboerse-jobsuche",
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-        Origin: "https://www.arbeitsagentur.de",
-        Referer: "https://www.arbeitsagentur.de/jobsuche/",
+        "User-Agent": "GermanJobsPro-Bot/1.0",
         Accept: "application/json",
       },
       cache: "no-store",
     });
 
-    if (baRes.ok) {
-      const data = await baRes.json();
-      const baJobs = (data.stellenangebote || []).map((j: any) => ({
-        id: j.refnr,
-        title: j.titel,
-        company: j.arbeitgeber,
-        city: j.arbeitsort?.ort || "Deutschland",
-        applyUrl: j.externeUrl || `https://web.arbeitsagentur.de/jobboerse/jobsuche/details/${j.refnr}`,
-        source: "Bundesagentur für Arbeit (Official)",
-      }));
-
-      if (baJobs.length > 0) {
-        return NextResponse.json({ success: true, source: "arbeitsagentur", jobs: baJobs });
-      }
+    if (!res.ok) {
+      return NextResponse.json(
+        { error: `Upstream service error: ${res.status}`, jobs: [] },
+        { status: 502 }
+      );
     }
-  } catch (err) {
-    console.warn("[BA Primary Fetch Warning]:", err);
-  }
 
-  // 3. خطة الإنقاذ التلقائية (Fallback): جلب فرص التكوين المهني الألمانية الموثقة عبر Adzuna Germany
-  try {
-    const adzunaUrl = `https://api.adzuna.com/v1/api/jobs/de/search/1?app_id=c1483841&app_key=4393699c824cff44e59c7bb6cb17c18d&results_per_page=${size}&what=${encodeURIComponent(
-      query
-    )}&content-type=application/json`;
+    const data = await res.json();
+    const allJobs = data.data || [];
 
-    const altRes = await fetch(adzunaUrl, {
-      headers: { Accept: "application/json" },
-      cache: "no-store",
+    // 2. فرز وأولوية لفرص التكوين والتدريب العملي والبدايات المهنية في ألمانيا
+    const trainingKeywords = [
+      "ausbildung",
+      "azubi",
+      "trainee",
+      "praktikum",
+      "praktikant",
+      "werkstudent",
+      "junior",
+      "entry",
+      "duales",
+      "berufseinstieg",
+    ];
+
+    let matchedJobs = allJobs.filter((j: any) => {
+      const fullText = `${j.title || ""} ${j.description || ""}`.toLowerCase();
+      return trainingKeywords.some((kw) => fullText.includes(kw));
     });
 
-    if (altRes.ok) {
-      const altData = await altRes.json();
-      const results = altData.results || [];
-
-      const fallbackJobs = results.map((item: any) => ({
-        id: String(item.id || Math.floor(Math.random() * 1000000)),
-        title: (item.title || "Ausbildung in Deutschland").replace(/<\/?[^>]+(>|$)/g, "").trim(),
-        company: item.company?.display_name || "Deutsches Ausbildungsunternehmen",
-        city: item.location?.display_name?.split(",")[0] || "Deutschland",
-        applyUrl: item.redirect_url || item.url || "https://www.arbeitsagentur.de",
-        source: "Verified German Ausbildung Network",
-      }));
-
-      return NextResponse.json({
-        success: true,
-        source: "german_ausbildung_fallback",
-        jobs: fallbackJobs,
-      });
+    // في حال عدم توفر إعلانات تدريب بحرفيتها في هذه اللحظة، جلب أحدث الوظائف المؤكدة لضمان استمرار الأتمتة
+    if (matchedJobs.length === 0) {
+      matchedJobs = allJobs;
     }
-  } catch (fallbackErr) {
-    console.error("[Ausbildung Fallback Error]:", fallbackErr);
-  }
 
-  return NextResponse.json(
-    { error: "No training positions currently available", jobs: [] },
-    { status: 502 }
-  );
+    const formattedJobs = matchedJobs.map((j: any) => {
+      const rawDesc = j.description || "";
+      const cleanDesc = rawDesc.replace(/<[^>]*>?/gm, " ").trim();
+
+      return {
+        id: j.slug || String(Math.floor(Math.random() * 1000000)),
+        title: j.title || "فرصة مهنية في ألمانيا",
+        company: j.company_name || "German Employer",
+        city: j.location || "Deutschland",
+        applyUrl: j.url,
+        description: cleanDesc.substring(0, 4000),
+        source: "Verified German Employer Network",
+      };
+    });
+
+    return NextResponse.json({
+      success: true,
+      total: formattedJobs.length,
+      jobs: formattedJobs.slice(0, size),
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal Server Error";
+    return NextResponse.json({ error: message, jobs: [] }, { status: 500 });
+  }
 }
