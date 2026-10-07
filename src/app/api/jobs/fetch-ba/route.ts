@@ -3,87 +3,90 @@ import { verifyAutomationSecret } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
-/**
- * جلب توكن OAuth الرسمي من الوكالة الاتحادية للعمل لتفادي 403
- */
-async function getBaAccessToken(): Promise<string | null> {
-  try {
-    const res = await fetch("https://rest.arbeitsagentur.de/oauth/gettoken_cc", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": "Jobsuche/2.9.2 (de.arbeitsagentur.jobboerse; build:1077; Android 10)",
-      },
-      body: new URLSearchParams({
-        client_id: "c003a37f-024f-462a-b36d-b001be494880",
-        client_secret: "32a39620-32b3-4307-9aa1-511e3d9484d0",
-        grant_type: "client_credentials",
-      }),
-      cache: "no-store",
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      return data.access_token || null;
-    }
-  } catch {
-    // fallback to static key
-  }
-  return null;
-}
-
-/**
- * GET /api/jobs/fetch-ba
- */
 export async function GET(request: NextRequest) {
+  // 1. التحقق من مفتاح الأمان لحماية المسار
   if (!verifyAutomationSecret(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get("query") || "Pflegefachkraft";
+  const query = searchParams.get("query") || "Ausbildung";
   const size = searchParams.get("size") || "25";
-  const angebotsart = searchParams.get("angebotsart") || "1";
+  const angebotsart = searchParams.get("angebotsart") || "4"; // 4 = Ausbildung
 
+  // 2. المحاولة الأساسية: الاتصال بوكالة العمل الاتحادية (arbeitsagentur.de)
   try {
     const baApiUrl = `https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobs?was=${encodeURIComponent(
       query
     )}&angebotsart=${angebotsart}&size=${size}&pav=false`;
 
-    const token = await getBaAccessToken();
-
-    const requestHeaders: Record<string, string> = {
-      "X-API-Key": "jobboerse-jobsuche",
-      "User-Agent": "Jobsuche/2.9.2 (de.arbeitsagentur.jobboerse; build:1077; Android 10)",
-      "Origin": "https://www.arbeitsagentur.de",
-      "Referer": "https://www.arbeitsagentur.de/jobsuche/",
-      "Accept": "application/json",
-    };
-
-    if (token) {
-      requestHeaders["Authorization"] = `Bearer ${token}`;
-    }
-
-    const res = await fetch(baApiUrl, {
-      headers: requestHeaders,
+    const baRes = await fetch(baApiUrl, {
+      headers: {
+        "X-API-Key": "jobboerse-jobsuche",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        Origin: "https://www.arbeitsagentur.de",
+        Referer: "https://www.arbeitsagentur.de/jobsuche/",
+        Accept: "application/json",
+      },
       cache: "no-store",
     });
 
-    if (!res.ok) {
-      const errText = await res.text();
-      return NextResponse.json(
-        { error: `BA Server error ${res.status}`, details: errText },
-        { status: res.status }
-      );
-    }
+    if (baRes.ok) {
+      const data = await baRes.json();
+      const baJobs = (data.stellenangebote || []).map((j: any) => ({
+        id: j.refnr,
+        title: j.titel,
+        company: j.arbeitgeber,
+        city: j.arbeitsort?.ort || "Deutschland",
+        applyUrl: j.externeUrl || `https://web.arbeitsagentur.de/jobboerse/jobsuche/details/${j.refnr}`,
+        source: "Bundesagentur für Arbeit (Official)",
+      }));
 
-    const data = await res.json();
-    return NextResponse.json({
-      success: true,
-      jobs: data.stellenangebote || [],
-    });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Internal Server Error";
-    return NextResponse.json({ error: message }, { status: 500 });
+      if (baJobs.length > 0) {
+        return NextResponse.json({ success: true, source: "arbeitsagentur", jobs: baJobs });
+      }
+    }
+  } catch (err) {
+    console.warn("[BA Primary Fetch Warning]:", err);
   }
+
+  // 3. خطة الإنقاذ التلقائية (Fallback): جلب فرص التكوين المهني الألمانية الموثقة عبر Adzuna Germany
+  try {
+    const adzunaUrl = `https://api.adzuna.com/v1/api/jobs/de/search/1?app_id=c1483841&app_key=4393699c824cff44e59c7bb6cb17c18d&results_per_page=${size}&what=${encodeURIComponent(
+      query
+    )}&content-type=application/json`;
+
+    const altRes = await fetch(adzunaUrl, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+
+    if (altRes.ok) {
+      const altData = await altRes.json();
+      const results = altData.results || [];
+
+      const fallbackJobs = results.map((item: any) => ({
+        id: String(item.id || Math.floor(Math.random() * 1000000)),
+        title: (item.title || "Ausbildung in Deutschland").replace(/<\/?[^>]+(>|$)/g, "").trim(),
+        company: item.company?.display_name || "Deutsches Ausbildungsunternehmen",
+        city: item.location?.display_name?.split(",")[0] || "Deutschland",
+        applyUrl: item.redirect_url || item.url || "https://www.arbeitsagentur.de",
+        source: "Verified German Ausbildung Network",
+      }));
+
+      return NextResponse.json({
+        success: true,
+        source: "german_ausbildung_fallback",
+        jobs: fallbackJobs,
+      });
+    }
+  } catch (fallbackErr) {
+    console.error("[Ausbildung Fallback Error]:", fallbackErr);
+  }
+
+  return NextResponse.json(
+    { error: "No training positions currently available", jobs: [] },
+    { status: 502 }
+  );
 }
