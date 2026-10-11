@@ -8,6 +8,10 @@ generator client {
   output   = "../src/generated/prisma"
 }
 
+generator clientJs {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
 }
@@ -95,6 +99,7 @@ model EmailVerificationCode {
   createdAt DateTime @default(now())
 
   @@index([email])
+  @@index([email, expiresAt])
 }
 
 model PasswordResetToken {
@@ -133,6 +138,7 @@ model Cv {
   applications    Application[]
 
   @@index([userId])
+  @@index([userId, createdAt])
 }
 
 model CvPersonalInfo {
@@ -266,6 +272,7 @@ model CoverLetter {
   applications      Application[]
 
   @@index([userId])
+  @@index([userId, createdAt])
   @@index([cvId])
 }
 

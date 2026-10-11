@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
+type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
 export const DAILY_LIMIT = 20;
 export const DAILY_PRO_LIMIT = 20;
 
@@ -295,3 +297,147 @@ export async function refundAiCredit(userId: string): Promise<void> {
     console.error("[refundAiCredit Error]:", err);
   }
 }
+
+export interface DeductCreditOptions {
+  userId: string;
+  operation: string;
+  model?: string;
+  requiredCredits?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  latencyMs?: number;
+}
+
+export interface DeductCreditResult {
+  success: boolean;
+  allowed: boolean;
+  isPaid: boolean;
+  isPro?: boolean;
+  remainingCredits?: number;
+  error?: string;
+  code?: string;
+}
+
+/**
+ * Atomically verifies user credits/quotas, deducts credit (or tracks daily quota),
+ * and creates an AiUsage record within an existing Prisma transaction.
+ * Returns failure with code "INSUFFICIENT_CREDITS" if credits are depleted.
+ */
+export async function deductCreditInTx(
+  tx: TransactionClient,
+  opts: DeductCreditOptions
+): Promise<DeductCreditResult> {
+  const user = await tx.user.findUnique({
+    where: { id: opts.userId },
+    select: { id: true, plan: true, planExpiresAt: true, aiCredits: true },
+  });
+
+  if (!user) {
+    return {
+      success: false,
+      allowed: false,
+      isPaid: false,
+      error: "User not found",
+      code: "USER_NOT_FOUND",
+    };
+  }
+
+  const isPaidActive = isPaidUser(user);
+
+  if (isPaidActive) {
+    const { startOfToday } = getDailyQuotaWindow();
+    const usedToday = await tx.aiUsage.count({
+      where: {
+        userId: user.id,
+        success: true,
+        createdAt: { gte: startOfToday },
+      },
+    });
+
+    if (usedToday >= DAILY_PRO_LIMIT) {
+      return {
+        success: false,
+        allowed: false,
+        isPaid: true,
+        isPro: true,
+        remainingCredits: 0,
+        error: "DAILY_LIMIT_REACHED",
+        code: "INSUFFICIENT_CREDITS",
+      };
+    }
+
+    await tx.aiUsage.create({
+      data: {
+        userId: user.id,
+        operation: opts.operation,
+        model: opts.model || process.env.GEMINI_MODEL || "gemini-1.5-flash",
+        inputTokens: opts.inputTokens ?? null,
+        outputTokens: opts.outputTokens ?? null,
+        latencyMs: opts.latencyMs ? Math.round(opts.latencyMs) : null,
+        success: true,
+      },
+    });
+
+    return {
+      success: true,
+      allowed: true,
+      isPaid: true,
+      isPro: true,
+      remainingCredits: Math.max(0, DAILY_PRO_LIMIT - (usedToday + 1)),
+    };
+  }
+
+  // Free or expired plan:
+  const required = opts.requiredCredits ?? 1;
+  if (user.aiCredits < required) {
+    return {
+      success: false,
+      allowed: false,
+      isPaid: false,
+      isPro: false,
+      remainingCredits: user.aiCredits,
+      error: "INSUFFICIENT_CREDITS",
+      code: "INSUFFICIENT_CREDITS",
+    };
+  }
+
+  const updatedUser = await tx.user.update({
+    where: { id: user.id },
+    data: {
+      aiCredits: { decrement: required },
+    },
+    select: { aiCredits: true },
+  });
+
+  await tx.aiUsage.create({
+    data: {
+      userId: user.id,
+      operation: opts.operation,
+      model: opts.model || process.env.GEMINI_MODEL || "gemini-1.5-flash",
+      inputTokens: opts.inputTokens ?? null,
+      outputTokens: opts.outputTokens ?? null,
+      latencyMs: opts.latencyMs ? Math.round(opts.latencyMs) : null,
+      success: true,
+    },
+  });
+
+  return {
+    success: true,
+    allowed: true,
+    isPaid: false,
+    isPro: false,
+    remainingCredits: updatedUser.aiCredits,
+  };
+}
+
+/**
+ * Helper to execute atomic credit deduction inside a self-managed transaction.
+ */
+export async function deductAiCreditAtomic(
+  opts: DeductCreditOptions
+): Promise<DeductCreditResult> {
+  return await prisma.$transaction(async (tx) => {
+    return await deductCreditInTx(tx, opts);
+  });
+}
+

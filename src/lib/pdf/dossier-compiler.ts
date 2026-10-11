@@ -21,12 +21,24 @@ export interface CompileDossierParams {
 }
 
 /**
+ * Safely converts Uint8Array or Node.js Buffer to a standard Uint8Array
+ */
+function toUint8Array(input: Uint8Array | Buffer): Uint8Array {
+  if (input instanceof Uint8Array) {
+    return input;
+  }
+  return new Uint8Array(input);
+}
+
+/**
  * Compiles a complete German Application Dossier ("Vollständige Bewerbungsmappe")
  * in strict German recruitment order:
  * 1. Deckblatt (Application Cover Page - optional)
  * 2. Anschreiben (DIN 5008 Cover Letter - optional)
  * 3. Lebenslauf (DIN 5008 Tabular CV or direct uploaded CV PDF)
  * 4. Anlagen & Zeugnisse (Merged PDF certificates, diplomas, references)
+ *
+ * Handles memory buffers efficiently and returns a merged PDF Uint8Array.
  */
 export async function compileBewerbungsmappe({
   cvData,
@@ -55,7 +67,9 @@ export async function compileBewerbungsmappe({
       phone: cvData?.personalInfo?.phone,
       address: cvData?.personalInfo?.address,
       photoUrl: cvData?.personalInfo?.photoUrl,
-      targetJobTitle: (coverLetterData?.jobTitle ? extractGermanJobTitle(coverLetterData.jobTitle) : undefined) || cvData?.personalInfo?.targetJobTitle,
+      targetJobTitle:
+        (coverLetterData?.jobTitle ? extractGermanJobTitle(coverLetterData.jobTitle) : undefined) ||
+        cvData?.personalInfo?.targetJobTitle,
       companyName: coverLetterData?.companyName,
       linkedinUrl: cvData?.personalInfo?.linkedinUrl,
       xingUrl: cvData?.personalInfo?.xingUrl,
@@ -63,7 +77,7 @@ export async function compileBewerbungsmappe({
     };
 
     if (photoBuffer) {
-      deckblattData.photoBuffer = photoBuffer;
+      deckblattData.photoBuffer = toUint8Array(photoBuffer);
     }
 
     if (!deckblattData.attachments || deckblattData.attachments.length === 0) {
@@ -75,11 +89,14 @@ export async function compileBewerbungsmappe({
     }) as unknown as React.ReactElement<DocumentProps>;
 
     const deckblattBuffer = await renderToBuffer(deckblattElement);
-    const deckblattDoc = await PDFDocument.load(deckblattBuffer, {
+    const deckblattDoc = await PDFDocument.load(toUint8Array(deckblattBuffer), {
       parseSpeed: ParseSpeeds.Fast,
     });
-    const copiedPages = await masterPdf.copyPages(deckblattDoc, deckblattDoc.getPageIndices());
-    copiedPages.forEach((page) => masterPdf.addPage(page));
+    const pageIndices = deckblattDoc.getPageIndices();
+    if (pageIndices.length > 0) {
+      const copiedPages = await masterPdf.copyPages(deckblattDoc, pageIndices);
+      copiedPages.forEach((page) => masterPdf.addPage(page));
+    }
   }
 
   // 2. Anschreiben (Cover Letter)
@@ -89,22 +106,28 @@ export async function compileBewerbungsmappe({
     }) as unknown as React.ReactElement<DocumentProps>;
 
     const coverLetterBuffer = await renderToBuffer(coverLetterElement);
-    const coverLetterDoc = await PDFDocument.load(coverLetterBuffer, {
+    const coverLetterDoc = await PDFDocument.load(toUint8Array(coverLetterBuffer), {
       parseSpeed: ParseSpeeds.Fast,
     });
-    const copiedPages = await masterPdf.copyPages(coverLetterDoc, coverLetterDoc.getPageIndices());
-    copiedPages.forEach((page) => masterPdf.addPage(page));
+    const pageIndices = coverLetterDoc.getPageIndices();
+    if (pageIndices.length > 0) {
+      const copiedPages = await masterPdf.copyPages(coverLetterDoc, pageIndices);
+      copiedPages.forEach((page) => masterPdf.addPage(page));
+    }
   }
 
   // 3. Lebenslauf (CV)
   if (cvPdfBuffer) {
     try {
-      const cvPdfDoc = await PDFDocument.load(cvPdfBuffer, {
+      const cvPdfDoc = await PDFDocument.load(toUint8Array(cvPdfBuffer), {
         ignoreEncryption: true,
         parseSpeed: ParseSpeeds.Fast,
       });
-      const copiedPages = await masterPdf.copyPages(cvPdfDoc, cvPdfDoc.getPageIndices());
-      copiedPages.forEach((page) => masterPdf.addPage(page));
+      const pageIndices = cvPdfDoc.getPageIndices();
+      if (pageIndices.length > 0) {
+        const copiedPages = await masterPdf.copyPages(cvPdfDoc, pageIndices);
+        copiedPages.forEach((page) => masterPdf.addPage(page));
+      }
     } catch (err: unknown) {
       console.error("[Dossier Compile Error - Uploaded CV]:", err);
       throw new Error(
@@ -118,22 +141,28 @@ export async function compileBewerbungsmappe({
     }) as unknown as React.ReactElement<DocumentProps>;
 
     const cvBuffer = await renderToBuffer(cvElement);
-    const cvDoc = await PDFDocument.load(cvBuffer, {
+    const cvDoc = await PDFDocument.load(toUint8Array(cvBuffer), {
       parseSpeed: ParseSpeeds.Fast,
     });
-    const cvPages = await masterPdf.copyPages(cvDoc, cvDoc.getPageIndices());
-    cvPages.forEach((page) => masterPdf.addPage(page));
+    const pageIndices = cvDoc.getPageIndices();
+    if (pageIndices.length > 0) {
+      const cvPages = await masterPdf.copyPages(cvDoc, pageIndices);
+      cvPages.forEach((page) => masterPdf.addPage(page));
+    }
   }
 
   // 4. Anlagen & Zeugnisse (Candidate Attachments)
   for (const attachment of attachmentBuffers) {
     try {
-      const attachmentDoc = await PDFDocument.load(attachment.buffer, {
+      const attachmentDoc = await PDFDocument.load(toUint8Array(attachment.buffer), {
         ignoreEncryption: true,
         parseSpeed: ParseSpeeds.Fast,
       });
-      const pages = await masterPdf.copyPages(attachmentDoc, attachmentDoc.getPageIndices());
-      pages.forEach((page) => masterPdf.addPage(page));
+      const pageIndices = attachmentDoc.getPageIndices();
+      if (pageIndices.length > 0) {
+        const pages = await masterPdf.copyPages(attachmentDoc, pageIndices);
+        pages.forEach((page) => masterPdf.addPage(page));
+      }
     } catch (err: unknown) {
       console.error(`[Dossier Compile Error - Attachment "${attachment.name}"]:`, err);
       throw new Error(

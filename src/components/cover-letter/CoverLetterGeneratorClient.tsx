@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { extractGermanJobTitle } from "@/lib/cover-letter";
+import FieldTooltip from "@/components/cv/FieldTooltip";
 
 interface CvOption {
   id: string;
@@ -182,9 +183,12 @@ export default function CoverLetterGeneratorClient({
         <div className="lg:col-span-5 bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl backdrop-blur-xl">
           <form onSubmit={handleGenerate} className="space-y-5">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-200">
-                {isAr ? "المسمى الوظيفي المستهدف *" : isDe ? "Stellenbezeichnung *" : "Job Title *"}
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-200">
+                  {isAr ? "المسمى الوظيفي المستهدف *" : isDe ? "Stellenbezeichnung *" : "Job Title *"}
+                </label>
+                <FieldTooltip fieldKey="targetJobTitle" locale={locale} />
+              </div>
               <input
                 type="text"
                 required
@@ -196,9 +200,12 @@ export default function CoverLetterGeneratorClient({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-200">
-                {isAr ? "اسم الشركة *" : isDe ? "Unternehmensname *" : "Company Name *"}
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-200">
+                  {isAr ? "اسم الشركة *" : isDe ? "Unternehmensname *" : "Company Name *"}
+                </label>
+                <FieldTooltip fieldKey="company" locale={locale} />
+              </div>
               <input
                 type="text"
                 required
@@ -210,9 +217,12 @@ export default function CoverLetterGeneratorClient({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-200">
-                {isAr ? "اسم المسؤول / جهة الاتصال (Ansprechpartner)" : isDe ? "Ansprechpartner" : "Contact Person (optional)"}
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-200">
+                  {isAr ? "اسم المسؤول / جهة الاتصال (Ansprechpartner)" : isDe ? "Ansprechpartner" : "Contact Person (optional)"}
+                </label>
+                <FieldTooltip fieldKey="fullName" locale={locale} />
+              </div>
               <input
                 type="text"
                 value={recipientName}

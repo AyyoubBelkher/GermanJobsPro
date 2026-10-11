@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyUserSession } from "@/lib/user-session";
 import { extractText } from "unpdf";
 import { magicImportCvAI } from "@/lib/gemini";
-import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
+import { consumeAiCredit, refundAiCredit, deductAiCreditAtomic } from "@/lib/monetization";
 import { logAiUsage } from "@/lib/ai-telemetry";
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
@@ -174,16 +174,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Consume AI Credit
-    const creditResult = await consumeAiCredit(authResult.user.id);
+    // 1. Consume AI Credit (Atomic reservation within transaction)
+    const creditResult = await deductAiCreditAtomic({
+      userId: authResult.user.id,
+      operation: "CV_MAGIC_IMPORT",
+      requiredCredits: 1,
+    });
     if (!creditResult.success) {
       return NextResponse.json(
         {
           success: false,
-          error: creditResult.error || "You have run out of AI credits. Please upgrade to Pro or redeem a promo code.",
+          error: "INSUFFICIENT_CREDITS",
+          message: creditResult.error || "You have run out of AI credits. Please upgrade to Pro or redeem a promo code.",
           outOfCredits: true,
         },
-        { status: 403 }
+        { status: 402 }
       );
     }
 

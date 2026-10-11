@@ -157,8 +157,10 @@ export async function verifyUserSession(token?: string | null): Promise<{
     }
 
     if (sessionRecord.expiresAt < new Date()) {
-      // Async clean up of expired session
-      prisma.userSession.delete({ where: { id: sessionRecord.id } }).catch(() => {});
+      // Clean up expired session
+      await prisma.userSession.delete({ where: { id: sessionRecord.id } }).catch((err) => {
+        console.warn("[UserSession Cleanup Warning]:", err instanceof Error ? err.message : err);
+      });
       return null;
     }
 

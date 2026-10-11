@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUserSession } from "@/lib/user-session";
 import { createApplicationSchema, applicationStatusEnum } from "@/lib/validations/application";
-import { ApplicationStatus } from "@/generated/prisma/client";
+import { ApplicationStatus } from "@prisma/client";
 
 /**
  * GET /api/applications

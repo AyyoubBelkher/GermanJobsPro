@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import FieldTooltip from "@/components/cv/FieldTooltip";
 
 export interface CoverLetterData {
   id: string;
@@ -209,7 +210,10 @@ export default function CoverLetterEditorClient({
           </h3>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-300">{isAr ? "المسمى الوظيفي" : "Job Title"}</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-300">{isAr ? "المسمى الوظيفي" : "Job Title"}</label>
+              <FieldTooltip fieldKey="targetJobTitle" locale={locale} />
+            </div>
             <input
               type="text"
               value={coverLetter.jobTitle}
@@ -222,7 +226,10 @@ export default function CoverLetterEditorClient({
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-300">{isAr ? "اسم الشركة" : "Company Name"}</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-300">{isAr ? "اسم الشركة" : "Company Name"}</label>
+              <FieldTooltip fieldKey="company" locale={locale} />
+            </div>
             <input
               type="text"
               value={coverLetter.companyName}
@@ -235,7 +242,10 @@ export default function CoverLetterEditorClient({
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-300">{isAr ? "اسم المسؤول (Ansprechpartner)" : "Recipient Name"}</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-300">{isAr ? "اسم المسؤول (Ansprechpartner)" : "Recipient Name"}</label>
+              <FieldTooltip fieldKey="fullName" locale={locale} />
+            </div>
             <input
               type="text"
               value={coverLetter.recipientName || ""}

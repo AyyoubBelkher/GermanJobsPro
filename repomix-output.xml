@@ -43,6 +43,10 @@ The content is organized as follows:
 prisma/
   schema.prisma
 public/
+  fonts/
+    Amiri-Bold.ttf
+    Amiri-Italic.ttf
+    Amiri-Regular.ttf
   images/
     lessons/
       german-a1-lesson-1.png
@@ -97,25 +101,43 @@ src/
         page.tsx
       dashboard/
         applications/
+          error.tsx
+          loading.tsx
           page.tsx
         ats-analyzer/
+          error.tsx
+          loading.tsx
           page.tsx
         cover-letters/
           [id]/
+            error.tsx
+            loading.tsx
             page.tsx
           new/
             page.tsx
+          error.tsx
+          loading.tsx
           page.tsx
         cv/
           [id]/
+            error.tsx
+            loading.tsx
             page.tsx
           new/
             page.tsx
+          error.tsx
+          loading.tsx
           page.tsx
         dossier/
+          error.tsx
+          loading.tsx
           page.tsx
         pricing/
+          error.tsx
+          loading.tsx
           page.tsx
+        error.tsx
+        loading.tsx
         page.tsx
       jobs/
         [id]/
@@ -191,6 +213,8 @@ src/
         [id]/
           pdf/
             route.ts
+          route.ts
+        auto-fix/
           route.ts
         magic-import/
           route.ts
@@ -310,9 +334,11 @@ src/
       cv.ts
     admin-auth.ts
     ai-telemetry.ts
+    auth.ts
     courseUtils.ts
     cover-letter.ts
     email.ts
+    env.ts
     gemini.ts
     monetization.ts
     prisma.ts
@@ -334,10 +360,1280 @@ postcss.config.mjs
 prisma.config.ts
 README.md
 tsconfig.json
+vercel.json
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="src/app/[locale]/dashboard/applications/error.tsx">
+"use client";
+
+import React, { useEffect } from "react";
+import Link from "next/link";
+
+export default function ApplicationsError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error("[Applications Section Error]:", error);
+  }, [error]);
+
+  return (
+    <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-2xl mb-4">
+        💼
+      </div>
+      <h2 className="text-lg font-bold text-slate-100 mb-2">تعذر تحميل طلبات التوظيف</h2>
+      <p className="text-xs text-slate-400 max-w-md mb-6">
+        {error?.message || "حدث خطأ أثناء جلب سجل طلبات التوظيف."}
+      </p>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => reset()}
+          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium cursor-pointer"
+        >
+          إعادة المحاولة
+        </button>
+        <Link
+          href="/dashboard"
+          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium"
+        >
+          لوحة التحكم
+        </Link>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/[locale]/dashboard/applications/loading.tsx">
+import React from "react";
+
+export default function ApplicationsLoading() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full space-y-8 animate-pulse">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-2">
+          <div className="h-8 w-56 bg-slate-800 rounded-xl" />
+          <div className="h-4 w-72 bg-slate-800/60 rounded-lg" />
+        </div>
+      </div>
+
+      <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="flex items-center justify-between p-4 rounded-2xl bg-slate-950/60 border border-slate-800/60"
+          >
+            <div className="space-y-2">
+              <div className="h-5 w-48 bg-slate-800 rounded-lg" />
+              <div className="h-4 w-32 bg-slate-800/60 rounded-md" />
+            </div>
+            <div className="h-6 w-20 bg-slate-800/60 rounded-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/[locale]/dashboard/ats-analyzer/error.tsx">
+"use client";
+
+import React, { useEffect } from "react";
+import Link from "next/link";
+
+export default function AtsAnalyzerError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error("[ATS Analyzer Error]:", error);
+  }, [error]);
+
+  return (
+    <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-2xl mb-4">
+        🔍
+      </div>
+      <h2 className="text-lg font-bold text-slate-100 mb-2">تعذر تشغيل أداة فحص الـ ATS</h2>
+      <p className="text-xs text-slate-400 max-w-md mb-6">
+        {error?.message || "حدث خطأ أثناء تحميل أداة تحليل السيرة الذاتية."}
+      </p>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => reset()}
+          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium cursor-pointer"
+        >
+          إعادة المحاولة
+        </button>
+        <Link
+          href="/dashboard"
+          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium"
+        >
+          لوحة التحكم
+        </Link>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/[locale]/dashboard/ats-analyzer/loading.tsx">
+import React from "react";
+
+export default function AtsAnalyzerLoading() {
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full space-y-8 animate-pulse">
+      <div className="space-y-2 text-center max-w-xl mx-auto">
+        <div className="h-8 w-64 bg-slate-800 rounded-xl mx-auto" />
+        <div className="h-4 w-96 bg-slate-800/60 rounded-lg mx-auto" />
+      </div>
+
+      <div className="p-8 rounded-3xl bg-slate-900/60 border border-slate-800/80 space-y-6">
+        <div className="h-40 bg-slate-950/80 rounded-2xl border border-dashed border-slate-800" />
+        <div className="h-12 w-48 bg-slate-800 rounded-xl mx-auto" />
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/[locale]/dashboard/cover-letters/[id]/error.tsx">
+"use client";
+
+import React, { useEffect } from "react";
+import Link from "next/link";
+
+export default function CoverLetterEditorError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error("[Cover Letter Editor Error]:", error);
+  }, [error]);
+
+  return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-3xl mb-4">
+        ✉️
+      </div>
+      <h2 className="text-xl font-bold text-slate-100 mb-2">تعذر فتح خطاب التقديم</h2>
+      <p className="text-sm text-slate-400 max-w-md mb-6">
+        {error?.message || "قد يكون الخطاب المطلوب غير موجود أو حدث خطأ أثناء جلب بياناته."}
+      </p>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => reset()}
+          className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-medium cursor-pointer"
+        >
+          إعادة المحاولة
+        </button>
+        <Link
+          href="/dashboard/cover-letters"
+          className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium"
+        >
+          خطابات التقديم
+        </Link>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/[locale]/dashboard/cover-letters/[id]/loading.tsx">
+import React from "react";
+
+export default function CoverLetterEditorLoading() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-6 animate-pulse">
+      <div className="h-4 w-48 bg-slate-800 rounded-md" />
+      <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-900 border border-slate-800">
+        <div className="h-6 w-56 bg-slate-800 rounded-lg" />
+        <div className="h-9 w-28 bg-slate-800 rounded-xl" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-4 space-y-4">
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+            <div className="h-4 w-32 bg-slate-800 rounded" />
+            <div className="h-10 bg-slate-950 rounded-xl" />
+            <div className="h-10 bg-slate-950 rounded-xl" />
+          </div>
+        </div>
+        <div className="lg:col-span-8">
+          <div className="h-[550px] rounded-3xl bg-slate-900 border border-slate-800" />
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/[locale]/dashboard/cover-letters/error.tsx">
+"use client";
+
+import React, { useEffect } from "react";
+import Link from "next/link";
+
+export default function CoverLettersError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error("[Cover Letters Section Error]:", error);
+  }, [error]);
+
+  return (
+    <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-2xl mb-4">
+        ✉️
+      </div>
+      <h2 className="text-lg font-bold text-slate-100 mb-2">تعذر تحميل خطابات التقديم</h2>
+      <p className="text-xs text-slate-400 max-w-md mb-6">
+        {error?.message || "حدث خطأ أثناء جلب خطابات التقديم الخاصة بك."}
+      </p>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => reset()}
+          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium cursor-pointer"
+        >
+          إعادة المحاولة
+        </button>
+        <Link
+          href="/dashboard"
+          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium"
+        >
+          لوحة التحكم
+        </Link>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/[locale]/dashboard/cover-letters/loading.tsx">
+import React from "react";
+
+export default function CoverLettersLoading() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full space-y-8 animate-pulse">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-2">
+          <div className="h-8 w-60 bg-slate-800/80 rounded-xl" />
+          <div className="h-4 w-72 bg-slate-800/50 rounded-lg" />
+        </div>
+        <div className="h-10 w-44 bg-slate-800/80 rounded-xl" />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 space-y-4"
+          >
+            <div className="h-6 w-44 bg-slate-800 rounded-lg" />
+            <div className="h-4 w-32 bg-slate-800/60 rounded-md" />
+            <div className="pt-4 border-t border-slate-800/60 flex items-center justify-between">
+              <div className="h-8 w-20 bg-slate-800/60 rounded-xl" />
+              <div className="h-8 w-24 bg-slate-800 rounded-xl" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/[locale]/dashboard/cv/[id]/error.tsx">
+"use client";
+
+import React, { useEffect } from "react";
+import Link from "next/link";
+
+export default function CvEditorError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error("[CV Editor Error]:", error);
+  }, [error]);
+
+  return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-3xl mb-4">
+        📑
+      </div>
+      <h2 className="text-xl font-bold text-slate-100 mb-2">تعذر فتح محرر السيرة الذاتية</h2>
+      <p className="text-sm text-slate-400 max-w-md mb-6">
+        {error?.message || "قد تكون السيرة المطلوبة غير موجودة أو حدث خطأ أثناء جلب بياناتها."}
+      </p>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => reset()}
+          className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-medium cursor-pointer"
+        >
+          إعادة المحاولة
+        </button>
+        <Link
+          href="/dashboard/cv"
+          className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium"
+        >
+          قائمة السير الذاتية
+        </Link>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/[locale]/dashboard/cv/[id]/loading.tsx">
+import React from "react";
+
+export default function CvEditorLoading() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-6 animate-pulse">
+      {/* Breadcrumb skeleton */}
+      <div className="h-4 w-48 bg-slate-800 rounded-md" />
+
+      {/* Editor top bar skeleton */}
+      <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-900 border border-slate-800">
+        <div className="h-6 w-56 bg-slate-800 rounded-lg" />
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-24 bg-slate-800 rounded-xl" />
+          <div className="h-9 w-28 bg-slate-800 rounded-xl" />
+        </div>
+      </div>
+
+      {/* Two-column editor skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-7 space-y-6">
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+            <div className="h-6 w-40 bg-slate-800 rounded-lg" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="h-10 bg-slate-950 rounded-xl" />
+              <div className="h-10 bg-slate-950 rounded-xl" />
+            </div>
+            <div className="h-10 bg-slate-950 rounded-xl" />
+          </div>
+        </div>
+        <div className="lg:col-span-5 hidden lg:block">
+          <div className="h-[600px] rounded-3xl bg-slate-900 border border-slate-800" />
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/[locale]/dashboard/cv/error.tsx">
+"use client";
+
+import React, { useEffect } from "react";
+import Link from "next/link";
+
+export default function CvError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error("[CV Section Error]:", error);
+  }, [error]);
+
+  return (
+    <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-2xl mb-4">
+        📄
+      </div>
+      <h2 className="text-lg font-bold text-slate-100 mb-2">تعذر تحميل السير الذاتية / Fehler beim Laden der Lebensläufe</h2>
+      <p className="text-xs text-slate-400 max-w-md mb-6">
+        {error?.message || "حدث خطأ أثناء تحميل بيانات السير الذاتية الخاصة بك."}
+      </p>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => reset()}
+          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium cursor-pointer"
+        >
+          إعادة المحاولة
+        </button>
+        <Link
+          href="/dashboard"
+          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium"
+        >
+          لوحة التحكم
+        </Link>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/[locale]/dashboard/cv/loading.tsx">
+import React from "react";
+
+export default function CvListLoading() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full space-y-8 animate-pulse">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-2">
+          <div className="h-8 w-56 bg-slate-800/80 rounded-xl" />
+          <div className="h-4 w-80 bg-slate-800/50 rounded-lg" />
+        </div>
+        <div className="h-10 w-44 bg-slate-800/80 rounded-xl" />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 space-y-4"
+          >
+            <div className="h-6 w-40 bg-slate-800 rounded-lg" />
+            <div className="h-4 w-28 bg-slate-800/60 rounded-md" />
+            <div className="pt-4 border-t border-slate-800/60 flex items-center justify-between">
+              <div className="h-8 w-20 bg-slate-800/60 rounded-xl" />
+              <div className="h-8 w-24 bg-slate-800 rounded-xl" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/[locale]/dashboard/dossier/error.tsx">
+"use client";
+
+import React, { useEffect } from "react";
+import Link from "next/link";
+
+export default function DossierError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error("[Dossier Compiler Error]:", error);
+  }, [error]);
+
+  return (
+    <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-2xl mb-4">
+        📁
+      </div>
+      <h2 className="text-lg font-bold text-slate-100 mb-2">تعذر تجميع ملف التقديم (Bewerbungsmappe)</h2>
+      <p className="text-xs text-slate-400 max-w-md mb-6">
+        {error?.message || "حدث خطأ أثناء تحميل محرر ملف التقديم الشامل."}
+      </p>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => reset()}
+          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium cursor-pointer"
+        >
+          إعادة المحاولة
+        </button>
+        <Link
+          href="/dashboard"
+          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium"
+        >
+          لوحة التحكم
+        </Link>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/[locale]/dashboard/dossier/loading.tsx">
+import React from "react";
+
+export default function DossierLoading() {
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full space-y-8 animate-pulse">
+      <div className="space-y-2 text-center max-w-xl mx-auto">
+        <div className="h-8 w-72 bg-slate-800 rounded-xl mx-auto" />
+        <div className="h-4 w-96 bg-slate-800/60 rounded-lg mx-auto" />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="h-64 rounded-3xl bg-slate-900/60 border border-slate-800" />
+        <div className="h-64 rounded-3xl bg-slate-900/60 border border-slate-800" />
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/[locale]/dashboard/pricing/error.tsx">
+"use client";
+
+import React, { useEffect } from "react";
+import Link from "next/link";
+
+export default function PricingError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error("[Pricing Section Error]:", error);
+  }, [error]);
+
+  return (
+    <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-2xl mb-4">
+        💳
+      </div>
+      <h2 className="text-lg font-bold text-slate-100 mb-2">تعذر تحميل خطط الاشتراك</h2>
+      <p className="text-xs text-slate-400 max-w-md mb-6">
+        {error?.message || "حدث خطأ أثناء تحميل بيانات الباقات والأسعار."}
+      </p>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => reset()}
+          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium cursor-pointer"
+        >
+          إعادة المحاولة
+        </button>
+        <Link
+          href="/dashboard"
+          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium"
+        >
+          لوحة التحكم
+        </Link>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/[locale]/dashboard/pricing/loading.tsx">
+import React from "react";
+
+export default function PricingLoading() {
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full space-y-10 animate-pulse">
+      <div className="text-center space-y-3 max-w-xl mx-auto">
+        <div className="h-8 w-60 bg-slate-800 rounded-xl mx-auto" />
+        <div className="h-4 w-80 bg-slate-800/60 rounded-lg mx-auto" />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-6"
+          >
+            <div className="h-6 w-32 bg-slate-800 rounded-lg" />
+            <div className="h-10 w-24 bg-slate-800 rounded-xl" />
+            <div className="space-y-2">
+              <div className="h-4 w-full bg-slate-800/60 rounded" />
+              <div className="h-4 w-5/6 bg-slate-800/60 rounded" />
+              <div className="h-4 w-4/6 bg-slate-800/60 rounded" />
+            </div>
+            <div className="h-11 w-full bg-slate-800 rounded-xl" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/[locale]/dashboard/error.tsx">
+"use client";
+
+import React, { useEffect } from "react";
+import Link from "next/link";
+
+export default function DashboardError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error("[Dashboard Root Error]:", error);
+  }, [error]);
+
+  return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-3xl mb-4">
+        ⚠️
+      </div>
+      <h2 className="text-xl font-bold text-slate-100 mb-2">حدث خطأ غير متوقع / Ein Fehler ist aufgetreten</h2>
+      <p className="text-sm text-slate-400 max-w-md mb-6">
+        {error?.message || "تعذر تحميل محتوى لوحة التحكم. يرجى المحاولة مرة أخرى."}
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <button
+          onClick={() => reset()}
+          className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs sm:text-sm transition-all shadow-lg shadow-blue-600/20 cursor-pointer"
+        >
+          إعادة المحاولة / Erneut versuchen
+        </button>
+        <Link
+          href="/"
+          className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs sm:text-sm transition-all"
+        >
+          الصفحة الرئيسية / Startseite
+        </Link>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/[locale]/dashboard/loading.tsx">
+import React from "react";
+
+export default function DashboardLoading() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full space-y-8 animate-pulse">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-2">
+          <div className="h-8 w-48 sm:w-64 bg-slate-800/80 rounded-xl" />
+          <div className="h-4 w-64 sm:w-96 bg-slate-800/50 rounded-lg" />
+        </div>
+        <div className="h-10 w-36 bg-slate-800/80 rounded-xl" />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div
+            key={i}
+            className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 space-y-4"
+          >
+            <div className="flex items-center justify-between">
+              <div className="h-5 w-32 bg-slate-800 rounded-lg" />
+              <div className="h-4 w-12 bg-slate-800/60 rounded-md" />
+            </div>
+            <div className="h-4 w-full bg-slate-800/50 rounded-md" />
+            <div className="h-4 w-3/4 bg-slate-800/40 rounded-md" />
+            <div className="pt-4 border-t border-slate-800/60 flex items-center justify-between">
+              <div className="h-4 w-20 bg-slate-800/40 rounded-md" />
+              <div className="h-8 w-24 bg-slate-800 rounded-xl" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/api/cv/auto-fix/route.ts">
+export const runtime = 'nodejs';
+export const maxDuration = 30;
+
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import { verifyAuth } from "@/lib/auth";
+import { deductCreditInTx } from "@/lib/monetization";
+
+// European, German & English date parser conforming to DIN standards and pure UTC
+const MONTH_MAP: Record<string, number> = {
+  jan: 0, januar: 0, january: 0,
+  feb: 1, februar: 1, february: 1,
+  mar: 2, marz: 2, maerz: 2, märz: 2, march: 2,
+  apr: 3, april: 3,
+  may: 4, mai: 4,
+  jun: 5, juni: 5, june: 5,
+  jul: 6, juli: 6, july: 6,
+  aug: 7, august: 7,
+  sep: 8, sept: 8, september: 8,
+  oct: 9, okt: 9, oktober: 9, october: 9,
+  nov: 10, november: 10,
+  dec: 11, dez: 11, dezember: 11, december: 11,
+};
+
+function parseEuropeanDate(val?: string | null): Date | null {
+  if (!val || typeof val !== "string") return null;
+  const s = val.trim();
+  if (!s || /^(heute|present|current|jetzt|laufend)$/i.test(s)) return null;
+
+  // 1. ISO standard: YYYY-MM-DD or YYYY-MM
+  const isoMatch = s.match(/^(\d{4})[-/.](\d{1,2})(?:[-/.](\d{1,2}))?$/);
+  if (isoMatch) {
+    const year = parseInt(isoMatch[1], 10);
+    const month = parseInt(isoMatch[2], 10) - 1;
+    const day = isoMatch[3] ? parseInt(isoMatch[3], 10) : 1;
+    if (month >= 0 && month <= 11 && day >= 1 && day <= 31) {
+      return new Date(Date.UTC(year, month, day));
+    }
+  }
+
+  // 2. Numeric DD.MM.YYYY or DD/MM/YYYY or DD-MM-YYYY
+  const dmyMatch = s.match(/^(\d{1,2})[./\-](\d{1,2})[./\-](\d{4})$/);
+  if (dmyMatch) {
+    const day = parseInt(dmyMatch[1], 10);
+    const month = parseInt(dmyMatch[2], 10) - 1;
+    const year = parseInt(dmyMatch[3], 10);
+    if (month >= 0 && month <= 11 && day >= 1 && day <= 31) {
+      return new Date(Date.UTC(year, month, day));
+    }
+  }
+
+  // 3. Numeric MM/YYYY or MM.YYYY or MM-YYYY
+  const myMatch = s.match(/^(\d{1,2})[./\-](\d{4})$/);
+  if (myMatch) {
+    const month = parseInt(myMatch[1], 10) - 1;
+    const year = parseInt(myMatch[2], 10);
+    if (month >= 0 && month <= 11) {
+      return new Date(Date.UTC(year, month, 1));
+    }
+  }
+
+  // 4. Text month with year: "Jan 2020", "Januar 2020", "März 2022", "15. Mai 2021", "January 15, 2020"
+  const norm = s
+    .toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue");
+
+  // Format: optional day, month text, optional comma/dot, 4-digit year
+  const textMonthMatch = norm.match(/^(?:(\d{1,2})[.\s/-]+)?([a-z]+)[.,\s/-]+(\d{4})$/);
+  if (textMonthMatch) {
+    const day = textMonthMatch[1] ? parseInt(textMonthMatch[1], 10) : 1;
+    const monthStr = textMonthMatch[2].replace(/\.$/, "");
+    const year = parseInt(textMonthMatch[3], 10);
+    if (monthStr in MONTH_MAP) {
+      const month = MONTH_MAP[monthStr];
+      return new Date(Date.UTC(year, month, day));
+    }
+  }
+
+  // Format: Month Day, Year (e.g. "January 15, 2020")
+  const mdyTextMatch = norm.match(/^([a-z]+)[.,\s/-]+(\d{1,2})[.,\s/-]+(\d{4})$/);
+  if (mdyTextMatch) {
+    const monthStr = mdyTextMatch[1];
+    const day = parseInt(mdyTextMatch[2], 10);
+    const year = parseInt(mdyTextMatch[3], 10);
+    if (monthStr in MONTH_MAP) {
+      const month = MONTH_MAP[monthStr];
+      return new Date(Date.UTC(year, month, day));
+    }
+  }
+
+  // 5. Standalone 4-digit year: "2020"
+  const yMatch = s.match(/^(\d{4})$/);
+  if (yMatch) {
+    const year = parseInt(yMatch[1], 10);
+    return new Date(Date.UTC(year, 0, 1));
+  }
+
+  return null;
+}
+
+function parseDateSafe(val?: string | null, fallbackYear = 2020): Date {
+  const d = parseEuropeanDate(val);
+  if (d !== null) return d;
+  if (val && typeof val === "string") {
+    const yrMatch = val.match(/\b(19\d{2}|20\d{2})\b/);
+    if (yrMatch) {
+      return new Date(Date.UTC(parseInt(yrMatch[1], 10), 0, 1));
+    }
+  }
+  // Deterministic fallback: never defaults to current timestamp
+  return new Date(Date.UTC(fallbackYear, 0, 1));
+}
+
+function parseNullableDate(val?: string | null): Date | null {
+  return parseEuropeanDate(val);
+}
+
+function isValidUrl(val?: string | null): string | null {
+  if (!val || typeof val !== "string") return null;
+  const s = val.trim();
+  try {
+    const u = new URL(s);
+    return u.protocol === "http:" || u.protocol === "https:" ? s : null;
+  } catch {
+    return null;
+  }
+}
+
+function extractLocale(req: Request, bodyLocale?: string): string {
+  if (bodyLocale && ["ar", "de", "en", "fr"].includes(bodyLocale)) {
+    return bodyLocale;
+  }
+  try {
+    const url = new URL(req.url);
+    const qLocale = url.searchParams.get("locale");
+    if (qLocale && ["ar", "de", "en", "fr"].includes(qLocale)) {
+      return qLocale;
+    }
+    const referer = req.headers.get("referer");
+    if (referer) {
+      const match = referer.match(/\/(ar|de|en|fr)(\/|$)/);
+      if (match) return match[1];
+    }
+  } catch {}
+  return "de";
+}
+
+const remediatedCvSchema = z.object({
+  locale: z.string().optional(),
+  personalInfo: z.object({
+    fullName: z.string().min(1),
+    title: z.string().optional().nullable(),
+    email: z.string().email().or(z.string()),
+    phone: z.string().optional().nullable(),
+    address: z.string().optional().nullable(),
+    dateOfBirth: z.string().optional().nullable(),
+    placeOfBirth: z.string().optional().nullable(),
+    summary: z.string().optional().nullable(),
+    targetJobTitle: z.string().optional().nullable(),
+    nationality: z.string().optional().nullable(),
+    photoUrl: z.string().optional().nullable(),
+    linkedinUrl: z.string().optional().nullable(),
+    xingUrl: z.string().optional().nullable(),
+  }),
+  experiences: z
+    .array(
+      z.object({
+        title: z.string().optional().nullable(),
+        position: z.string().optional().nullable(),
+        organization: z.string().optional().nullable(),
+        company: z.string().optional().nullable(),
+        location: z.string().optional().nullable(),
+        city: z.string().optional().nullable(),
+        country: z.string().optional().nullable(),
+        startDate: z.string().optional().nullable(),
+        endDate: z.string().optional().nullable(),
+        isCurrent: z.boolean().optional(),
+        bullets: z.array(z.string()).optional(),
+        description: z.string().optional().nullable(),
+      })
+    )
+    .optional()
+    .default([]),
+  education: z
+    .array(
+      z.object({
+        degree: z.string().optional().nullable(),
+        institution: z.string().optional().nullable(),
+        fieldOfStudy: z.string().optional().nullable(),
+        location: z.string().optional().nullable(),
+        city: z.string().optional().nullable(),
+        country: z.string().optional().nullable(),
+        startDate: z.string().optional().nullable(),
+        endDate: z.string().optional().nullable(),
+        isCurrent: z.boolean().optional(),
+        grade: z.string().optional().nullable(),
+        description: z.string().optional().nullable(),
+      })
+    )
+    .optional()
+    .default([]),
+  coursesAndCertifications: z
+    .array(
+      z.object({
+        title: z.string().optional().nullable(),
+        name: z.string().optional().nullable(),
+        provider: z.string().optional().nullable(),
+        issuer: z.string().optional().nullable(),
+        startDate: z.string().optional().nullable(),
+        endDate: z.string().optional().nullable(),
+        issueDate: z.string().optional().nullable(),
+        credentialUrl: z.string().optional().nullable(),
+        url: z.string().optional().nullable(),
+        bullets: z.array(z.string()).optional(),
+        description: z.string().optional().nullable(),
+      })
+    )
+    .optional()
+    .default([]),
+  skills: z
+    .array(
+      z.union([
+        z.string(),
+        z.object({
+          name: z.string(),
+          category: z.string().optional().nullable(),
+          level: z.string().optional().nullable(),
+        }),
+      ])
+    )
+    .optional()
+    .default([]),
+  languages: z
+    .array(
+      z.object({
+        language: z.string(),
+        level: z.string().optional().nullable(),
+        proficiency: z.string().optional().nullable(),
+      })
+    )
+    .optional()
+    .default([]),
+  hobbies: z.array(z.string()).optional().default([]),
+  driverLicense: z.string().optional().nullable(),
+});
+
+export async function POST(req: Request) {
+  try {
+    const authResult = await verifyAuth(req);
+    if (!authResult.success || !authResult.user) {
+      return NextResponse.json(
+        { success: false, error: "غير مصرح بالوصول (Unauthorized)" },
+        { status: 401 }
+      );
+    }
+
+    const body = await req.json().catch(() => null);
+    if (!body) {
+      return NextResponse.json(
+        { success: false, error: "بيانات غير صالحة" },
+        { status: 400 }
+      );
+    }
+
+    const validationResult = remediatedCvSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "بيانات السيرة الذاتية غير صالحة",
+          details: validationResult.error.format(),
+        },
+        { status: 400 }
+      );
+    }
+
+    const validatedCvData = validationResult.data;
+    const targetLocale = extractLocale(req, validatedCvData.locale);
+    const userId = authResult.user.id;
+
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Deduct AI credit / verify limits atomically
+      const creditResult = await deductCreditInTx(tx, {
+        userId,
+        operation: "CV_AUTO_FIX",
+        model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
+        requiredCredits: 1,
+      });
+
+      if (!creditResult.success) {
+        return {
+          insufficientCredits: true,
+          error: creditResult.error || "INSUFFICIENT_CREDITS",
+        };
+      }
+
+      // 2. Prepare Skills list (including optional driver license)
+      const skillsData: Array<{ name: string; category: string; level: string; order: number }> = [];
+      validatedCvData.skills.forEach((s, idx) => {
+        if (typeof s === "string") {
+          skillsData.push({
+            name: s,
+            category: "Fachkenntnisse",
+            level: "Fortgeschritten",
+            order: idx,
+          });
+        } else {
+          skillsData.push({
+            name: s.name,
+            category: s.category || "Fachkenntnisse",
+            level: s.level || "Fortgeschritten",
+            order: idx,
+          });
+        }
+      });
+
+      if (validatedCvData.driverLicense && validatedCvData.driverLicense.trim()) {
+        skillsData.push({
+          name: `Führerschein (${validatedCvData.driverLicense.trim()})`,
+          category: "Mobilität",
+          level: "Vorhanden",
+          order: skillsData.length,
+        });
+      }
+
+      // 3. Create Full CV with Relational Sub-Tables
+      const jobTitle =
+        validatedCvData.personalInfo.title ||
+        validatedCvData.personalInfo.targetJobTitle ||
+        "Fachkraft";
+
+      const newCv = await tx.cv.create({
+        data: {
+          userId,
+          title: `${validatedCvData.personalInfo.fullName} (DIN 5008)`,
+          language: "de",
+          isDraft: false,
+          personalInfo: {
+            create: {
+              fullName: validatedCvData.personalInfo.fullName,
+              email: validatedCvData.personalInfo.email,
+              phone: validatedCvData.personalInfo.phone || null,
+              address: validatedCvData.personalInfo.address || null,
+              birthDate: parseNullableDate(validatedCvData.personalInfo.dateOfBirth),
+              birthPlace: validatedCvData.personalInfo.placeOfBirth || null,
+              nationality: validatedCvData.personalInfo.nationality || null,
+              targetJobTitle: jobTitle,
+              linkedinUrl: validatedCvData.personalInfo.linkedinUrl || null,
+              xingUrl: validatedCvData.personalInfo.xingUrl || null,
+              summary: validatedCvData.personalInfo.summary || null,
+              photoUrl: validatedCvData.personalInfo.photoUrl || null,
+            },
+          },
+          experiences: {
+            create: validatedCvData.experiences.map((exp, idx) => {
+              const isCurrent = Boolean(
+                exp.isCurrent || (exp.endDate && /heute|present|current/i.test(exp.endDate))
+              );
+              let desc = exp.description || null;
+              if (exp.bullets && exp.bullets.length > 0) {
+                desc = exp.bullets.map((b) => `• ${b}`).join("\n");
+              }
+              return {
+                company: exp.company || exp.organization || "Unternehmen",
+                position: exp.position || exp.title || "Position",
+                city: exp.city || exp.location || null,
+                country: exp.country || "Deutschland",
+                startDate: parseDateSafe(exp.startDate),
+                endDate: isCurrent ? null : parseNullableDate(exp.endDate),
+                isCurrent,
+                description: desc,
+                order: idx,
+              };
+            }),
+          },
+          educations: {
+            create: validatedCvData.education.map((edu, idx) => {
+              const isCurrent = Boolean(edu.isCurrent);
+              return {
+                institution: edu.institution || "Ausbildungsstätte",
+                degree: edu.degree || "Abschluss",
+                fieldOfStudy: edu.fieldOfStudy || null,
+                city: edu.city || edu.location || null,
+                country: edu.country || null,
+                startDate: parseDateSafe(edu.startDate),
+                endDate: isCurrent ? null : parseNullableDate(edu.endDate),
+                isCurrent,
+                grade: edu.grade || null,
+                description: edu.description || null,
+                order: idx,
+              };
+            }),
+          },
+          skills: {
+            create: skillsData,
+          },
+          languages: {
+            create: validatedCvData.languages.map((l, idx) => ({
+              language: l.language,
+              proficiency: l.proficiency || l.level || "Gute Kenntnisse",
+              order: idx,
+            })),
+          },
+          certifications: {
+            create: validatedCvData.coursesAndCertifications.map((c, idx) => {
+              const rawName = c.name || c.title || "Zertifikat";
+              let desc = c.description || null;
+              if (c.bullets && c.bullets.length > 0) {
+                desc = c.bullets.join("\n");
+              }
+
+              // Decouple description from credentialUrl: only valid HTTP/HTTPS URLs are accepted
+              const credentialUrl =
+                isValidUrl(c.credentialUrl) ||
+                isValidUrl(c.url) ||
+                (desc && isValidUrl(desc) ? desc : null);
+
+              // If a non-URL description was provided, append it cleanly to the name so no candidate data is lost
+              const finalName =
+                desc && !isValidUrl(desc) && !rawName.includes(desc)
+                  ? `${rawName} (${desc.replace(/\n+/g, ", ")})`.slice(0, 190)
+                  : rawName;
+
+              return {
+                name: finalName,
+                issuer: c.issuer || c.provider || "Weiterbildung",
+                issueDate: parseNullableDate(c.issueDate || c.endDate || c.startDate),
+                credentialUrl,
+                order: idx,
+              };
+            }),
+          },
+        },
+        include: {
+          personalInfo: true,
+          experiences: { orderBy: { order: "asc" } },
+          educations: { orderBy: { order: "asc" } },
+          skills: { orderBy: { order: "asc" } },
+          languages: { orderBy: { order: "asc" } },
+          certifications: { orderBy: { order: "asc" } },
+          projects: { orderBy: { order: "asc" } },
+        },
+      });
+
+      return {
+        insufficientCredits: false,
+        newCv,
+        remainingCredits: creditResult.remainingCredits,
+      };
+    });
+
+    if (result.insufficientCredits) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "INSUFFICIENT_CREDITS",
+          message: "نفد رصيد الذكاء الاصطناعي الخاص بك. يرجى شحن الرصيد أو الترقية إلى Pro.",
+        },
+        { status: 402 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        cvId: result.newCv!.id,
+        redirectUrl: `/${targetLocale}/dashboard/cv/${result.newCv!.id}`,
+        cv: result.newCv,
+        remainingCredits: result.remainingCredits,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("[AUTO_FIX_CV_ERROR]:", error);
+    return NextResponse.json(
+      { success: false, error: "حدث خطأ أثناء حفظ السيرة الذاتية المصححة" },
+      { status: 500 }
+    );
+  }
+}
+</file>
+
+<file path="src/lib/auth.ts">
+import { getUserSession } from "@/lib/user-session";
+
+/**
+ * Authentication verification helper for API routes.
+ * Resolves current user session from request or cookies.
+ */
+export async function verifyAuth(req?: Request) {
+  try {
+    const sessionResult = await getUserSession(req as any);
+    if (!sessionResult || !sessionResult.user) {
+      return { success: false, user: null };
+    }
+    return { success: true, user: sessionResult.user };
+  } catch (error) {
+    console.error("[verifyAuth Error]:", error);
+    return { success: false, user: null };
+  }
+}
+</file>
+
+<file path="src/lib/env.ts">
+import { z } from "zod";
+
+export const envSchema = z.object({
+  DATABASE_URL: z.string().url().default("postgresql://localhost:5432/neondb"),
+  SESSION_SECRET: z.string().min(16).default("fallback_session_secret_min_16_chars"),
+  GEMINI_API_KEY: z.string().min(1),
+  RESEND_API_KEY: z.string().min(1),
+});
+
+export type Env = z.infer<typeof envSchema>;
+
+let cachedEnv: Env | null = null;
+
+/**
+ * Safely evaluates environment variables on demand.
+ * Prevents premature build-time crashes during static analysis/compilation when variables are not yet injected.
+ */
+export function getEnv(): Env {
+  if (cachedEnv) return cachedEnv;
+
+  const result = envSchema.safeParse(process.env);
+  if (result.success) {
+    cachedEnv = result.data;
+    return cachedEnv;
+  }
+
+  // During static analysis, production build phase, or testing, fallback gracefully rather than crashing
+  if (
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.NODE_ENV === "test" ||
+    typeof window !== "undefined"
+  ) {
+    console.warn(
+      "[ENV_WARN]: Non-critical environment variables missing during build-time static analysis:",
+      result.error.flatten().fieldErrors
+    );
+    return {
+      DATABASE_URL: process.env.DATABASE_URL || "postgresql://localhost:5432/neondb",
+      SESSION_SECRET: process.env.SESSION_SECRET || "fallback_session_secret_min_16_chars",
+      GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
+      RESEND_API_KEY: process.env.RESEND_API_KEY || "",
+    } as Env;
+  }
+
+  // Runtime error logging for server execution
+  console.error(
+    "[CRITICAL_ENV_ERROR]: Missing or invalid environment variables at runtime:",
+    result.error.format()
+  );
+  throw new Error("Invalid server environment configuration. Check server environment logs.");
+}
+
+/**
+ * Dynamic Proxy export allowing `env.KEY` syntax with deferred, safe runtime evaluation.
+ */
+export const env: Env = new Proxy({} as Env, {
+  get(_target, prop: string) {
+    const activeEnv = getEnv();
+    return activeEnv[prop as keyof Env];
+  },
+});
+</file>
+
+<file path="vercel.json">
+{
+  "crons": [
+    {
+      "path": "/api/jobs/cleanup-expired",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/jobs/fetch-ba",
+      "schedule": "0 */6 * * *"
+    }
+  ]
+}
+</file>
 
 <file path="public/file.svg">
 <svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 13.5V5.41a1 1 0 0 0-.3-.7L9.8.29A1 1 0 0 0 9.08 0H1.5v13.5A2.5 2.5 0 0 0 4 16h8a2.5 2.5 0 0 0 2.5-2.5m-1.5 0v-7H8v-5H3v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1M9.5 5V2.12L12.38 5zM5.13 5h-.62v1.25h2.12V5zm-.62 3h7.12v1.25H4.5zm.62 3h-.62v1.25h7.12V11z" clip-rule="evenodd" fill="#666" fill-rule="evenodd"/></svg>
@@ -2746,7 +4042,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUserSession } from "@/lib/user-session";
 import { updateApplicationSchema } from "@/lib/validations/application";
-import { ApplicationStatus } from "@/generated/prisma/client";
+import { ApplicationStatus } from "@prisma/client";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -3021,7 +4317,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUserSession } from "@/lib/user-session";
 import { createApplicationSchema, applicationStatusEnum } from "@/lib/validations/application";
-import { ApplicationStatus } from "@/generated/prisma/client";
+import { ApplicationStatus } from "@prisma/client";
 
 /**
  * GET /api/applications
@@ -6698,8 +7994,53 @@ export * from "./get-dictionary";
 
 <file path="src/lib/pdf/cv-template.tsx">
 import React from "react";
-import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Image, Font } from "@react-pdf/renderer";
 import { DeckblattPage } from "./deckblatt-template";
+
+/**
+ * Safely resolves local font file paths on the Node.js server without leaking
+ * Node built-in imports (`fs`, `path`) into client-side bundles.
+ */
+function resolveLocalFont(filename: string): string {
+  if (typeof window === "undefined" && typeof process !== "undefined" && typeof process.cwd === "function") {
+    try {
+      // Server-only runtime resolution
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const pathModule = require("path");
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const fsModule = require("fs");
+      const localDiskPath = pathModule.resolve(process.cwd(), "public", "fonts", filename);
+      if (fsModule.existsSync(localDiskPath)) {
+        return localDiskPath;
+      }
+    } catch {
+      // Fallback if filesystem access is restricted or during non-node execution
+    }
+  }
+  return `/fonts/${filename}`;
+}
+
+// Single consolidated font registration for Amiri using local static assets
+Font.register({
+  family: "Amiri",
+  fonts: [
+    {
+      src: resolveLocalFont("Amiri-Regular.ttf"),
+      fontWeight: "normal",
+    },
+    {
+      src: resolveLocalFont("Amiri-Bold.ttf"),
+      fontWeight: "bold",
+    },
+    {
+      src: resolveLocalFont("Amiri-Italic.ttf"),
+      fontStyle: "italic",
+    },
+  ],
+});
+
+// Prevent breaking Arabic words with hyphens
+Font.registerHyphenationCallback((word) => [word]);
 
 export interface CvPdfData {
   title: string;
@@ -6774,12 +8115,18 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 22,
     paddingHorizontal: 28,
-    fontFamily: "Helvetica",
+    fontFamily: "Amiri",
     color: "#0f172a",
-    fontSize: 8.5,
-    lineHeight: 1.28,
+    fontSize: 9,
+    lineHeight: 1.35,
     backgroundColor: "#ffffff",
     textAlign: "left",
+  },
+  rtlText: {
+    textAlign: "right",
+  },
+  rtlRow: {
+    flexDirection: "row-reverse",
   },
   header: {
     display: "flex",
@@ -6798,9 +8145,15 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     textAlign: "left",
   },
+  rtlHeaderInfo: {
+    textAlign: "right",
+    paddingRight: 0,
+    paddingLeft: 14,
+  },
   mainTitle: {
     fontSize: 18,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Amiri",
+    fontWeight: "bold",
     color: "#0f172a",
     letterSpacing: 0.5,
     marginBottom: 3,
@@ -6809,7 +8162,7 @@ const styles = StyleSheet.create({
   },
   targetTitle: {
     fontSize: 11,
-    fontFamily: "Helvetica",
+    fontFamily: "Amiri",
     color: "#2563eb",
     marginBottom: 5,
     lineHeight: 1.2,
@@ -6823,14 +8176,15 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   personalItem: {
-    fontSize: 8,
+    fontSize: 8.5,
     color: "#475569",
     width: "48%",
     textAlign: "left",
-    lineHeight: 1.25,
+    lineHeight: 1.3,
   },
   personalLabel: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Amiri",
+    fontWeight: "bold",
     color: "#334155",
   },
   photoContainer: {
@@ -6852,8 +8206,9 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   sectionTitle: {
-    fontSize: 9.8,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 10,
+    fontFamily: "Amiri",
+    fontWeight: "bold",
     color: "#1e3a8a",
     borderBottomWidth: 1,
     borderBottomColor: "#e2e8f0",
@@ -6867,7 +8222,7 @@ const styles = StyleSheet.create({
   summaryText: {
     fontSize: 8.5,
     color: "#334155",
-    lineHeight: 1.35,
+    lineHeight: 1.4,
     backgroundColor: "#f8fafc",
     padding: 6,
     marginBottom: 6,
@@ -6875,6 +8230,12 @@ const styles = StyleSheet.create({
     borderLeftWidth: 2,
     borderLeftColor: "#3b82f6",
     textAlign: "left",
+  },
+  rtlSummaryText: {
+    textAlign: "right",
+    borderLeftWidth: 0,
+    borderRightWidth: 2,
+    borderRightColor: "#3b82f6",
   },
   entryRow: {
     display: "flex",
@@ -6886,33 +8247,40 @@ const styles = StyleSheet.create({
     width: 110,
     fontSize: 8.5,
     color: "#64748b",
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Amiri",
+    fontWeight: "bold",
     paddingRight: 8,
     textAlign: "left",
-    lineHeight: 1.28,
+    lineHeight: 1.3,
+  },
+  rtlDateCol: {
+    textAlign: "right",
+    paddingRight: 0,
+    paddingLeft: 8,
   },
   contentCol: {
     flex: 1,
     textAlign: "left",
   },
   entryTitle: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 9.5,
+    fontFamily: "Amiri",
+    fontWeight: "bold",
     color: "#0f172a",
     textAlign: "left",
-    lineHeight: 1.22,
+    lineHeight: 1.25,
   },
   entrySub: {
     fontSize: 8.5,
     color: "#2563eb",
     marginBottom: 2,
     textAlign: "left",
-    lineHeight: 1.18,
+    lineHeight: 1.2,
   },
   entryDesc: {
     fontSize: 8.5,
     color: "#475569",
-    lineHeight: 1.32,
+    lineHeight: 1.35,
     textAlign: "left",
     marginBottom: 2.5,
   },
@@ -6945,7 +8313,7 @@ const styles = StyleSheet.create({
     fontSize: 8.5,
     color: "#334155",
     textAlign: "left",
-    lineHeight: 1.28,
+    lineHeight: 1.3,
   },
   projectItem: {
     marginBottom: 6,
@@ -6969,14 +8337,22 @@ const styles = StyleSheet.create({
   },
   signatureName: {
     fontSize: 8.5,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Amiri",
+    fontWeight: "bold",
     color: "#0f172a",
     textAlign: "right",
   },
+  signatureNameArabic: {
+    fontSize: 8.5,
+    fontFamily: "Amiri",
+    fontWeight: "bold",
+    color: "#0f172a",
+    textAlign: "left",
+  },
 });
 
-function formatDate(dateVal: Date | string | null | undefined, isCurrent?: boolean): string {
-  if (isCurrent) return "heute";
+function formatDate(dateVal: Date | string | null | undefined, isCurrent?: boolean, isArabic = false): string {
+  if (isCurrent) return isArabic ? "حتى الآن" : "heute";
   if (!dateVal) return "";
   const d = new Date(dateVal);
   if (isNaN(d.getTime())) return String(dateVal);
@@ -6985,7 +8361,7 @@ function formatDate(dateVal: Date | string | null | undefined, isCurrent?: boole
   return `${month}/${year}`;
 }
 
-function formatFullGermanDate(dateVal: Date | string | null | undefined): string {
+function formatFullDate(dateVal: Date | string | null | undefined): string {
   if (!dateVal) return "";
   const d = new Date(dateVal);
   if (isNaN(d.getTime())) return String(dateVal);
@@ -7011,7 +8387,15 @@ export function CvDocument({
   const p = cv.personalInfo;
   const fullName = p?.fullName || "Bewerber";
   const city = getCityLocation(p?.address);
-  const todayGerman = new Date().toLocaleDateString("de-DE", {
+
+  // Check if CV language is Arabic or contains Arabic characters
+  const isArabic =
+    cv.language === "ar" ||
+    /[\u0600-\u06FF]/.test(
+      fullName + (p?.summary || "") + (p?.targetJobTitle || "") + (p?.address || "")
+    );
+
+  const todayFormatted = new Date().toLocaleDateString(isArabic ? "ar-EG" : "de-DE", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -7036,55 +8420,63 @@ export function CvDocument({
       )}
 
       {/* Main CV Page(s) */}
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={[styles.page, isArabic ? styles.rtlText : undefined]}>
         {/* Header with Details & Photo */}
-        <View style={styles.header}>
-          <View style={styles.headerInfo}>
-            <Text style={styles.mainTitle}>{fullName}</Text>
+        <View style={[styles.header, isArabic ? styles.rtlRow : undefined]}>
+          <View style={[styles.headerInfo, isArabic ? styles.rtlHeaderInfo : undefined]}>
+            <Text style={[styles.mainTitle, isArabic ? styles.rtlText : undefined]}>{fullName}</Text>
             {p?.targetJobTitle && (
-              <Text style={styles.targetTitle}>{p.targetJobTitle}</Text>
+              <Text style={[styles.targetTitle, isArabic ? styles.rtlText : undefined]}>
+                {p.targetJobTitle}
+              </Text>
             )}
 
-            <View style={styles.personalGrid}>
+            <View style={[styles.personalGrid, isArabic ? styles.rtlRow : undefined]}>
               {p?.email && (
-                <Text style={styles.personalItem}>
-                  <Text style={styles.personalLabel}>E-Mail: </Text>
+                <Text style={[styles.personalItem, isArabic ? styles.rtlText : undefined]}>
+                  <Text style={styles.personalLabel}>
+                    {isArabic ? "البريد الإلكتروني: " : "E-Mail: "}
+                  </Text>
                   {p.email}
                 </Text>
               )}
               {p?.phone && (
-                <Text style={styles.personalItem}>
-                  <Text style={styles.personalLabel}>Telefon: </Text>
+                <Text style={[styles.personalItem, isArabic ? styles.rtlText : undefined]}>
+                  <Text style={styles.personalLabel}>{isArabic ? "الهاتف: " : "Telefon: "}</Text>
                   {p.phone}
                 </Text>
               )}
               {p?.address && (
-                <Text style={styles.personalItem}>
-                  <Text style={styles.personalLabel}>Adresse: </Text>
+                <Text style={[styles.personalItem, isArabic ? styles.rtlText : undefined]}>
+                  <Text style={styles.personalLabel}>{isArabic ? "العنوان: " : "Adresse: "}</Text>
                   {p.address}
                 </Text>
               )}
               {p?.birthDate && (
-                <Text style={styles.personalItem}>
-                  <Text style={styles.personalLabel}>Geboren: </Text>
-                  {formatFullGermanDate(p.birthDate)}
-                  {p.birthPlace ? ` in ${p.birthPlace}` : ""}
+                <Text style={[styles.personalItem, isArabic ? styles.rtlText : undefined]}>
+                  <Text style={styles.personalLabel}>
+                    {isArabic ? "تاريخ الميلاد: " : "Geboren: "}
+                  </Text>
+                  {formatFullDate(p.birthDate)}
+                  {p.birthPlace ? (isArabic ? ` في ${p.birthPlace}` : ` in ${p.birthPlace}`) : ""}
                 </Text>
               )}
               {p?.nationality && (
-                <Text style={styles.personalItem}>
-                  <Text style={styles.personalLabel}>Staatsangehörigkeit: </Text>
+                <Text style={[styles.personalItem, isArabic ? styles.rtlText : undefined]}>
+                  <Text style={styles.personalLabel}>
+                    {isArabic ? "الجنسية: " : "Staatsangehörigkeit: "}
+                  </Text>
                   {p.nationality}
                 </Text>
               )}
               {p?.linkedinUrl && (
-                <Text style={styles.personalItem}>
+                <Text style={[styles.personalItem, isArabic ? styles.rtlText : undefined]}>
                   <Text style={styles.personalLabel}>LinkedIn: </Text>
                   {p.linkedinUrl}
                 </Text>
               )}
               {p?.xingUrl && (
-                <Text style={styles.personalItem}>
+                <Text style={[styles.personalItem, isArabic ? styles.rtlText : undefined]}>
                   <Text style={styles.personalLabel}>Xing: </Text>
                   {p.xingUrl}
                 </Text>
@@ -7103,28 +8495,43 @@ export function CvDocument({
         {/* Summary / Kurzprofil */}
         {p?.summary && (
           <View style={styles.section} wrap={false}>
-            <Text style={styles.sectionTitle}>Kurzprofil</Text>
-            <Text style={styles.summaryText}>{p.summary}</Text>
+            <Text style={[styles.sectionTitle, isArabic ? styles.rtlText : undefined]}>
+              {isArabic ? "الملف التعريفي" : "Kurzprofil"}
+            </Text>
+            <Text style={[styles.summaryText, isArabic ? styles.rtlSummaryText : undefined]}>
+              {p.summary}
+            </Text>
           </View>
         )}
 
         {/* Work Experience */}
         {cv.experiences && cv.experiences.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Berufserfahrung</Text>
+            <Text style={[styles.sectionTitle, isArabic ? styles.rtlText : undefined]}>
+              {isArabic ? "الخبرات المهنية" : "Berufserfahrung"}
+            </Text>
             {cv.experiences.map((exp, idx) => (
-              <View key={idx} style={styles.entryRow} wrap={false}>
-                <Text style={styles.dateCol}>
-                  {formatDate(exp.startDate)} – {formatDate(exp.endDate, exp.isCurrent)}
+              <View
+                key={idx}
+                style={[styles.entryRow, isArabic ? styles.rtlRow : undefined]}
+                wrap={false}
+              >
+                <Text style={[styles.dateCol, isArabic ? styles.rtlDateCol : undefined]}>
+                  {formatDate(exp.startDate, false, isArabic)} –{" "}
+                  {formatDate(exp.endDate, exp.isCurrent, isArabic)}
                 </Text>
-                <View style={styles.contentCol}>
-                  <Text style={styles.entryTitle}>{exp.position}</Text>
-                  <Text style={styles.entrySub}>
+                <View style={[styles.contentCol, isArabic ? styles.rtlText : undefined]}>
+                  <Text style={[styles.entryTitle, isArabic ? styles.rtlText : undefined]}>
+                    {exp.position}
+                  </Text>
+                  <Text style={[styles.entrySub, isArabic ? styles.rtlText : undefined]}>
                     {exp.company}
                     {exp.city ? `, ${exp.city}` : ""}
                   </Text>
                   {exp.description && (
-                    <Text style={styles.entryDesc}>{exp.description}</Text>
+                    <Text style={[styles.entryDesc, isArabic ? styles.rtlText : undefined]}>
+                      {exp.description}
+                    </Text>
                   )}
                 </View>
               </View>
@@ -7135,24 +8542,33 @@ export function CvDocument({
         {/* Education */}
         {cv.educations && cv.educations.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Ausbildung & Studium</Text>
+            <Text style={[styles.sectionTitle, isArabic ? styles.rtlText : undefined]}>
+              {isArabic ? "التعليم والمؤهلات" : "Ausbildung & Studium"}
+            </Text>
             {cv.educations.map((edu, idx) => (
-              <View key={idx} style={styles.entryRow} wrap={false}>
-                <Text style={styles.dateCol}>
-                  {formatDate(edu.startDate)} – {formatDate(edu.endDate, edu.isCurrent)}
+              <View
+                key={idx}
+                style={[styles.entryRow, isArabic ? styles.rtlRow : undefined]}
+                wrap={false}
+              >
+                <Text style={[styles.dateCol, isArabic ? styles.rtlDateCol : undefined]}>
+                  {formatDate(edu.startDate, false, isArabic)} –{" "}
+                  {formatDate(edu.endDate, edu.isCurrent, isArabic)}
                 </Text>
-                <View style={styles.contentCol}>
-                  <Text style={styles.entryTitle}>
+                <View style={[styles.contentCol, isArabic ? styles.rtlText : undefined]}>
+                  <Text style={[styles.entryTitle, isArabic ? styles.rtlText : undefined]}>
                     {edu.degree}
                     {edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ""}
                   </Text>
-                  <Text style={styles.entrySub}>
+                  <Text style={[styles.entrySub, isArabic ? styles.rtlText : undefined]}>
                     {edu.institution}
                     {edu.city ? `, ${edu.city}` : ""}
-                    {edu.grade ? ` • Note: ${edu.grade}` : ""}
+                    {edu.grade ? ` • ${isArabic ? "التقدير: " : "Note: "}${edu.grade}` : ""}
                   </Text>
                   {edu.description && (
-                    <Text style={styles.entryDesc}>{edu.description}</Text>
+                    <Text style={[styles.entryDesc, isArabic ? styles.rtlText : undefined]}>
+                      {edu.description}
+                    </Text>
                   )}
                 </View>
               </View>
@@ -7163,8 +8579,10 @@ export function CvDocument({
         {/* Skills */}
         {cv.skills && cv.skills.length > 0 && (
           <View style={styles.section} wrap={false}>
-            <Text style={styles.sectionTitle}>Kenntnisse & Qualifikationen</Text>
-            <View style={styles.skillsContainer}>
+            <Text style={[styles.sectionTitle, isArabic ? styles.rtlText : undefined]}>
+              {isArabic ? "المهارات والقدرات" : "Kenntnisse & Qualifikationen"}
+            </Text>
+            <View style={[styles.skillsContainer, isArabic ? styles.rtlRow : undefined]}>
               {cv.skills.map((skill, idx) => (
                 <Text key={idx} style={styles.skillBadge}>
                   {skill.name}
@@ -7178,8 +8596,10 @@ export function CvDocument({
         {/* Languages (CEFR) */}
         {cv.languages && cv.languages.length > 0 && (
           <View style={styles.section} wrap={false}>
-            <Text style={styles.sectionTitle}>Sprachkenntnisse</Text>
-            <View style={styles.languagesContainer}>
+            <Text style={[styles.sectionTitle, isArabic ? styles.rtlText : undefined]}>
+              {isArabic ? "اللغات" : "Sprachkenntnisse"}
+            </Text>
+            <View style={[styles.languagesContainer, isArabic ? styles.rtlRow : undefined]}>
               {cv.languages.map((lang, idx) => (
                 <Text key={idx} style={styles.languageItem}>
                   <Text style={styles.personalLabel}>{lang.language}: </Text>
@@ -7193,15 +8613,29 @@ export function CvDocument({
         {/* Certifications */}
         {cv.certifications && cv.certifications.length > 0 && (
           <View style={styles.section} wrap={false}>
-            <Text style={styles.sectionTitle}>Zertifikate & Weiterbildung</Text>
+            <Text style={[styles.sectionTitle, isArabic ? styles.rtlText : undefined]}>
+              {isArabic ? "الشهادات والدورات" : "Zertifikate & Weiterbildung"}
+            </Text>
             {cv.certifications.map((cert, idx) => (
-              <View key={idx} style={styles.entryRow} wrap={false}>
-                <Text style={styles.dateCol}>
-                  {cert.issueDate ? formatDate(cert.issueDate) : "Zertifikat"}
+              <View
+                key={idx}
+                style={[styles.entryRow, isArabic ? styles.rtlRow : undefined]}
+                wrap={false}
+              >
+                <Text style={[styles.dateCol, isArabic ? styles.rtlDateCol : undefined]}>
+                  {cert.issueDate
+                    ? formatDate(cert.issueDate, false, isArabic)
+                    : isArabic
+                    ? "شهادة"
+                    : "Zertifikat"}
                 </Text>
-                <View style={styles.contentCol}>
-                  <Text style={styles.entryTitle}>{cert.name}</Text>
-                  <Text style={styles.entrySub}>{cert.issuer}</Text>
+                <View style={[styles.contentCol, isArabic ? styles.rtlText : undefined]}>
+                  <Text style={[styles.entryTitle, isArabic ? styles.rtlText : undefined]}>
+                    {cert.name}
+                  </Text>
+                  <Text style={[styles.entrySub, isArabic ? styles.rtlText : undefined]}>
+                    {cert.issuer}
+                  </Text>
                 </View>
               </View>
             ))}
@@ -7211,27 +8645,33 @@ export function CvDocument({
         {/* Projects */}
         {cv.projects && cv.projects.length > 0 && (
           <View style={styles.section} wrap={false}>
-            <Text style={styles.sectionTitle}>Projekte</Text>
+            <Text style={[styles.sectionTitle, isArabic ? styles.rtlText : undefined]}>
+              {isArabic ? "المشاريع" : "Projekte"}
+            </Text>
             {cv.projects.map((proj, idx) => (
               <View key={idx} style={styles.projectItem} wrap={false}>
-                <Text style={styles.entryTitle}>
+                <Text style={[styles.entryTitle, isArabic ? styles.rtlText : undefined]}>
                   {proj.title}
                   {proj.role ? ` (${proj.role})` : ""}
                 </Text>
                 {proj.description && (
-                  <Text style={styles.entryDesc}>{proj.description}</Text>
+                  <Text style={[styles.entryDesc, isArabic ? styles.rtlText : undefined]}>
+                    {proj.description}
+                  </Text>
                 )}
               </View>
             ))}
           </View>
         )}
 
-        {/* Formal German Closing Signature */}
-        <View style={styles.signatureSection} wrap={false}>
-          <Text style={styles.signatureLine}>
-            {city}, den {todayGerman}
+        {/* Formal Closing Signature */}
+        <View style={[styles.signatureSection, isArabic ? styles.rtlRow : undefined]} wrap={false}>
+          <Text style={[styles.signatureLine, isArabic ? styles.rtlText : undefined]}>
+            {isArabic ? `${city}، في ${todayFormatted}` : `${city}, den ${todayFormatted}`}
           </Text>
-          <Text style={styles.signatureName}>{fullName}</Text>
+          <Text style={isArabic ? styles.signatureNameArabic : styles.signatureName}>
+            {fullName}
+          </Text>
         </View>
       </Page>
     </Document>
@@ -11790,6 +13230,9 @@ export async function POST(request: NextRequest) {
 </file>
 
 <file path="src/app/api/cv/[id]/pdf/route.ts">
+export const runtime = 'nodejs';
+export const maxDuration = 30;
+
 import React from "react";
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -19260,12 +20703,24 @@ export interface CompileDossierParams {
 }
 
 /**
+ * Safely converts Uint8Array or Node.js Buffer to a standard Uint8Array
+ */
+function toUint8Array(input: Uint8Array | Buffer): Uint8Array {
+  if (input instanceof Uint8Array) {
+    return input;
+  }
+  return new Uint8Array(input);
+}
+
+/**
  * Compiles a complete German Application Dossier ("Vollständige Bewerbungsmappe")
  * in strict German recruitment order:
  * 1. Deckblatt (Application Cover Page - optional)
  * 2. Anschreiben (DIN 5008 Cover Letter - optional)
  * 3. Lebenslauf (DIN 5008 Tabular CV or direct uploaded CV PDF)
  * 4. Anlagen & Zeugnisse (Merged PDF certificates, diplomas, references)
+ *
+ * Handles memory buffers efficiently and returns a merged PDF Uint8Array.
  */
 export async function compileBewerbungsmappe({
   cvData,
@@ -19294,7 +20749,9 @@ export async function compileBewerbungsmappe({
       phone: cvData?.personalInfo?.phone,
       address: cvData?.personalInfo?.address,
       photoUrl: cvData?.personalInfo?.photoUrl,
-      targetJobTitle: (coverLetterData?.jobTitle ? extractGermanJobTitle(coverLetterData.jobTitle) : undefined) || cvData?.personalInfo?.targetJobTitle,
+      targetJobTitle:
+        (coverLetterData?.jobTitle ? extractGermanJobTitle(coverLetterData.jobTitle) : undefined) ||
+        cvData?.personalInfo?.targetJobTitle,
       companyName: coverLetterData?.companyName,
       linkedinUrl: cvData?.personalInfo?.linkedinUrl,
       xingUrl: cvData?.personalInfo?.xingUrl,
@@ -19302,7 +20759,7 @@ export async function compileBewerbungsmappe({
     };
 
     if (photoBuffer) {
-      deckblattData.photoBuffer = photoBuffer;
+      deckblattData.photoBuffer = toUint8Array(photoBuffer);
     }
 
     if (!deckblattData.attachments || deckblattData.attachments.length === 0) {
@@ -19314,11 +20771,14 @@ export async function compileBewerbungsmappe({
     }) as unknown as React.ReactElement<DocumentProps>;
 
     const deckblattBuffer = await renderToBuffer(deckblattElement);
-    const deckblattDoc = await PDFDocument.load(deckblattBuffer, {
+    const deckblattDoc = await PDFDocument.load(toUint8Array(deckblattBuffer), {
       parseSpeed: ParseSpeeds.Fast,
     });
-    const copiedPages = await masterPdf.copyPages(deckblattDoc, deckblattDoc.getPageIndices());
-    copiedPages.forEach((page) => masterPdf.addPage(page));
+    const pageIndices = deckblattDoc.getPageIndices();
+    if (pageIndices.length > 0) {
+      const copiedPages = await masterPdf.copyPages(deckblattDoc, pageIndices);
+      copiedPages.forEach((page) => masterPdf.addPage(page));
+    }
   }
 
   // 2. Anschreiben (Cover Letter)
@@ -19328,22 +20788,28 @@ export async function compileBewerbungsmappe({
     }) as unknown as React.ReactElement<DocumentProps>;
 
     const coverLetterBuffer = await renderToBuffer(coverLetterElement);
-    const coverLetterDoc = await PDFDocument.load(coverLetterBuffer, {
+    const coverLetterDoc = await PDFDocument.load(toUint8Array(coverLetterBuffer), {
       parseSpeed: ParseSpeeds.Fast,
     });
-    const copiedPages = await masterPdf.copyPages(coverLetterDoc, coverLetterDoc.getPageIndices());
-    copiedPages.forEach((page) => masterPdf.addPage(page));
+    const pageIndices = coverLetterDoc.getPageIndices();
+    if (pageIndices.length > 0) {
+      const copiedPages = await masterPdf.copyPages(coverLetterDoc, pageIndices);
+      copiedPages.forEach((page) => masterPdf.addPage(page));
+    }
   }
 
   // 3. Lebenslauf (CV)
   if (cvPdfBuffer) {
     try {
-      const cvPdfDoc = await PDFDocument.load(cvPdfBuffer, {
+      const cvPdfDoc = await PDFDocument.load(toUint8Array(cvPdfBuffer), {
         ignoreEncryption: true,
         parseSpeed: ParseSpeeds.Fast,
       });
-      const copiedPages = await masterPdf.copyPages(cvPdfDoc, cvPdfDoc.getPageIndices());
-      copiedPages.forEach((page) => masterPdf.addPage(page));
+      const pageIndices = cvPdfDoc.getPageIndices();
+      if (pageIndices.length > 0) {
+        const copiedPages = await masterPdf.copyPages(cvPdfDoc, pageIndices);
+        copiedPages.forEach((page) => masterPdf.addPage(page));
+      }
     } catch (err: unknown) {
       console.error("[Dossier Compile Error - Uploaded CV]:", err);
       throw new Error(
@@ -19357,22 +20823,28 @@ export async function compileBewerbungsmappe({
     }) as unknown as React.ReactElement<DocumentProps>;
 
     const cvBuffer = await renderToBuffer(cvElement);
-    const cvDoc = await PDFDocument.load(cvBuffer, {
+    const cvDoc = await PDFDocument.load(toUint8Array(cvBuffer), {
       parseSpeed: ParseSpeeds.Fast,
     });
-    const cvPages = await masterPdf.copyPages(cvDoc, cvDoc.getPageIndices());
-    cvPages.forEach((page) => masterPdf.addPage(page));
+    const pageIndices = cvDoc.getPageIndices();
+    if (pageIndices.length > 0) {
+      const cvPages = await masterPdf.copyPages(cvDoc, pageIndices);
+      cvPages.forEach((page) => masterPdf.addPage(page));
+    }
   }
 
   // 4. Anlagen & Zeugnisse (Candidate Attachments)
   for (const attachment of attachmentBuffers) {
     try {
-      const attachmentDoc = await PDFDocument.load(attachment.buffer, {
+      const attachmentDoc = await PDFDocument.load(toUint8Array(attachment.buffer), {
         ignoreEncryption: true,
         parseSpeed: ParseSpeeds.Fast,
       });
-      const pages = await masterPdf.copyPages(attachmentDoc, attachmentDoc.getPageIndices());
-      pages.forEach((page) => masterPdf.addPage(page));
+      const pageIndices = attachmentDoc.getPageIndices();
+      if (pageIndices.length > 0) {
+        const pages = await masterPdf.copyPages(attachmentDoc, pageIndices);
+        pages.forEach((page) => masterPdf.addPage(page));
+      }
     } catch (err: unknown) {
       console.error(`[Dossier Compile Error - Attachment "${attachment.name}"]:`, err);
       throw new Error(
@@ -21382,6 +22854,9 @@ export async function GET() {
 </file>
 
 <file path="src/app/api/cover-letters/[id]/pdf/route.ts">
+export const runtime = 'nodejs';
+export const maxDuration = 30;
+
 import React from "react";
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -21503,7 +22978,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyUserSession } from "@/lib/user-session";
 import { extractText } from "unpdf";
 import { magicImportCvAI } from "@/lib/gemini";
-import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
+import { consumeAiCredit, refundAiCredit, deductAiCreditAtomic } from "@/lib/monetization";
 import { logAiUsage } from "@/lib/ai-telemetry";
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
@@ -21673,16 +23148,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Consume AI Credit
-    const creditResult = await consumeAiCredit(authResult.user.id);
+    // 1. Consume AI Credit (Atomic reservation within transaction)
+    const creditResult = await deductAiCreditAtomic({
+      userId: authResult.user.id,
+      operation: "CV_MAGIC_IMPORT",
+      requiredCredits: 1,
+    });
     if (!creditResult.success) {
       return NextResponse.json(
         {
           success: false,
-          error: creditResult.error || "You have run out of AI credits. Please upgrade to Pro or redeem a promo code.",
+          error: "INSUFFICIENT_CREDITS",
+          message: creditResult.error || "You have run out of AI credits. Please upgrade to Pro or redeem a promo code.",
           outOfCredits: true,
         },
-        { status: 403 }
+        { status: 402 }
       );
     }
 
@@ -22923,6 +24403,7 @@ export default function AtsAnalyzerClient({
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import FieldTooltip from "@/components/cv/FieldTooltip";
 
 export interface CoverLetterData {
   id: string;
@@ -23129,7 +24610,10 @@ export default function CoverLetterEditorClient({
           </h3>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-300">{isAr ? "المسمى الوظيفي" : "Job Title"}</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-300">{isAr ? "المسمى الوظيفي" : "Job Title"}</label>
+              <FieldTooltip fieldKey="targetJobTitle" locale={locale} />
+            </div>
             <input
               type="text"
               value={coverLetter.jobTitle}
@@ -23142,7 +24626,10 @@ export default function CoverLetterEditorClient({
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-300">{isAr ? "اسم الشركة" : "Company Name"}</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-300">{isAr ? "اسم الشركة" : "Company Name"}</label>
+              <FieldTooltip fieldKey="company" locale={locale} />
+            </div>
             <input
               type="text"
               value={coverLetter.companyName}
@@ -23155,7 +24642,10 @@ export default function CoverLetterEditorClient({
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-300">{isAr ? "اسم المسؤول (Ansprechpartner)" : "Recipient Name"}</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-300">{isAr ? "اسم المسؤول (Ansprechpartner)" : "Recipient Name"}</label>
+              <FieldTooltip fieldKey="fullName" locale={locale} />
+            </div>
             <input
               type="text"
               value={coverLetter.recipientName || ""}
@@ -24903,6 +26393,8 @@ export default function NewsletterForm({ locale: propLocale }: { locale?: string
 <file path="src/lib/monetization.ts">
 import { prisma } from "@/lib/prisma";
 
+type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
 export const DAILY_LIMIT = 20;
 export const DAILY_PRO_LIMIT = 20;
 
@@ -25197,6 +26689,149 @@ export async function refundAiCredit(userId: string): Promise<void> {
   } catch (err) {
     console.error("[refundAiCredit Error]:", err);
   }
+}
+
+export interface DeductCreditOptions {
+  userId: string;
+  operation: string;
+  model?: string;
+  requiredCredits?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  latencyMs?: number;
+}
+
+export interface DeductCreditResult {
+  success: boolean;
+  allowed: boolean;
+  isPaid: boolean;
+  isPro?: boolean;
+  remainingCredits?: number;
+  error?: string;
+  code?: string;
+}
+
+/**
+ * Atomically verifies user credits/quotas, deducts credit (or tracks daily quota),
+ * and creates an AiUsage record within an existing Prisma transaction.
+ * Returns failure with code "INSUFFICIENT_CREDITS" if credits are depleted.
+ */
+export async function deductCreditInTx(
+  tx: TransactionClient,
+  opts: DeductCreditOptions
+): Promise<DeductCreditResult> {
+  const user = await tx.user.findUnique({
+    where: { id: opts.userId },
+    select: { id: true, plan: true, planExpiresAt: true, aiCredits: true },
+  });
+
+  if (!user) {
+    return {
+      success: false,
+      allowed: false,
+      isPaid: false,
+      error: "User not found",
+      code: "USER_NOT_FOUND",
+    };
+  }
+
+  const isPaidActive = isPaidUser(user);
+
+  if (isPaidActive) {
+    const { startOfToday } = getDailyQuotaWindow();
+    const usedToday = await tx.aiUsage.count({
+      where: {
+        userId: user.id,
+        success: true,
+        createdAt: { gte: startOfToday },
+      },
+    });
+
+    if (usedToday >= DAILY_PRO_LIMIT) {
+      return {
+        success: false,
+        allowed: false,
+        isPaid: true,
+        isPro: true,
+        remainingCredits: 0,
+        error: "DAILY_LIMIT_REACHED",
+        code: "INSUFFICIENT_CREDITS",
+      };
+    }
+
+    await tx.aiUsage.create({
+      data: {
+        userId: user.id,
+        operation: opts.operation,
+        model: opts.model || process.env.GEMINI_MODEL || "gemini-1.5-flash",
+        inputTokens: opts.inputTokens ?? null,
+        outputTokens: opts.outputTokens ?? null,
+        latencyMs: opts.latencyMs ? Math.round(opts.latencyMs) : null,
+        success: true,
+      },
+    });
+
+    return {
+      success: true,
+      allowed: true,
+      isPaid: true,
+      isPro: true,
+      remainingCredits: Math.max(0, DAILY_PRO_LIMIT - (usedToday + 1)),
+    };
+  }
+
+  // Free or expired plan:
+  const required = opts.requiredCredits ?? 1;
+  if (user.aiCredits < required) {
+    return {
+      success: false,
+      allowed: false,
+      isPaid: false,
+      isPro: false,
+      remainingCredits: user.aiCredits,
+      error: "INSUFFICIENT_CREDITS",
+      code: "INSUFFICIENT_CREDITS",
+    };
+  }
+
+  const updatedUser = await tx.user.update({
+    where: { id: user.id },
+    data: {
+      aiCredits: { decrement: required },
+    },
+    select: { aiCredits: true },
+  });
+
+  await tx.aiUsage.create({
+    data: {
+      userId: user.id,
+      operation: opts.operation,
+      model: opts.model || process.env.GEMINI_MODEL || "gemini-1.5-flash",
+      inputTokens: opts.inputTokens ?? null,
+      outputTokens: opts.outputTokens ?? null,
+      latencyMs: opts.latencyMs ? Math.round(opts.latencyMs) : null,
+      success: true,
+    },
+  });
+
+  return {
+    success: true,
+    allowed: true,
+    isPaid: false,
+    isPro: false,
+    remainingCredits: updatedUser.aiCredits,
+  };
+}
+
+/**
+ * Helper to execute atomic credit deduction inside a self-managed transaction.
+ */
+export async function deductAiCreditAtomic(
+  opts: DeductCreditOptions
+): Promise<DeductCreditResult> {
+  return await prisma.$transaction(async (tx) => {
+    return await deductCreditInTx(tx, opts);
+  });
 }
 </file>
 
@@ -27758,7 +29393,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyUserSession } from "@/lib/user-session";
 import { analyzeCvAtsSchema } from "@/lib/validations/ai";
 import { analyzeCvAtsAI } from "@/lib/gemini";
-import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
+import { consumeAiCredit, refundAiCredit, deductAiCreditAtomic } from "@/lib/monetization";
 import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 import { logAiUsage } from "@/lib/ai-telemetry";
 
@@ -27891,16 +29526,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // AI Credit Guardrail (Atomic reservation/decrement)
-    const creditResult = await consumeAiCredit(authResult.user.id);
+    // AI Credit Guardrail (Atomic reservation/decrement within transaction)
+    const creditResult = await deductAiCreditAtomic({
+      userId: authResult.user.id,
+      operation: "ATS_ANALYSIS",
+      requiredCredits: 1,
+    });
     if (!creditResult.success) {
       return NextResponse.json(
         {
           success: false,
-          error: creditResult.error || "نفد رصيد الذكاء الاصطناعي الخاص بك. يرجى الترقية إلى Pro أو إدخال كود ترويجي.",
+          error: "INSUFFICIENT_CREDITS",
+          message: creditResult.error || "نفد رصيد الذكاء الاصطناعي الخاص بك. يرجى الترقية إلى Pro أو إدخال كود ترويجي.",
           outOfCredits: true,
         },
-        { status: 403 }
+        { status: 402 }
       );
     }
 
@@ -27967,7 +29607,7 @@ import { cookies } from "next/headers";
 import { verifyUserSession } from "@/lib/user-session";
 import { optimizeBulletSchema } from "@/lib/validations/ai";
 import { optimizeBulletAI } from "@/lib/gemini";
-import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
+import { consumeAiCredit, refundAiCredit, deductAiCreditAtomic } from "@/lib/monetization";
 import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 import { logAiUsage } from "@/lib/ai-telemetry";
 
@@ -28009,16 +29649,21 @@ export async function POST(request: NextRequest) {
 
     const { text, role, language } = parseResult.data;
 
-    // AI Credit Guardrail (Atomic reservation/decrement)
-    const creditResult = await consumeAiCredit(authResult.user.id);
+    // AI Credit Guardrail (Atomic reservation/decrement within transaction)
+    const creditResult = await deductAiCreditAtomic({
+      userId: authResult.user.id,
+      operation: "BULLET_OPTIMIZE",
+      requiredCredits: 1,
+    });
     if (!creditResult.success) {
       return NextResponse.json(
         {
           success: false,
-          error: creditResult.error || "نفد رصيد الذكاء الاصطناعي الخاص بك. يرجى الترقية إلى Pro أو إدخال كود ترويجي.",
+          error: "INSUFFICIENT_CREDITS",
+          message: creditResult.error || "نفد رصيد الذكاء الاصطناعي الخاص بك. يرجى الترقية إلى Pro أو إدخال كود ترويجي.",
           outOfCredits: true,
         },
-        { status: 403 }
+        { status: 402 }
       );
     }
 
@@ -28204,6 +29849,9 @@ export async function POST(request: NextRequest) {
 </file>
 
 <file path="src/app/api/dossier/compile/route.ts">
+export const runtime = 'nodejs';
+export const maxDuration = 30;
+
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
@@ -29219,6 +30867,7 @@ export async function POST(request: NextRequest) {
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { extractGermanJobTitle } from "@/lib/cover-letter";
+import FieldTooltip from "@/components/cv/FieldTooltip";
 
 interface CvOption {
   id: string;
@@ -29398,9 +31047,12 @@ export default function CoverLetterGeneratorClient({
         <div className="lg:col-span-5 bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl backdrop-blur-xl">
           <form onSubmit={handleGenerate} className="space-y-5">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-200">
-                {isAr ? "المسمى الوظيفي المستهدف *" : isDe ? "Stellenbezeichnung *" : "Job Title *"}
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-200">
+                  {isAr ? "المسمى الوظيفي المستهدف *" : isDe ? "Stellenbezeichnung *" : "Job Title *"}
+                </label>
+                <FieldTooltip fieldKey="targetJobTitle" locale={locale} />
+              </div>
               <input
                 type="text"
                 required
@@ -29412,9 +31064,12 @@ export default function CoverLetterGeneratorClient({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-200">
-                {isAr ? "اسم الشركة *" : isDe ? "Unternehmensname *" : "Company Name *"}
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-200">
+                  {isAr ? "اسم الشركة *" : isDe ? "Unternehmensname *" : "Company Name *"}
+                </label>
+                <FieldTooltip fieldKey="company" locale={locale} />
+              </div>
               <input
                 type="text"
                 required
@@ -29426,9 +31081,12 @@ export default function CoverLetterGeneratorClient({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-200">
-                {isAr ? "اسم المسؤول / جهة الاتصال (Ansprechpartner)" : isDe ? "Ansprechpartner" : "Contact Person (optional)"}
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-200">
+                  {isAr ? "اسم المسؤول / جهة الاتصال (Ansprechpartner)" : isDe ? "Ansprechpartner" : "Contact Person (optional)"}
+                </label>
+                <FieldTooltip fieldKey="fullName" locale={locale} />
+              </div>
               <input
                 type="text"
                 value={recipientName}
@@ -30176,55 +31834,204 @@ export default function PostCard({
 
 <file path="src/lib/prisma.ts">
 import "dotenv/config";
-import { Pool } from "pg";
+import { Pool as PgPool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { neonConfig } from "@neondatabase/serverless";
+import { PrismaNeon } from "@prisma/adapter-neon";
+import ws from "ws";
 import { PrismaClient } from "../generated/prisma/client";
 
+// Ensure WebSocket constructor is available in Node.js runtime for Neon
+neonConfig.webSocketConstructor = ws;
+
+export type ExtendedPrismaClient = PrismaClient & {
+  cV: {
+    create: (args: { data: any }) => Promise<any>;
+  };
+};
+
 const globalForPrisma = globalThis as unknown as {
-  prisma?: PrismaClient;
-  pgPool?: Pool;
+  prisma?: ExtendedPrismaClient;
 };
 
 /**
  * Native PostgreSQL TCP client over port 5432 using @prisma/adapter-pg.
  * Eliminates WebSocket handshake timeouts (ETIMEDOUT) while fulfilling engineType="client".
  */
-function getPrismaClient(): PrismaClient {
+function parseDateFlexible(val?: string | null): Date {
+  if (!val || typeof val !== "string") return new Date();
+  const s = val.trim();
+  if (s.toLowerCase().includes("heute") || s.toLowerCase().includes("present")) return new Date();
+  const dmy = s.match(/^(\d{1,2})[./\-](\d{1,2})[./\-](\d{4})$/);
+  if (dmy) {
+    return new Date(Date.UTC(parseInt(dmy[3], 10), parseInt(dmy[2], 10) - 1, parseInt(dmy[1], 10)));
+  }
+  const my = s.match(/^(\d{1,2})[./\-](\d{4})$/);
+  if (my) {
+    return new Date(Date.UTC(parseInt(my[2], 10), parseInt(my[1], 10) - 1, 1));
+  }
+  const y = s.match(/^(\d{4})$/);
+  if (y) {
+    return new Date(Date.UTC(parseInt(y[1], 10), 0, 1));
+  }
+  const parsed = new Date(s);
+  return isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+function getPrismaClient(): ExtendedPrismaClient {
   if (globalForPrisma.prisma) {
     return globalForPrisma.prisma;
   }
 
   const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL;
-
-  const pool =
-    globalForPrisma.pgPool ??
-    new Pool({
-      connectionString,
-      ssl: {
-        rejectUnauthorized: false,
-      },
-      connectionTimeoutMillis: 5000,
-    });
-
-  if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.pgPool = pool;
+  if (!connectionString) {
+    throw new Error("Missing DATABASE_URL or DIRECT_URL in environment configuration.");
   }
 
-  const adapter = new PrismaPg(pool);
+  const isNeon = connectionString.includes("neon.tech");
+
+  const adapter = isNeon
+    ? new PrismaNeon({ connectionString })
+    : new PrismaPg(
+        new PgPool({
+          connectionString,
+          ssl: {
+            rejectUnauthorized: false,
+          },
+          connectionTimeoutMillis: 30000,
+          idleTimeoutMillis: 30000,
+          max: 10,
+        })
+      );
 
   const client = new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
-  });
+  }) as ExtendedPrismaClient;
 
-  if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.prisma = client;
-  }
+  // Compatibility delegate for cV (used by auto-fix)
+  client.cV = {
+    create: async (args: { data: any }) => {
+      const data = args?.data || {};
+      let validatedCvData: any = null;
+      if (data.content) {
+        try {
+          validatedCvData = typeof data.content === "string" ? JSON.parse(data.content) : data.content;
+        } catch {
+          validatedCvData = null;
+        }
+      }
 
+      const pInfo = validatedCvData?.personalInfo;
+      const experiences = validatedCvData?.experiences || [];
+      const education = validatedCvData?.education || [];
+      const skills = validatedCvData?.skills || [];
+      const languages = validatedCvData?.languages || [];
+      const certs = validatedCvData?.coursesAndCertifications || [];
+
+      return client.cv.create({
+        data: {
+          userId: data.userId,
+          title: data.title || (pInfo?.fullName ? `${pInfo.fullName} (DIN 5008 Optimized)` : "Lebenslauf"),
+          language: data.language || "de",
+          isDraft: false,
+          ...(pInfo
+            ? {
+                personalInfo: {
+                  create: {
+                    fullName: pInfo.fullName || "",
+                    email: pInfo.email || "",
+                    phone: pInfo.phone || null,
+                    address: pInfo.address || null,
+                    targetJobTitle: pInfo.title || null,
+                    birthDate: pInfo.dateOfBirth ? parseDateFlexible(pInfo.dateOfBirth) : null,
+                    birthPlace: pInfo.placeOfBirth || null,
+                    summary: pInfo.summary || null,
+                  },
+                },
+              }
+            : {}),
+          ...(experiences.length > 0
+            ? {
+                experiences: {
+                  create: experiences.map((exp: any, idx: number) => ({
+                    position: exp.title || "Position",
+                    company: exp.organization || "Unternehmen",
+                    city: exp.location || null,
+                    country: "Deutschland",
+                    startDate: parseDateFlexible(exp.startDate),
+                    endDate: exp.endDate && !exp.endDate.toLowerCase().includes("heute") ? parseDateFlexible(exp.endDate) : null,
+                    isCurrent: !exp.endDate || exp.endDate.toLowerCase().includes("heute"),
+                    description: Array.isArray(exp.bullets) ? exp.bullets.join("\n") : (exp.bullets || null),
+                    order: idx,
+                  })),
+                },
+              }
+            : {}),
+          ...(education.length > 0
+            ? {
+                educations: {
+                  create: education.map((edu: any, idx: number) => ({
+                    degree: edu.degree || "Abschluss",
+                    institution: edu.institution || "Institution",
+                    city: edu.location || null,
+                    country: "Deutschland",
+                    startDate: parseDateFlexible(edu.startDate),
+                    endDate: edu.endDate && !edu.endDate.toLowerCase().includes("heute") ? parseDateFlexible(edu.endDate) : null,
+                    isCurrent: !edu.endDate || edu.endDate.toLowerCase().includes("heute"),
+                    order: idx,
+                  })),
+                },
+              }
+            : {}),
+          ...(skills.length > 0
+            ? {
+                skills: {
+                  create: skills.map((sk: any, idx: number) => ({
+                    name: typeof sk === "string" ? sk : (sk.name || ""),
+                    level: "Fortgeschritten",
+                    order: idx,
+                  })),
+                },
+              }
+            : {}),
+          ...(languages.length > 0
+            ? {
+                languages: {
+                  create: languages.map((lang: any, idx: number) => ({
+                    language: lang.language || "Deutsch",
+                    proficiency: lang.level || "Fließend",
+                    order: idx,
+                  })),
+                },
+              }
+            : {}),
+          ...(certs.length > 0
+            ? {
+                certifications: {
+                  create: certs.map((cert: any, idx: number) => ({
+                    name: cert.title || "Zertifikat",
+                    issuer: cert.provider || "Aussteller",
+                    issueDate: cert.startDate ? parseDateFlexible(cert.startDate) : null,
+                    order: idx,
+                  })),
+                },
+              }
+            : {}),
+        },
+      });
+    },
+  };
+
+  globalForPrisma.prisma = client;
   return client;
 }
 
-export const prisma = getPrismaClient();
+export const prisma = globalForPrisma.prisma ?? getPrismaClient();
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}
+
 export default prisma;
 </file>
 
@@ -30605,8 +32412,10 @@ export async function verifyUserSession(token?: string | null): Promise<{
     }
 
     if (sessionRecord.expiresAt < new Date()) {
-      // Async clean up of expired session
-      prisma.userSession.delete({ where: { id: sessionRecord.id } }).catch(() => {});
+      // Clean up expired session
+      await prisma.userSession.delete({ where: { id: sessionRecord.id } }).catch((err) => {
+        console.warn("[UserSession Cleanup Warning]:", err instanceof Error ? err.message : err);
+      });
       return null;
     }
 
@@ -31428,7 +33237,7 @@ import {
   CvContext,
   ExtractedApplicantInfo,
 } from "@/lib/gemini";
-import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
+import { consumeAiCredit, refundAiCredit, deductAiCreditAtomic } from "@/lib/monetization";
 import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 import { extractText } from "unpdf";
 import { extractGermanJobTitle } from "@/lib/cover-letter";
@@ -31704,16 +33513,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // AI Credit Guardrail (Atomic reservation/decrement)
-    const creditResult = await consumeAiCredit(authResult.user.id);
+    // AI Credit Guardrail (Atomic reservation/decrement within transaction)
+    const creditResult = await deductAiCreditAtomic({
+      userId: authResult.user.id,
+      operation: "COVER_LETTER_GEN",
+      requiredCredits: 1,
+    });
     if (!creditResult.success) {
       return NextResponse.json(
         {
           success: false,
-          error: creditResult.error || "نفد رصيد الذكاء الاصطناعي الخاص بك. يرجى الترقية إلى Pro أو إدخال كود ترويجي.",
+          error: "INSUFFICIENT_CREDITS",
+          message: creditResult.error || "نفد رصيد الذكاء الاصطناعي الخاص بك. يرجى الترقية إلى Pro أو إدخال كود ترويجي.",
           outOfCredits: true,
         },
-        { status: 403 }
+        { status: 402 }
       );
     }
 
@@ -41168,6 +42982,10 @@ generator client {
   output   = "../src/generated/prisma"
 }
 
+generator clientJs {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
 }
@@ -41255,6 +43073,7 @@ model EmailVerificationCode {
   createdAt DateTime @default(now())
 
   @@index([email])
+  @@index([email, expiresAt])
 }
 
 model PasswordResetToken {
@@ -41293,6 +43112,7 @@ model Cv {
   applications    Application[]
 
   @@index([userId])
+  @@index([userId, createdAt])
 }
 
 model CvPersonalInfo {
@@ -41426,6 +43246,7 @@ model CoverLetter {
   applications      Application[]
 
   @@index([userId])
+  @@index([userId, createdAt])
   @@index([cvId])
 }
 

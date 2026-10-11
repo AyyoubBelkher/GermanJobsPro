@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyUserSession } from "@/lib/user-session";
 import { analyzeCvAtsSchema } from "@/lib/validations/ai";
 import { analyzeCvAtsAI } from "@/lib/gemini";
-import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
+import { consumeAiCredit, refundAiCredit, deductAiCreditAtomic } from "@/lib/monetization";
 import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 import { logAiUsage } from "@/lib/ai-telemetry";
 
@@ -137,16 +137,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // AI Credit Guardrail (Atomic reservation/decrement)
-    const creditResult = await consumeAiCredit(authResult.user.id);
+    // AI Credit Guardrail (Atomic reservation/decrement within transaction)
+    const creditResult = await deductAiCreditAtomic({
+      userId: authResult.user.id,
+      operation: "ATS_ANALYSIS",
+      requiredCredits: 1,
+    });
     if (!creditResult.success) {
       return NextResponse.json(
         {
           success: false,
-          error: creditResult.error || "نفد رصيد الذكاء الاصطناعي الخاص بك. يرجى الترقية إلى Pro أو إدخال كود ترويجي.",
+          error: "INSUFFICIENT_CREDITS",
+          message: creditResult.error || "نفد رصيد الذكاء الاصطناعي الخاص بك. يرجى الترقية إلى Pro أو إدخال كود ترويجي.",
           outOfCredits: true,
         },
-        { status: 403 }
+        { status: 402 }
       );
     }
 

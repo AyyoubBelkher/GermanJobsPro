@@ -1,3 +1,6 @@
+export const runtime = 'nodejs';
+export const maxDuration = 30;
+
 import React from "react";
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
