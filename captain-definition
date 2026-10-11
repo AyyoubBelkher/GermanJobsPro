@@ -1,15 +1,15 @@
 {
   "schemaVersion": 2,
   "dockerfileLines": [
-    "FROM node:20-alpine AS base",
+    "FROM node:20-slim AS base",
     "WORKDIR /app",
-    "RUN apk add --no-cache libc6-compat python3 make g++ sqlite-dev",
+    "RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*",
     "COPY package*.json ./",
     "COPY prisma ./prisma/",
     "RUN npm install",
     "COPY . .",
     "RUN npx prisma generate",
-    "ENV NODE_OPTIONS=\"--max-old-space-size=1536\"",
+    "ENV NODE_OPTIONS=\"--max-old-space-size=1024\"",
     "ENV NEXT_TELEMETRY_DISABLED=1",
     "RUN npm run build",
     "ENV NODE_ENV=production",
