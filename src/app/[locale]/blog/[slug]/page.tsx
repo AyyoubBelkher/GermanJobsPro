@@ -30,12 +30,29 @@ function safeDecodeURIComponent(str: string): string {
 }
 
 /**
- * Strips the first `# Heading` (H1) from markdown content if present at the beginning of the text,
- * preventing duplicate main title rendering.
+ * Strips the leading `# Heading` (H1/H2) and raw automation metadata lines
+ * (such as "تاريخ الدرس:...", "تاريخ النشر:...", "المستوى:...", and standalone "202\d{5}")
+ * from markdown content if present at the beginning of the text,
+ * preventing duplicate titles and metadata leakage on lesson pages.
  */
 function stripLeadingH1(content: string | null | undefined): string {
   if (!content) return "";
-  return content.replace(/^[\s\uFEFF]*#[ \t]+[^\r\n]+(\r?\n)*/, "");
+  let text = content;
+
+  // Run up to 4 passes to strip any combination of leading headings and metadata lines at the top
+  for (let i = 0; i < 4; i++) {
+    const prev = text;
+    // Strip leading H1/H2 headings
+    text = text.replace(/^[\s\uFEFF]*#+[ \t]+[^\r\n]+(\r?\n)*/u, "");
+    // Strip leading metadata lines (تاريخ الدرس, تاريخ النشر, المستوى, standalone 202\d{5}, العنوان)
+    text = text.replace(
+      /^[\s\uFEFF]*(?:(?:تاريخ\s*(?:الدرس|النشر))\s*:\s*[^\r\n]+|(?:المستوى|Level)\s*:\s*[^\r\n]+|\b202\d{5}\b|العنوان\s*:\s*[^\r\n]+)(\r?\n)*/iu,
+      ""
+    );
+    if (text === prev) break;
+  }
+
+  return text;
 }
 
 /**

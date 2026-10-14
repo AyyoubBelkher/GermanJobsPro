@@ -86,11 +86,17 @@ export function parseLessonTitle(rawTitle: string, markdownContent?: string): Pa
     }
   }
 
+  // Normalize duplicated "الدرس X: الدرس X:" -> "الدرس X:"
+  title = title.replace(
+    /^((?:الدرس|Lesson|Lektion)\s*\d+)\s*[:\-–—]?\s*(?:(?:الدرس|Lesson|Lektion)\s*\d+\s*[:\-–—]?\s*)+/iu,
+    '$1: '
+  ).trim();
+
   const num = extractLessonNumber(title);
   const lessonNumber = num !== 9999 ? num : null;
 
   // Remove "الدرس X:" prefix
-  const remaining = title.replace(/^(?:الدرس|Lesson|Lektion)\s*\d+\s*[:\-–—]?\s*/i, '').trim();
+  const remaining = title.replace(/^(?:(?:الدرس|Lesson|Lektion)\s*\d+\s*[:\-–—]?\s*)+/i, '').trim();
 
   let germanTitle = '';
   let arabicSubtitle = '';
@@ -167,3 +173,61 @@ export function calculateReadTime(content?: string | null, locale = 'ar'): strin
   if (locale === 'fr') return `⏱️ ${minutes} min de lecture`;
   return `⏱️ ${minutes} min read`;
 }
+
+/**
+ * Extracts a clean, sanitized plain-text excerpt from article or lesson markdown content.
+ * Strips leading H1/H2 headings, AI automation metadata lines, duplicated title prefixes,
+ * and markdown formatting symbols, collapsing whitespace and truncating to maxLength.
+ */
+export function extractCleanExcerpt(
+  markdown?: string | null,
+  title?: string,
+  maxLength = 150
+): string {
+  if (!markdown) return "";
+
+  let text = markdown;
+
+  // Run up to 3 passes to strip any combination of leading headings and metadata
+  for (let i = 0; i < 3; i++) {
+    // a) Strips leading H1/H2 headings
+    text = text.replace(/^[\s\uFEFF]*#+\s+[^\r\n]+(\r?\n)*/u, "");
+
+    // b) Strips raw lesson metadata patterns leaked by AI automation
+    text = text
+      .replace(/(?:تاريخ\s*(?:الدرس|النشر))\s*:\s*\d{4}[\d\/\-]*/gu, " ")
+      .replace(/\b202\d{5}\b/g, " ")
+      .replace(/العنوان\s*:\s*[^\r\n]+/gu, " ")
+      .replace(/المستوى\s*:\s*[A-C][12]/giu, " ")
+      .replace(/^[\s\uFEFF]*(?:المقدمة|مقدمة)\s*:\s*/gu, "");
+
+    // c) If remaining text starts with duplicated "الدرس X: الدرس X:", strip it
+    text = text.replace(/^[\s\uFEFF]*(?:الدرس|Lesson|Lektion)\s*\d+\s*:\s*(?:الدرس|Lesson|Lektion)\s*\d+\s*[:\-–—]?\s*/iu, "");
+
+    // Strip repeated title if remaining text starts with title
+    if (title) {
+      const cleanTitle = title.trim();
+      const escapedTitle = cleanTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      text = text.replace(new RegExp(`^[\\s\\uFEFF]*#*\\s*${escapedTitle}\\s*[:\\-–—]?\\s*`, "iu"), "");
+    }
+
+    // Strip leading المقدمة / مقدمة again if it was placed after the title
+    text = text.replace(/^[\s\uFEFF]*(?:المقدمة|مقدمة)\s*:\s*/gu, "");
+  }
+
+  // d) Strips markdown formatting symbols ([#*`>_~\[\]]), links, and collapses extra whitespace
+  text = text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[#*`>_~\[\]]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!text) return "";
+
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  return text.substring(0, maxLength).trim() + "...";
+}
+

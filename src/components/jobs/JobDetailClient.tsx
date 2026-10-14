@@ -140,6 +140,15 @@ export function detectPortalInfo(applyUrl?: string): { name: string; isAgentur: 
   if (lower.includes("lever.co")) {
     return { name: "Lever Portal", isAgentur: false };
   }
+  if (lower.includes("recruitee")) {
+    return { name: "Recruitee Portal", isAgentur: false };
+  }
+  if (lower.includes("join.com")) {
+    return { name: "JOIN Portal", isAgentur: false };
+  }
+  if (lower.includes("smartrecruiters")) {
+    return { name: "SmartRecruiters Portal", isAgentur: false };
+  }
   return { name: "بوابة التوظيف المباشرة للشركة", isAgentur: false };
 }
 
@@ -1192,7 +1201,7 @@ export default function JobDetailClient({
               {/* Action Buttons for Builders */}
               <div className="pt-2 flex items-center gap-3 flex-wrap">
                 <Link
-                  href={`/${activeLocale}/dashboard/my-resumes`}
+                  href={`/${activeLocale}/dashboard/cv`}
                   className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>📄</span>
@@ -1241,7 +1250,7 @@ export default function JobDetailClient({
 
             {/* Portal Application Action */}
             {hasPortal && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <a
                   href={job.applyUrl}
                   target="_blank"
@@ -1264,6 +1273,52 @@ export default function JobDetailClient({
                 <p className="text-[11px] text-slate-400 text-center">
                   {isAr ? "بوابة توظيف معتمدة وربط مباشر" : "Official authenticated ATS portal link"}
                 </p>
+
+                {/* Helpful Guide Box for German Application Forms */}
+                <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs space-y-2 text-start">
+                  <div className="flex items-center gap-1.5 font-bold text-blue-400 text-[11px]">
+                    <span>💡</span>
+                    <span>
+                      {isAr
+                        ? "دليل التقديم في استمارة الشركة الرسمية (Bewerbungsformular):"
+                        : isDe
+                        ? "Leitfaden für das offizielle Bewerbungsformular:"
+                        : "Guide for the Official Application Form (Bewerbungsformular):"}
+                    </span>
+                  </div>
+                  <ul className="space-y-1.5 text-[11px] text-slate-300 leading-relaxed">
+                    <li className="flex items-start gap-1.5">
+                      <span className="shrink-0 select-none">1️⃣</span>
+                      <span>
+                        {isAr
+                          ? "جهّز وحمّل ملف سيرتك الذاتية (Lebenslauf) وخطاب الدافع (Anschreiben) بصيغة PDF من الأدوات بالأسفل."
+                          : isDe
+                          ? "Erstellen und laden Sie Ihren Lebenslauf & Anschreiben als PDF über die Tools unten herunter."
+                          : "Prepare and download your CV (Lebenslauf) and cover letter (Anschreiben) as PDF from the tools below."}
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="shrink-0 select-none">2️⃣</span>
+                      <span>
+                        {isAr
+                          ? "اضغط على زر البوابة الرسمية أعلاه لفتح استمارة التقديم الخاصة بجهة العمل."
+                          : isDe
+                          ? "Klicken Sie oben auf den Portal-Button, um das Bewerbungsformular des Arbeitgebers zu öffnen."
+                          : "Click the official portal button above to open the employer's application form."}
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="shrink-0 select-none">3️⃣</span>
+                      <span>
+                        {isAr
+                          ? "في استمارة الشركة بالألمانية: اكتب اسمك في (Vorname / Nachname)، بريدك في (E-Mail)، وارفع ملف الـ PDF في خانة (Lebenslauf / Bewerbungsunterlagen) ثم اضغط (Bewerbung absenden)."
+                          : isDe
+                          ? "Im Formular: Name bei (Vorname / Nachname), E-Mail bei (E-Mail) eintragen, PDF bei (Lebenslauf / Bewerbungsunterlagen) hochladen und auf (Bewerbung absenden) klicken."
+                          : "In the German form: enter your name in (Vorname / Nachname), your email in (E-Mail), upload your PDF in (Lebenslauf / Bewerbungsunterlagen), then click (Bewerbung absenden)."}
+                      </span>
+                    </li>
+                  </ul>
+                </div>
               </div>
             )}
 

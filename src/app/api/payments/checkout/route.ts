@@ -7,7 +7,7 @@ import { verifyUserSession } from "@/lib/user-session";
  * Initiates a checkout session for GermanJobsPro PRO PASS ($9.99 USD / 90-day application cycle).
  * Points directly to the verified Gumroad product checkout URL with user email prefilled.
  */
-export async function POST(req?: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     let token = req?.cookies.get("user_session")?.value;
     if (!token) {
@@ -72,6 +72,6 @@ export async function POST(req?: NextRequest) {
   }
 }
 
-export async function GET(req?: NextRequest) {
+export async function GET(req: NextRequest) {
   return POST(req);
 }

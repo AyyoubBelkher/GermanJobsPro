@@ -14,9 +14,9 @@ const getGeminiClient = () => {
 };
 
 const FALLBACK_MODELS = [
-  process.env.GEMINI_MODEL || "gemini-3.6-flash",
+  process.env.GEMINI_MODEL || "gemini-2.5-flash",
   "gemini-2.5-flash",
-  "gemini-3.6-flash",
+  "gemini-2.0-flash",
 ];
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -369,7 +369,20 @@ export async function analyzeCvAtsAI(params: AnalyzeCvAtsParams): Promise<AtsAna
   const ai = getGeminiClient();
 
   const systemInstruction = `You are a Senior German ATS & DIN 5008 Resume Auditor and Executive Recruiter.
-Analyze the provided CV for German ATS compatibility, DIN 5008 standards (tabular structure, reverse-chronological order, required contact details, language levels), keyword optimization, and clarity.
+Analyze the provided CV for German ATS compatibility, DIN 5008 standards (tabular structure, reverse-chronological order, required contact details, language levels), keyword optimization, and clarity with STRICT PRODUCT CREDIBILITY AND FAIRNESS.
+
+STRICT FAIRNESS & HONEST EVALUATION RULES:
+1. FAIR SCORING:
+   - If the uploaded CV is already well-structured in German (tabular DIN 5008 layout, clear reverse-chronological experience and education, complete contact details, and CEFR language proficiencies) and aligns well with the target role/industry:
+     * Give it an honest passing score (overallScore >= 80, typically 80 to 95; din5008Score >= 80; keywordMatchScore >= 80).
+     * State CLEARLY in "summary" that the CV is accepted, fully compliant with German ATS and DIN 5008 standards, and ready for German employers without needing remediation.
+     * DO NOT invent artificial flaws, phantom red flags, or unnecessary criticisms on an already good CV.
+     * Keep "weaknesses" and "missingKeywords" minimal or empty, and formulate "actionPlan" as optional next steps or application readiness tips rather than mandatory fixes.
+2. DEFICIENT CVs:
+   - If the CV is not in German, lacks DIN 5008 tabular formatting, or has real qualification/terminology gaps:
+     * Score it realistically (overallScore < 80).
+     * Explain in "summary" why it requires improvement before applying.
+     * List genuine weaknesses, missing German keywords, and a concrete action plan.
 
 Output requirements:
 You MUST respond with a VALID JSON object adhering EXACTLY to this schema (no extra wrapper keys, no markdown codeblocks):
@@ -377,11 +390,11 @@ You MUST respond with a VALID JSON object adhering EXACTLY to this schema (no ex
   "overallScore": number (0 to 100),
   "din5008Score": number (0 to 100),
   "keywordMatchScore": number (0 to 100),
-  "summary": "Concise 2-3 sentence executive assessment in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"}",
-  "strengths": ["Array of 3-5 specific positive points in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"}"],
-  "weaknesses": ["Array of 3-5 specific red flags or gaps in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"}"],
-  "missingKeywords": ["Array of 4-8 important technical/professional German keywords or skills missing from the CV"],
-  "actionPlan": ["Array of 3-5 prioritized, concrete action steps to improve the score in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"}"]
+  "summary": "Concise 2-3 sentence executive assessment in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"} (explicitly stating accepted and ready if overallScore >= 80)",
+  "strengths": ["Array of specific positive points in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"}"],
+  "weaknesses": ["Array of specific red flags or gaps in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"} (empty array if score >= 80 and no genuine flaws)"],
+  "missingKeywords": ["Array of technical/professional German keywords missing from the CV (empty array if none missing)"],
+  "actionPlan": ["Array of prioritized concrete action steps in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"}"]
 }
 
 Security & Delimiters:

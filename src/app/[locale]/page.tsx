@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { getUserSession } from "@/lib/user-session";
 import LandingFaqAccordion from "@/components/landing/LandingFaqAccordion";
 import { getLandingContent } from "@/lib/i18n/landing-content";
-import { extractLessonNumber } from "@/lib/courseUtils";
+import { extractLessonNumber, extractCleanExcerpt } from "@/lib/courseUtils";
 
 export const revalidate = 60;
 
@@ -91,7 +91,16 @@ export default async function LandingPage({
         take: 3,
       }),
       prisma.post.findMany({
-        where: { published: true },
+        where: {
+          published: true,
+          NOT: {
+            OR: [
+              { category: { equals: "German A1", mode: "insensitive" } },
+              { category: { equals: "Deutsch A1", mode: "insensitive" } },
+              { category: { contains: "A1", mode: "insensitive" } },
+            ],
+          },
+        },
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
@@ -779,7 +788,7 @@ export default async function LandingPage({
                         </h4>
 
                         <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">
-                          {post.markdown_content?.replace(/[#*`>_\-]/g, "").substring(0, 140)}...
+                          {extractCleanExcerpt(post.markdown_content, post.title, 150)}
                         </p>
                       </div>
 
@@ -843,9 +852,11 @@ export default async function LandingPage({
                       </span>
                     </div>
                     <div>
-                      <h3 dir="auto" className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors truncate text-start">
-                        {job.title}
-                      </h3>
+                      <Link href={`/${locale}/jobs/${job.id}`}>
+                        <h3 dir="auto" className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors truncate text-start">
+                          {job.title}
+                        </h3>
+                      </Link>
                       <p dir="auto" className="text-xs text-slate-400 font-medium text-start">
                         {job.company} • {job.city || "Deutschland"}
                       </p>
@@ -862,7 +873,7 @@ export default async function LandingPage({
                       {t.jobs.languageLabel} {job.languageReq || "B1/B2"}
                     </span>
                     <Link
-                      href={`/${locale}/jobs`}
+                      href={`/${locale}/jobs/${job.id}`}
                       className="px-4 py-2 rounded-xl bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/20 text-xs font-bold transition-all"
                     >
                       {t.jobs.apply}
@@ -910,7 +921,7 @@ export default async function LandingPage({
                         {post.title}
                       </h3>
                       <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">
-                        {post.markdown_content?.replace(/[#*`>_\-]/g, "").substring(0, 140)}...
+                        {extractCleanExcerpt(post.markdown_content, post.title, 150)}
                       </p>
                     </div>
 

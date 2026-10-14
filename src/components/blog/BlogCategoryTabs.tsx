@@ -37,11 +37,6 @@ export default function BlogCategoryTabs({
       icon: "🌐",
     },
     {
-      id: "German A1",
-      label: isAr ? "تعلم الألمانية A1" : isDe ? "Deutsch A1" : isFr ? "Allemand A1" : "German A1",
-      icon: "🇩🇪",
-    },
-    {
       id: "Jobs",
       label: isAr ? "فرص العمل والتأشيرة" : isDe ? "Jobs & Karriere" : isFr ? "Emplois & Visa" : "Jobs & Career",
       icon: "💼",

@@ -11,6 +11,7 @@ import {
   extractLessonNumber,
   parseLessonTitle,
   calculateReadTime,
+  extractCleanExcerpt,
 } from "@/lib/courseUtils";
 
 export const revalidate = 60;
@@ -78,9 +79,20 @@ export default async function BlogPage({
     }
   }
 
-  const whereCondition = {
+  const whereCondition: Record<string, any> = {
     published: true,
     ...categoryFilter,
+    ...(!isGermanA1Selected
+      ? {
+          NOT: {
+            OR: [
+              { category: { equals: "German A1", mode: "insensitive" } },
+              { category: { equals: "Deutsch A1", mode: "insensitive" } },
+              { category: { contains: "A1", mode: "insensitive" } },
+            ],
+          },
+        }
+      : {}),
   };
 
   // Directly query database using Prisma with pagination & count
@@ -133,7 +145,7 @@ export default async function BlogPage({
     ]);
 
     countsMap = {
-      total: totalAll,
+      total: Math.max(0, totalAll - a1Count),
       "German A1": a1Count,
       Jobs: jobsCount,
       General: generalCount,
@@ -182,12 +194,7 @@ export default async function BlogPage({
   const totalPages = Math.ceil(totalPosts / pageSize);
 
   const posts = dbPosts.map((post) => {
-    const cleanExcerpt = post.markdown_content
-      ? post.markdown_content
-          .replace(/[#*`>_\-]/g, "")
-          .substring(0, 160)
-          .trim() + "..."
-      : "";
+    const cleanExcerpt = extractCleanExcerpt(post.markdown_content, post.title, 150);
 
     return {
       id: post.id,
@@ -347,30 +354,32 @@ export default async function BlogPage({
       <Navbar locale={locale} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full flex-1">
-        {/* Header section */}
-        <header className="text-center mb-12 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider">
-            <span>📚</span>
-            <span>{isAr ? "المقالات والدليل الإرشادي" : isDe ? "Ratgeber & Wissen" : "Guides & Articles"}</span>
-          </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-sky-300 to-blue-200 bg-clip-text text-transparent">
-            {ui.title}
-          </h1>
-          <p className="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            {ui.subtitle}
-          </p>
-          <div className="h-1 w-20 bg-gradient-to-r from-blue-500 to-blue-400 mx-auto rounded-full" />
-        </header>
+        {!isGermanA1Selected ? (
+          <>
+            {/* Header section */}
+            <header className="text-center mb-12 space-y-4">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider">
+                <span>📚</span>
+                <span>{isAr ? "المقالات والدليل الإرشادي" : isDe ? "Ratgeber & Wissen" : "Guides & Articles"}</span>
+              </div>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-sky-300 to-blue-200 bg-clip-text text-transparent">
+                {ui.title}
+              </h1>
+              <p className="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                {ui.subtitle}
+              </p>
+              <div className="h-1 w-20 bg-gradient-to-r from-blue-500 to-blue-400 mx-auto rounded-full" />
+            </header>
 
-        {/* Category Filter Tabs */}
-        <BlogCategoryTabs
-          locale={locale}
-          activeCategory={selectedCategory}
-          counts={countsMap}
-        />
-
-        {/* German A1 Course Hub Banner & Student Sorting Toggle */}
-        {isGermanA1Selected && (
+            {/* Category Filter Tabs */}
+            <BlogCategoryTabs
+              locale={locale}
+              activeCategory={selectedCategory}
+              counts={countsMap}
+            />
+          </>
+        ) : (
+          /* German A1 Course Hub Banner & Student Sorting Toggle */
           <div className="mb-10 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-blue-950/70 to-slate-900 border border-blue-500/30 shadow-2xl backdrop-blur-xl">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div className="space-y-3">

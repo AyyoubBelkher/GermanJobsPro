@@ -38,6 +38,43 @@ export default function AdminBar({ post, locale = "ar" }: AdminBarProps) {
   const isAr = locale === "ar";
   const dir = isAr ? "rtl" : "ltr";
 
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxWidth = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        setImageUrl(dataUrl);
+      };
+      if (typeof event.target?.result === "string") {
+        img.src = event.target.result;
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Handle Update Post (PUT)
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,15 +262,60 @@ export default function AdminBar({ post, locale = "ar" }: AdminBarProps) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  {isAr ? "رابط الصورة (Image URL)" : "Image URL"}
-                </label>
-                <input
-                  type="text"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500 text-sm font-mono"
-                />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-300">
+                    {isAr ? "رابط الصورة (Image URL)" : "Image URL"}
+                  </label>
+                  <label className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 cursor-pointer font-medium bg-blue-500/10 hover:bg-blue-500/20 px-2.5 py-1 rounded-lg border border-blue-500/30 transition-all">
+                    <span>📁</span>
+                    <span>{isAr ? "رفع صورة من الحاسوب" : "Upload from Computer"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      ref={fileInputRef}
+                      onChange={handleImageFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    placeholder="https://... or /images/... or data:image/..."
+                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500 text-sm font-mono"
+                  />
+                  {imageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setImageUrl("")}
+                      className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs cursor-pointer"
+                      title={isAr ? "مسح الصورة" : "Clear image"}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Thumbnail Preview */}
+                {imageUrl && (
+                  <div className="mt-2.5 p-2 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center gap-3">
+                    <img
+                      src={imageUrl}
+                      alt="Thumbnail preview"
+                      className="w-16 h-16 object-cover rounded-lg border border-slate-800 shadow"
+                    />
+                    <div className="text-xs text-slate-400 overflow-hidden">
+                      <p className="font-semibold text-slate-300">
+                        {isAr ? "معاينة الصورة" : "Image Preview"}
+                      </p>
+                      <p className="truncate text-slate-500 font-mono text-[11px] max-w-xs">
+                        {imageUrl.startsWith("data:") ? "Data URL (Permanent Base64)" : imageUrl}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>

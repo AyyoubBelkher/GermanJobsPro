@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, verifyAutomationSecret } from "@/lib/admin-auth";
+import { sanitizeJobPayload } from "@/lib/jobSanitizer";
 
 async function isAuthorized(request: NextRequest): Promise<boolean> {
   if (verifyAutomationSecret(request)) {
@@ -139,19 +140,27 @@ export async function POST(request: NextRequest) {
         ? String(status).toUpperCase()
         : "ACTIVE";
 
+    const sanitized = sanitizeJobPayload({
+      title: title.trim(),
+      category: category ? String(category).trim() : "General",
+      salary: salary ? String(salary).trim() : null,
+      requirements: requirements ? String(requirements).trim() : null,
+      descriptionRaw: descriptionRaw ? String(descriptionRaw).trim() : null,
+    });
+
     const newJob = await prisma.job.create({
       data: {
-        title: title.trim(),
+        title: sanitized.title.trim(),
         company: company.trim(),
         applyUrl: finalApplyUrl,
         contactEmail: finalContactEmail,
         city: city ? String(city).trim() : "Germany",
-        category: category ? String(category).trim() : "General",
+        category: sanitized.category ? String(sanitized.category).trim() : "General",
         jobType: jobType ? String(jobType).trim() : "Full-time",
         languageReq: languageReq ? String(languageReq).trim() : "B1/B2",
-        salary: salary ? String(salary).trim() : null,
-        requirements: requirements ? String(requirements).trim() : null,
-        descriptionRaw: descriptionRaw ? String(descriptionRaw).trim() : null,
+        salary: sanitized.salary ? String(sanitized.salary).trim() : null,
+        requirements: sanitized.requirements ? String(sanitized.requirements).trim() : null,
+        descriptionRaw: sanitized.descriptionRaw ? String(sanitized.descriptionRaw).trim() : null,
         publishedAt: publishedAt ? new Date(publishedAt) : new Date(),
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         status: validStatus,

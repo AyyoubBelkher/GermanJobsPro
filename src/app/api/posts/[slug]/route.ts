@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { decodeSlugParam, isValidHttpUrl } from "@/lib/session";
+import { decodeSlugParam, isValidHttpUrl, isValidImageUrl } from "@/lib/session";
 import { requireAdmin, verifyAutomationSecret } from "@/lib/admin-auth";
+import { ensurePermanentImageUrl } from "@/lib/imageUtils";
 
 /**
  * Helper function to verify admin session cookie or standard automation headers.
@@ -185,15 +186,22 @@ export async function PUT(
     const body = await request.json();
     const { title, markdown_content, category, image_url, source_link } = body || {};
 
-    // Validate URL protocols to prevent XSS (javascript: / data: protocols)
-    if (
-      (image_url !== undefined && !isValidHttpUrl(image_url)) ||
-      (source_link !== undefined && !isValidHttpUrl(source_link))
-    ) {
+    // Validate URL protocols to prevent XSS
+    if (image_url !== undefined && !isValidImageUrl(image_url)) {
       return NextResponse.json(
         {
           success: false,
-          error: "Bad Request: 'image_url' and 'source_link' must use http:// or https:// protocols.",
+          error: "Bad Request: 'image_url' must use http://, https://, a relative path starting with '/', or a data:image/ URL.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (source_link !== undefined && !isValidHttpUrl(source_link)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Bad Request: 'source_link' must use http:// or https:// protocols.",
         },
         { status: 400 }
       );
@@ -213,13 +221,19 @@ export async function PUT(
       );
     }
 
+    // Ensure image is permanent if updated
+    const finalImageUrl =
+      image_url !== undefined
+        ? await ensurePermanentImageUrl(image_url)
+        : existingPost.image_url;
+
     const updatedPost = await prisma.post.update({
       where: { id: existingPost.id },
       data: {
         title: updatedTitle,
         markdown_content: updatedContent,
         category: typeof category === "string" && category.trim() !== "" ? category.trim() : existingPost.category,
-        image_url: image_url !== undefined ? image_url : existingPost.image_url,
+        image_url: finalImageUrl,
         source_link: source_link !== undefined ? source_link : existingPost.source_link,
       },
     });

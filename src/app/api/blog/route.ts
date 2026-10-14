@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { extractCleanExcerpt } from '@/lib/courseUtils';
 
 export async function GET() {
   try {
@@ -11,13 +12,7 @@ export async function GET() {
     });
 
     const posts = dbPosts.map((post) => {
-      // Strip markdown symbols to create a plain text excerpt
-      const cleanExcerpt = post.markdown_content
-        ? post.markdown_content
-            .replace(/[#*`>_\-]/g, "")
-            .substring(0, 160)
-            .trim() + "..."
-        : "";
+      const cleanExcerpt = extractCleanExcerpt(post.markdown_content, post.title, 150);
 
       return {
         id: post.id,

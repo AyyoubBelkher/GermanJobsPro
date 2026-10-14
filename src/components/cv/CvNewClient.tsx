@@ -97,7 +97,7 @@ export default function CvNewClient({ locale }: CvNewClientProps) {
               {[
                 { code: "de", label: "Deutsch (الألمانية)", flag: "🇩🇪" },
                 { code: "en", label: "English (الإنجليزية)", flag: "🇬🇧" },
-                { code: "ar", label: "العربية (Arabic)", flag: "🇲🇦" },
+                { code: "ar", label: "العربية (Arabic)", flag: "🇸🇦" },
               ].map((item) => (
                 <button
                   key={item.code}

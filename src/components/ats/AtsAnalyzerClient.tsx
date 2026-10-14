@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AtsAnalysisResult } from "@/lib/gemini";
 
 interface CvOption {
@@ -21,6 +22,7 @@ export default function AtsAnalyzerClient({
   locale,
   initialJobDescription = "",
 }: AtsAnalyzerClientProps) {
+  const router = useRouter();
   const isAr = locale === "ar";
   const isDe = locale === "de";
 
@@ -33,6 +35,10 @@ export default function AtsAnalyzerClient({
   const [cvText, setCvText] = useState("");
   const [jobDescription, setJobDescription] = useState(initialJobDescription);
   const [language, setLanguage] = useState(locale || "de");
+
+  // Magic Import / Auto-Fix states
+  const [isMagicImporting, setIsMagicImporting] = useState(false);
+  const [magicImportError, setMagicImportError] = useState<string | null>(null);
 
   // PDF Upload states
   const [isDragging, setIsDragging] = useState(false);
@@ -150,6 +156,54 @@ export default function AtsAnalyzerClient({
       setError(err instanceof Error ? err.message : "Error analyzing CV");
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const handleMagicImport = async () => {
+    if (!cvText || cvText.trim().length < 30) {
+      setMagicImportError(
+        isAr
+          ? "نص السيرة الذاتية غير كافٍ للإصلاح والتوليد."
+          : isDe
+          ? "Der Lebenslauftext ist zu kurz für die Optimierung."
+          : "CV text is too short for auto-fix."
+      );
+      return;
+    }
+
+    setIsMagicImporting(true);
+    setMagicImportError(null);
+
+    try {
+      const res = await fetch("/api/cv/magic-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cvText: cvText.trim(),
+          targetJobTitle: jobDescription.slice(0, 100),
+          locale,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success || !data.cvId) {
+        throw new Error(
+          data.message ||
+            data.error ||
+            (isAr ? "فشل إصلاح وترجمة السيرة الذاتية." : "Failed to auto-fix and translate CV.")
+        );
+      }
+
+      router.push(`/${locale}/dashboard/cv/${data.cvId}`);
+    } catch (err: unknown) {
+      setMagicImportError(
+        err instanceof Error
+          ? err.message
+          : isAr
+          ? "حدث خطأ غير متوقع أثناء المعالجة."
+          : "An unexpected error occurred."
+      );
+      setIsMagicImporting(false);
     }
   };
 
@@ -437,50 +491,192 @@ export default function AtsAnalyzerClient({
       </div>
 
       {/* Analysis Results Display */}
-      {analysis && (
-        <div className="space-y-8 animate-fadeIn">
-          {/* Top Score Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {/* Overall ATS Score */}
-            <div className={`p-6 rounded-3xl border ${getScoreColor(analysis.overallScore)} flex flex-col items-center justify-center text-center space-y-2 shadow-xl`}>
-              <span className="text-xs font-bold uppercase tracking-wider">
-                {isAr ? "التقييم العام (ATS Score)" : "Overall ATS Score"}
-              </span>
-              <div className="text-4xl sm:text-5xl font-black">{analysis.overallScore}%</div>
-              <span className="text-xs font-semibold">
-                {analysis.overallScore >= 80
-                  ? isAr ? "ممتاز وجاهز للتقديم ✅" : "Excellent Readiness"
-                  : analysis.overallScore >= 60
-                  ? isAr ? "جيد ويحتاج تحسينات ⚠️" : "Moderate Readiness"
-                  : isAr ? "ضعيف ويتطلب تعديل ❌" : "Needs Immediate Revision"}
-              </span>
+      {analysis && (() => {
+        const isCvAccepted = analysis.overallScore >= 80;
+        return (
+          <div className="space-y-8 animate-fadeIn">
+            {/* Top Score Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {/* Overall ATS Score */}
+              <div className={`p-6 rounded-3xl border ${getScoreColor(analysis.overallScore)} flex flex-col items-center justify-center text-center space-y-2 shadow-xl`}>
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  {isAr ? "التقييم العام (ATS Score)" : "Overall ATS Score"}
+                </span>
+                <div className="text-4xl sm:text-5xl font-black">{analysis.overallScore}%</div>
+                <span className="text-xs font-semibold">
+                  {analysis.overallScore >= 80
+                    ? isAr ? "ممتاز وجاهز للتقديم ✅" : "Excellent Readiness"
+                    : analysis.overallScore >= 60
+                    ? isAr ? "جيد ويحتاج تحسينات ⚠️" : "Moderate Readiness"
+                    : isAr ? "ضعيف ويتطلب تعديل ❌" : "Needs Immediate Revision"}
+                </span>
+              </div>
+
+              {/* DIN 5008 Standard Score */}
+              <div className={`p-6 rounded-3xl border ${getScoreColor(analysis.din5008Score)} flex flex-col items-center justify-center text-center space-y-2 shadow-xl`}>
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  {isAr ? "معايير ألمانيا (DIN 5008)" : "DIN 5008 Standard"}
+                </span>
+                <div className="text-4xl sm:text-5xl font-black">{analysis.din5008Score}%</div>
+                <span className="text-xs font-semibold">
+                  {analysis.din5008Score >= 80 ? "DIN 5008 Konform" : "Strukturanpassung nötig"}
+                </span>
+              </div>
+
+              {/* Keyword Match Score */}
+              <div className={`p-6 rounded-3xl border ${getScoreColor(analysis.keywordMatchScore)} flex flex-col items-center justify-center text-center space-y-2 shadow-xl`}>
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  {isAr ? "مطابقة الكلمات المفتاحية" : "Keyword Match"}
+                </span>
+                <div className="text-4xl sm:text-5xl font-black">{analysis.keywordMatchScore}%</div>
+                <span className="text-xs font-semibold">
+                  {jobDescription.trim() ? (isAr ? "بناءً على إعلان الوظيفة" : "Based on Job Posting") : (isAr ? "بناءً على معايير المجال" : "Industry Standard Match")}
+                </span>
+              </div>
             </div>
 
-            {/* DIN 5008 Standard Score */}
-            <div className={`p-6 rounded-3xl border ${getScoreColor(analysis.din5008Score)} flex flex-col items-center justify-center text-center space-y-2 shadow-xl`}>
-              <span className="text-xs font-bold uppercase tracking-wider">
-                {isAr ? "معايير ألمانيا (DIN 5008)" : "DIN 5008 Standard"}
-              </span>
-              <div className="text-4xl sm:text-5xl font-black">{analysis.din5008Score}%</div>
-              <span className="text-xs font-semibold">
-                {analysis.din5008Score >= 80 ? "DIN 5008 Konform" : "Strukturanpassung nötig"}
-              </span>
-            </div>
+            {/* Prominent Credibility & Status Banner */}
+            {isCvAccepted ? (
+              <div className="rounded-3xl border border-emerald-500/40 bg-emerald-950/20 p-6 sm:p-8 shadow-2xl space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 text-emerald-400">
+                    <span className="text-3xl">✅</span>
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-black text-white">
+                        {isAr
+                          ? "✅ سيرتك الذاتية مقبولة وجاهزة للتقديم ولا تحتاج إلى تعديل!"
+                          : isDe
+                          ? "✅ Ihr Lebenslauf ist ATS-konform und bereit zur Bewerbung!"
+                          : "✅ Your CV is Accepted & Ready for Application!"}
+                      </h3>
+                      <p className="text-xs text-emerald-300 font-semibold mt-0.5">
+                        {isAr
+                          ? "توافق عالي مع معايير DIN 5008 وأنظمة الفرز الآلي الألمانية"
+                          : isDe
+                          ? "Hohe Übereinstimmung mit DIN 5008 und deutschen ATS-Systemen"
+                          : "High compliance with DIN 5008 and German ATS standards"}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-3.5 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold">
+                    {isAr ? "معتمد للتقديم المباشر" : isDe ? "Bewerbungsbereit" : "Ready to Apply"}
+                  </span>
+                </div>
 
-            {/* Keyword Match Score */}
-            <div className={`p-6 rounded-3xl border ${getScoreColor(analysis.keywordMatchScore)} flex flex-col items-center justify-center text-center space-y-2 shadow-xl`}>
-              <span className="text-xs font-bold uppercase tracking-wider">
-                {isAr ? "مطابقة الكلمات المفتاحية" : "Keyword Match"}
-              </span>
-              <div className="text-4xl sm:text-5xl font-black">{analysis.keywordMatchScore}%</div>
-              <span className="text-xs font-semibold">
-                {jobDescription.trim() ? (isAr ? "بناءً على إعلان الوظيفة" : "Based on Job Posting") : (isAr ? "بناءً على معايير المجال" : "Industry Standard Match")}
-              </span>
-            </div>
-          </div>
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed text-justify">
+                  {isAr
+                    ? "سيرتك الذاتية الحالية تحقق معايير الفرز الآلي (ATS) والتنسيق الألماني (DIN 5008) بنسبة ممتازة. حفاظاً على مصداقيتنا وشفافيتنا معك، لا نقترح أي إعادة هيكلة أو تعديل إضافي — يمكنك التقديم بها مباشرة على الوظائف في ألمانيا بثقة كاملة."
+                    : isDe
+                    ? "Ihr aktueller Lebenslauf erfüllt die deutschen ATS- und DIN 5008-Standards hervorragend. Aus Gründen der Glaubwürdigkeit und Transparenz empfehlen wir keine weiteren Überarbeitungen — Sie können sich direkt und selbstbewusst bewerben."
+                    : "Your current CV meets German ATS and DIN 5008 standards with an excellent score. In keeping with our strict credibility and transparency standards, no remediation is required — you can apply directly to employers in Germany with confidence."}
+                </p>
 
-          {/* Executive Summary */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-3 shadow-xl">
+                <div className="pt-1 flex flex-wrap items-center gap-3 text-xs text-emerald-300">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 font-bold">
+                    <span>✓</span>
+                    <span>{isAr ? "تنسيق ألماني قياسي DIN 5008" : isDe ? "DIN 5008 Standard erfüllt" : "DIN 5008 Compliant"}</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 font-bold">
+                    <span>✓</span>
+                    <span>{isAr ? "جاهزة للإرسال إلى الشركات الألمانية" : isDe ? "Bereit für Arbeitgeber in DE" : "Ready for German Employers"}</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 font-bold">
+                    <span>✓</span>
+                    <span>{isAr ? "لا تتطلب أي إصلاحات إجبارية" : isDe ? "Keine Nachbesserung nötig" : "No remediation needed"}</span>
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-3xl border border-amber-500/40 bg-amber-950/20 p-6 sm:p-8 shadow-2xl space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 text-amber-400">
+                    <span className="text-3xl">⚠️</span>
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-black text-white">
+                        {isAr
+                          ? "⚠️ السيرة الذاتية تحتاج إلى تحسين وتعديل قبل التقديم"
+                          : isDe
+                          ? "⚠️ Lebenslauf benötigt Optimierung vor der Bewerbung"
+                          : "⚠️ CV Needs Improvement Before Applying"}
+                      </h3>
+                      <p className="text-xs text-amber-300 font-semibold mt-0.5">
+                        {isAr
+                          ? "النتيجة الحالية أقل من الحد الأدنى الموصى به للقبول التلقائي (80%)"
+                          : isDe
+                          ? "Ergebnis liegt unter dem empfohlenen Mindestwert von 80%"
+                          : "Current score is below the recommended 80% passing threshold"}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-3.5 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold">
+                    {isAr ? "يُنصح بالتحسين" : isDe ? "Optimierung empfohlen" : "Revision Recommended"}
+                  </span>
+                </div>
+
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed text-justify">
+                  {isAr
+                    ? "التقييم الحالي أقل من النسبة الموصى بها لتخطي فلاتر التوظيف الألمانية بنجاح. نوصي بتعديل وتطوير السيرة الذاتية ومعالجة الفجوات وإضافة الكلمات المفتاحية الناقصة الموضحة أدناه لرفع حظوظك في الحصول على مقابلات عمل."
+                    : isDe
+                    ? "Die aktuelle Bewertung liegt unter der empfohlenen Schwelle für deutsche ATS-Filter. Wir empfehlen, die unten aufgeführten Lücken zu schließen und fehlende Fachbegriffe zu ergänzen, um Ihre Interviewchancen zu maximieren."
+                    : "The current score is below the recommended threshold to successfully pass German ATS parsers. We recommend addressing the identified gaps and adding missing keywords below to maximize your interview chances."}
+                </p>
+
+                {selectedCvId && inputMode === "saved" && (
+                  <div className="pt-1">
+                    <Link
+                      href={`/${locale}/dashboard/cv/${selectedCvId}`}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition-all shadow-md"
+                    >
+                      <span>✏️</span>
+                      <span>{isAr ? "الانتقال لتعديل وتحسين هذه السيرة في المحرر" : isDe ? "Jetzt im CV-Editor optimieren" : "Optimize this CV in Builder Now"}</span>
+                    </Link>
+                  </div>
+                )}
+
+                {(inputMode === "upload" || inputMode === "paste") && cvText.trim().length > 0 && (
+                  <div className="pt-2 space-y-2">
+                    {magicImportError && (
+                      <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-semibold">
+                        {magicImportError}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleMagicImport}
+                      disabled={isMagicImporting}
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-blue-900/40 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                    >
+                      {isMagicImporting ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                          </svg>
+                          <span>
+                            {isAr
+                              ? "جاري إصلاح وترجمة السيرة وفق DIN 5008..."
+                              : isDe
+                              ? "Lebenslauf wird nach DIN 5008 optimiert..."
+                              : "Optimizing and translating CV to DIN 5008..."}
+                          </span>
+                        </>
+                      ) : (
+                        <span>
+                          {isAr
+                            ? "✨ إصلاح السيرة الذاتية وإنشاء نسخة ألمانية مصححة الآن (DIN 5008)"
+                            : isDe
+                            ? "✨ Lebenslauf jetzt reparieren & DIN 5008 Version erstellen (DIN 5008)"
+                            : "✨ Auto-Fix CV & Create DIN 5008 Version Now (DIN 5008)"}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Executive Summary */}
+            <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-3 shadow-xl">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <span>📋</span>
               <span>{isAr ? "الملخص التنفيذي للتقييم" : isDe ? "Zusammenfassung" : "Executive Assessment"}</span>
@@ -571,16 +767,68 @@ export default function AtsAnalyzerClient({
               <div className="pt-4 flex justify-end">
                 <Link
                   href={`/${locale}/dashboard/cv/${selectedCvId}`}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition-all shadow-md"
+                  className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-md ${
+                    isCvAccepted
+                      ? "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
+                      : "bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/20"
+                  }`}
                 >
                   <span>✏️</span>
-                  <span>{isAr ? "تعديل هذه السيرة الذاتية الآن" : isDe ? "Diesen Lebenslauf bearbeiten" : "Edit this CV in Builder"}</span>
+                  <span>
+                    {isCvAccepted
+                      ? isAr
+                        ? "معاينة السيرة الذاتية في المحرر"
+                        : isDe
+                        ? "Lebenslauf im Editor anzeigen"
+                        : "View CV in Builder"
+                      : isAr
+                      ? "تعديل وإصلاح هذه السيرة الذاتية الآن"
+                      : isDe
+                      ? "Diesen Lebenslauf bearbeiten & optimieren"
+                      : "Edit & Fix this CV in Builder"}
+                  </span>
                 </Link>
+              </div>
+            )}
+
+            {!isCvAccepted && (inputMode === "upload" || inputMode === "paste") && cvText.trim().length > 0 && (
+              <div className="pt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleMagicImport}
+                  disabled={isMagicImporting}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                >
+                  {isMagicImporting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                      </svg>
+                      <span>
+                        {isAr
+                          ? "جاري إصلاح وترجمة السيرة وفق DIN 5008..."
+                          : isDe
+                          ? "Lebenslauf wird nach DIN 5008 optimiert..."
+                          : "Optimizing and translating CV to DIN 5008..."}
+                      </span>
+                    </>
+                  ) : (
+                    <span>
+                      {isAr
+                        ? "✨ إصلاح السيرة الذاتية وإنشاء نسخة ألمانية مصححة الآن (DIN 5008)"
+                        : isDe
+                        ? "✨ Lebenslauf jetzt reparieren & DIN 5008 Version erstellen (DIN 5008)"
+                        : "✨ Auto-Fix CV & Create DIN 5008 Version Now (DIN 5008)"}
+                    </span>
+                  )}
+                </button>
               </div>
             )}
           </div>
         </div>
-      )}
+      );
+    })()}
     </div>
   );
 }

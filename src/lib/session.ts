@@ -41,7 +41,12 @@ export function isValidImageUrl(urlStr?: string | null): boolean {
   if (!urlStr || typeof urlStr !== "string") return true;
   const trimmed = urlStr.trim().toLowerCase();
   if (trimmed === "") return true;
-  return trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("/");
+  return (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("/") ||
+    trimmed.startsWith("data:image/")
+  );
 }
 
 const globalAdminRevocations = globalThis as unknown as {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAutomationSecret } from "@/lib/admin-auth";
+import { sanitizeJobPayload } from "@/lib/jobSanitizer";
 
 function isAuthorized(request: NextRequest): boolean {
   return verifyAutomationSecret(request);
@@ -228,19 +229,27 @@ export async function POST(request: NextRequest) {
         ? String(status).toUpperCase()
         : "ACTIVE";
 
+    const sanitized = sanitizeJobPayload({
+      title: title.trim(),
+      category: category !== undefined && category !== null && String(category).trim() ? String(category).trim() : "General",
+      salary: salary !== undefined && salary !== null && String(salary).trim() ? String(salary).trim() : null,
+      requirements: requirements !== undefined && requirements !== null && String(requirements).trim() ? String(requirements).trim() : null,
+      descriptionRaw: descriptionRaw !== undefined && descriptionRaw !== null && String(descriptionRaw).trim() ? String(descriptionRaw).trim() : null,
+    });
+
     const newJob = await prisma.job.create({
       data: {
-        title: title.trim(),
+        title: sanitized.title.trim(),
         company: company.trim(),
         applyUrl: finalApplyUrl,
         contactEmail: finalContactEmail,
         city: city !== undefined && city !== null && String(city).trim() ? String(city).trim() : "Germany",
-        category: category !== undefined && category !== null && String(category).trim() ? String(category).trim() : "General",
+        category: sanitized.category ? String(sanitized.category).trim() : "General",
         jobType: jobType !== undefined && jobType !== null && String(jobType).trim() ? String(jobType).trim() : "Full-time",
         languageReq: languageReq !== undefined && languageReq !== null && String(languageReq).trim() ? String(languageReq).trim() : "B1/B2",
-        salary: salary !== undefined && salary !== null && String(salary).trim() ? String(salary).trim() : null,
-        requirements: requirements !== undefined && requirements !== null && String(requirements).trim() ? String(requirements).trim() : null,
-        descriptionRaw: descriptionRaw !== undefined && descriptionRaw !== null && String(descriptionRaw).trim() ? String(descriptionRaw).trim() : null,
+        salary: sanitized.salary ? String(sanitized.salary).trim() : null,
+        requirements: sanitized.requirements ? String(sanitized.requirements).trim() : null,
+        descriptionRaw: sanitized.descriptionRaw ? String(sanitized.descriptionRaw).trim() : null,
         publishedAt: publishedAt ? new Date(publishedAt as string | number | Date) : new Date(),
         expiresAt: expiresAt ? new Date(expiresAt as string | number | Date) : null,
         status: validStatus,

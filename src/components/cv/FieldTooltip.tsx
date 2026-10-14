@@ -103,7 +103,7 @@ export const CV_GUIDANCE_DICTIONARY: Record<TooltipKey, { ar: TooltipContent; de
     ar: {
       title: "رقم الهاتف والرمز الدولي (Telefonnummer)",
       description: "رقم هاتف مباشر ومفعل مع رمز الدولة الدولي (وفق معيار DIN 5008).",
-      example: "+49 170 1234567 (ألمانيا) / +212 600 123456 (المغرب)",
+      example: "+49 170 1234567 (ألمانيا) / +20 100 1234567 / +966 50 1234567",
       tip: "معيار DIN 5008 يوصي بوضع مسافة بعد رمز الدولة ورمز الشبكة لتسهيل القراءة.",
     },
     de: {
@@ -166,7 +166,7 @@ export const CV_GUIDANCE_DICTIONARY: Record<TooltipKey, { ar: TooltipContent; de
     ar: {
       title: "مكان الميلاد والجنسية (Geburtsort & Staatsangehörigkeit)",
       description: "مكان ولادتك وجنسيتك باللغة الألمانية.",
-      example: "Casablanca, Marokko / marokkanisch (أو Berlin / deutsch)",
+      example: "Kairo, Ägypten (أو Amman / الرياض / الدار البيضاء)",
       tip: "تحديد الجنسية بالألمانية يساعد قسم الموارد البشرية على معرفة نوع تصريح العمل ومتطلبات الفيزا.",
     },
     de: {
@@ -313,7 +313,7 @@ export const CV_GUIDANCE_DICTIONARY: Record<TooltipKey, { ar: TooltipContent; de
     ar: {
       title: "اسم الشركة وموقعها (Unternehmen & Standort)",
       description: "الاسم الرسمي للشركة ومقر العمل (المدينة والدولة).",
-      example: "Siemens AG (München) / Capgemini (Casablanca, Marokko)",
+      example: "Siemens AG (München) / Orascom / Aramco",
       tip: "إذا كانت الشركة غير معروفة في ألمانيا، يمكنك توضيح حجمها أو قطاعها بين قوسين (مثال: IT-Dienstleister, 150 MA).",
     },
     de: {
@@ -377,7 +377,7 @@ export const CV_GUIDANCE_DICTIONARY: Record<TooltipKey, { ar: TooltipContent; de
       title: "الدرجة العلمية ومعادلها الألماني (Abschluss)",
       description: "اسم الشهادة أو المؤهل العلمي مع ما يعادله في النظام الألماني (Anabin).",
       example: "Bachelor of Science (B.Sc.) in Informatik / Staatlich geprüfter Techniker (DTS) / Abitur (Baccalauréat)",
-      tip: "البكالوريا توازي `Abitur`، دبلوم التقني المتخصص DTS يوازي `Staatlich geprüfter Techniker`، والإجازة توازي `Bachelor`.",
+      tip: "الثانوية العامة / البكالوريا توازي Abitur، دبلوم المعاهد التقنية يوازي Staatlich geprüfter Techniker، والبكالوريوس / الليسانس يوازي Bachelor.",
     },
     de: {
       title: "Abschlussbezeichnung",
@@ -418,7 +418,7 @@ export const CV_GUIDANCE_DICTIONARY: Record<TooltipKey, { ar: TooltipContent; de
     ar: {
       title: "المؤسسة التعليمية / الجامعة (Hochschule / Universität)",
       description: "الاسم الرسمي للجامعة أو المعهد مع ذكر المدينة والدولة.",
-      example: "Technische Universität München (TUM) / Université Hassan II (Casablanca)",
+      example: "Technische Universität München (TUM) / Universität Kairo / جامعة الملك سعود",
       tip: "إذا كانت الجامعة معتمدة في قاعدة بيانات Anabin الألمانية، فإن ذكر اسمها بدقة يسرع إجراءات التحقق من المؤهل.",
     },
     de: {

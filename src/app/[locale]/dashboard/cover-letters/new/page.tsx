@@ -8,7 +8,7 @@ import { verifyUserSession } from "@/lib/user-session";
 import { prisma } from "@/lib/prisma";
 import CoverLetterGeneratorClient from "@/components/cover-letter/CoverLetterGeneratorClient";
 
-export function extractGermanJobTitle(rawTitle: string): string {
+function extractGermanJobTitle(rawTitle: string): string {
   if (!rawTitle) return "";
   
   // إذا كان العنوان يحتوي على المسمى الأصلي بين قوسين، استخرجه

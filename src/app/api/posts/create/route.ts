@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isValidHttpUrl, isValidImageUrl } from "@/lib/session";
 import { verifyAutomationSecret } from "@/lib/admin-auth";
+import { ensurePermanentImageUrl } from "@/lib/imageUtils";
 
 /**
  * Interface representing the expected structure of the incoming automation webhook payload.
@@ -235,6 +236,9 @@ export async function POST(request: NextRequest) {
       finalSlug = `${targetSlug}-${Date.now()}`;
     }
 
+    // Ensure image is permanent and does not expire from social CDN
+    const permanentImageUrl = await ensurePermanentImageUrl(imageUrl);
+
     // 5. Persist post to database using Prisma
     const newPost = await prisma.post.create({
       data: {
@@ -242,7 +246,7 @@ export async function POST(request: NextRequest) {
         slug: finalSlug,
         markdown_content: markdownContent,
         category,
-        image_url: imageUrl,
+        image_url: permanentImageUrl,
         source_link: sourceLink,
         generated_by_ai: generatedByAi,
         published,
