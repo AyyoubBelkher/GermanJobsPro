@@ -1,8 +1,10 @@
 import "dotenv/config";
+import fs from "fs";
+import path from "path";
 import { prisma } from "../src/lib/prisma";
 import { sanitizeJobPayload } from "../src/lib/jobSanitizer";
 import { ensurePermanentImageUrl, isExpiringSocialCdnUrl } from "../src/lib/imageUtils";
-import { extractLessonNumber } from "../src/lib/courseUtils";
+import { extractLessonNumber, parseLessonTitle } from "../src/lib/courseUtils";
 
 /**
  * Clean Live Database Script (Phase 2 - Permanent Assets & Schema Integrity)
@@ -102,6 +104,7 @@ async function cleanLiveDatabase() {
       post.title.includes("الدرس");
 
     let updatedTitle = post.title;
+    let updatedSlug = post.slug;
     let updatedContent = post.markdown_content;
     let updatedImageUrl = post.image_url;
     let updatedPublished = post.published;
@@ -152,32 +155,103 @@ async function cleanLiveDatabase() {
       console.log(`   - Stripped leaked date metadata from markdown_content.`);
     }
 
-    // 3. Lesson Image Persistence & Duplicate Checks
+    // 3. A1 Curriculum Sequence, Title Recovery, and Asset Integrity (Strictly Lessons 1 to 21)
     if (isA1) {
       const lessonNum = extractLessonNumber(post.title, post.slug, post.markdown_content);
 
-      if (lessonNum >= 1 && lessonNum <= 20) {
-        // Lessons 1 to 20: Use permanent local assets
-        const expectedImagePath = `/images/lessons/german-a1-lesson-${lessonNum}.png`;
-        const currentImage = (post.image_url || "").trim();
+      // Lesson 19: Clean truncated title & heading
+      if (lessonNum === 19 || post.id === "cmuqsvodi00020hp66tuc1vbm") {
+        if (updatedTitle === "الدرس 19:" || updatedTitle.endsWith(":") || updatedTitle.length <= 12) {
+          updatedTitle = "الدرس 19: Dativ mit Präpositionen (حروف الجر مع حالة المجرور ووسائل النقل)";
+          console.log(`📝 [LESSON 19 TITLE FIXED] ID: ${post.id}`);
+          console.log(`   - New Title: "${updatedTitle}"`);
+        }
+        updatedContent = updatedContent.replace(
+          /^#\s*الدرس\s*19\s*:\s*(?:العنوان\s*:\s*)?[^\r\n]*/miu,
+          "# الدرس 19: Dativ mit Präpositionen (حروف الجر مع حالة المجرور ووسائل النقل)"
+        );
+      }
 
-        if (
-          !currentImage ||
-          currentImage.includes("fbcdn.net") ||
-          currentImage.includes("scontent") ||
-          currentImage.includes("unsplash.com") ||
-          currentImage !== expectedImagePath
-        ) {
-          console.log(`🖼️  [A1 LESSON IMAGE RESTORED] Lesson ${lessonNum} (${post.slug})`);
-          console.log(`   - Old: "${post.image_url}"`);
+      // Lesson 23: Renumber to Lesson 21 (Die Familie und Verwandte)
+      if (
+        post.id === "cmv75d4cx00020ilqhq25at5m" ||
+        post.slug === "german-a1-lesson-23" ||
+        post.title.includes("الدرس 23") ||
+        (post.markdown_content.includes("العائلة والأقارب") && !post.markdown_content.includes("Tagesablauf"))
+      ) {
+        console.log(`📝 [RENUMBERING LESSON 23 -> 21] ID: ${post.id} (${post.slug})`);
+        updatedTitle = "الدرس 21: Die Familie und Verwandte (العائلة والأقارب في اللغة الألمانية)";
+        updatedSlug = "german-a1-lesson-21";
+        updatedPublished = true;
+
+        let cleanMd = updatedContent;
+        if (!cleanMd.startsWith("# الدرس 21:")) {
+          cleanMd = `# الدرس 21: Die Familie und Verwandte (العائلة والأقارب في اللغة الألمانية)\n\n` + cleanMd.replace(/^#+\s*الدرس\s*\d+[^\r\n]*\n*/iu, "");
+        }
+        cleanMd = cleanMd.replace(/الدرس الثالث والعشرين/gu, "الدرس الحادي والعشرين");
+        updatedContent = cleanMd;
+
+        // Ensure permanent cover image file for Lesson 21 on disk
+        const lesson21ImgPath = path.resolve(process.cwd(), "public/images/lessons/german-a1-lesson-21.png");
+        if (post.image_url && post.image_url.startsWith("data:image/")) {
+          try {
+            const base64Data = post.image_url.replace(/^data:image\/\w+;base64,/, "");
+            fs.writeFileSync(lesson21ImgPath, Buffer.from(base64Data, "base64"));
+            console.log(`   🖼️  Saved permanent image asset to public/images/lessons/german-a1-lesson-21.png`);
+          } catch (err) {
+            console.warn(`   ⚠️ Could not write lesson 21 image file:`, err);
+          }
+        }
+        if (fs.existsSync(lesson21ImgPath)) {
+          updatedImageUrl = "/images/lessons/german-a1-lesson-21.png";
+          imagesConvertedCount++;
+        }
+      }
+
+      // Fallback title recovery for any other truncated A1 title
+      const isStillTruncated = updatedTitle.endsWith(":") || !!updatedTitle.match(/^(?:الدرس|Lesson|Lektion)\s*\d+\s*[:\-–—]?\s*$/iu);
+      if (isStillTruncated) {
+        const parsed = parseLessonTitle(updatedTitle, updatedContent);
+        if (parsed.fullTitle && parsed.fullTitle !== updatedTitle) {
+          console.log(`📝 [TRUNCATED A1 TITLE RECOVERED] ID: ${post.id}`);
+          console.log(`   - Old Title: "${updatedTitle}"`);
+          console.log(`   - New Title: "${parsed.fullTitle}"`);
+          updatedTitle = parsed.fullTitle;
+        }
+      }
+
+      // Manage duplicate lessons and permanent assets
+      const currentLessonNum = extractLessonNumber(updatedTitle, updatedSlug, updatedContent);
+      if (currentLessonNum === 21 && post.id !== "cmv75d4cx00020ilqhq25at5m" && updatedSlug !== "german-a1-lesson-21") {
+        // Duplicate Lesson 21 (duplicate of Lesson 17 Trennbare Verben)
+        console.log(`⚠️  [DUPLICATE LESSON DETECTED] Post ${post.id} (${post.slug}) duplicates Lesson 17 topic.`);
+        if (updatedPublished) {
+          console.log(`   -> Setting published: false to keep curriculum clean.`);
+          updatedPublished = false;
+          duplicateLessonsUnpublished++;
+        }
+      } else if (currentLessonNum === 22) {
+        // Duplicate Lesson 22 (duplicate of Lesson 18 Modalverben)
+        console.log(`⚠️  [DUPLICATE LESSON DETECTED] Post ${post.id} (${post.slug}) duplicates Lesson 18 topic.`);
+        if (updatedPublished) {
+          console.log(`   -> Setting published: false to keep curriculum clean.`);
+          updatedPublished = false;
+          duplicateLessonsUnpublished++;
+        }
+      } else if (currentLessonNum >= 1 && currentLessonNum <= 21) {
+        // Lessons 1 to 21: Check permanent local assets
+        const expectedImagePath = `/images/lessons/german-a1-lesson-${currentLessonNum}.png`;
+        const localFileExists = fs.existsSync(path.resolve(process.cwd(), `public${expectedImagePath}`));
+        if (localFileExists && updatedImageUrl !== expectedImagePath) {
+          console.log(`🖼️  [A1 LESSON IMAGE RESTORED] Lesson ${currentLessonNum} (${updatedSlug})`);
+          console.log(`   - Old: "${post.image_url?.slice(0, 30)}..."`);
           console.log(`   - New: "${expectedImagePath}"`);
           updatedImageUrl = expectedImagePath;
           imagesConvertedCount++;
         }
-      } else if (lessonNum > 20) {
-        // Lessons > 20: If active social CDN URL, convert to permanent Base64 Data URL
+      } else if (currentLessonNum > 21) {
         if (post.image_url && isExpiringSocialCdnUrl(post.image_url)) {
-          console.log(`🔄 [CONVERTING SOCIAL CDN IMAGE] Lesson ${lessonNum} (${post.slug})...`);
+          console.log(`🔄 [CONVERTING SOCIAL CDN IMAGE] Lesson ${currentLessonNum} (${post.slug})...`);
           const permanentUrl = await ensurePermanentImageUrl(post.image_url);
           if (permanentUrl && permanentUrl !== post.image_url) {
             console.log(`   ✅ Converted to permanent Base64 Data URL (length: ${permanentUrl.length})`);
@@ -185,36 +259,21 @@ async function cleanLiveDatabase() {
             imagesConvertedCount++;
           }
         }
-
-        // Specifically check Lessons 21 and 22 duplicates
-        if (lessonNum === 21) {
-          console.log(`⚠️  [DUPLICATE LESSON DETECTED] Lesson 21 duplicates Lesson 17 topic ("Trennbare Verben").`);
-          if (updatedPublished) {
-            console.log(`   -> Setting published: false to keep curriculum clean.`);
-            updatedPublished = false;
-            duplicateLessonsUnpublished++;
-          }
-        } else if (lessonNum === 22) {
-          console.log(`⚠️  [DUPLICATE LESSON DETECTED] Lesson 22 duplicates Lesson 18 topic ("Modalverben: können und müssen").`);
-          if (updatedPublished) {
-            console.log(`   -> Setting published: false to keep curriculum clean.`);
-            updatedPublished = false;
-            duplicateLessonsUnpublished++;
-          }
-        }
       }
     }
 
     // Save changes if any field changed
     const titleChanged = updatedTitle !== post.title;
+    const slugChanged = updatedSlug !== post.slug;
     const imageChanged = updatedImageUrl !== post.image_url;
     const publishedChanged = updatedPublished !== post.published;
 
-    if (titleChanged || contentChanged || imageChanged || publishedChanged) {
+    if (titleChanged || slugChanged || contentChanged || imageChanged || publishedChanged) {
       await prisma.post.update({
         where: { id: post.id },
         data: {
           title: updatedTitle,
+          slug: updatedSlug,
           markdown_content: updatedContent,
           image_url: updatedImageUrl,
           published: updatedPublished,

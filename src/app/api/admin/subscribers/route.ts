@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin-auth";
+import { requireAdmin, verifyAutomationSecret } from "@/lib/admin-auth";
 
 export async function GET(request: NextRequest) {
-  const admin = await requireAdmin(request);
-  if (!admin) {
+  const isAdmin = Boolean(await requireAdmin(request));
+  const isAutomation = verifyAutomationSecret(request);
+
+  if (!isAdmin && !isAutomation) {
     return NextResponse.json(
       { error: "Unauthorized" },
       { status: 401 }

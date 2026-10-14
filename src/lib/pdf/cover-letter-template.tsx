@@ -1,6 +1,7 @@
 import React from "react";
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import { extractGermanJobTitle } from "@/lib/cover-letter";
+import { containsArabic, ARABIC_REGEX } from "./font-amiri";
 
 export { extractGermanJobTitle };
 
@@ -251,52 +252,86 @@ export function CoverLetterDocument({ data }: { data: CoverLetterPdfData }) {
   // Clean and split body text into paragraphs
   const paragraphs = cleanCoverLetterContent(data.generatedContent || "");
 
+  const hasArabic = containsArabic(
+    data.title,
+    data.jobTitle,
+    data.companyName,
+    data.recipientName,
+    data.generatedContent,
+    senderName,
+    senderAddress,
+    senderEmail,
+    city
+  );
+
   return (
     <Document
       title={`Anschreiben_${data.companyName.replace(/\s+/g, "_")}`}
       author={senderName}
     >
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={[styles.page, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
         {/* DIN 5008 Absenderzeile (Return Address Header) */}
-        <Text style={styles.returnAddressLine}>
+        <Text style={[styles.returnAddressLine, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
           {senderName} • {senderAddress} • {senderEmail}
           {senderPhone}
         </Text>
 
         {/* DIN 5008 Empfängerfeld (Recipient Box) */}
         <View style={styles.recipientBox}>
-          <Text style={styles.recipientCompany}>{data.companyName}</Text>
+          <Text style={[styles.recipientCompany, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
+            {data.companyName}
+          </Text>
           {data.recipientName && (
-            <Text style={styles.recipientPerson}>{data.recipientName}</Text>
+            <Text style={[styles.recipientPerson, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
+              {data.recipientName}
+            </Text>
           )}
-          <Text style={styles.recipientAddress}>Deutschland</Text>
+          <Text style={[styles.recipientAddress, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
+            Deutschland
+          </Text>
         </View>
 
         {/* Datum (Date right-aligned) */}
-        <Text style={styles.dateLine}>
+        <Text style={[styles.dateLine, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
           {city}, den {todayGerman}
         </Text>
 
         {/* Betreffzeile (Bold Subject Line) */}
-        <Text style={styles.subjectLine}>
+        <Text style={[styles.subjectLine, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
           Bewerbung als {extractGermanJobTitle(data.jobTitle)}
         </Text>
 
         {/* Body Paragraphs */}
-        {paragraphs.map((pText, idx) => (
-          <Text key={idx} style={styles.bodyParagraph}>
-            {pText}
-          </Text>
-        ))}
+        {paragraphs.map((pText, idx) => {
+          const pHasArabic = ARABIC_REGEX.test(pText);
+          return (
+            <Text
+              key={idx}
+              style={[
+                styles.bodyParagraph,
+                hasArabic ? { fontFamily: "Amiri" } : undefined,
+                pHasArabic ? { textAlign: "right" } : undefined,
+              ]}
+            >
+              {pText}
+            </Text>
+          );
+        })}
 
         {/* Formal Closing & Signature Space */}
         <View style={styles.closingSection} wrap={false}>
-          <Text style={styles.closingText}>Mit freundlichen Grüßen</Text>
-          <Text style={styles.senderName}>{senderName}</Text>
+          <Text style={[styles.closingText, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
+            Mit freundlichen Grüßen
+          </Text>
+          <Text style={[styles.senderName, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
+            {senderName}
+          </Text>
         </View>
 
         {/* Anlagen Note */}
-        <Text style={styles.anlagenText}>Anlagen</Text>
+        <Text style={[styles.anlagenText, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
+          Anlagen
+        </Text>
       </Page>
     </Document>
   );

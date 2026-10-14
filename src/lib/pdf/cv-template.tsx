@@ -1,51 +1,10 @@
 import React from "react";
-import { Document, Page, Text, View, StyleSheet, Image, Font } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import { DeckblattPage } from "./deckblatt-template";
+import { registerAmiriFont } from "./font-amiri";
 
-/**
- * Safely resolves local font file paths on the Node.js server without leaking
- * Node built-in imports (`fs`, `path`) into client-side bundles.
- */
-function resolveLocalFont(filename: string): string {
-  if (typeof window === "undefined" && typeof process !== "undefined" && typeof process.cwd === "function") {
-    try {
-      // Server-only runtime resolution
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const pathModule = require("path");
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const fsModule = require("fs");
-      const localDiskPath = pathModule.resolve(process.cwd(), "public", "fonts", filename);
-      if (fsModule.existsSync(localDiskPath)) {
-        return localDiskPath;
-      }
-    } catch {
-      // Fallback if filesystem access is restricted or during non-node execution
-    }
-  }
-  return `/fonts/${filename}`;
-}
-
-// Single consolidated font registration for Amiri using local static assets
-Font.register({
-  family: "Amiri",
-  fonts: [
-    {
-      src: resolveLocalFont("Amiri-Regular.ttf"),
-      fontWeight: "normal",
-    },
-    {
-      src: resolveLocalFont("Amiri-Bold.ttf"),
-      fontWeight: "bold",
-    },
-    {
-      src: resolveLocalFont("Amiri-Italic.ttf"),
-      fontStyle: "italic",
-    },
-  ],
-});
-
-// Prevent breaking Arabic words with hyphens
-Font.registerHyphenationCallback((word) => [word]);
+// Ensure Amiri font and non-breaking Arabic hyphenation are registered
+registerAmiriFont();
 
 export interface CvPdfData {
   title: string;

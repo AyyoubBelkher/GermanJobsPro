@@ -59,9 +59,10 @@ export const config = {
      * - /_next/* (Next.js internals)
      * - /api/* (API routes)
      * - /images/* (images directory)
-     * - *.svg, *.ico, *.png, *.jpg (static files)
+     * - /fonts/* (fonts directory)
+     * - *.svg, *.ico, *.png, *.jpg, *.ttf, *.woff, *.woff2 (static files)
      * - robots.txt, sitemap.xml
      */
-    "/((?!api|_next|images|robots\\.txt|sitemap\\.xml|.*\\.(?:svg|ico|png|jpg|jpeg)$).*)",
+    "/((?!api|_next|images|fonts|robots\\.txt|sitemap\\.xml|.*\\.(?:svg|ico|png|jpg|jpeg|ttf|woff|woff2)$).*)",
   ],
 };

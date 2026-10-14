@@ -74,29 +74,72 @@ export interface ParsedLessonTitle {
 export function parseLessonTitle(rawTitle: string, markdownContent?: string): ParsedLessonTitle {
   let title = (rawTitle || '').trim();
 
-  // If title was truncated or ends with colon without topic (e.g. "الدرس 2:"), recover from markdown content
-  if ((title.endsWith(':') || title.length <= 10) && markdownContent) {
+  // Determine if raw title is truncated (e.g. "الدرس 19:", "الدرس 23:", ends with colon, length <= 10, or lacks topic)
+  const prefixOnlyMatch = title.match(/^(?:(?:الدرس|Lesson|Lektion)\s*\d+\s*[:\-–—]?\s*)+$/iu);
+  const isTruncated = !title || title.endsWith(':') || title.length <= 10 || !!prefixOnlyMatch;
+
+  if (isTruncated && markdownContent) {
+    let recovered = false;
+
+    // 1. Scan first 15 lines of markdown content for # الدرس or الدرس headings with substantial text
     const firstLines = markdownContent.split('\n').map((l) => l.trim()).filter(Boolean);
-    for (const line of firstLines) {
+    for (const line of firstLines.slice(0, 15)) {
       const cleanLine = line.replace(/^#+\s*/, '').trim();
-      if (cleanLine.startsWith('الدرس') && cleanLine.length > title.length) {
-        title = cleanLine;
+      const strippedTopic = cleanLine.replace(/^(?:(?:الدرس|Lesson|Lektion)\s*\d+\s*[:\-–—]?\s*)+/iu, '').trim();
+      if (cleanLine.startsWith('الدرس') && strippedTopic.length > 3) {
+        title = cleanLine.replace(/(?:^|\s*)العنوان\s*:\s*/gu, ' ').trim();
+        recovered = true;
         break;
+      }
+    }
+
+    // 2. Scan markdownContent for explicit "العنوان: ..." line
+    if (!recovered) {
+      const titleMetaMatch = markdownContent.match(/العنوان\s*:\s*([^\r\n]+)/u);
+      if (titleMetaMatch && titleMetaMatch[1].trim()) {
+        const topic = titleMetaMatch[1].trim();
+        const num = extractLessonNumber(title, undefined, markdownContent);
+        title = num !== 9999 ? `الدرس ${num}: ${topic}` : topic;
+        recovered = true;
+      }
+    }
+
+    // 3. Fallback: extract topic from the first intro sentence (e.g. "سنتعلم كيف نتحدث عن ...") if no # الدرس heading exists
+    if (!recovered) {
+      const introSlice = markdownContent.slice(0, 1500);
+      const introTopicMatch = introSlice.match(/(?:سنتعلم\s+(?:في\s+هذا\s+الدرس\s+)?كيف\s+نتحدث\s+عن|سنتعلم\s+عن|سنتحدث\s+عن|سنتعلم)\s+([^.!\r\n]+)/u);
+      if (introTopicMatch && introTopicMatch[1].trim()) {
+        let extractedTopic = introTopicMatch[1].trim();
+        extractedTopic = extractedTopic.replace(/\s*(?:الأهم\s+من\s+ذلك|استعدوا|وسنتدرب).*$/u, '').trim();
+        const num = extractLessonNumber(title, undefined, markdownContent);
+
+        if (extractedTopic.includes('العائلة') || extractedTopic.includes('الأقارب')) {
+          const german = 'Die Familie und Verwandte';
+          const arabic = 'العائلة والأقارب في اللغة الألمانية';
+          title = num !== 9999 ? `الدرس ${num}: ${german} (${arabic})` : `${german} (${arabic})`;
+        } else {
+          title = num !== 9999 ? `الدرس ${num}: ${extractedTopic}` : extractedTopic;
+        }
+        recovered = true;
       }
     }
   }
 
   // Normalize duplicated "الدرس X: الدرس X:" -> "الدرس X:"
-  title = title.replace(
-    /^((?:الدرس|Lesson|Lektion)\s*\d+)\s*[:\-–—]?\s*(?:(?:الدرس|Lesson|Lektion)\s*\d+\s*[:\-–—]?\s*)+/iu,
-    '$1: '
-  ).trim();
+  title = title
+    .replace(
+      /^((?:الدرس|Lesson|Lektion)\s*\d+)\s*[:\-–—]?\s*(?:(?:الدرس|Lesson|Lektion)\s*\d+\s*[:\-–—]?\s*)+/iu,
+      '$1: '
+    )
+    .replace(/(?:^|\s*)العنوان\s*:\s*/gu, ' ')
+    .trim();
 
-  const num = extractLessonNumber(title);
+  const num = extractLessonNumber(title, undefined, markdownContent);
   const lessonNumber = num !== 9999 ? num : null;
 
   // Remove "الدرس X:" prefix
-  const remaining = title.replace(/^(?:(?:الدرس|Lesson|Lektion)\s*\d+\s*[:\-–—]?\s*)+/i, '').trim();
+  let remaining = title.replace(/^(?:(?:الدرس|Lesson|Lektion)\s*\d+\s*[:\-–—]?\s*)+/i, '').trim();
+  remaining = remaining.replace(/(?:^|\s*)العنوان\s*:\s*/gu, ' ').trim();
 
   let germanTitle = '';
   let arabicSubtitle = '';
@@ -104,8 +147,8 @@ export function parseLessonTitle(rawTitle: string, markdownContent?: string): Pa
   // Check for parenthesis pattern: "Part 1 (Part 2)"
   const parenMatch = remaining.match(/^(.*?)\s*[\(\（](.*?)[\)\）]\s*$/);
   if (parenMatch) {
-    const p1 = parenMatch[1].trim();
-    const p2 = parenMatch[2].trim();
+    const p1 = parenMatch[1].replace(/(?:^|\s*)العنوان\s*:\s*/gu, ' ').trim();
+    const p2 = parenMatch[2].replace(/(?:^|\s*)العنوان\s*:\s*/gu, ' ').trim();
     const p1HasAr = /[\u0600-\u06FF]/.test(p1);
     const p2HasAr = /[\u0600-\u06FF]/.test(p2);
 
@@ -123,8 +166,8 @@ export function parseLessonTitle(rawTitle: string, markdownContent?: string): Pa
     // Check dash or colon separator: "Part 1 - Part 2"
     const dashParts = remaining.split(/\s*[-–—:]\s*/);
     if (dashParts.length === 2) {
-      const p1 = dashParts[0].trim();
-      const p2 = dashParts[1].trim();
+      const p1 = dashParts[0].replace(/(?:^|\s*)العنوان\s*:\s*/gu, ' ').trim();
+      const p2 = dashParts[1].replace(/(?:^|\s*)العنوان\s*:\s*/gu, ' ').trim();
       const p1HasAr = /[\u0600-\u06FF]/.test(p1);
       const p2HasAr = /[\u0600-\u06FF]/.test(p2);
 
@@ -146,11 +189,27 @@ export function parseLessonTitle(rawTitle: string, markdownContent?: string): Pa
     }
   }
 
+  // Build clean unified fullTitle
+  let fullTitle = title;
+  if (germanTitle && arabicSubtitle) {
+    fullTitle = lessonNumber !== null
+      ? `الدرس ${lessonNumber}: ${germanTitle} (${arabicSubtitle})`
+      : `${germanTitle} (${arabicSubtitle})`;
+  } else if (germanTitle) {
+    fullTitle = lessonNumber !== null
+      ? `الدرس ${lessonNumber}: ${germanTitle}`
+      : germanTitle;
+  } else if (arabicSubtitle) {
+    fullTitle = lessonNumber !== null
+      ? `الدرس ${lessonNumber}: ${arabicSubtitle}`
+      : arabicSubtitle;
+  }
+
   return {
     lessonNumber,
     germanTitle,
     arabicSubtitle,
-    fullTitle: title,
+    fullTitle,
   };
 }
 
@@ -188,39 +247,69 @@ export function extractCleanExcerpt(
 
   let text = markdown;
 
-  // Run up to 3 passes to strip any combination of leading headings and metadata
-  for (let i = 0; i < 3; i++) {
+  // Run up to 4 passes to strip any combination of leading headings, metadata, and lesson prefixes
+  for (let i = 0; i < 4; i++) {
     // a) Strips leading H1/H2 headings
-    text = text.replace(/^[\s\uFEFF]*#+\s+[^\r\n]+(\r?\n)*/u, "");
+    text = text.replace(/^[\s\uFEFF]*#+\s+[^\r\n]*(\r?\n)*/u, "");
 
-    // b) Strips raw lesson metadata patterns leaked by AI automation
+    // b) Strip any inline repeated "الدرس X: ..." prefix before "المقدمة" or "أهلاً" or "مرحباً"
+    text = text.replace(
+      /^[\s\uFEFF]*(?:الدرس|Lesson|Lektion)\s*\d+[^]*?(?=(?:المقدمة|مقدمة|أهلاً|أهلا|مرحباً|مرحبا))/iu,
+      ""
+    );
+
+    // c) Strip any leading lesson/title lines matching:
+    text = text.replace(
+      /^[\s\uFEFF]*(?:الدرس|Lesson|Lektion)\s*\d+\s*[:\-–—]?[^\r\n]*(\r?\n)+/gmiu,
+      ""
+    );
+
+    // d) Strips raw lesson metadata patterns leaked by AI automation
     text = text
-      .replace(/(?:تاريخ\s*(?:الدرس|النشر))\s*:\s*\d{4}[\d\/\-]*/gu, " ")
+      .replace(/^[\s\uFEFF]*(?:تاريخ\s*(?:الدرس|النشر)|التاريخ)\s*:\s*[^\r\n]*(\r?\n)*/gmiu, "")
+      .replace(
+        /^[\s\uFEFF]*(?:المستوى\s*:\s*(?:CEFR\s*)?[A-C][12](?:\.\d)?(?:\s*-\s*[A-C][12](?:\.\d)?)?|[^\r\n]*CEFR\s*[A-C][12](?:\.\d)?)[^\r\n]*(\r?\n)*/gmiu,
+        ""
+      )
+      .replace(/^[\s\uFEFF]*العنوان\s*:\s*[^\r\n]+(\r?\n)*/gmiu, "")
+      .replace(/(?:تاريخ\s*(?:الدرس|النشر)|التاريخ)\s*:\s*\d{4}[\d\/\-]*/gu, " ")
       .replace(/\b202\d{5}\b/g, " ")
-      .replace(/العنوان\s*:\s*[^\r\n]+/gu, " ")
-      .replace(/المستوى\s*:\s*[A-C][12]/giu, " ")
-      .replace(/^[\s\uFEFF]*(?:المقدمة|مقدمة)\s*:\s*/gu, "");
+      .replace(/المستوى\s*:\s*(?:CEFR\s*)?[A-C][12](?:\.\d)?/giu, " ")
+      .replace(/العنوان\s*:\s*[^\r\n]+/gu, " ");
 
-    // c) If remaining text starts with duplicated "الدرس X: الدرس X:", strip it
-    text = text.replace(/^[\s\uFEFF]*(?:الدرس|Lesson|Lektion)\s*\d+\s*:\s*(?:الدرس|Lesson|Lektion)\s*\d+\s*[:\-–—]?\s*/iu, "");
+    // e) Strip standalone "المقدمة" or "مقدمة" even when NOT followed by a colon (:)
+    text = text.replace(/^[\s\uFEFF]*(?:#+\s*)?(?:المقدمة|مقدمة)\s*:?\s*(\r?\n)*/gmiu, "");
 
-    // Strip repeated title if remaining text starts with title
+    // f) If remaining text starts with duplicated "الدرس X: الدرس X:", strip it
+    text = text.replace(
+      /^[\s\uFEFF]*(?:الدرس|Lesson|Lektion)\s*\d+\s*[:\-–—]?\s*(?:(?:الدرس|Lesson|Lektion)\s*\d+\s*[:\-–—]?\s*)+/iu,
+      ""
+    );
+
+    // g) Strip repeated title if remaining text starts with title
     if (title) {
       const cleanTitle = title.trim();
       const escapedTitle = cleanTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       text = text.replace(new RegExp(`^[\\s\\uFEFF]*#*\\s*${escapedTitle}\\s*[:\\-–—]?\\s*`, "iu"), "");
     }
 
-    // Strip leading المقدمة / مقدمة again if it was placed after the title
-    text = text.replace(/^[\s\uFEFF]*(?:المقدمة|مقدمة)\s*:\s*/gu, "");
+    // Strip leading المقدمة / مقدمة again if it was placed after the title or metadata
+    text = text.replace(/^[\s\uFEFF]*(?:#+\s*)?(?:المقدمة|مقدمة)\s*:?\s*(\r?\n)*/gmiu, "");
   }
 
-  // d) Strips markdown formatting symbols ([#*`>_~\[\]]), links, and collapses extra whitespace
+  // Strips markdown formatting symbols ([#*`>_~\[\]]), links, and collapses extra whitespace
   text = text
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
     .replace(/[#*`>_~\[\]]/g, "")
     .replace(/\s+/g, " ")
     .trim();
+
+  // Final sanity cleans on collapsed string
+  text = text.replace(/^(?:المقدمة|مقدمة)\s*:?\s*/u, "").trim();
+  text = text.replace(
+    /^(?:الدرس|Lesson|Lektion)\s*\d+[^]*?(?=(?:أهلاً|أهلا|مرحباً|مرحبا))/iu,
+    ""
+  ).trim();
 
   if (!text) return "";
 

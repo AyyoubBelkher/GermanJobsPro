@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { getUserSession } from "@/lib/user-session";
 import LandingFaqAccordion from "@/components/landing/LandingFaqAccordion";
 import { getLandingContent } from "@/lib/i18n/landing-content";
-import { extractLessonNumber, extractCleanExcerpt } from "@/lib/courseUtils";
+import { extractLessonNumber, extractCleanExcerpt, parseLessonTitle } from "@/lib/courseUtils";
 
 export const revalidate = 60;
 
@@ -766,6 +766,7 @@ export default async function LandingPage({
                 {germanA1Posts.map((post, idx) => {
                   const parsedNum = extractLessonNumber(post.title, post.slug, post.markdown_content);
                   const displayNum = parsedNum !== 9999 ? parsedNum : idx + 1;
+                  const fullTitle = parseLessonTitle(post.title, post.markdown_content).fullTitle;
                   return (
                     <Link
                       key={post.id}
@@ -784,11 +785,11 @@ export default async function LandingPage({
                         </div>
 
                         <h4 className="text-base sm:text-lg font-bold text-white group-hover:text-blue-400 transition-colors line-clamp-2">
-                          {post.title}
+                          {fullTitle}
                         </h4>
 
                         <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">
-                          {extractCleanExcerpt(post.markdown_content, post.title, 150)}
+                          {extractCleanExcerpt(post.markdown_content, fullTitle, 150)}
                         </p>
                       </div>
 

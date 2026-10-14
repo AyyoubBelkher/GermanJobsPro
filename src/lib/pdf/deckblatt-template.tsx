@@ -1,5 +1,6 @@
 import React from "react";
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
+import { containsArabic, ARABIC_REGEX } from "./font-amiri";
 
 export interface DeckblattData {
   targetJobTitle?: string | null;
@@ -170,6 +171,16 @@ export function DeckblattPage({ data }: { data: DeckblattData }) {
     "Diplome & Nachweise",
   ];
 
+  const hasArabic = containsArabic(
+    data.targetJobTitle,
+    data.companyName,
+    data.fullName,
+    data.address,
+    data.phone,
+    data.email,
+    ...(data.attachments || [])
+  );
+
   // Resolve image source: URL string or base64 data URL from buffer
   const imageSource =
     data.photoUrl ||
@@ -178,15 +189,19 @@ export function DeckblattPage({ data }: { data: DeckblattData }) {
       : null);
 
   return (
-    <Page size="A4" style={styles.page}>
+    <Page size="A4" style={[styles.page, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
       {/* Header Banner */}
       <View style={styles.headerSection}>
-        <Text style={styles.subHeader}>BEWERBUNGSUNTERLAGEN</Text>
-        <Text style={styles.title}>
+        <Text style={[styles.subHeader, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
+          BEWERBUNGSUNTERLAGEN
+        </Text>
+        <Text style={[styles.title, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
           {data.targetJobTitle ? `Bewerbung als ${data.targetJobTitle}` : "Bewerbung"}
         </Text>
         {data.companyName && (
-          <Text style={styles.company}>bei {data.companyName}</Text>
+          <Text style={[styles.company, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
+            bei {data.companyName}
+          </Text>
         )}
       </View>
 
@@ -199,32 +214,44 @@ export function DeckblattPage({ data }: { data: DeckblattData }) {
           </View>
 
           <View style={styles.contactBox}>
-            <Text style={styles.contactName}>{data.fullName}</Text>
+            <Text style={[styles.contactName, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
+              {data.fullName}
+            </Text>
             {data.address && (
-              <Text style={styles.contactItem}>
-                <Text style={styles.contactLabel}>Adresse: </Text>
+              <Text style={[styles.contactItem, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
+                <Text style={[styles.contactLabel, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
+                  Adresse:{" "}
+                </Text>
                 {data.address}
               </Text>
             )}
             {data.phone && (
-              <Text style={styles.contactItem}>
-                <Text style={styles.contactLabel}>Telefon: </Text>
+              <Text style={[styles.contactItem, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
+                <Text style={[styles.contactLabel, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
+                  Telefon:{" "}
+                </Text>
                 {data.phone}
               </Text>
             )}
-            <Text style={styles.contactItem}>
-              <Text style={styles.contactLabel}>E-Mail: </Text>
+            <Text style={[styles.contactItem, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
+              <Text style={[styles.contactLabel, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
+                E-Mail:{" "}
+              </Text>
               {data.email}
             </Text>
             {data.linkedinUrl && (
-              <Text style={styles.contactItem}>
-                <Text style={styles.contactLabel}>LinkedIn: </Text>
+              <Text style={[styles.contactItem, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
+                <Text style={[styles.contactLabel, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
+                  LinkedIn:{" "}
+                </Text>
                 {data.linkedinUrl}
               </Text>
             )}
             {data.xingUrl && (
-              <Text style={styles.contactItem}>
-                <Text style={styles.contactLabel}>Xing: </Text>
+              <Text style={[styles.contactItem, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
+                <Text style={[styles.contactLabel, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
+                  Xing:{" "}
+                </Text>
                 {data.xingUrl}
               </Text>
             )}
@@ -234,32 +261,44 @@ export function DeckblattPage({ data }: { data: DeckblattData }) {
         /* Minimalist full-width layout when no photo is provided (no empty placeholder) */
         <View style={styles.centerContentNoPhoto}>
           <View style={styles.contactBoxFull}>
-            <Text style={styles.contactName}>{data.fullName}</Text>
+            <Text style={[styles.contactName, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
+              {data.fullName}
+            </Text>
             {data.address && (
-              <Text style={styles.contactItem}>
-                <Text style={styles.contactLabel}>Adresse: </Text>
+              <Text style={[styles.contactItem, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
+                <Text style={[styles.contactLabel, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
+                  Adresse:{" "}
+                </Text>
                 {data.address}
               </Text>
             )}
             {data.phone && (
-              <Text style={styles.contactItem}>
-                <Text style={styles.contactLabel}>Telefon: </Text>
+              <Text style={[styles.contactItem, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
+                <Text style={[styles.contactLabel, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
+                  Telefon:{" "}
+                </Text>
                 {data.phone}
               </Text>
             )}
-            <Text style={styles.contactItem}>
-              <Text style={styles.contactLabel}>E-Mail: </Text>
+            <Text style={[styles.contactItem, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
+              <Text style={[styles.contactLabel, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
+                E-Mail:{" "}
+              </Text>
               {data.email}
             </Text>
             {data.linkedinUrl && (
-              <Text style={styles.contactItem}>
-                <Text style={styles.contactLabel}>LinkedIn: </Text>
+              <Text style={[styles.contactItem, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
+                <Text style={[styles.contactLabel, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
+                  LinkedIn:{" "}
+                </Text>
                 {data.linkedinUrl}
               </Text>
             )}
             {data.xingUrl && (
-              <Text style={styles.contactItem}>
-                <Text style={styles.contactLabel}>Xing: </Text>
+              <Text style={[styles.contactItem, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
+                <Text style={[styles.contactLabel, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
+                  Xing:{" "}
+                </Text>
                 {data.xingUrl}
               </Text>
             )}
@@ -269,10 +308,12 @@ export function DeckblattPage({ data }: { data: DeckblattData }) {
 
       {/* Bottom Attachments (Anlagen) */}
       <View style={styles.bottomSection}>
-        <Text style={styles.anlagenTitle}>ANLAGEN</Text>
+        <Text style={[styles.anlagenTitle, hasArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
+          ANLAGEN
+        </Text>
         <View style={styles.anlagenList}>
           {defaultAttachments.map((item, idx) => (
-            <Text key={idx} style={styles.anlageItem}>
+            <Text key={idx} style={[styles.anlageItem, hasArabic ? { fontFamily: "Amiri" } : undefined]}>
               • {item}
             </Text>
           ))}

@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { Metadata } from 'next';
 import BlogGrid from "@/components/ui/BlogGrid";
 import PostCard from "@/components/ui/PostCard";
 import Navbar from "@/components/ui/Navbar";
@@ -15,6 +16,87 @@ import {
 } from "@/lib/courseUtils";
 
 export const revalidate = 60;
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ page?: string; category?: string; sort?: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const resolvedSearchParams = await searchParams;
+  const isGermanA1Selected = isGermanA1Category(resolvedSearchParams?.category);
+
+  const isAr = locale === "ar";
+  const isDe = locale === "de";
+  const isFr = locale === "fr";
+
+  if (isGermanA1Selected) {
+    const title = isAr
+      ? "أكاديمية اللغة الألمانية A1 للمبتدئين | GermanJobsPro"
+      : isDe
+      ? "Deutsch A1 Akademie für Anfänger | GermanJobsPro"
+      : isFr
+      ? "Académie d'Allemand A1 pour Débutants | GermanJobsPro"
+      : "German A1 Academy for Beginners | GermanJobsPro";
+
+    const description = isAr
+      ? "دروس لغة ألمانية مجانية للمستوى A1 خطوة بخطوة بالصوت والشرح العربي لتهيئة ملفك المهني والحصول على فرصة عمل في ألمانيا."
+      : isDe
+      ? "Kostenlose Deutsch A1 Lektionen Schritt für Schritt mit Grammatik, Wortschatz und praxisnahen Übungen für Ihre Karriere in Deutschland."
+      : isFr
+      ? "Cours d'allemand A1 gratuits étape par étape avec grammaire, vocabulaire et explications pour réussir votre carrière en Allemagne."
+      : "Free step-by-step German A1 lessons covering grammar, vocabulary, and practical exercises for living and working in Germany.";
+
+    return {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+      },
+    };
+  }
+
+  // General Career, Visa & Job Guide Articles
+  const title = isAr
+    ? "دليل العمل والهجرة وتأشيرة البحث عن عمل في ألمانيا | مدونة GermanJobsPro"
+    : isDe
+    ? "Karriere-, Visum- & Bewerbungs-Ratgeber Deutschland | GermanJobsPro Blog"
+    : isFr
+    ? "Guide Carrière, Visa & Emploi en Allemagne | Blog GermanJobsPro"
+    : "Germany Career, Visa & Job Application Guide | GermanJobsPro Blog";
+
+  const description = isAr
+    ? "مقالات وإرشادات شاملة حول سوق العمل الألماني، معادلة الشهادات، صياغة السيرة الذاتية DIN 5008، وتأشيرة فرصة العمل (Chancenkarte)."
+    : isDe
+    ? "Expertenratgeber für den deutschen Arbeitsmarkt, Anerkennung von Abschlüssen, DIN 5008 Lebenslauf und das Chancenkarte-Visum."
+    : isFr
+    ? "Conseils d'experts sur le marché du travail allemand, la reconnaissance des diplômes, le CV DIN 5008 et la carte des opportunités."
+    : "Expert guides on the German job market, degree recognition, DIN 5008 CV standards, and the Chancenkarte opportunity card visa.";
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
+}
 
 export default async function BlogPage({
   params,
@@ -194,12 +276,15 @@ export default async function BlogPage({
   const totalPages = Math.ceil(totalPosts / pageSize);
 
   const posts = dbPosts.map((post) => {
-    const cleanExcerpt = extractCleanExcerpt(post.markdown_content, post.title, 150);
+    const postTitle = isGermanA1Selected
+      ? parseLessonTitle(post.title, post.markdown_content).fullTitle
+      : post.title;
+    const cleanExcerpt = extractCleanExcerpt(post.markdown_content, postTitle, 150);
 
     return {
       id: post.id,
       slug: post.slug,
-      title: post.title,
+      title: postTitle,
       excerpt: cleanExcerpt,
       cover_image: post.image_url || "",
       author: post.generated_by_ai
