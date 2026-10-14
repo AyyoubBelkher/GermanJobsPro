@@ -289,14 +289,14 @@ export default async function LandingPage({
               </div>
             </Link>
 
-            {/* Pillar 3: Application Pipeline Tracker */}
+            {/* Pillar 3: AI Cover Letter & Smart ATS Checker */}
             <Link
-              href={`/${locale}/dashboard/applications`}
+              href={`/${locale}/dashboard/cover-letters/new`}
               className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6 cursor-pointer"
             >
               <div className="space-y-4">
                 <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                  📊
+                  🎯
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">

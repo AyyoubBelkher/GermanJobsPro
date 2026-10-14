@@ -328,7 +328,6 @@ interface DesktopNavProps {
   jobsLink: string;
   blogLink: string;
   germanA1Link: string;
-  applicationsLink: string;
   atsLink: string;
   dossierLink: string;
   dashboardLink: string;
@@ -344,7 +343,6 @@ interface MobileNavProps {
   blogLink: string;
   germanA1Link: string;
   dashboardLink: string;
-  applicationsLink: string;
   cvLink: string;
   atsLink: string;
   dossierLink: string;
@@ -361,7 +359,6 @@ function useNavActive(
   homeLink: string,
   jobsLink: string,
   dashboardLink: string,
-  applicationsLink: string,
   atsLink: string,
   dossierLink: string,
   activeLocale: Locale,
@@ -383,7 +380,6 @@ function useNavActive(
 
   const isJobs = Boolean(pathname?.startsWith(jobsLink));
   const isDashboard = pathname === dashboardLink;
-  const isApplications = Boolean(pathname?.startsWith(applicationsLink));
   const isAts = Boolean(pathname?.startsWith(atsLink));
   const isDossier = Boolean(pathname?.startsWith(dossierLink));
   const isCv = cvLink ? Boolean(pathname?.startsWith(cvLink)) : false;
@@ -394,8 +390,8 @@ function useNavActive(
     isBlog,
     isGermanA1,
     isDashboard,
-    isApplications,
     isAts,
+    dossier: isDossier,
     isDossier,
     isCv,
   };
@@ -406,7 +402,6 @@ function DesktopNav({
   jobsLink,
   blogLink,
   germanA1Link,
-  applicationsLink,
   atsLink,
   dossierLink,
   dashboardLink,
@@ -421,7 +416,6 @@ function DesktopNav({
     isBlog,
     isGermanA1,
     isDashboard,
-    isApplications,
     isAts,
     isDossier,
   } = useNavActive(
@@ -429,32 +423,31 @@ function DesktopNav({
     homeLink,
     jobsLink,
     dashboardLink,
-    applicationsLink,
     atsLink,
     dossierLink,
     activeLocale
   );
 
   const activeClass =
-    "px-3 py-1.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400 font-bold transition-all";
+    "px-3 py-1.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400 font-bold transition-all whitespace-nowrap";
   const inactiveClass =
-    "px-3 py-1.5 rounded-xl border border-transparent text-slate-300 hover:text-blue-400 hover:bg-slate-900/40 transition-colors";
+    "px-3 py-1.5 rounded-xl border border-transparent text-slate-300 hover:text-blue-400 hover:bg-slate-900/40 transition-colors whitespace-nowrap";
 
   return (
     <nav className="hidden lg:flex items-center gap-1 xl:gap-2 text-sm font-semibold">
-      <Link href={homeLink} className={isHome ? activeClass : inactiveClass}>
+      <Link href={homeLink} className={`${isHome ? activeClass : inactiveClass} whitespace-nowrap`}>
         {dict.nav.home}
       </Link>
-      <Link href={jobsLink} className={`${isJobs ? activeClass : inactiveClass} flex items-center gap-1.5`}>
+      <Link href={jobsLink} className={`${isJobs ? activeClass : inactiveClass} flex items-center gap-1.5 whitespace-nowrap`}>
         <span>💼</span>
         <span>{dict.nav.jobs}</span>
       </Link>
-      <Link href={blogLink} className={isBlog ? activeClass : inactiveClass}>
+      <Link href={blogLink} className={`${isBlog ? activeClass : inactiveClass} whitespace-nowrap`}>
         {dict.nav.blog}
       </Link>
       <Link
         href={germanA1Link}
-        className={`${isGermanA1 ? activeClass : inactiveClass} flex items-center gap-1.5`}
+        className={`${isGermanA1 ? activeClass : inactiveClass} flex items-center gap-1.5 whitespace-nowrap`}
       >
         <span>🇩🇪</span>
         <span>{dict.nav.germanA1}</span>
@@ -463,29 +456,22 @@ function DesktopNav({
       {user ? (
         <>
           <Link
-            href={applicationsLink}
-            className={`${isApplications ? activeClass : inactiveClass} flex items-center gap-1.5`}
-          >
-            <span>💼</span>
-            <span>{dict.nav.applications}</span>
-          </Link>
-          <Link
             href={atsLink}
-            className={`${isAts ? activeClass : inactiveClass} flex items-center gap-1`}
+            className={`${isAts ? activeClass : inactiveClass} flex items-center gap-1 whitespace-nowrap`}
           >
             <span>🔍</span>
             <span>{dict.nav.atsCheck}</span>
           </Link>
           <Link
             href={dossierLink}
-            className={`${isDossier ? activeClass : inactiveClass} flex items-center gap-1`}
+            className={`${isDossier ? activeClass : inactiveClass} flex items-center gap-1 whitespace-nowrap`}
           >
             <span>📑</span>
             <span>{dict.nav.dossier}</span>
           </Link>
           <Link
             href={dashboardLink}
-            className={isDashboard ? activeClass : inactiveClass}
+            className={`${isDashboard ? activeClass : inactiveClass} whitespace-nowrap`}
           >
             {dict.nav.dashboard}
           </Link>
@@ -493,7 +479,7 @@ function DesktopNav({
       ) : (
         <Link
           href={pricingLink}
-          className="px-3 py-1.5 rounded-xl border border-transparent hover:text-amber-300 text-amber-400 transition-colors flex items-center gap-1 font-bold"
+          className="px-3 py-1.5 rounded-xl border border-transparent hover:text-amber-300 text-amber-400 transition-colors flex items-center gap-1 font-bold whitespace-nowrap"
         >
           <span>💎</span>
           <span>{dict.nav.pricingAndPro}</span>
@@ -508,7 +494,6 @@ function DesktopNavFallback({
   jobsLink,
   blogLink,
   germanA1Link,
-  applicationsLink,
   atsLink,
   dossierLink,
   dashboardLink,
@@ -517,47 +502,43 @@ function DesktopNavFallback({
   user,
 }: DesktopNavProps) {
   const inactiveClass =
-    "px-3 py-1.5 rounded-xl border border-transparent text-slate-300 hover:text-blue-400 hover:bg-slate-900/40 transition-colors";
+    "px-3 py-1.5 rounded-xl border border-transparent text-slate-300 hover:text-blue-400 hover:bg-slate-900/40 transition-colors whitespace-nowrap";
 
   return (
     <nav className="hidden lg:flex items-center gap-1 xl:gap-2 text-sm font-semibold">
-      <Link href={homeLink} className={inactiveClass}>
+      <Link href={homeLink} className={`${inactiveClass} whitespace-nowrap`}>
         {dict.nav.home}
       </Link>
-      <Link href={jobsLink} className={`${inactiveClass} flex items-center gap-1.5`}>
+      <Link href={jobsLink} className={`${inactiveClass} flex items-center gap-1.5 whitespace-nowrap`}>
         <span>💼</span>
         <span>{dict.nav.jobs}</span>
       </Link>
-      <Link href={blogLink} className={inactiveClass}>
+      <Link href={blogLink} className={`${inactiveClass} whitespace-nowrap`}>
         {dict.nav.blog}
       </Link>
-      <Link href={germanA1Link} className={`${inactiveClass} flex items-center gap-1.5`}>
+      <Link href={germanA1Link} className={`${inactiveClass} flex items-center gap-1.5 whitespace-nowrap`}>
         <span>🇩🇪</span>
         <span>{dict.nav.germanA1}</span>
       </Link>
 
       {user ? (
         <>
-          <Link href={applicationsLink} className={`${inactiveClass} flex items-center gap-1.5`}>
-            <span>💼</span>
-            <span>{dict.nav.applications}</span>
-          </Link>
-          <Link href={atsLink} className={`${inactiveClass} flex items-center gap-1`}>
+          <Link href={atsLink} className={`${inactiveClass} flex items-center gap-1 whitespace-nowrap`}>
             <span>🔍</span>
             <span>{dict.nav.atsCheck}</span>
           </Link>
-          <Link href={dossierLink} className={`${inactiveClass} flex items-center gap-1`}>
+          <Link href={dossierLink} className={`${inactiveClass} flex items-center gap-1 whitespace-nowrap`}>
             <span>📑</span>
             <span>{dict.nav.dossier}</span>
           </Link>
-          <Link href={dashboardLink} className={inactiveClass}>
+          <Link href={dashboardLink} className={`${inactiveClass} whitespace-nowrap`}>
             {dict.nav.dashboard}
           </Link>
         </>
       ) : (
         <Link
           href={pricingLink}
-          className="px-3 py-1.5 rounded-xl border border-transparent hover:text-amber-300 text-amber-400 transition-colors flex items-center gap-1 font-bold"
+          className="px-3 py-1.5 rounded-xl border border-transparent hover:text-amber-300 text-amber-400 transition-colors flex items-center gap-1 font-bold whitespace-nowrap"
         >
           <span>💎</span>
           <span>{dict.nav.pricingAndPro}</span>
@@ -573,7 +554,6 @@ function MobileNav({
   blogLink,
   germanA1Link,
   dashboardLink,
-  applicationsLink,
   cvLink,
   atsLink,
   dossierLink,
@@ -590,7 +570,6 @@ function MobileNav({
     isBlog,
     isGermanA1,
     isDashboard,
-    isApplications,
     isAts,
     isDossier,
     isCv,
@@ -599,7 +578,6 @@ function MobileNav({
     homeLink,
     jobsLink,
     dashboardLink,
-    applicationsLink,
     atsLink,
     dossierLink,
     activeLocale,
@@ -607,9 +585,9 @@ function MobileNav({
   );
 
   const mobileActiveClass =
-    "px-3 py-2.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400 font-bold transition-all";
+    "px-3 py-2.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400 font-bold transition-all whitespace-nowrap";
   const mobileInactiveClass =
-    "px-3 py-2.5 rounded-xl hover:bg-slate-900 hover:text-blue-400 transition-colors text-slate-300";
+    "px-3 py-2.5 rounded-xl hover:bg-slate-900 hover:text-blue-400 transition-colors text-slate-300 whitespace-nowrap";
 
   return (
     <nav className="flex flex-col space-y-1 text-sm font-semibold">
@@ -660,15 +638,6 @@ function MobileNav({
           </Link>
 
           <Link
-            href={applicationsLink}
-            onClick={onClose}
-            className={`${isApplications ? mobileActiveClass : mobileInactiveClass} flex items-center gap-2`}
-          >
-            <span>💼</span>
-            <span>{dict.nav.applications}</span>
-          </Link>
-
-          <Link
             href={cvLink}
             onClick={onClose}
             className={`${isCv ? mobileActiveClass : mobileInactiveClass} flex items-center gap-2`}
@@ -698,7 +667,7 @@ function MobileNav({
           <Link
             href={pricingLink}
             onClick={onClose}
-            className="px-3 py-2.5 rounded-xl hover:bg-slate-900 text-amber-400 transition-colors flex items-center gap-2 font-bold"
+            className="px-3 py-2.5 rounded-xl hover:bg-slate-900 text-amber-400 transition-colors flex items-center gap-2 font-bold whitespace-nowrap"
           >
             <span>💎</span>
             <span>{dict.nav.pricingAndPro}</span>
@@ -709,7 +678,7 @@ function MobileNav({
           <Link
             href={pricingLink}
             onClick={onClose}
-            className="px-3 py-2.5 rounded-xl hover:bg-slate-900 text-amber-400 transition-colors flex items-center gap-2 font-bold"
+            className="px-3 py-2.5 rounded-xl hover:bg-slate-900 text-amber-400 transition-colors flex items-center gap-2 font-bold whitespace-nowrap"
           >
             <span>💎</span>
             <span>{dict.nav.pricingAndPro}</span>
@@ -718,7 +687,7 @@ function MobileNav({
           <Link
             href={loginLink}
             onClick={onClose}
-            className="px-3 py-2.5 rounded-xl hover:bg-slate-900 hover:text-blue-400 transition-colors flex items-center gap-2"
+            className="px-3 py-2.5 rounded-xl hover:bg-slate-900 hover:text-blue-400 transition-colors flex items-center gap-2 whitespace-nowrap"
           >
             <span>🔑</span>
             <span>{dict.nav.signIn}</span>
@@ -735,7 +704,6 @@ function MobileNavFallback({
   blogLink,
   germanA1Link,
   dashboardLink,
-  applicationsLink,
   cvLink,
   atsLink,
   dossierLink,
@@ -746,7 +714,7 @@ function MobileNavFallback({
   onClose,
 }: MobileNavProps) {
   const mobileInactiveClass =
-    "px-3 py-2.5 rounded-xl hover:bg-slate-900 hover:text-blue-400 transition-colors text-slate-300";
+    "px-3 py-2.5 rounded-xl hover:bg-slate-900 hover:text-blue-400 transition-colors text-slate-300 whitespace-nowrap";
 
   return (
     <nav className="flex flex-col space-y-1 text-sm font-semibold">
@@ -770,10 +738,6 @@ function MobileNavFallback({
           <Link href={dashboardLink} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2 font-bold`}>
             <span>📊</span>
             <span>{dict.nav.dashboard}</span>
-          </Link>
-          <Link href={applicationsLink} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2`}>
-            <span>💼</span>
-            <span>{dict.nav.applications}</span>
           </Link>
           <Link href={cvLink} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2`}>
             <span>📄</span>
@@ -910,7 +874,6 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
   const blogLink = `/${activeLocale}/blog`;
   const germanA1Link = `/${activeLocale}/blog?category=German+A1`;
   const dashboardLink = `/${activeLocale}/dashboard`;
-  const applicationsLink = `/${activeLocale}/dashboard/applications`;
   const atsLink = `/${activeLocale}/dashboard/ats-analyzer`;
   const dossierLink = `/${activeLocale}/dashboard/dossier`;
   const cvLink = `/${activeLocale}/dashboard/cv`;
@@ -948,7 +911,6 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
               jobsLink={jobsLink}
               blogLink={blogLink}
               germanA1Link={germanA1Link}
-              applicationsLink={applicationsLink}
               atsLink={atsLink}
               dossierLink={dossierLink}
               dashboardLink={dashboardLink}
@@ -964,7 +926,6 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
             jobsLink={jobsLink}
             blogLink={blogLink}
             germanA1Link={germanA1Link}
-            applicationsLink={applicationsLink}
             atsLink={atsLink}
             dossierLink={dossierLink}
             dashboardLink={dashboardLink}
@@ -989,7 +950,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                 {/* Plan Badge */}
                 <Link
                   href={pricingLink}
-                  className={`px-2.5 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1 transition-all ${
+                  className={`px-2.5 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1 transition-all whitespace-nowrap ${
                     isPro
                       ? "bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25"
                       : "bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700"
@@ -1002,7 +963,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                 {/* Quick CV Action */}
                 <Link
                   href={newCvLink}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold shadow-lg shadow-blue-600/20 transition-all hover:scale-[1.02] active:scale-95"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold shadow-lg shadow-blue-600/20 transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap"
                 >
                   <span>✨</span>
                   <span>{dict.nav.newCv}</span>
@@ -1042,25 +1003,16 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                       <Link
                         href={dashboardLink}
                         onClick={() => setUserDropdownOpen(false)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors whitespace-nowrap"
                       >
                         <span>📊</span>
                         <span>{dict.nav.mainDashboard}</span>
                       </Link>
 
                       <Link
-                        href={applicationsLink}
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
-                      >
-                        <span>💼</span>
-                        <span>{dict.nav.applications}</span>
-                      </Link>
-
-                      <Link
                         href={cvLink}
                         onClick={() => setUserDropdownOpen(false)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors whitespace-nowrap"
                       >
                         <span>📄</span>
                         <span>{dict.nav.myResumes}</span>
@@ -1069,7 +1021,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                       <Link
                         href={dossierLink}
                         onClick={() => setUserDropdownOpen(false)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors whitespace-nowrap"
                       >
                         <span>📑</span>
                         <span>{dict.nav.completeDossier}</span>
@@ -1078,7 +1030,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                       <Link
                         href={pricingLink}
                         onClick={() => setUserDropdownOpen(false)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-amber-300 hover:text-amber-200 hover:bg-amber-500/10 transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-amber-300 hover:text-amber-200 hover:bg-amber-500/10 transition-colors whitespace-nowrap"
                       >
                         <span>💎</span>
                         <span>{dict.nav.upgradePro}</span>
@@ -1202,7 +1154,6 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                 blogLink={blogLink}
                 germanA1Link={germanA1Link}
                 dashboardLink={dashboardLink}
-                applicationsLink={applicationsLink}
                 cvLink={cvLink}
                 atsLink={atsLink}
                 dossierLink={dossierLink}
@@ -1221,7 +1172,6 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
               blogLink={blogLink}
               germanA1Link={germanA1Link}
               dashboardLink={dashboardLink}
-              applicationsLink={applicationsLink}
               cvLink={cvLink}
               atsLink={atsLink}
               dossierLink={dossierLink}

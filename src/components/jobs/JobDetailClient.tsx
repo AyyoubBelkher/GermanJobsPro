@@ -434,10 +434,6 @@ export default function JobDetailClient({
   const [copiedLink, setCopiedLink] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [trackedStatus, setTrackedStatus] = useState<string | null>(
-    initialApplication?.status || null
-  );
-  const [trackingLoading, setTrackingLoading] = useState(false);
 
   // Derived metadata & helpers
   const germanTitle = extractGermanTitle(job.title);
@@ -547,10 +543,6 @@ export default function JobDetailClient({
     const target = emailToSend || effectiveEmail || job.contactEmail;
     if (!target) return;
 
-    if (initialUser && trackedStatus !== "APPLIED") {
-      handleTrackApplication("APPLIED");
-    }
-
     await copyToClipboard(target);
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 3000);
@@ -571,60 +563,6 @@ export default function JobDetailClient({
   const mailtoLink = effectiveEmail
     ? `mailto:${effectiveEmail}?subject=${encodeURIComponent(emailSubject)}`
     : "";
-
-  const handleTrackApplication = async (newStatus: "SAVED" | "APPLIED" = "SAVED") => {
-    if (!initialUser) {
-      window.location.href = `/${activeLocale}/auth/login?redirect=${encodeURIComponent(
-        `/${activeLocale}/jobs/${job.id}`
-      )}`;
-      return;
-    }
-
-    setTrackingLoading(true);
-    try {
-      const res = await fetch("/api/applications", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          jobId: job.id,
-          companyName: cleanCompany,
-          jobTitle: germanTitle,
-          location: germanCity || job.city || "Deutschland",
-          status: newStatus,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setTrackedStatus(data.application.status);
-        setToast(
-          isAr
-            ? newStatus === "APPLIED"
-              ? "تم تسجيل تقديمك وتتبع طلبك بنجاح! 🚀"
-              : "تم حفظ الوظيفة في قائمة تقديماتك بنجاح! 📌"
-            : isDe
-            ? newStatus === "APPLIED"
-              ? "Bewerbung erfolgreich erfasst! 🚀"
-              : "Job in deinen Bewerbungen gespeichert! 📌"
-            : newStatus === "APPLIED"
-            ? "Application successfully tracked as Applied! 🚀"
-            : "Job successfully saved to your Applications! 📌"
-        );
-        setTimeout(() => setToast(null), 5000);
-      } else {
-        setToast(data.error || "Failed to track application");
-        setTimeout(() => setToast(null), 5000);
-      }
-    } catch (err) {
-      console.error("[Track Application Error]:", err);
-      setToast(isAr ? "حدث خطأ أثناء حفظ التقديم." : "Failed to track application.");
-      setTimeout(() => setToast(null), 5000);
-    } finally {
-      setTrackingLoading(false);
-    }
-  };
 
   return (
     <div className="space-y-8" dir={dir}>
@@ -751,53 +689,18 @@ export default function JobDetailClient({
               <div className="absolute top-0 right-0 w-80 h-80 bg-blue-600/10 blur-3xl pointer-events-none -mr-20 -mt-20" />
               
               <div className="relative space-y-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-blue-500/15 text-blue-400 text-[11px] font-bold">
-                      <span>⚡</span>
-                      <span>{isAr ? "بوابة التقديم السريع المعتمد" : "Fast-Track German Application"}</span>
-                    </div>
-                    <h3 className="text-base sm:text-lg font-black text-white">
-                      {isAr
-                        ? "جهّز ملف ترشيحك المعتمد وقدّم للوظيفة مباشرة"
-                        : isDe
-                        ? "Bewerbungsmappe nach DIN 5008 erstellen & bewerben"
-                        : "Generate DIN 5008 Application Dossier & Apply"}
-                    </h3>
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-blue-500/15 text-blue-400 text-[11px] font-bold">
+                    <span>⚡</span>
+                    <span>{isAr ? "بوابة التقديم السريع المعتمد" : "Fast-Track German Application"}</span>
                   </div>
-
-                  {/* Application Tracker Badge/Toggle */}
-                  <button
-                    type="button"
-                    onClick={() => handleTrackApplication(trackedStatus === "SAVED" ? "APPLIED" : "SAVED")}
-                    disabled={trackingLoading}
-                    className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border cursor-pointer ${
-                      trackedStatus === "APPLIED"
-                        ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                        : trackedStatus === "SAVED"
-                        ? "bg-blue-500/15 text-blue-300 border-blue-500/30"
-                        : "bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700"
-                    }`}
-                  >
-                    <span>{trackedStatus === "APPLIED" ? "✓" : trackedStatus === "SAVED" ? "📌" : "💼"}</span>
-                    <span>
-                      {trackingLoading
-                        ? isAr
-                          ? "جاري الحفظ..."
-                          : "Saving..."
-                        : trackedStatus === "APPLIED"
-                        ? isAr
-                          ? "مسجل: تم التقديم"
-                          : "Status: Applied"
-                        : trackedStatus === "SAVED"
-                        ? isAr
-                          ? "محفوظ في التقديمات"
-                          : "Saved in Tracker"
-                        : isAr
-                        ? "+ حفظ في التقديمات"
-                        : "+ Track Application"}
-                    </span>
-                  </button>
+                  <h3 className="text-base sm:text-lg font-black text-white">
+                    {isAr
+                      ? "جهّز ملف ترشيحك المعتمد وقدّم للوظيفة مباشرة"
+                      : isDe
+                      ? "Bewerbungsmappe nach DIN 5008 erstellen & bewerben"
+                      : "Generate DIN 5008 Application Dossier & Apply"}
+                  </h3>
                 </div>
 
                 {/* Primary & Secondary CTAs */}
@@ -823,11 +726,6 @@ export default function JobDetailClient({
                       href={job.applyUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={() => {
-                        if (initialUser && trackedStatus !== "APPLIED") {
-                          handleTrackApplication("APPLIED");
-                        }
-                      }}
                       className="w-full py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 hover:text-white border border-slate-700 hover:border-slate-600 font-bold text-xs sm:text-sm text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
                     >
                       <span>
@@ -841,11 +739,6 @@ export default function JobDetailClient({
                   ) : hasEmail ? (
                     <a
                       href={mailtoLink}
-                      onClick={() => {
-                        if (initialUser && trackedStatus !== "APPLIED") {
-                          handleTrackApplication("APPLIED");
-                        }
-                      }}
                       className="w-full py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 hover:text-white border border-slate-700 hover:border-slate-600 font-bold text-xs sm:text-sm text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
                     >
                       <span>✉️</span>
@@ -1255,11 +1148,6 @@ export default function JobDetailClient({
                   href={job.applyUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={() => {
-                    if (initialUser && trackedStatus !== "APPLIED") {
-                      handleTrackApplication("APPLIED");
-                    }
-                  }}
                   className="w-full py-4 px-5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm text-center shadow-xl shadow-blue-600/30 hover:shadow-blue-500/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer ring-1 ring-blue-400/40"
                 >
                   <span>
@@ -1350,11 +1238,6 @@ export default function JobDetailClient({
 
                 <a
                   href={mailtoLink}
-                  onClick={() => {
-                    if (initialUser && trackedStatus !== "APPLIED") {
-                      handleTrackApplication("APPLIED");
-                    }
-                  }}
                   className={`w-full py-3.5 px-4 rounded-xl text-center font-extrabold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
                     hasPortal
                       ? "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
@@ -1397,64 +1280,6 @@ export default function JobDetailClient({
                 <span className="leading-snug">{toast}</span>
               </div>
             )}
-
-            {/* Application OS Direct Track Action */}
-            <div className="pt-3 border-t border-slate-800/80 space-y-2">
-              <button
-                type="button"
-                onClick={() => handleTrackApplication(trackedStatus === "SAVED" ? "APPLIED" : "SAVED")}
-                disabled={trackingLoading}
-                className={`w-full py-3 px-4 rounded-2xl font-bold text-xs text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
-                  trackedStatus === "APPLIED"
-                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30"
-                    : trackedStatus === "SAVED"
-                    ? "bg-blue-500/20 text-blue-300 border border-blue-500/40 hover:bg-blue-500/30"
-                    : "bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 hover:border-slate-600"
-                }`}
-              >
-                <span>{trackedStatus === "APPLIED" ? "✅" : trackedStatus === "SAVED" ? "📌" : "💼"}</span>
-                <span>
-                  {trackingLoading
-                    ? isAr
-                      ? "جاري الحفظ في التقديمات..."
-                      : isDe
-                      ? "Wird gespeichert..."
-                      : "Saving to Tracker..."
-                    : trackedStatus === "APPLIED"
-                    ? isAr
-                      ? "تم التقديم (مسجل في قائمة تقديماتك)"
-                      : isDe
-                      ? "✓ Als beworben erfasst"
-                      : "✓ Applied (In Tracker)"
-                    : trackedStatus === "SAVED"
-                    ? isAr
-                      ? "محفوظ في قائمة تقديماتي (اضغط للتعيين كتم التقديم)"
-                      : isDe
-                      ? "✓ Gespeichert (Klick für Beworben)"
-                      : "✓ Saved (Click to set as Applied)"
-                    : isAr
-                    ? "حفظ في قائمة تقديماتي / Track Application"
-                    : isDe
-                    ? "In Bewerbungen speichern / Tracken"
-                    : "Track Application"}
-                </span>
-              </button>
-
-              {trackedStatus && (
-                <div className="text-center">
-                  <Link
-                    href={`/${activeLocale}/dashboard`}
-                    className="text-[11px] text-blue-400 hover:text-blue-300 underline font-medium transition-colors"
-                  >
-                    {isAr
-                      ? "متابعة حالة التقديم في لوحة التحكم ←"
-                      : isDe
-                      ? "Bewerbungsstatus im Dashboard ansehen ←"
-                      : "Manage applications in Dashboard →"}
-                  </Link>
-                </div>
-              )}
-            </div>
           </div>
 
           {/* Box 2: مسار الخطوات الثلاث لضمان القبول (3-Step Stepper) */}

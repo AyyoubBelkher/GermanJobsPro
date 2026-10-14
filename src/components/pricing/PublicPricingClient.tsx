@@ -287,10 +287,10 @@ export default function PublicPricingClient({
                 <span className="text-slate-600 font-bold text-sm">✕</span>
                 <span>
                   {isAr
-                    ? "تتبع متقدم لمراحل التقديم والمقابلات"
+                    ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
                     : isDe
-                    ? "Erweiterter Bewerbungs-Tracker & Interview-Notizen"
-                    : "Advanced application pipeline & interview tracking"}
+                    ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
+                    : "1-Click PDF to DIN 5008 Auto-Adapt"}
                 </span>
               </li>
             </ul>
@@ -444,9 +444,9 @@ export default function PublicPricingClient({
               </h3>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
                 {isAr
-                  ? "90 يوماً كاملة تغطي دورة التوظيف بالكامل مع إمكانية تصدير الدوسيه الكامل وتتبع المقابلات."
+                  ? "90 يوماً كاملة تغطي دورة التوظيف بالكامل مع إمكانية تصدير الدوسيه الكامل وتكييف السيرة الذاتية."
                   : isDe
-                  ? "Volle 90 Tage für den gesamten Bewerbungszyklus mit vollständiger Bewerbungsmappe und Tracker."
+                  ? "Volle 90 Tage für den gesamten Bewerbungszyklus mit vollständiger Bewerbungsmappe und Auto-Adapt."
                   : "90 full days covering the entire German hiring cycle with full Bewerbungsmappe compiler."}
               </p>
             </div>
@@ -481,10 +481,10 @@ export default function PublicPricingClient({
                 <span className="text-blue-400 font-bold text-sm">✓</span>
                 <span className="font-semibold text-white">
                   {isAr
-                    ? "متتبع التقديمات المتكامل وملاحظات المقابلات"
+                    ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
                     : isDe
-                    ? "Vollständiger Bewerbungs-Tracker & Interview-Notizen"
-                    : "Full Application Tracker & interview notes"}
+                    ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
+                    : "1-Click PDF to DIN 5008 Auto-Adapt"}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
@@ -676,27 +676,13 @@ export default function PublicPricingClient({
                 <td className="py-3.5 px-6 text-center text-emerald-400 font-bold bg-blue-600/5 border-x border-blue-500/10">✓ {isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium">
-                  {isAr
-                    ? "متتبع التقديمات المتكامل وملاحظات المقابلات"
-                    : isDe
-                    ? "Bewerbungs-Tracker & Pipeline"
-                    : "Application Tracker & Notes"}
-                </td>
-                <td className="py-3.5 px-6 text-center text-rose-400">✕</td>
-                <td className="py-3.5 px-6 text-center text-slate-400 bg-slate-800/20">{isAr ? "أساسي" : isDe ? "Basis" : "Basic"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-400 font-bold bg-blue-600/5 border-x border-blue-500/10">
-                  ✓ {isAr ? "متكامل ومتقدم مع ملاحظات المقابلات" : isDe ? "Vollständig & Interview-Notizen" : "Full Pipeline & Interview Notes"}
-                </td>
-              </tr>
-              <tr>
                 <td className="py-3.5 px-6 font-medium">{isAr ? "استوديو ملف الترشيح الكامل (Bewerbungsmappe)" : isDe ? "Vollständige Bewerbungsmappe" : "Complete Bewerbungsmappe Studio"}</td>
                 <td className="py-3.5 px-6 text-center text-rose-400">✕</td>
                 <td className="py-3.5 px-6 text-center text-rose-400 bg-slate-800/20">✕</td>
                 <td className="py-3.5 px-6 text-center text-emerald-400 font-bold bg-blue-600/5 border-x border-blue-500/10">✓ {isAr ? "مضمّن بالكامل (غلاف + سيرة + خطاب)" : isDe ? "Inklusive (Deckblatt + CV + Anschreiben)" : "Included (Cover + CV + Anschreiben)"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium">{isAr ? "تحويل فوري (1-Click PDF to DIN 5008)" : isDe ? "1-Click PDF zu DIN 5008" : "1-Click PDF to DIN 5008"}</td>
+                <td className="py-3.5 px-6 font-medium">{isAr ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)" : isDe ? "1-Klick PDF zu DIN 5008 Auto-Adapt" : "1-Click PDF to DIN 5008 Auto-Adapt"}</td>
                 <td className="py-3.5 px-6 text-center text-slate-400">{isAr ? "تجريبي" : isDe ? "1 Test" : "1 Trial"}</td>
                 <td className="py-3.5 px-6 text-center text-emerald-400 bg-slate-800/20">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
                 <td className="py-3.5 px-6 text-center text-emerald-400 font-bold bg-blue-600/5 border-x border-blue-500/10">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>

@@ -193,7 +193,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       headline: {
         prefix: "Préparez votre dossier de candidature allemand ",
         highlight: "(DIN 5008)",
-        suffix: " & suivez vos offres par IA",
+        suffix: " & franchissez les filtres ATS",
       },
       subheadline: "Créez votre CV DIN 5008 certifié, générez des lettres de motivation sur mesure (Anschreiben), assemblez votre Bewerbungsmappe complète, vérifiez la conformité ATS et apprenez l'allemand A1.",
       primaryCta: "Créer votre CV allemand gratuit 🇩🇪",
@@ -221,10 +221,10 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         cta: "Assembler le dossier →",
       },
       pillar3: {
-        title: "Suivi des Candidatures (Pipeline)",
-        desc: "Organisez vos offres sauvegardées, suivez le statut de vos candidatures, vos entretiens et vos négociations salariales dans un pipeline dédié.",
-        tag: "✓ Saved → Interview → Offer",
-        cta: "Voir le suivi →",
+        title: "Lettre de motivation IA & Audit ATS",
+        desc: "Générez des lettres de motivation (Anschreiben) sur mesure par IA et testez la compatibilité de votre CV avec les filtres ATS allemands.",
+        tag: "✓ KI-Anschreiben & Audit ATS",
+        cta: "Tester & Générer →",
       },
       pillar4: {
         title: "Académie Allemand A1 Professionnel",
@@ -287,12 +287,12 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         popularBadge: "Le plus populaire • Économisez 35%",
         category: "Pass Carrière Complet",
         title: "PRO Job Pass",
-        desc: "Couverture complète du cycle d'embauche (90 jours), compilateur Bewerbungsmappe, suivi des candidatures.",
+        desc: "Couverture complète du cycle d'embauche (90 jours), compilateur Bewerbungsmappe, adaptation intelligente.",
         price: "$19.99",
         period: "/ 90 jours",
         subtext: "Paiement unique • Aucun abonnement masqué",
         f1: "90 jours complets couvrant le cycle de recrutement",
-        f2: "Suivi complet des candidatures (Pipeline Tracker)",
+        f2: "1-Click PDF to DIN 5008 Auto-Adapt",
         f3: "Compilateur Bewerbungsmappe 3-en-1",
         f4: "20 requêtes IA prioritaires par jour",
         f5: "Lettres de motivation personnalisées par offre",
@@ -315,8 +315,8 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       },
       step3: {
         number: "03",
-        title: "3. Téléchargement & suivi de vos candidatures",
-        desc: "Téléchargez votre dossier PDF officiel DIN 5008 et suivez vos candidatures et entretiens depuis votre tableau de bord.",
+        title: "3. Téléchargement & Candidature directe",
+        desc: "Téléchargez votre dossier PDF officiel DIN 5008 et postulez directement auprès des entreprises en toute confiance.",
       },
     },
     a1Track: {
@@ -385,7 +385,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         },
         {
           question: "Puis-je commencer et utiliser la plateforme gratuitement ?",
-          answer: "Oui ! L'inscription est totalement gratuite. Vous pouvez créer, modifier et télécharger votre CV DIN 5008 et accéder au parcours Allemand A1. Pour les fonctionnalités IA avancées ou le suivi des candidatures, des pass uniques transparents sont proposés sans abonnement.",
+          answer: "Oui ! L'inscription est totalement gratuite. Vous pouvez créer, modifier et télécharger votre CV DIN 5008 et accéder au parcours Allemand A1. Pour les fonctionnalités IA avancées, des pass uniques transparents sont proposés sans abonnement.",
         },
       ],
     },
@@ -400,16 +400,16 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
   ar: {
     meta: {
       title: "GermanJobsPro 🇩🇪 | المنظومة المتكاملة للعمل والاستقرار في ألمانيا (DIN 5008)",
-      description: "جهّز ملف ترشيحك الألماني المعتمد (DIN 5008)، أنشئ خطابات دافع Anschreiben بالذكاء الاصطناعي، وتابع وظائفك عبر متتبع التقديمات وتعلّم الألمانية للمبتدئين A1.",
+      description: "جهّز ملف ترشيحك الألماني المعتمد (DIN 5008)، أنشئ خطابات دافع Anschreiben بالذكاء الاصطناعي، وافحص توافق ATS وتعلّم الألمانية للمبتدئين A1.",
     },
     hero: {
       badge: "🇩🇪 المنظومة المتكاملة للعمل والاستقرار في ألمانيا",
       headline: {
         prefix: "جهّز ملف ترشيحك الألماني المعتمد ",
         highlight: "(DIN 5008)",
-        suffix: " وتابع وظائفك باحترافية",
+        suffix: " واجتز فلاتر التوظيف باحترافية",
       },
-      subheadline: "أنشئ سيرتك الذاتية وفق معيار DIN 5008، ولّد خطابات دافع (Anschreiben) بالذكاء الاصطناعي، اجمع ملف الترشيح المتكامل (Bewerbungsmappe)، فحص الـ ATS، وتتبع تقديماتك ومقابلاتك مع مسار تعلم الألمانية A1.",
+      subheadline: "أنشئ سيرتك الذاتية وفق معيار DIN 5008، ولّد خطابات دافع (Anschreiben) بالذكاء الاصطناعي، اجمع ملف الترشيح المتكامل (Bewerbungsmappe)، وافحص توافق الـ ATS مع مسار تعلم الألمانية A1.",
       primaryCta: "أنشئ سيرتك الذاتية مجاناً 🇩🇪",
       secondaryCta: "مسار تعلم الألمانية A1 📚",
       trustBadges: [
@@ -435,10 +435,10 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         cta: "تجميع الملف ←",
       },
       pillar3: {
-        title: "لوحة متابعة التقديمات (Pipeline)",
-        desc: "نظم وظائفك المحفوظة، وتتبع مراحل التقديم، ومواعيد المقابلات، وملاحظات الرواتب عبر خط أنابيب وظيفي احترافي.",
-        tag: "✓ Saved → Interview → Offer",
-        cta: "لوحة المتابعة ←",
+        title: "خطاب الدافع وفاحص الـ ATS الذكي",
+        desc: "ولّد خطابات دافع (Anschreiben) مخصصة لكل وظيفة بالذكاء الاصطناعي وافحص نسبة توافق سيرتك الذاتية مع فلاتر الشركات الألمانية.",
+        tag: "✓ KI-Anschreiben & ATS Audit",
+        cta: "فحص وتوليد ←",
       },
       pillar4: {
         title: "أكاديمية الألمانية A1 للعمل",
@@ -506,7 +506,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         period: "/ 90 يوماً",
         subtext: "دفع لمرة واحدة • بدون اشتراك دوري",
         f1: "90 يوماً كاملة تغطي دورة التوظيف",
-        f2: "لوحة متتبع التقديمات (Pipeline Tracker)",
+        f2: "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)",
         f3: "استوديو الملف المتكامل (Bewerbungsmappe)",
         f4: "20 طلب ذكاء اصطناعي يومياً عالي الدقة",
         f5: "خطابات دافع مخصصة لكل إعلان وظيفي",
@@ -529,8 +529,8 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       },
       step3: {
         number: "03",
-        title: "3. التنزيل والتتبع المباشر",
-        desc: "حمّل ملف PDF الرسمي المتوافق مع DIN 5008 وتابع تقديماتك ومواعيد مقابلاتك عبر لوحة المتابعة.",
+        title: "3. التنزيل والتقديم المباشر",
+        desc: "حمّل ملف PDF الرسمي المتوافق مع DIN 5008 وقدّم طلبك مباشرة للشركات الألمانية بثقة كاملة.",
       },
     },
     a1Track: {
@@ -613,17 +613,17 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
 
   de: {
     meta: {
-      title: "GermanJobsPro 🇩🇪 | DIN 5008 Bewerbung, Jobs & A1-Kurs für Deutschland",
-      description: "Offizielle DIN 5008 Bewerbungsmappe, KI-Anschreiben, Application-Tracker und Deutsch A1 Lernpfad für Ihre Karriere in Deutschland.",
+      title: "GermanJobsPro 🇩🇪 | DIN 5008 Bewerbung, KI-Anschreiben & ATS-Audit",
+      description: "Offizielle DIN 5008 Bewerbungsmappe, KI-Anschreiben, ATS-Audit und Deutsch A1 Lernpfad für Ihre Karriere in Deutschland.",
     },
     hero: {
       badge: "🇩🇪 Die Komplettplattform für Bewerbung & Karriere in Deutschland",
       headline: {
         prefix: "Erstellen Sie Ihre DIN 5008 Bewerbung & ",
-        highlight: "verwalten Sie Ihre Jobchancen",
-        suffix: "",
+        highlight: "bestehen Sie ATS-Filter",
+        suffix: " professionell",
       },
-      subheadline: "Erstellen Sie DIN 5008 Lebensläufe, KI-Anschreiben, vollständige Bewerbungsmappen, ATS-Checks, Bewerbungs-Tracker und den Deutsch A1 Sprachkurs für Ihren beruflichen Erfolg.",
+      subheadline: "Erstellen Sie DIN 5008 Lebensläufe, KI-Anschreiben, vollständige Bewerbungsmappen, präzise ATS-Audits und nutzen Sie den Deutsch A1 Sprachkurs für Ihren beruflichen Erfolg.",
       primaryCta: "Kostenlosen Lebenslauf erstellen 🇩🇪",
       secondaryCta: "Deutsch A1 Lernkurs 📚",
       trustBadges: [
@@ -649,10 +649,10 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         cta: "Mappe erstellen →",
       },
       pillar3: {
-        title: "Bewerbungs-Pipeline Tracker",
-        desc: "Verwalten Sie Stellenangebote, Bewerbungsstatus, Interviewtermine und Notizen in einer übersichtlichen Pipeline.",
-        tag: "✓ Saved → Interview → Offer",
-        cta: "Zur Pipeline →",
+        title: "KI-Anschreiben & ATS-Audit Studio",
+        desc: "Erstellen Sie maßgeschneiderte Anschreiben nach DIN 5008 und prüfen Sie die Passgenauigkeit Ihres Lebenslaufs mit deutschen ATS-Scannern.",
+        tag: "✓ KI-Anschreiben & ATS Audit",
+        cta: "Prüfen & erstellen →",
       },
       pillar4: {
         title: "Deutsch A1 Berufsakademie",
@@ -720,7 +720,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         period: "/ 90 Tage",
         subtext: "Einmalzahlung • Kein Abo",
         f1: "90 volle Tage für den gesamten Bewerbungszyklus",
-        f2: "Vollständiger Bewerbungs-Pipeline Tracker",
+        f2: "1-Click PDF to DIN 5008 Auto-Adapt",
         f3: "Bewerbungsmappe 3-in-1 Compiler",
         f4: "20 tägliche Prioritäts-KI-Anfragen",
         f5: "Individuelle Anschreiben für jede Stelle",
@@ -744,7 +744,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       step3: {
         number: "03",
         title: "3. Herunterladen & Bewerben",
-        desc: "Laden Sie Ihr DIN 5008 PDF herunter und verwalten Sie Ihre Bewerbungen und Vorstellungsgespräche im Tracker.",
+        desc: "Laden Sie Ihr DIN 5008 PDF-Dossier herunter und bewerben Sie sich direkt und selbstbewusst bei deutschen Unternehmen.",
       },
     },
     a1Track: {
@@ -828,16 +828,16 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
   en: {
     meta: {
       title: "GermanJobsPro 🇩🇪 | Certified DIN 5008 German Application & Career Platform",
-      description: "Build certified DIN 5008 German CVs, AI cover letters (Anschreiben), track job applications, compile dossiers, and learn German A1.",
+      description: "Build certified DIN 5008 German CVs, AI cover letters (Anschreiben), compile complete dossiers, run ATS audits, and learn German A1.",
     },
     hero: {
       badge: "🇩🇪 The Complete Career & Application Platform for Germany",
       headline: {
         prefix: "Prepare Your Certified German Application ",
         highlight: "(DIN 5008)",
-        suffix: " & Track Jobs Professionally",
+        suffix: " & Beat ATS Filters Professionally",
       },
-      subheadline: "Build certified DIN 5008 CVs, craft tailored AI cover letters (Anschreiben), compile complete Bewerbungsmappe dossiers, run ATS audits, track job applications, and master German A1.",
+      subheadline: "Build certified DIN 5008 CVs, craft tailored AI cover letters (Anschreiben), compile complete Bewerbungsmappe dossiers, run ATS audits, and master German A1.",
       primaryCta: "Create Your Free German CV 🇩🇪",
       secondaryCta: "German A1 Course Track 📚",
       trustBadges: [
@@ -863,10 +863,10 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         cta: "Compile →",
       },
       pillar3: {
-        title: "Application Pipeline Tracker",
-        desc: "Track saved positions, active applications, interview rounds, and job offers in one organized dashboard with deadline alerts.",
-        tag: "✓ Saved → Interview → Offer",
-        cta: "Pipeline →",
+        title: "AI Cover Letter & Smart ATS Checker",
+        desc: "Generate tailored German cover letters (Anschreiben) with AI and audit your CV's match score against German recruiter ATS filters.",
+        tag: "✓ AI Anschreiben & ATS Audit",
+        cta: "Audit & Generate →",
       },
       pillar4: {
         title: "Career German A1 Academy",
@@ -934,7 +934,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         period: "/ 90 days",
         subtext: "One-time payment • No recurring fees",
         f1: "90 full days covering hiring cycle",
-        f2: "Full Application Pipeline Tracker",
+        f2: "1-Click PDF to DIN 5008 Auto-Adapt",
         f3: "Bewerbungsmappe 3-in-1 Compiler",
         f4: "20 daily priority AI requests",
         f5: "Tailored cover letters per vacancy",
@@ -957,8 +957,8 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       },
       step3: {
         number: "03",
-        title: "3. Download & Pipeline Tracking",
-        desc: "Download your certified DIN 5008 PDF dossier and track application status in the pipeline.",
+        title: "3. Download & Apply",
+        desc: "Download your certified DIN 5008 PDF dossier and apply directly to German employers with full confidence.",
       },
     },
     a1Track: {
@@ -1027,7 +1027,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         },
         {
           question: "Can I start and use the platform for free?",
-          answer: "Yes! Registration is completely free. You can build, edit, and download your DIN 5008 CV and access the German A1 track. When you need extended AI power or the application tracker, transparent one-time passes are available without subscriptions.",
+          answer: "Yes! Registration is completely free. You can build, edit, and download your DIN 5008 CV and access the German A1 track. When you need extended AI power, transparent one-time passes are available without subscriptions.",
         },
       ],
     },

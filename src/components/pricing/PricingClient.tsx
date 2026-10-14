@@ -120,10 +120,10 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
         </h1>
         <p className="text-sm text-slate-400 leading-relaxed">
           {isAr
-            ? "احصل على ترخيص متكامل لتوليد خطابات الدافع، فحص الـ ATS، وتتبع تقديماتك للعمل في ألمانيا."
+            ? "احصل على ترخيص متكامل لتوليد خطابات الدافع، فحص الـ ATS، وتكييف سيرتك الذاتية للعمل في ألمانيا."
             : isDe
-            ? "Komplettzugang zu DIN 5008 Anschreiben, ATS-Check und Bewerbungs-Tracker für Deutschland."
-            : "Get full access to AI cover letters, ATS resume audits, and application tracking for the German job market."}
+            ? "Komplettzugang zu DIN 5008 Anschreiben, ATS-Check und KI-Lebenslauf für Deutschland."
+            : "Get full access to AI cover letters, ATS resume audits, and DIN 5008 adaptation for the German job market."}
         </p>
       </div>
 
@@ -317,10 +317,10 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                 <span className="text-slate-600 font-bold text-sm">✕</span>
                 <span>
                   {isAr
-                    ? "تتبع متقدم لمراحل التقديم والمقابلات"
+                    ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
                     : isDe
-                    ? "Erweiterter Bewerbungs-Tracker & Interview-Notizen"
-                    : "Advanced application pipeline & interview tracking"}
+                    ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
+                    : "1-Click PDF to DIN 5008 Auto-Adapt"}
                 </span>
               </li>
             </ul>
@@ -499,10 +499,10 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                 <span className="text-blue-400 font-bold text-sm">✓</span>
                 <span className="font-semibold text-white">
                   {isAr
-                    ? "متتبع التقديمات المتكامل وملاحظات المقابلات"
+                    ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
                     : isDe
-                    ? "Vollständiger Bewerbungs-Tracker & Interview-Notizen"
-                    : "Full Application Tracker & interview notes"}
+                    ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
+                    : "1-Click PDF to DIN 5008 Auto-Adapt"}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
