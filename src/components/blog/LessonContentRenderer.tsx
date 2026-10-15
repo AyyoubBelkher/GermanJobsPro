@@ -3,6 +3,11 @@
 import React from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
+import {
+  GermanTtsButton,
+  speakGermanText,
+  useIsGermanPlaying,
+} from "./GermanTtsButton";
 
 interface LessonContentRendererProps {
   content: string;
@@ -618,6 +623,9 @@ export function DialogueCard({
   let cleanTranslation = translation ? translation.trim() : "";
   cleanTranslation = cleanTranslation.replace(/^[:\-–—\s]+/, "").trim();
 
+  const isSpeaker1 = theme.roleLabel === "Speaker 1";
+  const isPlaying = useIsGermanPlaying(cleanGerman);
+
   return (
     <div
       className={`group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 shadow-2xs hover:shadow-md transition-all duration-200 my-3.5 space-y-3 ${theme.hoverBorder} ${className}`}
@@ -642,6 +650,12 @@ export function DialogueCard({
         <span className="font-bold text-slate-900 dark:text-white text-lg sm:text-xl tracking-wide leading-snug flex-1 select-text">
           {cleanGerman}
         </span>
+        <GermanTtsButton
+          text={cleanGerman}
+          genderHint={isSpeaker1 ? "male" : "female"}
+          variant={isSpeaker1 ? "blue" : "emerald"}
+          size="sm"
+        />
       </div>
 
       {/* Body / Bottom (same card): Phonetic pronunciation badge + Arabic translation aligned to the RIGHT (dir='rtl') */}
@@ -651,13 +665,19 @@ export function DialogueCard({
           className="pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center gap-2.5 sm:gap-3 text-right"
         >
           {cleanPhonetic && (
-            <span
+            <button
+              type="button"
               dir="rtl"
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/60 font-semibold text-xs sm:text-sm shadow-2xs shrink-0 select-none"
+              onClick={() => speakGermanText(cleanGerman, isSpeaker1 ? "male" : "female")}
+              title="اضغط للاستماع للنطق الألماني"
+              aria-label="اضغط للاستماع للنطق الألماني"
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/60 font-semibold text-xs sm:text-sm shadow-2xs shrink-0 select-none cursor-pointer hover:scale-105 active:scale-95 transition-all ${
+                isPlaying ? "ring-2 ring-amber-400 dark:ring-amber-500 bg-amber-500/20" : ""
+              }`}
             >
-              <span className="text-xs text-amber-600 dark:text-amber-400 select-none">🔊</span>
+              <span className={`text-xs text-amber-600 dark:text-amber-400 select-none ${isPlaying ? "animate-pulse" : ""}`}>🔊</span>
               <span>{cleanPhonetic}</span>
-            </span>
+            </button>
           )}
 
           {cleanTranslation && (
@@ -1211,6 +1231,8 @@ export function VocabularyCard({
   let cleanTranslation = translation ? translation.trim() : "";
   cleanTranslation = cleanTranslation.replace(/^[:\-–—\s]+/, "").trim();
 
+  const isPlaying = useIsGermanPlaying(cleanGerman);
+
   return (
     <div
       className={`group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 shadow-2xs hover:shadow-md hover:border-blue-400/80 dark:hover:border-blue-700/80 transition-all duration-200 my-3.5 space-y-3 ${className}`}
@@ -1223,12 +1245,15 @@ export function VocabularyCard({
         dir="ltr"
         className="text-left font-bold text-slate-900 dark:text-white text-lg sm:text-xl font-sans tracking-wide leading-snug pl-1 select-text flex items-center justify-between gap-3"
       >
-        <span className="text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+        <span className="text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors flex-1 select-text">
           {cleanGerman}
         </span>
-        <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 select-none shrink-0">
-          DE
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <GermanTtsButton text={cleanGerman} size="sm" variant="blue" />
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 select-none shrink-0">
+            DE
+          </span>
+        </div>
       </div>
 
       {/* Tier 2: Pronunciation & Arabic Translation (Strictly separate bottom line, RTL, Right-aligned) */}
@@ -1238,13 +1263,19 @@ export function VocabularyCard({
           className="pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center gap-2.5 sm:gap-3 text-right"
         >
           {cleanPhonetic && (
-            <span
+            <button
+              type="button"
               dir="rtl"
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/60 font-semibold text-xs sm:text-sm shadow-2xs shrink-0 select-none"
+              onClick={() => speakGermanText(cleanGerman)}
+              title="اضغط للاستماع للنطق الألماني"
+              aria-label="اضغط للاستماع للنطق الألماني"
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/60 font-semibold text-xs sm:text-sm shadow-2xs shrink-0 select-none cursor-pointer hover:scale-105 active:scale-95 transition-all ${
+                isPlaying ? "ring-2 ring-amber-400 dark:ring-amber-500 bg-amber-500/20" : ""
+              }`}
             >
-              <span className="text-xs text-amber-600 dark:text-amber-400 select-none">🔊</span>
+              <span className={`text-xs text-amber-600 dark:text-amber-400 select-none ${isPlaying ? "animate-pulse" : ""}`}>🔊</span>
               <span>{cleanPhonetic}</span>
-            </span>
+            </button>
           )}
 
           {cleanTranslation && (
@@ -1449,11 +1480,12 @@ export default function LessonContentRenderer({
 
               <div
                 dir="ltr"
-                className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-blue-300/60 dark:border-blue-800/80 shadow-2xs text-left"
+                className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-blue-300/60 dark:border-blue-800/80 shadow-2xs text-left flex items-center justify-between gap-3"
               >
-                <span className="font-extrabold text-blue-600 dark:text-white text-lg sm:text-xl font-sans tracking-wide">
+                <span className="font-extrabold text-blue-600 dark:text-white text-lg sm:text-xl font-sans tracking-wide flex-1 select-text">
                   {grammar.exampleSentence}
                 </span>
+                <GermanTtsButton text={grammar.exampleSentence} size="sm" variant="blue" />
               </div>
 
               {grammar.breakdownChips.length > 0 && (
@@ -1804,9 +1836,10 @@ export default function LessonContentRenderer({
               return (
                 <div
                   dir="ltr"
-                  className="text-left font-bold text-slate-900 dark:text-white text-base sm:text-lg font-sans tracking-wide p-3.5 my-3 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800"
+                  className="text-left font-bold text-slate-900 dark:text-white text-base sm:text-lg font-sans tracking-wide p-3.5 my-3 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800 flex items-center justify-between gap-3"
                 >
-                  {children}
+                  <div className="flex-1 select-text">{children}</div>
+                  <GermanTtsButton text={trimmed} size="sm" variant="blue" />
                 </div>
               );
             }
@@ -1955,9 +1988,10 @@ export default function LessonContentRenderer({
                     <span className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 flex items-center justify-center font-mono font-bold text-xs sm:text-sm shrink-0 select-none">
                       •
                     </span>
-                    <span className="text-left font-bold text-slate-900 dark:text-white text-base sm:text-lg font-sans tracking-wide select-text">
+                    <span className="text-left font-bold text-slate-900 dark:text-white text-base sm:text-lg font-sans tracking-wide select-text flex-1">
                       {clean}
                     </span>
+                    <GermanTtsButton text={clean} size="sm" variant="blue" />
                   </div>
                 </li>
               );
