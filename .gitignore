@@ -56,3 +56,6 @@ live-production-data.json
 *.backup
 *.dump
 
+# repomix bundles
+repomix-output.xml
+

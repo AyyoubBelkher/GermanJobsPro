@@ -20,6 +20,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.warn("[Sitemap] Could not fetch dynamic posts during build prerender:", error instanceof Error ? error.message : error);
   }
 
+  // Fetch active jobs from DB via Prisma
+  let jobs: Array<{ id: string; updatedAt: Date }> = [];
+  try {
+    jobs = await prisma.job.findMany({
+      where: { status: "ACTIVE" },
+      select: {
+        id: true,
+        updatedAt: true,
+      },
+      orderBy: { publishedAt: "desc" },
+      take: 500,
+    });
+  } catch (error) {
+    console.warn("[Sitemap] Could not fetch active jobs during build prerender:", error instanceof Error ? error.message : error);
+  }
+
   const locales = ["ar", "en", "de", "fr"];
 
   // Base static routes
@@ -32,7 +48,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // Add localized root and blog list routes
+  // Add localized root, blog, jobs, and pricing routes
   locales.forEach((locale) => {
     routes.push({
       url: `${baseUrl}/${locale}`,
@@ -46,6 +62,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 0.8,
     });
+    routes.push({
+      url: `${baseUrl}/${locale}/jobs`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.9,
+    });
+    routes.push({
+      url: `${baseUrl}/${locale}/pricing`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    });
   });
 
   // Dynamic routes for each published blog post slug across localized routes
@@ -56,6 +84,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: post.updatedAt || new Date(),
         changeFrequency: "weekly",
         priority: 0.7,
+      });
+    });
+  });
+
+  // Dynamic routes for each active job across localized routes
+  jobs.forEach((job) => {
+    locales.forEach((locale) => {
+      routes.push({
+        url: `${baseUrl}/${locale}/jobs/${encodeURIComponent(job.id)}`,
+        lastModified: job.updatedAt || new Date(),
+        changeFrequency: "daily",
+        priority: 0.8,
       });
     });
   });

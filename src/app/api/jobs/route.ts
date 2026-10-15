@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category")?.trim() || "";
     const language = searchParams.get("language")?.trim() || "";
     const city = searchParams.get("city")?.trim() || "";
+    const directEmail = searchParams.get("directEmail") === "true";
 
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "15", 10)));
@@ -48,6 +49,25 @@ export async function GET(request: NextRequest) {
     if (city && city !== "all" && city !== "All") {
       whereConditions.push({
         city: { contains: city, mode: "insensitive" },
+      });
+    }
+
+    if (directEmail) {
+      whereConditions.push({
+        OR: [
+          {
+            AND: [
+              { contactEmail: { not: null } },
+              { contactEmail: { not: "" } },
+            ],
+          },
+          {
+            applyUrl: {
+              startsWith: "mailto:",
+              mode: "insensitive",
+            },
+          },
+        ],
       });
     }
 

@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useTransition, useCallback } from "react";
+import React, { useState, useEffect, useRef, useTransition, useCallback } from "react";
 import Link from "next/link";
 import { extractGermanJobTitle } from "@/lib/cover-letter";
+import GermanTtsButton from "@/components/blog/GermanTtsButton";
 import { getDictionary, isValidLocale, DEFAULT_LOCALE, LOCALE_METADATA, type Locale } from "@/lib/i18n";
 
 export interface JobItem {
@@ -53,6 +54,8 @@ export default function JobBoardClient({
   const activeLocale: Locale = isValidLocale(locale) ? locale : DEFAULT_LOCALE;
   const dict = getDictionary(activeLocale);
   const currentMeta = LOCALE_METADATA[activeLocale];
+  const isAr = activeLocale === "ar";
+  const isDe = activeLocale === "de";
   const dir = currentMeta.dir;
 
   const categories = [
@@ -72,6 +75,20 @@ export default function JobBoardClient({
     { id: "C1", label: "🇩🇪 Deutsch C1" },
   ];
 
+  const topGermanCities = [
+    { id: "all", label: isAr ? "📍 كل المدن" : isDe ? "📍 Alle Städte" : "📍 All Cities" },
+    { id: "Berlin", label: "Berlin" },
+    { id: "München", label: "München" },
+    { id: "Hamburg", label: "Hamburg" },
+    { id: "Frankfurt", label: "Frankfurt" },
+    { id: "Köln", label: "Köln" },
+    { id: "Stuttgart", label: "Stuttgart" },
+    { id: "Düsseldorf", label: "Düsseldorf" },
+    { id: "Leipzig", label: "Leipzig" },
+    { id: "Hannover", label: "Hannover" },
+    { id: "Nürnberg", label: "Nürnberg" },
+  ];
+
   const [jobs, setJobs] = useState<JobItem[]>(initialJobs);
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(initialPage);
@@ -80,47 +97,67 @@ export default function JobBoardClient({
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [language, setLanguage] = useState("all");
+  const [city, setCity] = useState("all");
+  const [directEmailOnly, setDirectEmailOnly] = useState(false);
 
   const [isPending, startTransition] = useTransition();
+  const isInitialMount = useRef(true);
 
-  const fetchJobs = useCallback(async (searchQuery: string, cat: string, lang: string, targetPage: number) => {
-    try {
-      const params = new URLSearchParams();
-      if (searchQuery) params.set("search", searchQuery);
-      if (cat && cat !== "all") params.set("category", cat);
-      if (lang && lang !== "all") params.set("language", lang);
-      params.set("page", String(targetPage));
-      params.set("limit", "15");
+  const fetchJobs = useCallback(
+    async (
+      searchQuery: string,
+      cat: string,
+      lang: string,
+      selectedCity: string,
+      directEmail: boolean,
+      targetPage: number
+    ) => {
+      try {
+        const params = new URLSearchParams();
+        if (searchQuery) params.set("search", searchQuery);
+        if (cat && cat !== "all") params.set("category", cat);
+        if (lang && lang !== "all") params.set("language", lang);
+        if (selectedCity && selectedCity !== "all") params.set("city", selectedCity);
+        if (directEmail) params.set("directEmail", "true");
+        params.set("page", String(targetPage));
+        params.set("limit", "15");
 
-      const res = await fetch(`/api/jobs?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to load jobs");
-      const data = await res.json();
+        const res = await fetch(`/api/jobs?${params.toString()}`);
+        if (!res.ok) throw new Error("Failed to load jobs");
+        const data = await res.json();
 
-      if (data.success) {
-        setJobs(data.jobs);
-        setTotal(data.total);
-        setPage(data.page);
-        setTotalPages(data.totalPages);
+        if (data.success) {
+          setJobs(data.jobs);
+          setTotal(data.total);
+          setPage(data.page);
+          setTotalPages(data.totalPages);
+        }
+      } catch (err) {
+        console.error("Error fetching jobs:", err);
       }
-    } catch (err) {
-      console.error("Error fetching jobs:", err);
-    }
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
     const timer = setTimeout(() => {
       startTransition(() => {
-        fetchJobs(search, category, language, 1);
+        fetchJobs(search, category, language, city, directEmailOnly, 1);
       });
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [search, category, language, fetchJobs]);
+  }, [search, category, language, city, directEmailOnly, fetchJobs]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
     startTransition(() => {
-      fetchJobs(search, category, language, newPage);
+      fetchJobs(search, category, language, city, directEmailOnly, newPage);
     });
     window.scrollTo({ top: 200, behavior: "smooth" });
   };
@@ -172,8 +209,8 @@ export default function JobBoardClient({
         </div>
 
         {/* Search Bar & Dropdowns */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-          <div className="md:col-span-8 relative">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3">
+          <div className="sm:col-span-2 md:col-span-6 relative">
             <input
               type="text"
               value={search}
@@ -184,7 +221,21 @@ export default function JobBoardClient({
             <span className="absolute left-4 top-4 text-slate-500 text-base">🔍</span>
           </div>
 
-          <div className="md:col-span-4">
+          <div className="sm:col-span-1 md:col-span-3">
+            <select
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              className="w-full px-4 py-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden transition-all cursor-pointer"
+            >
+              {topGermanCities.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="sm:col-span-1 md:col-span-3">
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
@@ -199,8 +250,32 @@ export default function JobBoardClient({
           </div>
         </div>
 
-        {/* Category Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        {/* Category Pills & Direct Email Toggle */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none flex-wrap sm:flex-nowrap">
+          <button
+            type="button"
+            onClick={() => setDirectEmailOnly((prev) => !prev)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
+              directEmailOnly
+                ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/25 ring-2 ring-emerald-400/50"
+                : "bg-slate-950 hover:bg-slate-800 text-emerald-400 border border-emerald-500/30"
+            }`}
+          >
+            <span>✉️</span>
+            <span>
+              {isAr
+                ? "تقديم مباشر بالإيميل"
+                : isDe
+                ? "Direkte E-Mail-Bewerbung"
+                : "Direct HR Email"}
+            </span>
+            {directEmailOnly && (
+              <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-full font-bold">✓</span>
+            )}
+          </button>
+
+          <div className="h-5 w-px bg-slate-800 hidden sm:block shrink-0" />
+
           {categories.map((cat) => {
             const active = category === cat.id;
             return (
@@ -208,7 +283,7 @@ export default function JobBoardClient({
                 key={cat.id}
                 type="button"
                 onClick={() => setCategory(cat.id)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
                   active
                     ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
                     : "bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800/80"
@@ -265,6 +340,8 @@ export default function JobBoardClient({
               setSearch("");
               setCategory("all");
               setLanguage("all");
+              setCity("all");
+              setDirectEmailOnly(false);
             }}
             className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all cursor-pointer"
           >
@@ -274,27 +351,48 @@ export default function JobBoardClient({
       ) : (
         /* CARDS GRID VIEW */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {jobs.map((job) => (
-            <div
-              key={job.id}
-              className="bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-3xl p-6 space-y-5 shadow-xl hover:shadow-2xl transition-all flex flex-col justify-between"
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
-                    {job.category}
-                  </span>
-                  <span className="text-[11px] text-slate-500">{formatDate(job.publishedAt)}</span>
-                </div>
+          {jobs.map((job) => {
+            const hasDirectEmail = Boolean(
+              job.contactEmail?.trim() ||
+              (job.applyUrl && job.applyUrl.toLowerCase().startsWith("mailto:"))
+            );
+            const spokenGermanTitle = extractGermanJobTitle(job.title) || job.title;
 
-                <div dir="auto" className="text-start">
-                  <h3 dir="auto" className="font-extrabold text-white text-base leading-snug hover:text-blue-400 transition-colors text-start">
-                    <Link href={`/${activeLocale}/jobs/${job.id}`} className="block text-start" dir="auto">
-                      {job.title}
-                    </Link>
-                  </h3>
-                  <p dir="auto" className="text-xs text-slate-400 mt-1 text-start">🏢 {job.company}</p>
-                </div>
+            return (
+              <div
+                key={job.id}
+                className="bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-3xl p-6 space-y-5 shadow-xl hover:shadow-2xl transition-all flex flex-col justify-between"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
+                        {job.category}
+                      </span>
+                      {hasDirectEmail && (
+                        <span className="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-1">
+                          {isAr ? "✉️ بريد مباشر" : isDe ? "✉️ Direktkontakt" : "✉️ Direct Email"}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-slate-500">{formatDate(job.publishedAt)}</span>
+                  </div>
+
+                  <div dir="auto" className="text-start">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 dir="auto" className="font-extrabold text-white text-base leading-snug hover:text-blue-400 transition-colors text-start flex-1">
+                        <Link href={`/${activeLocale}/jobs/${job.id}`} className="block text-start" dir="auto">
+                          {job.title}
+                        </Link>
+                      </h3>
+                      <GermanTtsButton
+                        text={spokenGermanTitle}
+                        size="sm"
+                        variant="blue"
+                      />
+                    </div>
+                    <p dir="auto" className="text-xs text-slate-400 mt-1 text-start">🏢 {job.company}</p>
+                  </div>
 
                 <div className="flex items-center gap-2 flex-wrap text-xs">
                   <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 font-medium">
@@ -351,7 +449,8 @@ export default function JobBoardClient({
                 </div>
               </div>
             </div>
-          ))}
+          );
+        })}
         </div>
       )}
 

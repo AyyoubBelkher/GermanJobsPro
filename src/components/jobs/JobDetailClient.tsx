@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { stripHtml } from "@/components/jobs/JobBoardClient";
+import GermanTtsButton from "@/components/blog/GermanTtsButton";
 import { getDictionary, isValidLocale, DEFAULT_LOCALE, LOCALE_METADATA, type Locale } from "@/lib/i18n";
 
 export interface JobDetailData {
@@ -30,10 +31,6 @@ interface JobDetailClientProps {
     email: string;
     name: string | null;
     plan: string;
-  } | null;
-  initialApplication?: {
-    id: string;
-    status: string;
   } | null;
 }
 
@@ -420,7 +417,6 @@ export default function JobDetailClient({
   job,
   locale,
   initialUser,
-  initialApplication,
 }: JobDetailClientProps) {
   const activeLocale: Locale = isValidLocale(locale) ? locale : DEFAULT_LOCALE;
   const dict = getDictionary(activeLocale);
@@ -622,12 +618,20 @@ export default function JobDetailClient({
 
             {/* Job Title & Corporate Details */}
             <div className="space-y-3">
-              <h1
-                dir="auto"
-                className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-snug text-start"
-              >
-                <bdi>{job.title}</bdi>
-              </h1>
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <h1
+                  dir="auto"
+                  className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-snug text-start flex-1"
+                >
+                  <bdi>{job.title}</bdi>
+                </h1>
+                <GermanTtsButton
+                  text={germanTitle}
+                  size="sm"
+                  variant="blue"
+                  label={isAr ? "نطق المسمى بالألمانية" : isDe ? "Aussprache" : "Pronounce"}
+                />
+              </div>
 
               <div className="flex items-center gap-4 text-sm sm:text-base text-slate-300 flex-wrap">
                 <span className="font-bold text-blue-400 flex items-center gap-1.5" dir="auto">
@@ -1480,17 +1484,23 @@ export default function JobDetailClient({
       {showEmailModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
           <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 max-w-xl w-full space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 flex-wrap">
                 <span className="text-2xl">📝</span>
                 <h3 className="text-base sm:text-lg font-bold text-white">
                   {dict.jobs.details.templateModalTitle}
                 </h3>
+                <GermanTtsButton
+                  text={emailBody}
+                  size="sm"
+                  variant="emerald"
+                  label={isAr ? "استمع لنص الرسالة" : isDe ? "Vorlesen" : "Listen"}
+                />
               </div>
               <button
                 type="button"
                 onClick={() => setShowEmailModal(false)}
-                className="text-slate-400 hover:text-white text-lg p-1 cursor-pointer"
+                className="text-slate-400 hover:text-white text-lg p-1 cursor-pointer shrink-0"
               >
                 ✕
               </button>
