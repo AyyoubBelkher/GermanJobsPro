@@ -10,6 +10,16 @@ export async function middleware(request: NextRequest) {
   const segments = pathname.split("/");
   const potentialLocale = segments[1];
 
+  // Pass through root-level text and sitemap files without locale redirection
+  if (
+    pathname === "/llms.txt" ||
+    pathname === "/llms-full.txt" ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml"
+  ) {
+    return NextResponse.next();
+  }
+
   // If path lacks a valid locale prefix or contains an unsupported locale, redirect using a 307 temporary redirect
   if (!potentialLocale || !isValidLocale(potentialLocale)) {
     const targetPath = `/${DEFAULT_LOCALE}${pathname === "/" ? "" : pathname}${search}`;
@@ -61,8 +71,8 @@ export const config = {
      * - /images/* (images directory)
      * - /fonts/* (fonts directory)
      * - *.svg, *.ico, *.png, *.jpg, *.ttf, *.woff, *.woff2 (static files)
-     * - robots.txt, sitemap.xml
+     * - robots.txt, sitemap.xml, llms.txt, llms-full.txt
      */
-    "/((?!api|_next|images|fonts|robots\\.txt|sitemap\\.xml|.*\\.(?:svg|ico|png|jpg|jpeg|ttf|woff|woff2)$).*)",
+    "/((?!api|_next|images|fonts|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt|.*\\.(?:svg|ico|png|jpg|jpeg|ttf|woff|woff2)$).*)",
   ],
 };

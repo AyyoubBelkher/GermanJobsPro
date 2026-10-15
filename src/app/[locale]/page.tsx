@@ -22,6 +22,42 @@ export async function generateMetadata({
   return {
     title: t.meta.title,
     description: t.meta.description,
+    alternates: {
+      canonical: `https://www.germanjobspro.com/${locale}`,
+      languages: {
+        ar: "https://www.germanjobspro.com/ar",
+        de: "https://www.germanjobspro.com/de",
+        en: "https://www.germanjobspro.com/en",
+        fr: "https://www.germanjobspro.com/fr",
+        "x-default": "https://www.germanjobspro.com/de",
+      },
+    },
+    keywords: [
+      "Lebenslauf DIN 5008",
+      "سيرة ذاتية ألمانية",
+      "فحص ATS ألمانيا",
+      "وظائف في ألمانيا",
+      "عقود أوسبيلدونغ",
+      "Anschreiben الذكاء الاصطناعي",
+      "Bewerbungsmappe",
+      "Chancenkarte CV",
+      "German CV Maker",
+      "Tabellarischer Lebenslauf",
+      "German ATS Resume Checker",
+      "German Cover Letter Generator",
+      "Ausbildung Deutschland",
+      "Jobs in Germany",
+      "Apprendre Allemand A1",
+      "CV Allemand DIN 5008",
+    ],
+    openGraph: {
+      title: t.meta.title,
+      description: t.meta.description,
+      url: `https://www.germanjobspro.com/${locale}`,
+      siteName: "GermanJobsPro",
+      locale: locale === "ar" ? "ar_AR" : locale === "de" ? "de_DE" : locale === "fr" ? "fr_FR" : "en_US",
+      type: "website",
+    },
   };
 }
 
@@ -148,8 +184,113 @@ export default async function LandingPage({
     console.warn("[LandingPage] Database query failed during prerendering:", error instanceof Error ? error.message : error);
   }
 
+  const knowledgeGraphLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.germanjobspro.com/#organization",
+        "name": "GermanJobsPro",
+        "url": "https://www.germanjobspro.com",
+        "logo": "https://www.germanjobspro.com/icon.svg",
+        "sameAs": [
+          "https://twitter.com/GermanJobsPro",
+          "https://www.linkedin.com/company/germanjobspro"
+        ],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "customer support",
+          "email": "support@germanjobspro.com",
+          "availableLanguage": ["Arabic", "German", "English", "French"]
+        }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.germanjobspro.com/#website",
+        "url": "https://www.germanjobspro.com",
+        "name": "GermanJobsPro",
+        "description": t.meta.description,
+        "publisher": { "@id": "https://www.germanjobspro.com/#organization" },
+        "inLanguage": ["ar", "de", "en", "fr"],
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": `https://www.germanjobspro.com/${locale}/jobs?search={search_term_string}`,
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://www.germanjobspro.com/#software",
+        "name": "GermanJobsPro DIN 5008 CV Builder & German ATS Suite",
+        "url": `https://www.germanjobspro.com/${locale}`,
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "featureList": [
+          "DIN 5008 Tabellarischer Lebenslauf Builder",
+          "1-Click PDF to DIN 5008 Converter",
+          "German ATS Resume Checker",
+          "AI Anschreiben Cover Letter Generator",
+          "3-in-1 Bewerbungsmappe Dossier Studio",
+          "Verified German Job Board",
+          "Free German A1 Course with Audio"
+        ],
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": "Starter",
+            "price": "0",
+            "priceCurrency": "USD",
+            "description": "Free Starter Plan for German CV and A1 Course"
+          },
+          {
+            "@type": "Offer",
+            "name": "Quick Sprint",
+            "price": "9.99",
+            "priceCurrency": "USD",
+            "description": "30-day active application pass with German ATS audit and AI credits"
+          },
+          {
+            "@type": "Offer",
+            "name": "PRO Job Pass",
+            "price": "19.99",
+            "priceCurrency": "USD",
+            "description": "90-day comprehensive German job hunting suite: 1-Click PDF to DIN 5008, Dossier Studio, ATS audit"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `https://www.germanjobspro.com/${locale}/#faq`,
+        "mainEntity": t.faq.items.map((item) => ({
+          "@type": "Question",
+          "name": item.question,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": item.answer
+          }
+        }))
+      },
+      {
+        "@type": "Course",
+        "@id": `https://www.germanjobspro.com/${locale}/#course-a1`,
+        "name": isAr ? "مسار تعلم اللغة الألمانية للمبتدئين A1" : "Free German A1 Career Academy",
+        "description": isAr
+          ? "مسار تفاعلي مجاني لتعلم اللغة الألمانية من الصفر للمستوى A1 مع النطق الصوتي الأصلي والكتابة الصوتية بالعربية."
+          : "Free interactive German A1 course with native audio pronunciation for job seekers in Germany.",
+        "provider": { "@id": "https://www.germanjobspro.com/#organization" },
+        "url": `https://www.germanjobspro.com/${locale}/blog?category=German+A1`,
+        "isAccessibleForFree": true,
+        "inLanguage": ["de", "ar", "en"]
+      }
+    ]
+  };
+
   return (
     <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(knowledgeGraphLd) }}
+      />
       <Navbar locale={locale} initialUser={user} />
 
       <main className="flex-1 w-full space-y-24 sm:space-y-32 pb-24 overflow-hidden">

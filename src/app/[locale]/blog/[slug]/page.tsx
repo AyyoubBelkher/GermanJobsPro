@@ -452,9 +452,44 @@ export default async function SinglePostPage({
   });
 
   const author = getAuthorName(Boolean(post.generated_by_ai), locale);
+  const postTitle = currentLessonParsed?.fullTitle || post.title;
+  const postDescription = extractDescription(post.markdown_content);
+  const postImages = post.image_url ? [post.image_url] : undefined;
+
+  const articleLd = {
+    "@context": "https://schema.org",
+    "@type": isA1 ? ["Article", "LearningResource"] : "Article",
+    headline: postTitle,
+    description: postDescription,
+    datePublished: post.createdAt.toISOString(),
+    dateModified: (post.updatedAt ? post.updatedAt : post.createdAt).toISOString(),
+    author: {
+      "@type": "Person",
+      name: author,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "GermanJobsPro",
+      url: "https://www.germanjobspro.com",
+      logo: "https://www.germanjobspro.com/icon.svg",
+    },
+    mainEntityOfPage: `https://www.germanjobspro.com/${locale}/blog/${encodeURIComponent(post.slug)}`,
+    image: postImages,
+    ...(isA1
+      ? {
+          educationalLevel: "Beginner (CEFR A1)",
+          learningResourceType: "Lesson",
+          inLanguage: ["de", "ar"],
+        }
+      : {}),
+  };
 
   return (
     <div dir={dir} className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 py-16 px-4 sm:px-6 lg:px-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }}
+      />
       {/* Invisible Admin Controls - Rendered ONLY if admin_session cookie is active */}
       {isAdmin && <AdminBar post={post} locale={locale} />}
 
