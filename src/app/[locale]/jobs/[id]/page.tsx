@@ -7,7 +7,7 @@ import Footer from "@/components/ui/Footer";
 import { prisma } from "@/lib/prisma";
 import { getUserSession } from "@/lib/user-session";
 import JobDetailClient, { JobDetailData } from "@/components/jobs/JobDetailClient";
-import { stripHtml } from "@/components/jobs/JobBoardClient";
+import { stripHtml } from "@/lib/cover-letter";
 
 export const revalidate = 60;
 
@@ -158,20 +158,34 @@ export default async function JobDetailPage({
     contactEmail: job.contactEmail,
     requirements: job.requirements,
     descriptionRaw: job.descriptionRaw,
-    publishedAt: job.publishedAt instanceof Date ? job.publishedAt.toISOString() : String(job.publishedAt),
+    publishedAt:
+      job.publishedAt instanceof Date
+        ? (!isNaN(job.publishedAt.getTime()) ? job.publishedAt.toISOString() : new Date().toISOString())
+        : String(job.publishedAt),
     isVerified: job.isVerified ?? true,
   };
+
+  const publishedTime = new Date(job.publishedAt).getTime();
+  const isPublishedValid = !isNaN(publishedTime);
+  const fallbackDate = new Date().toISOString();
+
+  const expiresTime = job.expiresAt ? new Date(job.expiresAt).getTime() : NaN;
+  const isExpiresValid = !isNaN(expiresTime);
+
+  const datePosted = isPublishedValid ? new Date(publishedTime).toISOString() : fallbackDate;
+  const validThrough = isExpiresValid
+    ? new Date(expiresTime).toISOString()
+    : isPublishedValid
+    ? new Date(publishedTime + 30 * 24 * 60 * 60 * 1000).toISOString()
+    : fallbackDate;
 
   const jobPostingLd = {
     "@context": "https://schema.org",
     "@type": "JobPosting",
     title: job.title,
     description: stripHtml(job.descriptionRaw || job.requirements || job.title),
-    datePosted: new Date(job.publishedAt).toISOString(),
-    validThrough: (job.expiresAt
-      ? new Date(job.expiresAt)
-      : new Date(new Date(job.publishedAt).getTime() + 30 * 24 * 60 * 60 * 1000)
-    ).toISOString(),
+    datePosted,
+    validThrough,
     employmentType: /ausbildung|تدريب/i.test(job.category) ? "INTERN" : "FULL_TIME",
     hiringOrganization: {
       "@type": "Organization",

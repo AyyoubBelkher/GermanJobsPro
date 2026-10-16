@@ -15,3 +15,17 @@ export function extractGermanJobTitle(rawTitle: string): string {
   const latinOnly = rawTitle.replace(/[\u0600-\u06FF]/g, "").replace(/^[-–—:\s]+|[-–—:\s]+$/g, "").trim();
   return latinOnly || rawTitle;
 }
+
+export function stripHtml(html?: string | null): string {
+  if (!html) return "";
+  return html
+    .replace(/<[^>]*>?/gm, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}

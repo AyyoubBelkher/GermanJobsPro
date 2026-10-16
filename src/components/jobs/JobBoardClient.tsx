@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect, useRef, useTransition, useCallback } from "react";
 import Link from "next/link";
-import { extractGermanJobTitle } from "@/lib/cover-letter";
+import { extractGermanJobTitle, stripHtml } from "@/lib/cover-letter";
 import GermanTtsButton from "@/components/blog/GermanTtsButton";
 import { getDictionary, isValidLocale, DEFAULT_LOCALE, LOCALE_METADATA, type Locale } from "@/lib/i18n";
+
+export { stripHtml };
 
 export interface JobItem {
   id: string;
@@ -20,20 +22,6 @@ export interface JobItem {
   requirements?: string | null;
   descriptionRaw: string | null;
   publishedAt: string | Date;
-}
-
-export function stripHtml(html?: string | null): string {
-  if (!html) return "";
-  return html
-    .replace(/<[^>]*>?/gm, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 interface JobBoardClientProps {

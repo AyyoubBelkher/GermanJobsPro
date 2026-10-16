@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getLlmsBaseMarkdown } from "@/lib/llms";
-import { stripHtml } from "@/components/jobs/JobBoardClient";
+import { stripHtml } from "@/lib/cover-letter";
 
 export const revalidate = 3600;
 
