@@ -3,7 +3,7 @@
   "dockerfileLines": [
     "FROM node:20-slim AS base",
     "WORKDIR /app",
-    "RUN apt-get update && apt-get install -y python3 make g++ build-essential libsqlite3-dev openssl ca-certificates && rm -rf /var/lib/apt/lists/*",
+    "RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*",
     "COPY package*.json ./",
     "COPY prisma ./prisma/",
     "RUN npm install --no-audit",

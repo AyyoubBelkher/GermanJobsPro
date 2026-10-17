@@ -20,25 +20,30 @@ export interface JobSanitizerInput {
 export const TRUE_HEALTHCARE_REGEX =
   /(?:\b(pflege|kranken|medizin|arzt|ärzt|klinik|hospital|apotheke|therap|hebamme|sanitäter|betreuung|zahn|chirurg|nurse|nursing|medical|healthcare|clinic|caregiver)\b|\b(?:pflege|kranken|medizin|arzt|ärzt|klinik|hospital|apotheke|therap|hebamme|sanitäter|betreuung|zahn|chirurg)\w*|\w*pflege\w*)/i;
 
+export const AUSBILDUNG_REGEX = /\b(ausbildung|azubi|duales)\b/i;
+export const INTERN_REGEX = /\b(praktikant|praktikum|intern|internship|werkstudent|trainee)\b/i;
+export const IT_REGEX = /\b(software|developer|entwickler|engineer|it|security|cyber|data|cloud|devops|frontend|backend|fullstack|admin|system|ki|ai|tech|product|scrum)\b/i;
+export const ENGINEERING_REGEX = /\b(ingenieur|mechanik|elektro|mechatronik|bau|konstrukt|cnc|produktion|fertigung)\b/i;
+
 interface Rule {
   regex: RegExp;
   prefix: string;
-  category: string;
+  category: string | ((target: string) => string);
 }
 
 const CLASSIFICATION_RULES: Rule[] = [
   {
-    regex: /\b(praktikant|praktikum|intern|internship|werkstudent|trainee)\b/i,
-    prefix: "تدريب عملي",
-    category: "Ausbildung",
-  },
-  {
-    regex: /\b(ausbildung|azubi|duales)\b/i,
+    regex: AUSBILDUNG_REGEX,
     prefix: "عقد تدريب مهني",
     category: "Ausbildung",
   },
   {
-    regex: /\b(software|developer|entwickler|engineer|it|security|cyber|data|cloud|devops|frontend|backend|fullstack|admin|system|ki|ai|tech|product|scrum)\b/i,
+    regex: INTERN_REGEX,
+    prefix: "تدريب عملي",
+    category: (target: string) => (IT_REGEX.test(target) ? "IT" : "General"),
+  },
+  {
+    regex: IT_REGEX,
     prefix: "متخصص تقنية معلومات",
     category: "IT",
   },
@@ -53,7 +58,7 @@ const CLASSIFICATION_RULES: Rule[] = [
     category: "General",
   },
   {
-    regex: /\b(ingenieur|mechanik|elektro|mechatronik|bau|konstrukt|cnc|produktion|fertigung)\b/i,
+    regex: ENGINEERING_REGEX,
     prefix: "مهندس / تقني",
     category: "Engineering",
   },
@@ -100,6 +105,8 @@ export function sanitizeJobPayload<T extends JobSanitizerInput>(input: T): T {
     input.descriptionRaw && /(?:تمريض|(?:لل|ال)?رعاية\s*الصحية)/u.test(input.descriptionRaw)
   );
 
+  let result: T = input;
+
   // If NOT true healthcare and any false nursing/healthcare boilerplate is present, sanitize
   if (
     !isTrueHealthcare &&
@@ -115,7 +122,7 @@ export function sanitizeJobPayload<T extends JobSanitizerInput>(input: T): T {
 
     for (const rule of CLASSIFICATION_RULES) {
       if (rule.regex.test(targetForCheck)) {
-        trueCategory = rule.category;
+        trueCategory = typeof rule.category === "function" ? rule.category(targetForCheck) : rule.category;
         arabicPrefix = rule.prefix;
         break;
       }
@@ -191,7 +198,7 @@ export function sanitizeJobPayload<T extends JobSanitizerInput>(input: T): T {
         .trim();
     }
 
-    return {
+    result = {
       ...input,
       title: newTitle,
       category: newCategory,
@@ -201,5 +208,27 @@ export function sanitizeJobPayload<T extends JobSanitizerInput>(input: T): T {
     };
   }
 
-  return input;
+  // 2. Separate Praktikum / Werkstudent from Ausbildung:
+  // Check if category is "Ausbildung" while the title matches intern keywords
+  // and does NOT match Ausbildung/Azubi/duales keywords — reclassify category to General / IT / Engineering
+  const currentCategory = (result.category || "").trim();
+  if (
+    currentCategory.toLowerCase() === "ausbildung" &&
+    INTERN_REGEX.test(targetForCheck) &&
+    !AUSBILDUNG_REGEX.test(targetForCheck)
+  ) {
+    let reclassifiedCategory = "General";
+    if (IT_REGEX.test(targetForCheck)) {
+      reclassifiedCategory = "IT";
+    } else if (ENGINEERING_REGEX.test(targetForCheck)) {
+      reclassifiedCategory = "Engineering";
+    }
+
+    result = {
+      ...result,
+      category: reclassifiedCategory,
+    };
+  }
+
+  return result;
 }

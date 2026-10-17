@@ -36,6 +36,15 @@ export interface GumroadPingPayload {
  */
 export async function POST(request: NextRequest) {
   try {
+    const webhookSecret = process.env.GUMROAD_WEBHOOK_SECRET?.trim();
+    if (webhookSecret) {
+      const secretParam = new URL(request.url).searchParams.get("secret");
+      if (!secretParam || !timingSafeCompare(secretParam, webhookSecret)) {
+        console.warn("[Gumroad Webhook] Secret mismatch or missing");
+        return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+      }
+    }
+
     const rawBody = await request.text();
     const contentType = request.headers.get("content-type") || "";
 
@@ -342,8 +351,10 @@ export async function POST(request: NextRequest) {
       "[Gumroad Webhook Error]:",
       error instanceof Error ? error.message : error
     );
-    // Returning 200 prevents Gumroad from disabling the Ping webhook on transient network issues
-    return NextResponse.json({ received: true }, { status: 200 });
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 

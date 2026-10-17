@@ -317,14 +317,6 @@ export async function POST(request: NextRequest) {
         cvRawText,
       });
 
-      const latencyMs = performance.now() - aiStartTime;
-      logAiUsage({
-        userId: authResult.user.id,
-        operation: "COVER_LETTER_GEN",
-        latencyMs,
-        success: true,
-      }).catch(() => {});
-
       return NextResponse.json(
         {
           success: true,

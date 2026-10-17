@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 22,
     paddingHorizontal: 28,
-    fontFamily: "Amiri",
+    fontFamily: "Helvetica",
     color: "#0f172a",
     fontSize: 9,
     lineHeight: 1.35,
@@ -116,8 +116,7 @@ const styles = StyleSheet.create({
   },
   mainTitle: {
     fontSize: 18,
-    fontFamily: "Amiri",
-    fontWeight: "bold",
+    fontFamily: "Helvetica-Bold",
     color: "#0f172a",
     letterSpacing: 0.5,
     marginBottom: 3,
@@ -126,7 +125,7 @@ const styles = StyleSheet.create({
   },
   targetTitle: {
     fontSize: 11,
-    fontFamily: "Amiri",
+    fontFamily: "Helvetica",
     color: "#2563eb",
     marginBottom: 5,
     lineHeight: 1.2,
@@ -147,8 +146,7 @@ const styles = StyleSheet.create({
     lineHeight: 1.3,
   },
   personalLabel: {
-    fontFamily: "Amiri",
-    fontWeight: "bold",
+    fontFamily: "Helvetica-Bold",
     color: "#334155",
   },
   photoContainer: {
@@ -171,8 +169,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 10,
-    fontFamily: "Amiri",
-    fontWeight: "bold",
+    fontFamily: "Helvetica-Bold",
     color: "#1e3a8a",
     borderBottomWidth: 1,
     borderBottomColor: "#e2e8f0",
@@ -211,8 +208,7 @@ const styles = StyleSheet.create({
     width: 110,
     fontSize: 8.5,
     color: "#64748b",
-    fontFamily: "Amiri",
-    fontWeight: "bold",
+    fontFamily: "Helvetica-Bold",
     paddingRight: 8,
     textAlign: "left",
     lineHeight: 1.3,
@@ -228,8 +224,7 @@ const styles = StyleSheet.create({
   },
   entryTitle: {
     fontSize: 9.5,
-    fontFamily: "Amiri",
-    fontWeight: "bold",
+    fontFamily: "Helvetica-Bold",
     color: "#0f172a",
     textAlign: "left",
     lineHeight: 1.25,
@@ -301,8 +296,7 @@ const styles = StyleSheet.create({
   },
   signatureName: {
     fontSize: 8.5,
-    fontFamily: "Amiri",
-    fontWeight: "bold",
+    fontFamily: "Helvetica-Bold",
     color: "#0f172a",
     textAlign: "right",
   },
@@ -384,13 +378,13 @@ export function CvDocument({
       )}
 
       {/* Main CV Page(s) */}
-      <Page size="A4" style={[styles.page, isArabic ? styles.rtlText : undefined]}>
+      <Page size="A4" style={[styles.page, isArabic ? { fontFamily: "Amiri" } : undefined, isArabic ? styles.rtlText : undefined]}>
         {/* Header with Details & Photo */}
         <View style={[styles.header, isArabic ? styles.rtlRow : undefined]}>
           <View style={[styles.headerInfo, isArabic ? styles.rtlHeaderInfo : undefined]}>
-            <Text style={[styles.mainTitle, isArabic ? styles.rtlText : undefined]}>{fullName}</Text>
+            <Text style={[styles.mainTitle, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlText : undefined]}>{fullName}</Text>
             {p?.targetJobTitle && (
-              <Text style={[styles.targetTitle, isArabic ? styles.rtlText : undefined]}>
+              <Text style={[styles.targetTitle, isArabic ? { fontFamily: "Amiri" } : undefined, isArabic ? styles.rtlText : undefined]}>
                 {p.targetJobTitle}
               </Text>
             )}
@@ -398,7 +392,7 @@ export function CvDocument({
             <View style={[styles.personalGrid, isArabic ? styles.rtlRow : undefined]}>
               {p?.email && (
                 <Text style={[styles.personalItem, isArabic ? styles.rtlText : undefined]}>
-                  <Text style={styles.personalLabel}>
+                  <Text style={[styles.personalLabel, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
                     {isArabic ? "البريد الإلكتروني: " : "E-Mail: "}
                   </Text>
                   {p.email}
@@ -406,19 +400,19 @@ export function CvDocument({
               )}
               {p?.phone && (
                 <Text style={[styles.personalItem, isArabic ? styles.rtlText : undefined]}>
-                  <Text style={styles.personalLabel}>{isArabic ? "الهاتف: " : "Telefon: "}</Text>
+                  <Text style={[styles.personalLabel, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>{isArabic ? "الهاتف: " : "Telefon: "}</Text>
                   {p.phone}
                 </Text>
               )}
               {p?.address && (
                 <Text style={[styles.personalItem, isArabic ? styles.rtlText : undefined]}>
-                  <Text style={styles.personalLabel}>{isArabic ? "العنوان: " : "Adresse: "}</Text>
+                  <Text style={[styles.personalLabel, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>{isArabic ? "العنوان: " : "Adresse: "}</Text>
                   {p.address}
                 </Text>
               )}
               {p?.birthDate && (
                 <Text style={[styles.personalItem, isArabic ? styles.rtlText : undefined]}>
-                  <Text style={styles.personalLabel}>
+                  <Text style={[styles.personalLabel, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
                     {isArabic ? "تاريخ الميلاد: " : "Geboren: "}
                   </Text>
                   {formatFullDate(p.birthDate)}
@@ -427,7 +421,7 @@ export function CvDocument({
               )}
               {p?.nationality && (
                 <Text style={[styles.personalItem, isArabic ? styles.rtlText : undefined]}>
-                  <Text style={styles.personalLabel}>
+                  <Text style={[styles.personalLabel, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>
                     {isArabic ? "الجنسية: " : "Staatsangehörigkeit: "}
                   </Text>
                   {p.nationality}
@@ -435,13 +429,13 @@ export function CvDocument({
               )}
               {p?.linkedinUrl && (
                 <Text style={[styles.personalItem, isArabic ? styles.rtlText : undefined]}>
-                  <Text style={styles.personalLabel}>LinkedIn: </Text>
+                  <Text style={[styles.personalLabel, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>LinkedIn: </Text>
                   {p.linkedinUrl}
                 </Text>
               )}
               {p?.xingUrl && (
                 <Text style={[styles.personalItem, isArabic ? styles.rtlText : undefined]}>
-                  <Text style={styles.personalLabel}>Xing: </Text>
+                  <Text style={[styles.personalLabel, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>Xing: </Text>
                   {p.xingUrl}
                 </Text>
               )}
@@ -459,7 +453,7 @@ export function CvDocument({
         {/* Summary / Kurzprofil */}
         {p?.summary && (
           <View style={styles.section} wrap={false}>
-            <Text style={[styles.sectionTitle, isArabic ? styles.rtlText : undefined]}>
+            <Text style={[styles.sectionTitle, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlText : undefined]}>
               {isArabic ? "الملف التعريفي" : "Kurzprofil"}
             </Text>
             <Text style={[styles.summaryText, isArabic ? styles.rtlSummaryText : undefined]}>
@@ -471,7 +465,7 @@ export function CvDocument({
         {/* Work Experience */}
         {cv.experiences && cv.experiences.length > 0 && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, isArabic ? styles.rtlText : undefined]}>
+            <Text style={[styles.sectionTitle, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlText : undefined]}>
               {isArabic ? "الخبرات المهنية" : "Berufserfahrung"}
             </Text>
             {cv.experiences.map((exp, idx) => (
@@ -480,12 +474,12 @@ export function CvDocument({
                 style={[styles.entryRow, isArabic ? styles.rtlRow : undefined]}
                 wrap={false}
               >
-                <Text style={[styles.dateCol, isArabic ? styles.rtlDateCol : undefined]}>
+                <Text style={[styles.dateCol, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlDateCol : undefined]}>
                   {formatDate(exp.startDate, false, isArabic)} –{" "}
                   {formatDate(exp.endDate, exp.isCurrent, isArabic)}
                 </Text>
                 <View style={[styles.contentCol, isArabic ? styles.rtlText : undefined]}>
-                  <Text style={[styles.entryTitle, isArabic ? styles.rtlText : undefined]}>
+                  <Text style={[styles.entryTitle, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlText : undefined]}>
                     {exp.position}
                   </Text>
                   <Text style={[styles.entrySub, isArabic ? styles.rtlText : undefined]}>
@@ -506,7 +500,7 @@ export function CvDocument({
         {/* Education */}
         {cv.educations && cv.educations.length > 0 && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, isArabic ? styles.rtlText : undefined]}>
+            <Text style={[styles.sectionTitle, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlText : undefined]}>
               {isArabic ? "التعليم والمؤهلات" : "Ausbildung & Studium"}
             </Text>
             {cv.educations.map((edu, idx) => (
@@ -515,12 +509,12 @@ export function CvDocument({
                 style={[styles.entryRow, isArabic ? styles.rtlRow : undefined]}
                 wrap={false}
               >
-                <Text style={[styles.dateCol, isArabic ? styles.rtlDateCol : undefined]}>
+                <Text style={[styles.dateCol, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlDateCol : undefined]}>
                   {formatDate(edu.startDate, false, isArabic)} –{" "}
                   {formatDate(edu.endDate, edu.isCurrent, isArabic)}
                 </Text>
                 <View style={[styles.contentCol, isArabic ? styles.rtlText : undefined]}>
-                  <Text style={[styles.entryTitle, isArabic ? styles.rtlText : undefined]}>
+                  <Text style={[styles.entryTitle, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlText : undefined]}>
                     {edu.degree}
                     {edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ""}
                   </Text>
@@ -543,7 +537,7 @@ export function CvDocument({
         {/* Skills */}
         {cv.skills && cv.skills.length > 0 && (
           <View style={styles.section} wrap={false}>
-            <Text style={[styles.sectionTitle, isArabic ? styles.rtlText : undefined]}>
+            <Text style={[styles.sectionTitle, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlText : undefined]}>
               {isArabic ? "المهارات والقدرات" : "Kenntnisse & Qualifikationen"}
             </Text>
             <View style={[styles.skillsContainer, isArabic ? styles.rtlRow : undefined]}>
@@ -560,13 +554,13 @@ export function CvDocument({
         {/* Languages (CEFR) */}
         {cv.languages && cv.languages.length > 0 && (
           <View style={styles.section} wrap={false}>
-            <Text style={[styles.sectionTitle, isArabic ? styles.rtlText : undefined]}>
+            <Text style={[styles.sectionTitle, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlText : undefined]}>
               {isArabic ? "اللغات" : "Sprachkenntnisse"}
             </Text>
             <View style={[styles.languagesContainer, isArabic ? styles.rtlRow : undefined]}>
               {cv.languages.map((lang, idx) => (
                 <Text key={idx} style={styles.languageItem}>
-                  <Text style={styles.personalLabel}>{lang.language}: </Text>
+                  <Text style={[styles.personalLabel, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>{lang.language}: </Text>
                   {lang.proficiency}
                 </Text>
               ))}
@@ -577,7 +571,7 @@ export function CvDocument({
         {/* Certifications */}
         {cv.certifications && cv.certifications.length > 0 && (
           <View style={styles.section} wrap={false}>
-            <Text style={[styles.sectionTitle, isArabic ? styles.rtlText : undefined]}>
+            <Text style={[styles.sectionTitle, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlText : undefined]}>
               {isArabic ? "الشهادات والدورات" : "Zertifikate & Weiterbildung"}
             </Text>
             {cv.certifications.map((cert, idx) => (
@@ -586,7 +580,7 @@ export function CvDocument({
                 style={[styles.entryRow, isArabic ? styles.rtlRow : undefined]}
                 wrap={false}
               >
-                <Text style={[styles.dateCol, isArabic ? styles.rtlDateCol : undefined]}>
+                <Text style={[styles.dateCol, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlDateCol : undefined]}>
                   {cert.issueDate
                     ? formatDate(cert.issueDate, false, isArabic)
                     : isArabic
@@ -594,7 +588,7 @@ export function CvDocument({
                     : "Zertifikat"}
                 </Text>
                 <View style={[styles.contentCol, isArabic ? styles.rtlText : undefined]}>
-                  <Text style={[styles.entryTitle, isArabic ? styles.rtlText : undefined]}>
+                  <Text style={[styles.entryTitle, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlText : undefined]}>
                     {cert.name}
                   </Text>
                   <Text style={[styles.entrySub, isArabic ? styles.rtlText : undefined]}>
@@ -609,12 +603,12 @@ export function CvDocument({
         {/* Projects */}
         {cv.projects && cv.projects.length > 0 && (
           <View style={styles.section} wrap={false}>
-            <Text style={[styles.sectionTitle, isArabic ? styles.rtlText : undefined]}>
+            <Text style={[styles.sectionTitle, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlText : undefined]}>
               {isArabic ? "المشاريع" : "Projekte"}
             </Text>
             {cv.projects.map((proj, idx) => (
               <View key={idx} style={styles.projectItem} wrap={false}>
-                <Text style={[styles.entryTitle, isArabic ? styles.rtlText : undefined]}>
+                <Text style={[styles.entryTitle, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlText : undefined]}>
                   {proj.title}
                   {proj.role ? ` (${proj.role})` : ""}
                 </Text>

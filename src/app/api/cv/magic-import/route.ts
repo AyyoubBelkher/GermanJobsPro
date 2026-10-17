@@ -201,14 +201,6 @@ export async function POST(request: NextRequest) {
         targetJobTitle,
         locale,
       });
-
-      const latencyMs = performance.now() - aiStartTime;
-      logAiUsage({
-        userId: authResult.user.id,
-        operation: "CV_MAGIC_IMPORT",
-        latencyMs,
-        success: true,
-      }).catch(() => {});
     } catch (aiErr) {
       const latencyMs = performance.now() - aiStartTime;
       logAiUsage({

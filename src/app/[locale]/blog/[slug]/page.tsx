@@ -14,6 +14,7 @@ import {
   isGermanA1Category,
   parseLessonTitle,
   calculateReadTime,
+  resolveLessonImage,
 } from "@/lib/courseUtils";
 
 export const revalidate = 60;
@@ -139,7 +140,10 @@ export async function generateMetadata({
   const parsedLesson = isA1 ? parseLessonTitle(post.title, post.markdown_content) : null;
   const title = parsedLesson?.fullTitle || post.title;
   const description = extractDescription(post.markdown_content);
-  const images = post.image_url ? [post.image_url] : [];
+  const resolvedCover = isA1
+    ? resolveLessonImage(post.image_url, parsedLesson?.lessonNumber, post.slug, post.title)
+    : post.image_url;
+  const images = resolvedCover ? [resolvedCover] : [];
   const authorName = getAuthorName(Boolean(post.generated_by_ai), locale);
 
   return {
@@ -193,6 +197,9 @@ export default async function SinglePostPage({
   const isA1 = isGermanA1Category(post.category);
   const currentLessonParsed = isA1 ? parseLessonTitle(post.title, post.markdown_content) : null;
   const readTime = calculateReadTime(post.markdown_content, locale);
+  const resolvedHeroImage = isA1
+    ? resolveLessonImage(post.image_url, currentLessonParsed?.lessonNumber, post.slug, post.title)
+    : post.image_url;
 
   // Linear Stepper Navigation state for German A1 Course
   let prevLesson: {
@@ -303,8 +310,28 @@ export default async function SinglePostPage({
     comments = [];
   }
 
-  // Fetch 3 related published posts safely
-  let relatedPosts: typeof post[] = [];
+  // Fetch 3 related published posts safely with selective lightweight fields
+  type RelatedPostItem = {
+    id: string;
+    title: string;
+    slug: string;
+    category: string;
+    image_url: string | null;
+    markdown_content: string;
+    createdAt: Date;
+  };
+
+  const relatedPostSelect = {
+    id: true,
+    title: true,
+    slug: true,
+    category: true,
+    image_url: true,
+    markdown_content: true,
+    createdAt: true,
+  } as const;
+
+  let relatedPosts: RelatedPostItem[] = [];
   try {
     if (isA1) {
       relatedPosts = await prisma.post.findMany({
@@ -316,6 +343,7 @@ export default async function SinglePostPage({
             { category: { contains: "A1", mode: "insensitive" } },
           ],
         },
+        select: relatedPostSelect,
         orderBy: { createdAt: "desc" },
         take: 3,
       });
@@ -325,10 +353,17 @@ export default async function SinglePostPage({
           id: { not: post.id },
           published: true,
         },
+        select: relatedPostSelect,
         orderBy: { createdAt: "desc" },
         take: 3,
       });
     }
+
+    // Keep markdown_content lightweight (first 500 chars needed only for parseLessonTitle fallback)
+    relatedPosts = relatedPosts.map((p) => ({
+      ...p,
+      markdown_content: p.markdown_content ? p.markdown_content.slice(0, 500) : "",
+    }));
   } catch (err) {
     console.error("[SinglePostPage] Related posts fetch error:", err);
     relatedPosts = [];
@@ -454,7 +489,7 @@ export default async function SinglePostPage({
   const author = getAuthorName(Boolean(post.generated_by_ai), locale);
   const postTitle = currentLessonParsed?.fullTitle || post.title;
   const postDescription = extractDescription(post.markdown_content);
-  const postImages = post.image_url ? [post.image_url] : undefined;
+  const postImages = resolvedHeroImage ? [resolvedHeroImage] : undefined;
 
   const articleLd = {
     "@context": "https://schema.org",
@@ -626,15 +661,48 @@ export default async function SinglePostPage({
           </div>
         </header>
 
-        {/* Hero Image or Fallback SVG Banner */}
-        {post.image_url ? (
+        {/* Hero Image or Fallback SVG / Branded A1 CSS Banner */}
+        {resolvedHeroImage ? (
           <div className="aspect-video w-full relative rounded-3xl overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-lg">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={post.image_url}
+              src={resolvedHeroImage}
               alt={post.title}
               className="w-full h-full object-cover rounded-3xl"
             />
+          </div>
+        ) : isA1 ? (
+          /* Dynamic Branded CSS Cover for German A1 Lessons without Image */
+          <div className="aspect-video w-full relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950/70 to-slate-900 border border-blue-500/30 shadow-2xl flex flex-col items-center justify-center p-8 text-center select-none">
+            {/* Subtle Tech Blueprint Grid Overlay */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 opacity-15 bg-[linear-gradient(to_right,#3b82f6_1px,transparent_1px),linear-gradient(to_bottom,#3b82f6_1px,transparent_1px)] bg-[size:28px_28px] pointer-events-none"
+            />
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-radial from-blue-500/15 via-transparent to-transparent pointer-events-none"
+            />
+
+            <span className="relative z-10 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 font-bold text-sm shadow-inner backdrop-blur-md mb-4 tracking-wide">
+              🇩🇪 A1 • Lektion {currentLessonParsed?.lessonNumber || "•"}
+            </span>
+
+            <h2
+              dir="ltr"
+              className="relative z-10 text-2xl sm:text-3xl lg:text-4xl font-black text-white text-center leading-snug line-clamp-2 px-4 font-sans tracking-tight max-w-2xl"
+            >
+              {currentLessonParsed?.germanTitle || post.title}
+            </h2>
+
+            {currentLessonParsed?.arabicSubtitle && (
+              <p
+                dir="rtl"
+                className="relative z-10 text-sm sm:text-base font-semibold text-blue-300/90 text-center line-clamp-1 px-4 mt-2 max-w-xl"
+              >
+                {currentLessonParsed.arabicSubtitle}
+              </p>
+            )}
           </div>
         ) : (
           <div className="aspect-video w-full relative rounded-3xl overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-md">
@@ -836,6 +904,9 @@ export default async function SinglePostPage({
                 const relIsA1 = isGermanA1Category(relPost.category);
                 const relParsed = relIsA1 ? parseLessonTitle(relPost.title, relPost.markdown_content) : null;
                 const relTitle = relParsed?.fullTitle || relPost.title;
+                const relCover = relIsA1
+                  ? resolveLessonImage(relPost.image_url, relParsed?.lessonNumber, relPost.slug, relPost.title)
+                  : relPost.image_url;
 
                 return (
                   <div
@@ -843,13 +914,23 @@ export default async function SinglePostPage({
                     className="flex flex-col bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800/80 shadow-sm hover:shadow-md transition-all group"
                   >
                     <div className="aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-800 relative">
-                      {relPost.image_url ? (
+                      {relCover ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
-                          src={relPost.image_url}
+                          src={relCover}
                           alt={relTitle}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
+                      ) : relIsA1 ? (
+                        /* Dynamic Branded CSS Thumbnail for German A1 Lessons without Image */
+                        <div className="w-full h-full bg-gradient-to-br from-slate-900 via-blue-950/70 to-slate-900 flex flex-col items-center justify-center p-4 text-center select-none relative group-hover:scale-105 transition-transform duration-300">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 font-bold text-[10px] mb-1">
+                            🇩🇪 A1 • Lektion {relParsed?.lessonNumber || "•"}
+                          </span>
+                          <p dir="ltr" className="text-xs font-bold text-white line-clamp-1 px-2">
+                            {relParsed?.germanTitle || relTitle}
+                          </p>
+                        </div>
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-blue-600 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 text-white text-center">
                           <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-md mb-2 border border-white/20">
@@ -868,7 +949,7 @@ export default async function SinglePostPage({
                             </svg>
                           </div>
                           <span className="font-bold text-xs tracking-wider text-blue-100 uppercase">
-                            {relIsA1 && relParsed?.lessonNumber ? `${ui.lessonWord} ${relParsed.lessonNumber}` : relPost.category}
+                            {relPost.category}
                           </span>
                         </div>
                       )}

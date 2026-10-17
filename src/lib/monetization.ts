@@ -281,8 +281,26 @@ export async function refundAiCredit(userId: string): Promise<void> {
       user.planExpiresAt > new Date()
     );
 
-    // Paid active users do not have aiCredits decremented, so nothing to restore
+    // Paid active users: if an AI call fails, mark success: false on the most recent
+    // AiUsage record created for that userId within the last 2 minutes, ensuring failed AI calls
+    // never count against a paid user's 20/day quota.
     if (isPaidActive) {
+      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+      const recentUsage = await prisma.aiUsage.findFirst({
+        where: {
+          userId,
+          createdAt: { gte: twoMinutesAgo },
+          success: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (recentUsage) {
+        await prisma.aiUsage.update({
+          where: { id: recentUsage.id },
+          data: { success: false },
+        });
+      }
       return;
     }
 

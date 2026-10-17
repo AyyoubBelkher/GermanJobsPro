@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { GoogleGenAI } from "@google/genai";
 import { extractText } from "unpdf";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { verifyUserSession } from "@/lib/user-session";
+import { deductAiCreditAtomic, refundAiCredit } from "@/lib/monetization";
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -35,6 +38,17 @@ export async function POST(request: NextRequest) {
   });
   if (rateLimitResponse) {
     return rateLimitResponse;
+  }
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get("user_session")?.value;
+  const authResult = await verifyUserSession(token);
+
+  if (!authResult) {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
   try {
@@ -107,30 +121,52 @@ Return JSON:
   "germanTips": ["Tips for German DIN 5008 standards"]
 }`;
 
+    const creditResult = await deductAiCreditAtomic({
+      userId: authResult.user.id,
+      operation: "ATS_TOOL",
+      requiredCredits: 1,
+    });
+    if (!creditResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "INSUFFICIENT_CREDITS",
+          message: creditResult.error || "نفد رصيد الذكاء الاصطناعي الخاص بك. يرجى الترقية إلى Pro أو إدخال كود ترويجي.",
+          outOfCredits: true,
+        },
+        { status: 402 }
+      );
+    }
+
     let lastError: unknown = null;
     let responseText = "";
 
-    for (const model of FALLBACK_MODELS) {
-      try {
-        const res = await ai.models.generateContent({
-          model,
-          contents: prompt,
-          config: {
-            temperature: 0.2,
-            responseMimeType: "application/json",
-          },
-        });
-        if (res.text) {
-          responseText = res.text.trim();
-          break;
+    try {
+      for (const model of FALLBACK_MODELS) {
+        try {
+          const res = await ai.models.generateContent({
+            model,
+            contents: prompt,
+            config: {
+              temperature: 0.2,
+              responseMimeType: "application/json",
+            },
+          });
+          if (res.text) {
+            responseText = res.text.trim();
+            break;
+          }
+        } catch (err) {
+          lastError = err;
         }
-      } catch (err) {
-        lastError = err;
       }
-    }
 
-    if (!responseText) {
-      throw lastError || new Error("Failed to generate ATS analysis.");
+      if (!responseText) {
+        throw lastError || new Error("Failed to generate ATS analysis.");
+      }
+    } catch (geminiError) {
+      await refundAiCredit(authResult.user.id);
+      throw geminiError;
     }
 
     const parsed = JSON.parse(

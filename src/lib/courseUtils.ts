@@ -297,11 +297,50 @@ export function extractCleanExcerpt(
     text = text.replace(/^[\s\uFEFF]*(?:#+\s*)?(?:المقدمة|مقدمة)\s*:?\s*(\r?\n)*/gmiu, "");
   }
 
-  // Strips markdown formatting symbols ([#*`>_~\[\]]), links, and collapses extra whitespace
+  // 1. Strip markdown links [text](url) -> text
+  text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+
+  // 2. Neatly parenthesize bracketed phonetic transcriptions so they don't mash into adjacent words
+  text = text.replace(/\[([\u0600-\u06FF\s:!؟،.\-_…]+)\]/gu, " ($1) ");
+
+  // 3. Replace newlines between short vocabulary lines with " • " before collapsing whitespace
+  const rawLines = text.split(/\r?\n/);
+  const formattedChunks: string[] = [];
+  let prevWasShort = false;
+
+  for (const rawLine of rawLines) {
+    const trimmed = rawLine.trim();
+    if (!trimmed) continue;
+
+    const cleanLine = trimmed.replace(/^[-*•]\s+/, "");
+    const hasLatin = /[a-zA-ZäöüÄÖÜß]/.test(cleanLine);
+    const hasArabic = /[\u0600-\u06FF]/.test(cleanLine);
+    const isVocabOrList =
+      (hasLatin && hasArabic) ||
+      /^(\d+\.|\*|-|•)\s*/.test(trimmed) ||
+      /[:\-–—]/.test(cleanLine);
+    const isShortVocab = cleanLine.length <= 100 && isVocabOrList;
+
+    if (formattedChunks.length > 0) {
+      if (prevWasShort && isShortVocab) {
+        formattedChunks.push(" • ");
+      } else {
+        formattedChunks.push(" ");
+      }
+    }
+
+    formattedChunks.push(cleanLine);
+    prevWasShort = isShortVocab;
+  }
+
+  text = formattedChunks.join("");
+
+  // 4. Strips markdown formatting symbols ([#*`>_~\[\]]) and collapses extra whitespace
   text = text
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
     .replace(/[#*`>_~\[\]]/g, "")
+    .replace(/(?:\s*•\s*)+/g, " • ")
     .replace(/\s+/g, " ")
+    .replace(/^[\s•\-–—]+\s*/, "")
     .trim();
 
   // Final sanity cleans on collapsed string
@@ -318,5 +357,100 @@ export function extractCleanExcerpt(
   }
 
   return text.substring(0, maxLength).trim() + "...";
+}
+
+/**
+ * Checks if a string represents a custom uploaded or external image URL
+ * (such as a Base64 data:image URL or an https:// / http:// URL).
+ */
+export function isCustomLessonImage(url?: string | null): boolean {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  return (
+    trimmed.startsWith("data:image/") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("http://")
+  );
+}
+
+/**
+ * Checks if a static lesson cover image exists on disk or in the client bundle.
+ * - On server: verifies filesystem existence (public/images/lessons/german-a1-lesson-${lessonNum}.png).
+ * - On client: lessons 1..17 and 19 exist (lesson 18 explicitly does NOT exist).
+ */
+export function hasStaticLessonImage(lessonNum: number): boolean {
+  if (!lessonNum || lessonNum < 1 || lessonNum === 18) return false;
+
+  if (typeof window === "undefined") {
+    try {
+      // Dynamic eval require to prevent client bundlers from bundling 'fs' / 'path'
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const fs = eval("require")("fs");
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const path = eval("require")("path");
+      const filePath = path.resolve(
+        process.cwd(),
+        `public/images/lessons/german-a1-lesson-${lessonNum}.png`
+      );
+      return Boolean(fs.existsSync(filePath));
+    } catch {
+      // Server fallback if dynamic require fails
+    }
+  }
+
+  // Client fallback: lessons 1..17 and 19 exist, lesson 18 does NOT
+  return (lessonNum >= 1 && lessonNum <= 17) || lessonNum === 19;
+}
+
+/**
+ * Resolves the cover image URL for a post / lesson with strict precedence:
+ * 1. If post has a custom image (data:image/... Base64 or https:// / http://),
+ *    the database image ALWAYS takes priority and is NEVER overridden.
+ * 2. If the current image is a stale reference to a non-existent static file
+ *    (such as "/images/lessons/german-a1-lesson-18.png"), it is stripped and falls back cleanly to null.
+ * 3. Fallback to static asset `/images/lessons/german-a1-lesson-${num}.png` ONLY IF that file
+ *    actually exists on disk (or lessons 1..17 and 19 on client) AND the post does not already have a custom image.
+ * 4. If Lesson 18 has no custom image, returns null so the branded German A1 CSS cover renders.
+ */
+export function resolveLessonImage(
+  rawImage?: string | null,
+  lessonNumber?: number | null,
+  slug?: string | null,
+  title?: string | null
+): string | null {
+  const trimmed = typeof rawImage === "string" ? rawImage.trim() : null;
+
+  // 1. If post has a custom image (data:image/ or https:// / http://), database image ALWAYS takes priority
+  if (trimmed && isCustomLessonImage(trimmed)) {
+    return trimmed;
+  }
+
+  // 2. If an image path is set, verify if it points to a static lesson image
+  if (trimmed) {
+    const staticMatch = trimmed.match(/\/images\/lessons\/german-a1-lesson-(\d+)\.png/i);
+    if (staticMatch) {
+      const num = parseInt(staticMatch[1], 10);
+      if (hasStaticLessonImage(num)) {
+        return trimmed;
+      }
+      // Stale or missing static lesson image (e.g., Lesson 18) -> fall back cleanly to null
+      return null;
+    }
+    // Other custom relative path (not a stale lesson png)
+    return trimmed;
+  }
+
+  // 3. Fallback logic: check if lesson has a verified static image file on disk
+  const num =
+    lessonNumber !== undefined && lessonNumber !== null && lessonNumber < 9999
+      ? lessonNumber
+      : extractLessonNumber(title || "", slug || undefined);
+
+  if (num && num >= 1 && num < 9999 && hasStaticLessonImage(num)) {
+    return `/images/lessons/german-a1-lesson-${num}.png`;
+  }
+
+  // Fall back cleanly to null (e.g. Lesson 18) so CSS cover renders
+  return null;
 }
 

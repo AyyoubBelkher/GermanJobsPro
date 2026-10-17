@@ -13,6 +13,7 @@ import {
   parseLessonTitle,
   calculateReadTime,
   extractCleanExcerpt,
+  resolveLessonImage,
 } from "@/lib/courseUtils";
 
 export const revalidate = 60;
@@ -276,17 +277,22 @@ export default async function BlogPage({
   const totalPages = Math.ceil(totalPosts / pageSize);
 
   const posts = dbPosts.map((post) => {
-    const postTitle = isGermanA1Selected
-      ? parseLessonTitle(post.title, post.markdown_content).fullTitle
-      : post.title;
+    const isA1 = isGermanA1Category(post.category);
+    const parsed = isA1
+      ? parseLessonTitle(post.title, post.markdown_content)
+      : null;
+    const postTitle = parsed?.fullTitle || post.title;
     const cleanExcerpt = extractCleanExcerpt(post.markdown_content, postTitle, 150);
+    const resolvedCover = isA1
+      ? resolveLessonImage(post.image_url, parsed?.lessonNumber, post.slug, post.title)
+      : post.image_url;
 
     return {
       id: post.id,
       slug: post.slug,
       title: postTitle,
       excerpt: cleanExcerpt,
-      cover_image: post.image_url || "",
+      cover_image: resolvedCover || "",
       author: post.generated_by_ai
         ? (isAr ? "فريق GermanJobsPro" : "GermanJobsPro Team")
         : (isAr ? "إدارة التحرير" : "Editorial Team"),

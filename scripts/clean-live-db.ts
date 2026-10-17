@@ -4,7 +4,7 @@ import path from "path";
 import { prisma } from "../src/lib/prisma";
 import { sanitizeJobPayload } from "../src/lib/jobSanitizer";
 import { ensurePermanentImageUrl, isExpiringSocialCdnUrl } from "../src/lib/imageUtils";
-import { extractLessonNumber, parseLessonTitle } from "../src/lib/courseUtils";
+import { extractLessonNumber, parseLessonTitle, isCustomLessonImage } from "../src/lib/courseUtils";
 
 const LESSON_18_MARKDOWN_CONTENT = `# الدرس 18: Termine vereinbaren und Uhrzeiten (حجز المواعيد والتوقيت في الحياة اليومية)
 
@@ -131,7 +131,7 @@ const LESSON_18_MARKDOWN_CONTENT = `# الدرس 18: Termine vereinbaren und Uhr
 
 /**
  * Clean Live Database Script (Phase 3 - German A1 Strict 1..19 Curriculum Alignment)
- * Part A: Cleans Jobs (sanitizes false healthcare/nursing data, updates titles, categories, salaries, requirements).
+ * Part A: Cleans Jobs (sanitizes false healthcare/nursing data, fixes misclassified Praktikant/Werkstudent jobs as General/IT/Engineering, updates titles, categories, salaries, requirements).
  * Part B: Cleans Posts:
  *   1. Permanently deletes duplicate/unpublished posts above Lesson 15 so slugs are freed.
  *   2. Renumbers valid lessons 16 to 19 sequentially (Modalverben, Dativ, Termine, Familie).
@@ -266,7 +266,9 @@ async function cleanLiveDatabase() {
 
     const targetTitle = "الدرس 16: Modalverben: können und müssen (التعبير عن القدرة والالتزام باستخدام الأفعال الناقصة können و müssen)";
     const targetSlug = "german-a1-lesson-16";
-    const targetImg = "/images/lessons/german-a1-lesson-16.png";
+    const targetImg = isCustomLessonImage(lesson16Post.image_url)
+      ? lesson16Post.image_url
+      : "/images/lessons/german-a1-lesson-16.png";
 
     if (
       lesson16Post.slug !== targetSlug ||
@@ -314,7 +316,9 @@ async function cleanLiveDatabase() {
 
     const targetTitle = "الدرس 17: Dativ mit Präpositionen (حروف الجر مع حالة المجرور ووسائل النقل)";
     const targetSlug = "german-a1-lesson-17";
-    const targetImg = "/images/lessons/german-a1-lesson-17.png";
+    const targetImg = isCustomLessonImage(lesson17Post.image_url)
+      ? lesson17Post.image_url
+      : "/images/lessons/german-a1-lesson-17.png";
 
     if (
       lesson17Post.slug !== targetSlug ||
@@ -366,12 +370,17 @@ async function cleanLiveDatabase() {
 
     const targetTitle = "الدرس 18: Termine vereinbaren und Uhrzeiten (حجز المواعيد والتوقيت في الحياة اليومية)";
     const targetSlug = "german-a1-lesson-18";
-    const targetImg = "/images/lessons/german-a1-lesson-18.png";
+    // Never force wrong static image /images/lessons/german-a1-lesson-18.png.
+    // If a custom image exists (data:image/ or https://), preserve it.
+    // Otherwise, clear to null so the branded German A1 CSS cover renders.
+    const targetImg18 = isCustomLessonImage(lesson18Post.image_url)
+      ? lesson18Post.image_url
+      : null;
 
     if (
       lesson18Post.slug !== targetSlug ||
       lesson18Post.title !== targetTitle ||
-      lesson18Post.image_url !== targetImg ||
+      lesson18Post.image_url !== targetImg18 ||
       lesson18Post.markdown_content !== md18 ||
       !lesson18Post.published
     ) {
@@ -381,12 +390,12 @@ async function cleanLiveDatabase() {
         data: {
           title: targetTitle,
           slug: targetSlug,
-          image_url: targetImg,
+          image_url: targetImg18,
           published: true,
           markdown_content: md18,
         },
       });
-      console.log(`   ✅ Lesson 18 updated: slug="${targetSlug}", image="${targetImg}"`);
+      console.log(`   ✅ Lesson 18 updated: slug="${targetSlug}", image=${targetImg18 ? `"${targetImg18}"` : "null (CSS cover fallback)"}`);
     } else {
       console.log(`   ✅ Lesson 18 is already up to date.`);
     }
@@ -397,12 +406,12 @@ async function cleanLiveDatabase() {
         title: "الدرس 18: Termine vereinbaren und Uhrzeiten (حجز المواعيد والتوقيت في الحياة اليومية)",
         slug: "german-a1-lesson-18",
         category: "German A1",
-        image_url: "/images/lessons/german-a1-lesson-18.png",
+        image_url: null,
         published: true,
         markdown_content: LESSON_18_MARKDOWN_CONTENT,
       },
     });
-    console.log(`   ✅ Lesson 18 created [ID: ${created18.id}]: slug="german-a1-lesson-18", image="/images/lessons/german-a1-lesson-18.png"`);
+    console.log(`   ✅ Lesson 18 created [ID: ${created18.id}]: slug="german-a1-lesson-18", image=null (CSS cover fallback)`);
   }
 
   // Lesson 19 (Die Familie und Verwandte)
@@ -425,7 +434,9 @@ async function cleanLiveDatabase() {
 
     const targetTitle = "الدرس 19: Die Familie und Verwandte (العائلة والأقارب في اللغة الألمانية)";
     const targetSlug = "german-a1-lesson-19";
-    const targetImg = "/images/lessons/german-a1-lesson-19.png";
+    const targetImg = isCustomLessonImage(lesson19Post.image_url)
+      ? lesson19Post.image_url
+      : "/images/lessons/german-a1-lesson-19.png";
 
     if (
       lesson19Post.slug !== targetSlug ||
@@ -525,8 +536,18 @@ async function cleanLiveDatabase() {
     // 3. Check permanent local assets for A1 lessons 1 to 19
     if (isA1) {
       const currentLessonNum = extractLessonNumber(updatedTitle, updatedSlug, updatedContent);
+      const hasCustomImage = isCustomLessonImage(updatedImageUrl);
 
-      if (currentLessonNum >= 1 && currentLessonNum <= 19) {
+      if (hasCustomImage) {
+        // Custom image set via Admin UI or Base64 ALWAYS takes priority and is NEVER overridden!
+      } else if (currentLessonNum === 18 || updatedImageUrl === "/images/lessons/german-a1-lesson-18.png") {
+        // Lesson 18 wrong static image was removed from disk. Fall back cleanly to null so CSS cover renders.
+        if (updatedImageUrl !== null) {
+          console.log(`🖼️  [A1 LESSON 18 IMAGE CLEARED] Lesson 18 (${updatedSlug}) -> null (CSS cover fallback)`);
+          updatedImageUrl = null;
+          imagesConvertedCount++;
+        }
+      } else if (currentLessonNum >= 1 && currentLessonNum <= 19) {
         const expectedImagePath = `/images/lessons/german-a1-lesson-${currentLessonNum}.png`;
         const localFileExists = fs.existsSync(path.resolve(process.cwd(), `public${expectedImagePath}`));
         if (localFileExists && updatedImageUrl !== expectedImagePath) {
@@ -633,17 +654,17 @@ async function cleanLiveDatabase() {
     throw new Error(`❌ Validation Failed: Duplicate lesson numbers found: ${duplicates.join(", ")}`);
   }
 
-  if (lessonNumbers.length !== 19) {
-    throw new Error(`❌ Validation Failed: Expected exactly 19 lessons, found ${lessonNumbers.length}`);
+  if (lessonNumbers.length < 19) {
+    throw new Error(`❌ Validation Failed: Expected at least 19 lessons, found ${lessonNumbers.length}`);
   }
 
-  for (let i = 1; i <= 19; i++) {
+  for (let i = 1; i <= lessonNumbers.length; i++) {
     if (!lessonNumbers.includes(i)) {
       throw new Error(`❌ Validation Failed: Gap detected! Missing Lesson ${i}`);
     }
   }
 
-  console.log("\n🎉 ALL CHECKS PASSED: German A1 curriculum is strictly contiguous from Lesson 1 to Lesson 19 with 0 gaps and 0 duplicates!");
+  console.log(`\n🎉 ALL CHECKS PASSED: German A1 curriculum is strictly contiguous from Lesson 1 to Lesson ${lessonNumbers.length} with 0 gaps and 0 duplicates!`);
   console.log("================================================================================\n");
 }
 

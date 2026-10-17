@@ -3,6 +3,7 @@ import { Metadata } from "next";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
 import { prisma } from "@/lib/prisma";
+import { getCityVariants } from "@/lib/cityAliases";
 import JobBoardClient, { JobItem } from "@/components/jobs/JobBoardClient";
 
 export const revalidate = 60;
@@ -33,7 +34,7 @@ export default async function JobsPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams?: Promise<{ search?: string; category?: string; language?: string; page?: string }>;
+  searchParams?: Promise<{ search?: string; category?: string; language?: string; city?: string; page?: string }>;
 }) {
   const { locale } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
@@ -43,6 +44,7 @@ export default async function JobsPage({
   const search = resolvedSearchParams.search?.trim() || "";
   const category = resolvedSearchParams.category?.trim() || "";
   const language = resolvedSearchParams.language?.trim() || "";
+  const city = resolvedSearchParams.city?.trim() || "";
   const parsedPage = parseInt(resolvedSearchParams.page || "1", 10);
   const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
   const limit = 15;
@@ -52,25 +54,43 @@ export default async function JobsPage({
   const whereConditions: Array<Record<string, unknown>> = [];
 
   if (search) {
+    const searchCityVariants = getCityVariants(search);
     whereConditions.push({
       OR: [
         { title: { contains: search, mode: "insensitive" } },
         { company: { contains: search, mode: "insensitive" } },
-        { city: { contains: search, mode: "insensitive" } },
+        ...searchCityVariants.map((variant) => ({
+          city: { contains: variant, mode: "insensitive" },
+        })),
       ],
     });
   }
 
-  if (category && category !== "all") {
+  if (category && category !== "all" && category !== "All") {
     whereConditions.push({
       category: { contains: category, mode: "insensitive" },
     });
   }
 
-  if (language && language !== "all") {
+  if (language && language !== "all" && language !== "All") {
     whereConditions.push({
       languageReq: { contains: language, mode: "insensitive" },
     });
+  }
+
+  if (city && city !== "all" && city !== "All") {
+    const cityVariants = getCityVariants(city);
+    if (cityVariants.length > 1) {
+      whereConditions.push({
+        OR: cityVariants.map((variant) => ({
+          city: { contains: variant, mode: "insensitive" },
+        })),
+      });
+    } else {
+      whereConditions.push({
+        city: { contains: city, mode: "insensitive" },
+      });
+    }
   }
 
   // Only display verified active jobs on the board

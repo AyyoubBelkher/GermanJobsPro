@@ -1,8 +1,39 @@
+import fs from "fs";
+import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isValidHttpUrl, isValidImageUrl } from "@/lib/session";
 import { verifyAutomationSecret } from "@/lib/admin-auth";
 import { ensurePermanentImageUrl } from "@/lib/imageUtils";
+import { extractLessonNumber, resolveLessonImage } from "@/lib/courseUtils";
+
+/**
+ * Strips leaked date metadata, standalone timestamps, and duplicate lesson headings.
+ */
+function cleanPostContent(content: string): string {
+  if (!content) return "";
+  let text = content;
+  // Strip lines starting with تاريخ الدرس / تاريخ النشر / التاريخ
+  text = text.replace(
+    /^[\s\uFEFF]*(?:تاريخ\s*(?:الدرس|النشر)|التاريخ)\s*:[^\r\n]*(\r?\n)*/gmiu,
+    ""
+  );
+  // Strip lines starting with standalone date tokens like 202\d{5}
+  text = text.replace(
+    /^[\s\uFEFF]*\b202\d{5}\b[^\r\n]*(\r?\n)*/gmu,
+    ""
+  );
+  // Strip inline standalone 202\d{5}
+  text = text.replace(/\b202\d{5}\b/g, "");
+  // Normalize duplicated "الدرس X: الدرس X:" inside markdown headings if present
+  text = text.replace(
+    /^((?:#+\s*)?(?:الدرس|Lesson|Lektion)\s*\d+)\s*[:\-–—]?\s*(?:(?:الدرس|Lesson|Lektion)\s*\d+\s*[:\-–—]?\s*)+/gmiu,
+    "$1: "
+  );
+  // Normalize excessive newlines
+  text = text.replace(/\n{3,}/g, "\n\n").trim();
+  return text;
+}
 
 /**
  * Interface representing the expected structure of the incoming automation webhook payload.
@@ -194,14 +225,70 @@ export async function POST(request: NextRequest) {
     const published =
       body.published !== undefined ? Boolean(body.published) : true;
 
-    // Compute slug with Unicode support (Arabic / German characters)
+    // 1. Normalize Title: collapse repeated prefixes like "الدرس 18: الدرس 18:" -> "الدرس 18:"
+    const normalizedTitle = title
+      .replace(
+        /^((?:الدرس|Lesson|Lektion)\s*\d+)\s*[:\-–—]?\s*(?:(?:الدرس|Lesson|Lektion)\s*\d+\s*[:\-–—]?\s*)+/iu,
+        "$1: "
+      )
+      .trim();
+
+    // 2. Sanitize markdown content and optional excerpt of leaked date metadata
+    const sanitizedMarkdown = cleanPostContent(markdownContent);
+
+    // 3. German A1 Lesson Detection, Slug Normalization & Local Asset Auto-Assignment
+    const isA1 =
+      category.toLowerCase().includes("a1") ||
+      category.toLowerCase() === "german a1" ||
+      category.toLowerCase() === "deutsch a1" ||
+      /^(?:الدرس|Lesson|Lektion)\s*\d+/iu.test(normalizedTitle);
+
     const rawSlug = typeof body.slug === "string" ? body.slug.trim() : "";
-    const baseSlug = title
-      .toLowerCase()
-      .replace(/[^\p{L}\p{N}\s-]/gu, "")
-      .trim()
-      .replace(/\s+/g, "-");
-    const targetSlug = rawSlug || (baseSlug.length > 0 ? baseSlug : `post-${Date.now()}`);
+    let targetSlug = rawSlug;
+    let resolvedImage = imageUrl;
+
+    if (isA1) {
+      const lessonNum = extractLessonNumber(normalizedTitle, rawSlug, sanitizedMarkdown);
+      if (lessonNum !== null && lessonNum >= 1 && lessonNum < 9999) {
+        const canonicalA1Slug = `german-a1-lesson-${lessonNum}`;
+
+        const existingPostWithSlug = await prisma.post.findUnique({
+          where: { slug: canonicalA1Slug },
+        });
+
+        if (!existingPostWithSlug) {
+          targetSlug = canonicalA1Slug;
+        } else {
+          const existingLessonNum = extractLessonNumber(
+            existingPostWithSlug.title,
+            existingPostWithSlug.slug,
+            existingPostWithSlug.markdown_content
+          );
+          if (existingLessonNum === lessonNum) {
+            targetSlug = canonicalA1Slug;
+          } else {
+            targetSlug = `${canonicalA1Slug}-${Date.now()}`;
+          }
+        }
+
+        // Resolve cover image: custom image takes priority, otherwise use static asset if on disk
+        resolvedImage = resolveLessonImage(
+          resolvedImage,
+          lessonNum,
+          canonicalA1Slug,
+          normalizedTitle
+        );
+      }
+    }
+
+    if (!targetSlug) {
+      const baseSlug = normalizedTitle
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s-]/gu, "")
+        .trim()
+        .replace(/\s+/g, "-");
+      targetSlug = baseSlug.length > 0 ? baseSlug : `post-${Date.now()}`;
+    }
 
     // 3. Deduplication Check by source_link if present
     if (sourceLink) {
@@ -237,14 +324,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Ensure image is permanent and does not expire from social CDN
-    const permanentImageUrl = await ensurePermanentImageUrl(imageUrl);
+    const permanentImageUrl = resolvedImage ? await ensurePermanentImageUrl(resolvedImage) : null;
 
     // 5. Persist post to database using Prisma
     const newPost = await prisma.post.create({
       data: {
-        title,
+        title: normalizedTitle,
         slug: finalSlug,
-        markdown_content: markdownContent,
+        markdown_content: sanitizedMarkdown,
         category,
         image_url: permanentImageUrl,
         source_link: sourceLink,

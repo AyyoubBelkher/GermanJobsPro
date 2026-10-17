@@ -71,14 +71,6 @@ export async function POST(request: NextRequest) {
         language,
       });
 
-      const latencyMs = performance.now() - aiStartTime;
-      logAiUsage({
-        userId: authResult.user.id,
-        operation: "BULLET_OPTIMIZE",
-        latencyMs,
-        success: true,
-      }).catch(() => {});
-
       return NextResponse.json(
         {
           success: true,

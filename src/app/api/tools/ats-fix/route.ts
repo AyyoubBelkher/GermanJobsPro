@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { GoogleGenAI } from "@google/genai";
 import { extractText } from "unpdf";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { verifyUserSession } from "@/lib/user-session";
+import { deductAiCreditAtomic, refundAiCredit } from "@/lib/monetization";
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -101,6 +104,17 @@ export async function POST(request: NextRequest) {
   });
   if (rateLimitResponse) {
     return rateLimitResponse;
+  }
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get("user_session")?.value;
+  const authResult = await verifyUserSession(token);
+
+  if (!authResult) {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
   try {
@@ -282,8 +296,32 @@ RETURN ONLY A VALID JSON OBJECT MATCHING THIS SCHEMA:
   "unverifiedSkills": ["string (German keywords not found in CV)"]
 }`;
 
+    // Deduct AI Credit
+    const creditResult = await deductAiCreditAtomic({
+      userId: authResult.user.id,
+      operation: "ATS_TOOL",
+      requiredCredits: 1,
+    });
+    if (!creditResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "INSUFFICIENT_CREDITS",
+          message: creditResult.error || "نفد رصيد الذكاء الاصطناعي الخاص بك. يرجى الترقية إلى Pro أو إدخال كود ترويجي.",
+          outOfCredits: true,
+        },
+        { status: 402 }
+      );
+    }
+
     // 5. Call Gemini
-    const geminiRaw = await generateAtsFixWithGemini(systemPrompt);
+    let geminiRaw: string;
+    try {
+      geminiRaw = await generateAtsFixWithGemini(systemPrompt);
+    } catch (geminiError) {
+      await refundAiCredit(authResult.user.id);
+      throw geminiError;
+    }
 
     // 6. Parse and Sanitize JSON safely
     let parsed: any;

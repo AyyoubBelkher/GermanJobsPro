@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { decodeSlugParam, isValidHttpUrl, isValidImageUrl } from "@/lib/session";
 import { requireAdmin, verifyAutomationSecret } from "@/lib/admin-auth";
@@ -46,6 +47,12 @@ export async function GET(
     }
 
     if (!post) {
+      post = await prisma.post.findUnique({
+        where: { id: rawSlug },
+      });
+    }
+
+    if (!post) {
       return NextResponse.json(
         {
           success: false,
@@ -70,7 +77,7 @@ export async function GET(
 
 /**
  * DELETE /api/posts/[slug]
- * Deletes a post from SQLite database using Prisma after verifying admin auth.
+ * Deletes a post from database using Prisma after verifying admin auth.
  * Decodes URI parameters safely for Arabic slugs and special characters.
  */
 export async function DELETE(
@@ -104,6 +111,12 @@ export async function DELETE(
     }
 
     if (!existingPost) {
+      existingPost = await prisma.post.findUnique({
+        where: { id: rawSlug },
+      });
+    }
+
+    if (!existingPost) {
       return NextResponse.json(
         {
           success: false,
@@ -118,6 +131,20 @@ export async function DELETE(
     });
 
     console.log(`[Admin Post Delete] Post '${existingPost.slug}' deleted successfully.`);
+
+    // Invalidate caches immediately so deletion reflects everywhere
+    try {
+      const locales = ["ar", "en", "de", "fr"];
+      revalidatePath("/[locale]/blog", "page");
+      revalidatePath("/[locale]/blog/[slug]", "page");
+      revalidatePath("/[locale]/blog", "layout");
+      for (const loc of locales) {
+        revalidatePath(`/${loc}/blog`);
+        revalidatePath(`/${loc}/blog/${encodeURIComponent(existingPost.slug)}`);
+      }
+    } catch (revalErr) {
+      console.warn("[Admin Post Delete] revalidatePath warning:", revalErr);
+    }
 
     return NextResponse.json(
       {
@@ -140,8 +167,9 @@ export async function DELETE(
 
 /**
  * PUT /api/posts/[slug]
- * Updates post details in SQLite database after verifying admin auth.
- * Decodes URI parameters safely for Arabic slugs and special characters.
+ * Updates post details in database after verifying admin auth.
+ * Supports image and image_url, converts external URLs via ensurePermanentImageUrl,
+ * and calls revalidatePath for instant cache purging.
  */
 export async function PUT(
   request: NextRequest,
@@ -174,6 +202,12 @@ export async function PUT(
     }
 
     if (!existingPost) {
+      existingPost = await prisma.post.findUnique({
+        where: { id: rawSlug },
+      });
+    }
+
+    if (!existingPost) {
       return NextResponse.json(
         {
           success: false,
@@ -184,10 +218,11 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { title, markdown_content, category, image_url, source_link } = body || {};
+    const { title, markdown_content, category, image_url, image, source_link } = body || {};
+    const rawImage = image_url !== undefined ? image_url : image;
 
     // Validate URL protocols to prevent XSS
-    if (image_url !== undefined && !isValidImageUrl(image_url)) {
+    if (rawImage !== undefined && !isValidImageUrl(rawImage)) {
       return NextResponse.json(
         {
           success: false,
@@ -221,11 +256,15 @@ export async function PUT(
       );
     }
 
-    // Ensure image is permanent if updated
-    const finalImageUrl =
-      image_url !== undefined
-        ? await ensurePermanentImageUrl(image_url)
-        : existingPost.image_url;
+    // Ensure image is permanent if updated, or null if cleared
+    let finalImageUrl = existingPost.image_url;
+    if (rawImage !== undefined) {
+      if (rawImage === null || (typeof rawImage === "string" && rawImage.trim() === "")) {
+        finalImageUrl = null;
+      } else {
+        finalImageUrl = await ensurePermanentImageUrl(rawImage);
+      }
+    }
 
     const updatedPost = await prisma.post.update({
       where: { id: existingPost.id },
@@ -239,6 +278,24 @@ export async function PUT(
     });
 
     console.log(`[Admin Post Update] Post '${existingPost.slug}' updated successfully.`);
+
+    // Invalidate caches immediately across locales so updates appear without stale cache
+    try {
+      const locales = ["ar", "en", "de", "fr"];
+      revalidatePath("/[locale]/blog", "page");
+      revalidatePath("/[locale]/blog/[slug]", "page");
+      revalidatePath("/[locale]/blog", "layout");
+
+      for (const loc of locales) {
+        revalidatePath(`/${loc}/blog`);
+        revalidatePath(`/${loc}/blog/${encodeURIComponent(updatedPost.slug)}`);
+        if (existingPost.slug !== updatedPost.slug) {
+          revalidatePath(`/${loc}/blog/${encodeURIComponent(existingPost.slug)}`);
+        }
+      }
+    } catch (revalErr) {
+      console.warn("[Admin Post Update] revalidatePath warning:", revalErr);
+    }
 
     return NextResponse.json(
       {

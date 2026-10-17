@@ -163,14 +163,6 @@ export async function POST(request: NextRequest) {
         language: language || "de",
       });
 
-      const latencyMs = performance.now() - aiStartTime;
-      logAiUsage({
-        userId: authResult.user.id,
-        operation: "ATS_ANALYSIS",
-        latencyMs,
-        success: true,
-      }).catch(() => {});
-
       return NextResponse.json(
         {
           success: true,

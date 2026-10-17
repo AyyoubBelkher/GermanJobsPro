@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { isGermanA1Category, parseLessonTitle, calculateReadTime } from "@/lib/courseUtils";
+import { isGermanA1Category, parseLessonTitle, calculateReadTime, resolveLessonImage } from "@/lib/courseUtils";
 
 export interface PostCardProps {
   title: string;
@@ -80,11 +80,15 @@ export default function PostCard({
     : "Read More →";
   const actionText = readMoreText || defaultCta;
 
-  // Inspect image source
+  // Inspect image source and resolve A1 lesson fallback / filter out missing static images
   const rawImage = imageUrl || image_url || cover_image;
-  const hasValidRawImage = Boolean(
-    rawImage && typeof rawImage === "string" && rawImage.trim().length > 0
-  );
+  const resolvedCover = isA1
+    ? resolveLessonImage(rawImage, lessonNum, slug, title)
+    : rawImage && typeof rawImage === "string" && rawImage.trim().length > 0
+    ? rawImage.trim()
+    : null;
+
+  const hasValidRawImage = Boolean(resolvedCover);
 
   // Determine if dynamic CSS Cover should be displayed for A1
   const shouldRenderA1Cover = isA1 && (!hasValidRawImage || imgError);
@@ -96,11 +100,11 @@ export default function PostCard({
         setImgError(true);
       }
     }
-  }, [hasValidRawImage, rawImage]);
+  }, [hasValidRawImage, resolvedCover]);
 
   // Final image URL (with fallback for regular blog posts if missing or errored)
   const finalImageUrl =
-    hasValidRawImage && !imgError ? rawImage!.trim() : DEFAULT_UNSPLASH_IMAGE;
+    hasValidRawImage && !imgError ? resolvedCover!.trim() : DEFAULT_UNSPLASH_IMAGE;
 
   // Construct target link cleanly using encoded slug to prevent 404s
   const targetHref = href
