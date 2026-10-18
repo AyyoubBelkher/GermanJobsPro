@@ -6,7 +6,7 @@ import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
 import { prisma } from "@/lib/prisma";
 import { getUserSession } from "@/lib/user-session";
-import JobDetailClient, { JobDetailData } from "@/components/jobs/JobDetailClient";
+import JobDetailClient, { JobDetailData, extractCleanHrEmail } from "@/components/jobs/JobDetailClient";
 import { stripHtml } from "@/lib/cover-letter";
 
 export const revalidate = 60;
@@ -145,6 +145,8 @@ export default async function JobDetailPage({
     console.error("[JobDetailPage] Error fetching similar jobs:", err);
   }
 
+  const cleanEmail = extractCleanHrEmail(job);
+
   const jobData: JobDetailData = {
     id: job.id,
     title: job.title,
@@ -155,7 +157,7 @@ export default async function JobDetailPage({
     languageReq: job.languageReq,
     salary: job.salary,
     applyUrl: job.applyUrl,
-    contactEmail: job.contactEmail,
+    contactEmail: cleanEmail,
     requirements: job.requirements,
     descriptionRaw: job.descriptionRaw,
     publishedAt:
@@ -199,7 +201,7 @@ export default async function JobDetailPage({
         addressCountry: "DE",
       },
     },
-    directApply: Boolean(job.contactEmail || job.applyUrl),
+    directApply: Boolean(cleanEmail || job.applyUrl),
   };
 
   return (

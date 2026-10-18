@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 
 export interface LogAiUsageParams {
   userId: string;
-  operation: string; // e.g. "COVER_LETTER_GEN", "ATS_ANALYSIS", "BULLET_OPTIMIZE", "CV_INTERVIEW"
+  operation: string; // e.g. "COVER_LETTER_GEN", "ATS_ANALYSIS", "BULLET_OPTIMIZE"
   model?: string;
   inputTokens?: number | null;
   outputTokens?: number | null;

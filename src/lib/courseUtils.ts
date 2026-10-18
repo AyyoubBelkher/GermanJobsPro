@@ -16,13 +16,122 @@ export function normalizeDigits(str: string): string {
   return str.replace(/[٠-٩]/g, (d) => ARABIC_INDIC_DIGITS[d] || d);
 }
 
+export type PostClassificationTarget =
+  | {
+      category?: string | null;
+      slug?: string | null;
+      title?: string | null;
+    }
+  | string
+  | null
+  | undefined;
+
 /**
- * Checks if a category corresponds to the German A1 Course track.
+ * Checks if a post, category, slug, or title corresponds to the German A1 Course track.
+ * Rock-solid deterministic classification for German A1 lessons.
+ */
+export function isCourseLesson(post?: PostClassificationTarget): boolean {
+  if (!post) return false;
+
+  if (typeof post === "string") {
+    const s = post.trim();
+    if (!s) return false;
+    const lower = s.toLowerCase();
+    if (lower === "german a1" || lower === "deutsch a1" || lower.includes("a1")) return true;
+    if (lower.startsWith("german-a1-lesson-") || /lesson-\d+/i.test(lower)) return true;
+    const norm = normalizeDigits(s);
+    if (/^(?:الدرس|Lesson|Lektion)\s*\d+/iu.test(norm)) return true;
+    return false;
+  }
+
+  const { category, slug, title } = post;
+
+  // 1. Check category
+  if (category) {
+    const lowerCat = category.toLowerCase().trim();
+    if (
+      lowerCat === "german a1" ||
+      lowerCat === "deutsch a1" ||
+      lowerCat.includes("a1") ||
+      lowerCat.includes("كورس") ||
+      lowerCat.includes("course")
+    ) {
+      return true;
+    }
+  }
+
+  // 2. Check slug
+  if (slug) {
+    const lowerSlug = slug.toLowerCase().trim();
+    if (
+      lowerSlug.startsWith("german-a1-lesson-") ||
+      /lesson-\d+/i.test(lowerSlug) ||
+      lowerSlug.includes("german-a1")
+    ) {
+      return true;
+    }
+  }
+
+  // 3. Check title
+  if (title) {
+    const normTitle = normalizeDigits(title.trim());
+    if (
+      /^(?:الدرس|Lesson|Lektion)\s*\d+/iu.test(normTitle) ||
+      /(?:الدرس|Lesson|Lektion)\s*\d+\s*[:\-–—]/iu.test(normTitle)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Checks if a target is an editorial article (NOT a course lesson).
+ */
+export function isArticle(post?: PostClassificationTarget): boolean {
+  return !isCourseLesson(post);
+}
+
+/**
+ * Backwards-compatible alias for isCourseLesson.
  */
 export function isGermanA1Category(category?: string | null): boolean {
-  if (!category) return false;
-  const lower = category.toLowerCase().trim();
-  return lower === 'german a1' || lower === 'deutsch a1' || lower.includes('a1');
+  return isCourseLesson(category);
+}
+
+/**
+ * Prisma WHERE condition to query ONLY German A1 Course Lessons.
+ */
+export function getCourseLessonsPrismaFilter() {
+  return {
+    OR: [
+      { category: { equals: "German A1", mode: "insensitive" as const } },
+      { category: { equals: "Deutsch A1", mode: "insensitive" as const } },
+      { category: { contains: "A1", mode: "insensitive" as const } },
+      { slug: { startsWith: "german-a1-lesson-", mode: "insensitive" as const } },
+      { title: { startsWith: "الدرس", mode: "insensitive" as const } },
+      { title: { startsWith: "Lesson", mode: "insensitive" as const } },
+      { title: { startsWith: "Lektion", mode: "insensitive" as const } },
+    ],
+  };
+}
+
+/**
+ * Prisma WHERE condition to query ONLY Editorial Blog Articles (strictly excluding all course lessons).
+ */
+export function getArticlesOnlyPrismaFilter() {
+  return {
+    NOT: [
+      { category: { equals: "German A1", mode: "insensitive" as const } },
+      { category: { equals: "Deutsch A1", mode: "insensitive" as const } },
+      { category: { contains: "A1", mode: "insensitive" as const } },
+      { slug: { startsWith: "german-a1-lesson-", mode: "insensitive" as const } },
+      { title: { startsWith: "الدرس", mode: "insensitive" as const } },
+      { title: { startsWith: "Lesson", mode: "insensitive" as const } },
+      { title: { startsWith: "Lektion", mode: "insensitive" as const } },
+    ],
+  };
 }
 
 /**

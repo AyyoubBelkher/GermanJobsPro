@@ -7,28 +7,101 @@ import { prisma } from "@/lib/prisma";
 import { verifyAuth } from "@/lib/auth";
 import { deductCreditInTx } from "@/lib/monetization";
 
-// European, German & English date parser conforming to DIN standards and pure UTC
-const MONTH_MAP: Record<string, number> = {
-  jan: 0, januar: 0, january: 0,
-  feb: 1, februar: 1, february: 1,
-  mar: 2, marz: 2, maerz: 2, märz: 2, march: 2,
-  apr: 3, april: 3,
+// European, German, French, English & Arabic date parser conforming to DIN standards and pure UTC
+function normalizeDateStr(val: string): string {
+  return val
+    .trim()
+    // Eastern Arabic numerals (٠-٩)
+    .replace(/[\u0660-\u0669]/g, (c) => String(c.charCodeAt(0) - 0x0660))
+    // Persian numerals (۰-۹)
+    .replace(/[\u06F0-\u06F9]/g, (c) => String(c.charCodeAt(0) - 0x06F0))
+    // Arabic comma
+    .replace(/،/g, ",")
+    .replace(/\s+/g, " ");
+}
+
+const MONTH_MAP_LATIN: Record<string, number> = {
+  jan: 0, janv: 0, januar: 0, january: 0, janvier: 0,
+  feb: 1, febr: 1, fev: 1, fevr: 1, februar: 1, february: 1, fevrier: 1,
+  mar: 2, maerz: 2, march: 2, mars: 2,
+  apr: 3, avr: 3, april: 3, avril: 3,
   may: 4, mai: 4,
-  jun: 5, juni: 5, june: 5,
-  jul: 6, juli: 6, july: 6,
-  aug: 7, august: 7,
-  sep: 8, sept: 8, september: 8,
-  oct: 9, okt: 9, oktober: 9, october: 9,
-  nov: 10, november: 10,
-  dec: 11, dez: 11, dezember: 11, december: 11,
+  jun: 5, juni: 5, june: 5, juin: 5,
+  jul: 6, juil: 6, juli: 6, july: 6, juillet: 6,
+  aug: 7, august: 7, aout: 7,
+  sep: 8, sept: 8, september: 8, septembre: 8,
+  oct: 9, okt: 9, oktober: 9, october: 9, octobre: 9,
+  nov: 10, november: 10, novembre: 10,
+  dec: 11, dez: 11, dezember: 11, december: 11, decembre: 11,
 };
 
-function parseEuropeanDate(val?: string | null): Date | null {
-  if (!val || typeof val !== "string") return null;
-  const s = val.trim();
-  if (!s || /^(heute|present|current|jetzt|laufend)$/i.test(s)) return null;
+const MONTH_MAP_AR: Record<string, number> = {
+  "يناير": 0, "فبراير": 1, "مارس": 2, "ابريل": 3, "مايو": 4, "ماي": 4,
+  "يونيو": 5, "جوان": 5, "يوليو": 6, "جويليه": 6, "جويلية": 6, "يوليوز": 6,
+  "اغسطس": 7, "اوت": 7, "غشت": 7, "سبتمبر": 8, "شتنبر": 8, "اكتوبر": 9,
+  "نوفمبر": 10, "نونبر": 10, "ديسمبر": 11, "دجنبر": 11,
+  "كانون الثاني": 0, "كانون 2": 0, "شباط": 1, "اذار": 2, "نيسان": 3,
+  "ايار": 4, "حزيران": 5, "تموز": 6, "اب": 7, "ايلول": 8,
+  "تشرين الاول": 9, "تشرين 1": 9, "تشرين الثاني": 10, "تشرين 2": 10,
+  "كانون الاول": 11, "كانون 1": 11,
+};
 
-  // 1. ISO standard: YYYY-MM-DD or YYYY-MM
+const SORTED_LATIN_MONTHS = Object.keys(MONTH_MAP_LATIN).sort((a, b) => b.length - a.length);
+const SORTED_ARABIC_MONTHS = Object.keys(MONTH_MAP_AR).sort((a, b) => b.length - a.length);
+
+function normalizeLatin(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[éèêë]/g, "e")
+    .replace(/[àâ]/g, "a")
+    .replace(/[îï]/g, "i")
+    .replace(/[ûù]/g, "u")
+    .replace(/[ç]/g, "c")
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss");
+}
+
+function normalizeArabic(s: string): string {
+  return s
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ـ/g, "");
+}
+
+function parseEuropeanDate(val?: string | null, isSubCheck = false): Date | null {
+  if (!val || typeof val !== "string") return null;
+  let s = normalizeDateStr(val);
+  if (
+    !s ||
+    /^(heute|present|current|jetzt|laufend|aktuell|actuel|en cours|حالي|حاليا|حالياً|الآن|الان)$/i.test(s)
+  ) {
+    return null;
+  }
+
+  // Strip common leading prepositions: "von ", "من ", "du ", "from ", "since ", "ab "
+  s = s.replace(/^(?:von|from|du|de|since|ab|من|منذ)\s+/i, "").trim();
+
+  // Range splitting (e.g. "2021 - 2023", "01/2021 - 05/2023", "2021 bis 2023", "2021 إلى 2023")
+  if (!isSubCheck) {
+    // Two 4-digit years without spaces: e.g. "2021-2023", "2021/2023", "2021–2023"
+    const yrYrMatch = s.match(/^(\d{4})\s*[-–—/]\s*(\d{4})$/);
+    if (yrYrMatch) {
+      const startYear = parseInt(yrYrMatch[1], 10);
+      if (startYear >= 1900 && startYear <= 2100) {
+        return new Date(Date.UTC(startYear, 0, 1));
+      }
+    }
+
+    const rangeParts = s.split(/\s+[-–—/]\s+|\s+(?:bis|to|à|au|الى|إلى|حتى)\s+/i);
+    if (rangeParts.length > 1) {
+      const parsedStart = parseEuropeanDate(rangeParts[0], true);
+      if (parsedStart) return parsedStart;
+    }
+  }
+
+  // 1. ISO standard: YYYY-MM-DD, YYYY-MM, YYYY/MM, YYYY.MM
   const isoMatch = s.match(/^(\d{4})[-/.](\d{1,2})(?:[-/.](\d{1,2}))?$/);
   if (isoMatch) {
     const year = parseInt(isoMatch[1], 10);
@@ -39,7 +112,7 @@ function parseEuropeanDate(val?: string | null): Date | null {
     }
   }
 
-  // 2. Numeric DD.MM.YYYY or DD/MM/YYYY or DD-MM-YYYY
+  // 2. Numeric DD.MM.YYYY, DD/MM/YYYY, DD-MM-YYYY
   const dmyMatch = s.match(/^(\d{1,2})[./\-](\d{1,2})[./\-](\d{4})$/);
   if (dmyMatch) {
     const day = parseInt(dmyMatch[1], 10);
@@ -50,7 +123,7 @@ function parseEuropeanDate(val?: string | null): Date | null {
     }
   }
 
-  // 3. Numeric MM/YYYY or MM.YYYY or MM-YYYY
+  // 3. Numeric MM/YYYY, MM.YYYY, MM-YYYY
   const myMatch = s.match(/^(\d{1,2})[./\-](\d{4})$/);
   if (myMatch) {
     const month = parseInt(myMatch[1], 10) - 1;
@@ -60,58 +133,110 @@ function parseEuropeanDate(val?: string | null): Date | null {
     }
   }
 
-  // 4. Text month with year: "Jan 2020", "Januar 2020", "März 2022", "15. Mai 2021", "January 15, 2020"
-  const norm = s
-    .toLowerCase()
-    .replace(/ä/g, "ae")
-    .replace(/ö/g, "oe")
-    .replace(/ü/g, "ue");
-
-  // Format: optional day, month text, optional comma/dot, 4-digit year
-  const textMonthMatch = norm.match(/^(?:(\d{1,2})[.\s/-]+)?([a-z]+)[.,\s/-]+(\d{4})$/);
-  if (textMonthMatch) {
-    const day = textMonthMatch[1] ? parseInt(textMonthMatch[1], 10) : 1;
-    const monthStr = textMonthMatch[2].replace(/\.$/, "");
-    const year = parseInt(textMonthMatch[3], 10);
-    if (monthStr in MONTH_MAP) {
-      const month = MONTH_MAP[monthStr];
-      return new Date(Date.UTC(year, month, day));
-    }
-  }
-
-  // Format: Month Day, Year (e.g. "January 15, 2020")
-  const mdyTextMatch = norm.match(/^([a-z]+)[.,\s/-]+(\d{1,2})[.,\s/-]+(\d{4})$/);
-  if (mdyTextMatch) {
-    const monthStr = mdyTextMatch[1];
-    const day = parseInt(mdyTextMatch[2], 10);
-    const year = parseInt(mdyTextMatch[3], 10);
-    if (monthStr in MONTH_MAP) {
-      const month = MONTH_MAP[monthStr];
-      return new Date(Date.UTC(year, month, day));
-    }
-  }
-
-  // 5. Standalone 4-digit year: "2020"
+  // 4. Standalone 4-digit year: "2020"
   const yMatch = s.match(/^(\d{4})$/);
   if (yMatch) {
     const year = parseInt(yMatch[1], 10);
-    return new Date(Date.UTC(year, 0, 1));
+    if (year >= 1900 && year <= 2100) {
+      return new Date(Date.UTC(year, 0, 1));
+    }
+  }
+
+  // 5. Text month with year (Latin: EN/DE/FR)
+  const normLatin = normalizeLatin(s);
+  const yrMatch = normLatin.match(/\b(19\d{2}|20\d{2})\b/);
+  if (yrMatch) {
+    const year = parseInt(yrMatch[1], 10);
+    for (const mName of SORTED_LATIN_MONTHS) {
+      const reg = new RegExp(`(?:^|[^a-z])${mName}(?:$|[^a-z])`, "i");
+      if (reg.test(normLatin)) {
+        const month = MONTH_MAP_LATIN[mName];
+        const withoutMonthAndYear = normLatin
+          .replace(new RegExp(mName, "i"), " ")
+          .replace(yrMatch[0], " ");
+        const dayMatch = withoutMonthAndYear.match(/\b(\d{1,2})\b/);
+        const day = dayMatch ? parseInt(dayMatch[1], 10) : 1;
+        const validDay = day >= 1 && day <= 31 ? day : 1;
+        return new Date(Date.UTC(year, month, validDay));
+      }
+    }
+  }
+
+  // 6. Text month with year (Arabic)
+  const normArabic = normalizeArabic(s);
+  const yrMatchAr = normArabic.match(/\b(19\d{2}|20\d{2})\b/);
+  if (yrMatchAr) {
+    const year = parseInt(yrMatchAr[1], 10);
+    for (const mName of SORTED_ARABIC_MONTHS) {
+      const normMName = normalizeArabic(mName);
+      if (normArabic.includes(normMName)) {
+        const month = MONTH_MAP_AR[mName];
+        const withoutMonthAndYear = normArabic
+          .replace(normMName, " ")
+          .replace(yrMatchAr[0], " ");
+        const dayMatch = withoutMonthAndYear.match(/\b(\d{1,2})\b/);
+        const day = dayMatch ? parseInt(dayMatch[1], 10) : 1;
+        const validDay = day >= 1 && day <= 31 ? day : 1;
+        return new Date(Date.UTC(year, month, validDay));
+      }
+    }
   }
 
   return null;
 }
 
-function parseDateSafe(val?: string | null, fallbackYear = 2020): Date {
+function parseDateSafe(
+  val?: string | null,
+  fallbackAnchor?: string | null | number,
+  fallbackYear?: number
+): Date {
+  let anchorStr: string | null = null;
+  let customFallbackYear: number | undefined = undefined;
+
+  if (typeof fallbackAnchor === "number") {
+    customFallbackYear = fallbackAnchor;
+  } else if (typeof fallbackAnchor === "string") {
+    anchorStr = fallbackAnchor;
+  }
+  if (typeof fallbackYear === "number") {
+    customFallbackYear = fallbackYear;
+  }
+
+  // 1. Try parsing val directly with parseEuropeanDate
   const d = parseEuropeanDate(val);
   if (d !== null) return d;
+
+  // 2. Check if val has any 4-digit year between 1970 and 2030
   if (val && typeof val === "string") {
-    const yrMatch = val.match(/\b(19\d{2}|20\d{2})\b/);
+    const normalizedVal = normalizeDateStr(val);
+    const yrMatch = normalizedVal.match(/\b(19[7-9]\d|20[0-2]\d|2030)\b/);
     if (yrMatch) {
       return new Date(Date.UTC(parseInt(yrMatch[1], 10), 0, 1));
     }
   }
-  // Deterministic fallback: never defaults to current timestamp
-  return new Date(Date.UTC(fallbackYear, 0, 1));
+
+  // 3. If startDate is missing or unparseable, check if endDate (fallbackAnchor) is valid
+  if (anchorStr && typeof anchorStr === "string") {
+    const anchorDate = parseEuropeanDate(anchorStr);
+    if (anchorDate !== null) {
+      // Use endDate at month/day 01 as the anchor date
+      return new Date(Date.UTC(anchorDate.getUTCFullYear(), anchorDate.getUTCMonth(), 1));
+    }
+
+    // Check if anchorStr has any 4-digit year (1970-2030)
+    const normalizedAnchor = normalizeDateStr(anchorStr);
+    const anchorYrMatch = normalizedAnchor.match(/\b(19[7-9]\d|20[0-2]\d|2030)\b/);
+    if (anchorYrMatch) {
+      return new Date(Date.UTC(parseInt(anchorYrMatch[1], 10), 0, 1));
+    }
+  }
+
+  // 4. Fallback: only if both are completely unparseable and no 1970-2030 year exists anywhere in the string
+  const resolvedFallbackYear = customFallbackYear ?? new Date().getUTCFullYear();
+  console.warn(
+    `[CV Auto-Fix Warning] Unparseable date encountered. Missing/unparseable startDate="${val}" and endDate="${anchorStr}". Defaulting to ${resolvedFallbackYear}-01-01 UTC to prevent gap fabrication.`
+  );
+  return new Date(Date.UTC(resolvedFallbackYear, 0, 1));
 }
 
 function parseNullableDate(val?: string | null): Date | null {
@@ -357,7 +482,11 @@ export async function POST(req: Request) {
           experiences: {
             create: validatedCvData.experiences.map((exp, idx) => {
               const isCurrent = Boolean(
-                exp.isCurrent || (exp.endDate && /heute|present|current/i.test(exp.endDate))
+                exp.isCurrent ||
+                  (exp.endDate &&
+                    /heute|present|current|jetzt|laufend|actuel|en cours|حالي|حاليا|الآن|الان/i.test(
+                      exp.endDate
+                    ))
               );
               let desc = exp.description || null;
               if (exp.bullets && exp.bullets.length > 0) {
@@ -368,7 +497,7 @@ export async function POST(req: Request) {
                 position: exp.position || exp.title || "Position",
                 city: exp.city || exp.location || null,
                 country: exp.country || "Deutschland",
-                startDate: parseDateSafe(exp.startDate),
+                startDate: parseDateSafe(exp.startDate, exp.endDate),
                 endDate: isCurrent ? null : parseNullableDate(exp.endDate),
                 isCurrent,
                 description: desc,
@@ -385,7 +514,7 @@ export async function POST(req: Request) {
                 fieldOfStudy: edu.fieldOfStudy || null,
                 city: edu.city || edu.location || null,
                 country: edu.country || null,
-                startDate: parseDateSafe(edu.startDate),
+                startDate: parseDateSafe(edu.startDate, edu.endDate),
                 endDate: isCurrent ? null : parseNullableDate(edu.endDate),
                 isCurrent,
                 grade: edu.grade || null,

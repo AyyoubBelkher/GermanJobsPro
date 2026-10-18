@@ -113,40 +113,150 @@ export function extractCefrLevel(languageReq?: string | null, requirements?: str
 }
 
 // Detects the ATS or portal service name
-export function detectPortalInfo(applyUrl?: string): { name: string; isAgentur: boolean } {
-  if (!applyUrl) return { name: "Bewerbungsportal", isAgentur: false };
+export function detectPortalInfo(applyUrl?: string): { name: string; isAgentur: boolean; isArbeitNow: boolean } {
+  if (!applyUrl) return { name: "Bewerbungsportal", isAgentur: false, isArbeitNow: false };
   const lower = applyUrl.toLowerCase();
   if (lower.includes("arbeitsagentur.de")) {
-    return { name: "Bundesagentur für Arbeit (BA)", isAgentur: true };
+    return { name: "Bundesagentur für Arbeit (BA)", isAgentur: true, isArbeitNow: false };
   }
   if (lower.includes("arbeitnow.com")) {
-    return { name: "ArbeitNow Partnernetzwerk", isAgentur: false };
+    return { name: "ArbeitNow Partnernetzwerk", isAgentur: false, isArbeitNow: true };
   }
   if (lower.includes("personio")) {
-    return { name: "Personio Recruiting Portal", isAgentur: false };
+    return { name: "Personio Recruiting Portal", isAgentur: false, isArbeitNow: false };
   }
   if (lower.includes("workday") || lower.includes("myworkday")) {
-    return { name: "Workday ATS", isAgentur: false };
+    return { name: "Workday ATS", isAgentur: false, isArbeitNow: false };
   }
   if (lower.includes("softgarden")) {
-    return { name: "Softgarden e-Recruiting", isAgentur: false };
+    return { name: "Softgarden e-Recruiting", isAgentur: false, isArbeitNow: false };
   }
   if (lower.includes("greenhouse")) {
-    return { name: "Greenhouse Portal", isAgentur: false };
+    return { name: "Greenhouse Portal", isAgentur: false, isArbeitNow: false };
   }
   if (lower.includes("lever.co")) {
-    return { name: "Lever Portal", isAgentur: false };
+    return { name: "Lever Portal", isAgentur: false, isArbeitNow: false };
   }
   if (lower.includes("recruitee")) {
-    return { name: "Recruitee Portal", isAgentur: false };
+    return { name: "Recruitee Portal", isAgentur: false, isArbeitNow: false };
   }
   if (lower.includes("join.com")) {
-    return { name: "JOIN Portal", isAgentur: false };
+    return { name: "JOIN Portal", isAgentur: false, isArbeitNow: false };
   }
   if (lower.includes("smartrecruiters")) {
-    return { name: "SmartRecruiters Portal", isAgentur: false };
+    return { name: "SmartRecruiters Portal", isAgentur: false, isArbeitNow: false };
   }
-  return { name: "بوابة التوظيف المباشرة للشركة", isAgentur: false };
+  return { name: "بوابة التوظيف المباشرة للشركة", isAgentur: false, isArbeitNow: false };
+}
+
+/**
+ * Known placeholder / fake email domains and prefixes from scrapers or dummy templates.
+ */
+export const FAKE_EMAIL_DOMAINS = new Set([
+  "company.com",
+  "company.de",
+  "example.com",
+  "example.de",
+  "example.org",
+  "domain.com",
+  "domain.de",
+  "placeholder.com",
+  "test.com",
+  "test.de",
+  "email.com",
+  "sample.com",
+  "yoursite.com",
+  "arbeitnow.com",
+  "arbeitsagentur.de",
+]);
+
+export const FAKE_EMAIL_EXACT = new Set([
+  "hr@company.com",
+  "hr@company.de",
+  "jobs@company.com",
+  "jobs@company.de",
+  "karriere@company.de",
+  "karriere@company.com",
+  "info@company.com",
+  "info@company.de",
+  "info@example.com",
+  "contact@company.com",
+  "contact@company.de",
+  "user@domain.com",
+  "test@test.de",
+  "email@example.com",
+  "noreply@arbeitnow.com",
+  "no-reply@arbeitnow.com",
+]);
+
+/**
+ * Validates whether an email string is a legitimate, non-placeholder HR email.
+ */
+export function isValidHrEmail(email?: string | null): boolean {
+  if (!email || typeof email !== "string") return false;
+  const clean = email.trim().toLowerCase().replace(/^mailto:/i, "").trim();
+
+  // Basic RFC 5322 regex validation
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(clean)) return false;
+
+  if (FAKE_EMAIL_EXACT.has(clean)) return false;
+
+  const domain = clean.split("@")[1];
+  if (!domain || FAKE_EMAIL_DOMAINS.has(domain)) return false;
+
+  // Filter out image extensions or syntax accidents (e.g. user@domain.png)
+  if (/\.(png|jpg|jpeg|gif|svg|webp|pdf)$/i.test(clean)) return false;
+
+  return true;
+}
+
+/**
+ * Extracts a robust, verified HR email from contactEmail, applyUrl (mailto:), or description/requirements.
+ */
+export function extractCleanHrEmail(job: {
+  contactEmail?: string | null;
+  applyUrl?: string | null;
+  descriptionRaw?: string | null;
+  requirements?: string | null;
+}): string | null {
+  // 1. Check contactEmail
+  if (isValidHrEmail(job.contactEmail)) {
+    return job.contactEmail!.trim().toLowerCase();
+  }
+
+  // 2. Check applyUrl for mailto:
+  if (job.applyUrl && job.applyUrl.toLowerCase().startsWith("mailto:")) {
+    const rawMailto = job.applyUrl.replace(/^mailto:/i, "").split("?")[0].trim();
+    if (isValidHrEmail(rawMailto)) {
+      return rawMailto.toLowerCase();
+    }
+  }
+
+  // 3. Scan descriptionRaw and requirements for HR application email
+  const textToScan = `${job.descriptionRaw || ""} ${job.requirements || ""}`;
+  if (textToScan) {
+    const emailMatches = textToScan.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
+    if (emailMatches && emailMatches.length > 0) {
+      // Prioritize HR/application-specific mailboxes
+      for (const candidate of emailMatches) {
+        if (isValidHrEmail(candidate)) {
+          const lower = candidate.toLowerCase();
+          if (/bewerbung|karriere|jobs|recruiting|personal|hr|kontakt/i.test(lower)) {
+            return lower;
+          }
+        }
+      }
+      // Otherwise, take the first valid one if legitimate
+      for (const candidate of emailMatches) {
+        if (isValidHrEmail(candidate)) {
+          return candidate.toLowerCase();
+        }
+      }
+    }
+  }
+
+  return null;
 }
 
 // Returns Anerkennung (diploma equivalence) guidance based on role category
@@ -484,15 +594,14 @@ export default function JobDetailClient({
     }
   };
 
-  const effectiveEmail =
-    job.contactEmail?.trim() ||
-    (job.applyUrl?.startsWith("mailto:") ? job.applyUrl.replace(/^mailto:/i, "").trim() : null);
+  const effectiveEmail = extractCleanHrEmail(job);
 
   const isApplyUrlWeb = Boolean(
     job.applyUrl &&
+      !job.applyUrl.toLowerCase().startsWith("mailto:") &&
       (job.applyUrl.startsWith("http://") ||
         job.applyUrl.startsWith("https://") ||
-        (!job.applyUrl.startsWith("mailto:") && job.applyUrl.includes(".")))
+        job.applyUrl.includes("."))
   );
 
   const hasPortal = Boolean(job.applyUrl && isApplyUrlWeb);
@@ -560,6 +669,497 @@ export default function JobDetailClient({
     ? `mailto:${effectiveEmail}?subject=${encodeURIComponent(emailSubject)}`
     : "";
 
+  const getVerificationBadgeText = () => {
+    if (portalInfo.isAgentur) {
+      return isAr
+        ? "✓ فرصة عمل معتمدة رسمياً • وكالة التوظيف الفيدرالية الألمانية (BA)"
+        : isDe
+        ? "✓ Offiziell verifiziert • Bundesagentur für Arbeit (BA)"
+        : "✓ Officially Verified • German Federal Employment Agency (BA)";
+    }
+    if (portalInfo.isArbeitNow) {
+      return isAr
+        ? "✓ فرصة عمل معتمدة رسمياً • سجل التوظيف الفيدرالي الألماني (BA/ArbeitNow)"
+        : isDe
+        ? "✓ Offiziell verifiziert • Bundesagentur für Arbeit (BA/ArbeitNow)"
+        : "✓ Officially Verified Job Opening • Federal Partner Feed (BA/ArbeitNow)";
+    }
+    if (effectiveEmail) {
+      return isAr
+        ? "✓ فرصة عمل مباشرة ومعتمدة • قسم الموارد البشرية لدى جهة العمل الرسمية"
+        : isDe
+        ? "✓ Offiziell verifiziert • Direkter HR-Kontakt des Arbeitgebers"
+        : "✓ Officially Verified • Direct Employer HR Contact";
+    }
+    return isAr
+      ? "✓ فرصة عمل معتمدة رسمياً • بوابة التوظيف الرسمية لجهة العمل المباشرة"
+      : isDe
+      ? "✓ Offiziell verifiziert • Direktes Unternehmensportal"
+      : "✓ Officially Verified • Direct Employer Career Portal";
+  };
+
+  const reassuringMicrocopy = isAr
+    ? "جميع الوظائف من مصادر رسمية معتمدة في ألمانيا ولا توجد أي رسوم وساطة."
+    : isDe
+    ? "Alle Stellenangebote stammen aus offiziell verifizierten Quellen in Deutschland – 100% gebührenfrei ohne Vermittler."
+    : "All job openings are sourced from verified official German feeds with zero intermediary fees.";
+
+  // Renders the Direct HR Email or Official Portal Application Card
+  const renderDirectApplicationChannels = (keyPrefix = "desktop") => (
+    <div
+      key={`${keyPrefix}-apply-card`}
+      className={`rounded-3xl p-6 sm:p-7 space-y-5 shadow-2xl backdrop-blur-xl relative overflow-hidden text-slate-100 ${
+        hasEmail
+          ? "bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/30 border border-emerald-500/30"
+          : "bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950/30 border border-blue-500/30"
+      }`}
+    >
+      <div
+        className={`absolute top-0 right-0 w-64 h-64 blur-3xl pointer-events-none -mr-20 -mt-20 ${
+          hasEmail ? "bg-emerald-600/10" : "bg-blue-600/10"
+        }`}
+      />
+
+      <div className="relative space-y-4">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {hasEmail ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-xs font-bold text-emerald-400">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <span>{isAr ? "بريد الموارد البشرية المعتمد والمباشر" : "Direct Verified HR Email"}</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/25 text-xs font-bold text-blue-400">
+                <span>✓</span>
+                <span>{isAr ? `بوابة التقديم المعتمدة (${portalInfo.name})` : `Official Portal (${portalInfo.name})`}</span>
+              </span>
+            )}
+          </div>
+
+          <h3 className="text-lg sm:text-xl font-black text-white">
+            {hasEmail
+              ? isAr
+                ? "قناة التواصل المباشر مع الموارد البشرية"
+                : isDe
+                ? "Direkter HR-Bewerbungsweg"
+                : "Direct HR Application Channel"
+              : isAr
+              ? "قناة التقديم الرسمية المعتمدة"
+              : isDe
+              ? "Offizieller Bewerbungsweg"
+              : "Direct Application Method"}
+          </h3>
+
+          <p className="text-xs text-slate-300 leading-relaxed">
+            {hasEmail
+              ? isAr
+                ? `تم استخراج والتحقق من البريد المباشر لقسم التوظيف لدى ${cleanCompany}. يمكنك إرسال ملف ترشيحك DIN 5008 مباشرة بدون وسيط.`
+                : `Verified direct HR contact for ${cleanCompany}. You can submit your DIN 5008 dossier directly to recruiter inboxes.`
+              : isAr
+              ? `يتم إرسال ترشيحك مباشرة عبر البوابة الرسمية المعتمدة لدى ${cleanCompany} دون أي وسطاء أو رسوم.`
+              : `Submit your application directly through ${cleanCompany}'s official recruitment portal.`}
+          </p>
+        </div>
+
+        {/* State A: Direct HR Email Display & Actions */}
+        {hasEmail && effectiveEmail && (
+          <div className="space-y-3.5 pt-1">
+            <div className="p-4 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400 font-semibold">
+                  {isAr ? "البريد الإلكتروني للتوظيف:" : "Official Recruiter Email:"}
+                </span>
+                <span className="text-emerald-400 font-bold flex items-center gap-1 text-[11px]">
+                  <span>✓</span>
+                  <span>{isAr ? "موثق 100%" : "Verified"}</span>
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between gap-2 bg-slate-900/90 p-3 rounded-xl border border-slate-800 font-mono text-xs sm:text-sm text-white" dir="ltr">
+                <span className="break-all font-bold select-all text-emerald-300">
+                  {effectiveEmail}
+                </span>
+              </div>
+            </div>
+
+            {/* Direct Mailto Action */}
+            <a
+              href={mailtoLink}
+              className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/30 ring-1 ring-emerald-400/40"
+            >
+              <span className="text-base">✉️</span>
+              <span>
+                {isAr
+                  ? "إرسال السيرة عبر الإيميل (DIN 5008)"
+                  : "Send DIN 5008 Application via Email"}
+              </span>
+            </a>
+
+            {/* 1-Click Copy and Gmail Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => handleCopyEmail(effectiveEmail)}
+                className="w-full min-h-[48px] py-3 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-100 hover:text-white border border-slate-700 font-bold text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+              >
+                <span>📋</span>
+                <span>
+                  {copiedEmail
+                    ? isAr
+                      ? "✓ تم نسخ الإيميل!"
+                      : "Copied!"
+                    : isAr
+                    ? "نسخ الإيميل"
+                    : "Copy Email"}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSmartMailSend(effectiveEmail)}
+                className="w-full min-h-[48px] py-3 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-100 hover:text-white border border-slate-700 font-bold text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+              >
+                <span>🚀</span>
+                <span>{isAr ? "فتح في Gmail" : "Open in Gmail"}</span>
+              </button>
+            </div>
+
+            {/* German Template Modal Trigger */}
+            <button
+              type="button"
+              onClick={() => setShowEmailModal(true)}
+              className="w-full min-h-[44px] py-2.5 px-3 rounded-xl bg-slate-950/70 hover:bg-slate-950 text-slate-300 hover:text-white border border-slate-800 text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <span>📝</span>
+              <span>
+                {isAr ? "عرض وقراءة نص الإيميل بالألمانية (Muster-Vorlage)" : "Show German Email Template"}
+              </span>
+            </button>
+
+            {/* Secondary Portal Link if ATS URL exists */}
+            {hasPortal && (
+              <div className="pt-2 border-t border-slate-800/80">
+                <a
+                  href={job.applyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full min-h-[44px] py-2.5 px-3 rounded-xl bg-slate-800/60 hover:bg-slate-800 active:scale-[0.98] text-slate-300 hover:text-white border border-slate-700/60 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <span>🌐</span>
+                  <span>
+                    {isAr
+                      ? `أو التقديم عبر بوابة الشركة الرسمية (${portalInfo.name}) ↗`
+                      : `Or apply via Portal (${portalInfo.name}) ↗`}
+                  </span>
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* State B: Official Employer Portal (when no direct email) */}
+        {!hasEmail && hasPortal && (
+          <div className="space-y-3.5 pt-1">
+            <a
+              href={job.applyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full min-h-[48px] py-3.5 px-5 rounded-2xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-extrabold text-sm text-center shadow-xl shadow-blue-600/30 hover:shadow-blue-500/40 transition-all flex items-center justify-center gap-2 cursor-pointer ring-1 ring-blue-400/40"
+            >
+              <span>
+                {isAr
+                  ? `التقديم عبر البوابة الرسمية (${portalInfo.name}) ↗`
+                  : isDe
+                  ? `Über offizielles Portal bewerben (${portalInfo.name}) ↗`
+                  : `Apply via Official Portal (${portalInfo.name}) ↗`}
+              </span>
+            </a>
+            <p className="text-[11px] text-slate-400 text-center">
+              {isAr ? "بوابة توظيف معتمدة وربط مباشر بدون أي وسطاء" : "Official authenticated ATS portal link with zero intermediary"}
+            </p>
+
+            {/* German Bewerbungsformular Guide */}
+            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs space-y-2 text-start">
+              <div className="flex items-center gap-1.5 font-bold text-blue-400 text-[11px]">
+                <span>💡</span>
+                <span>
+                  {isAr
+                    ? "دليل التقديم في استمارة الشركة الرسمية (Bewerbungsformular):"
+                    : isDe
+                    ? "Leitfaden für das offizielle Bewerbungsformular:"
+                    : "Guide for the Official Application Form (Bewerbungsformular):"}
+                </span>
+              </div>
+              <ul className="space-y-2 text-[11px] text-slate-300 leading-relaxed">
+                <li className="flex items-start gap-1.5">
+                  <span className="shrink-0 select-none">1️⃣</span>
+                  <span>
+                    {isAr
+                      ? "جهّز وحمّل ملف سيرتك الذاتية (Lebenslauf) وخطاب الدافع (Anschreiben) بصيغة PDF من الأدوات بالأسفل."
+                      : isDe
+                      ? "Erstellen und laden Sie Ihren Lebenslauf & Anschreiben als PDF über die Tools unten herunter."
+                      : "Prepare and download your CV (Lebenslauf) and cover letter (Anschreiben) as PDF from the tools below."}
+                  </span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="shrink-0 select-none">2️⃣</span>
+                  <span>
+                    {isAr
+                      ? "اضغط على زر البوابة الرسمية أعلاه لفتح استمارة التقديم الخاصة بجهة العمل."
+                      : isDe
+                      ? "Klicken Sie oben auf den Portal-Button, um das Bewerbungsformular des Arbeitgebers zu öffnen."
+                      : "Click the official portal button above to open the employer's application form."}
+                  </span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="shrink-0 select-none">3️⃣</span>
+                  <span>
+                    {isAr
+                      ? "في استمارة الشركة بالألمانية: اكتب اسمك في (Vorname / Nachname)، بريدك في (E-Mail)، وارفع ملف الـ PDF في خانة (Lebenslauf / Bewerbungsunterlagen) ثم اضغط (Bewerbung absenden)."
+                      : isDe
+                      ? "Im Formular: Name bei (Vorname / Nachname), E-Mail bei (E-Mail) eintragen, PDF bei (Lebenslauf / Bewerbungsunterlagen) hochladen und auf (Bewerbung absenden) klicken."
+                      : "In the German form: enter your name in (Vorname / Nachname), your email in (E-Mail), upload your PDF in (Lebenslauf / Bewerbungsunterlagen), then click (Bewerbung absenden)."}
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* State C: Neither (Rare fallback) */}
+        {!hasEmail && !hasPortal && (
+          <div className="space-y-3 pt-1">
+            <Link
+              href={coverLetterUrl}
+              className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-extrabold text-sm text-center shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>✨</span>
+              <span>{isAr ? "تجهيز ملف الترشيح الكامل (DIN 5008)" : "Prepare DIN 5008 Dossier"}</span>
+            </Link>
+          </div>
+        )}
+
+        {/* Reassuring Source Transparency Micro-Copy */}
+        <div className="flex items-center gap-2 text-[11px] text-slate-300 pt-3 border-t border-slate-800/80">
+          <span className="text-emerald-400 text-sm shrink-0">🛡️</span>
+          <span className="leading-relaxed">{reassuringMicrocopy}</span>
+        </div>
+
+        {/* In-Card Toast Notification */}
+        {toast && (
+          <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2 animate-fadeIn shadow-inner">
+            <span className="text-sm shrink-0">✓</span>
+            <span className="leading-snug">{toast}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // Renders the AI Career Suite Box
+  const renderAiSuiteBox = (keyPrefix = "desktop") => (
+    <div
+      key={`${keyPrefix}-ai-box`}
+      className="rounded-3xl bg-slate-900/90 border border-blue-500/20 p-6 space-y-4 shadow-xl backdrop-blur-xl"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-base">⚡</span>
+          <h3 className="font-bold text-white text-xs sm:text-sm">
+            {isAr ? "أدوات الذكاء الاصطناعي التنافسية" : "AI Career Suite"}
+          </h3>
+        </div>
+
+        <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 font-mono text-[11px] font-bold">
+          +85% ATS Score
+        </span>
+      </div>
+
+      {/* Tool 1: Cover Letter Generator */}
+      <Link
+        href={coverLetterUrl}
+        className="group block p-4 rounded-2xl bg-slate-950 hover:bg-slate-950/80 border border-slate-800 hover:border-blue-500/40 transition-all space-y-1.5 min-h-[48px]"
+      >
+        <div className="flex items-center justify-between text-white font-bold text-xs group-hover:text-blue-400 transition-colors">
+          <div className="flex items-center gap-2">
+            <span className="text-base">✨</span>
+            <span>{isAr ? "توليد خطاب الدافع (Anschreiben)" : "DIN 5008 Cover Letter Studio"}</span>
+          </div>
+          <span className={dir === "rtl" ? "rotate-180" : ""}>→</span>
+        </div>
+        <p className="text-[11px] text-slate-400 leading-relaxed">
+          {isAr
+            ? `صياغة خطاب دافع ألماني مخصص لـ ${cleanCompany} طبقاً لمعايير DIN 5008 معبأ بمتطلبات الشاغر.`
+            : `Generate a tailored DIN 5008 cover letter pre-filled with ${cleanCompany} and role details.`}
+        </p>
+      </Link>
+
+      {/* Tool 2: ATS Analyzer */}
+      <Link
+        href={atsAnalyzerUrl}
+        className="group block p-4 rounded-2xl bg-slate-950 hover:bg-slate-950/80 border border-slate-800 hover:border-blue-500/40 transition-all space-y-1.5 min-h-[48px]"
+      >
+        <div className="flex items-center justify-between text-white font-bold text-xs group-hover:text-blue-400 transition-colors">
+          <div className="flex items-center gap-2">
+            <span className="text-base">🔍</span>
+            <span>{isAr ? "فاحص التوافق مع أنظمة الفرز (ATS)" : "ATS Job-Resume Matcher"}</span>
+          </div>
+          <span className={dir === "rtl" ? "rotate-180" : ""}>→</span>
+        </div>
+        <p className="text-[11px] text-slate-400 leading-relaxed">
+          {isAr
+            ? "فحص نسبة تطابق سيرتك الذاتية مع متطلبات هذا الإعلان واكتشاف الكلمات المفتاحية الناقصة فوراً."
+            : "Audit your CV against this job's keywords and score higher on recruiter ATS scans."}
+        </p>
+      </Link>
+    </div>
+  );
+
+  // Renders the 3-Step Roadmap Stepper
+  const renderRoadmapStepper = (keyPrefix = "desktop") => (
+    <div
+      key={`${keyPrefix}-stepper`}
+      className="rounded-3xl bg-slate-900/90 border border-slate-800 p-6 space-y-4 shadow-xl backdrop-blur-xl"
+    >
+      <div className="flex items-center gap-2">
+        <span className="text-base select-none">🧭</span>
+        <h3 className="font-bold text-white text-xs sm:text-sm">
+          {isAr
+            ? "مسار الخطوات الثلاث لضمان القبول"
+            : isDe
+            ? "3-Schritte-Erfolgsplan zur Bewerbung"
+            : "3-Step Acceptance Roadmap"}
+        </h3>
+      </div>
+
+      <div className="space-y-4 pt-1">
+        <div className="flex items-start gap-3 relative">
+          <div className="flex flex-col items-center">
+            <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-black shrink-0">
+              1
+            </span>
+            <div className="w-0.5 h-10 bg-slate-800 mt-1" />
+          </div>
+          <div className="space-y-0.5 flex-1">
+            <h4 className="text-xs font-bold text-white">
+              {isAr ? "تجهيز السيرة الذاتية (DIN 5008)" : "Lebenslauf vorbereiten (DIN 5008)"}
+            </h4>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              {isAr
+                ? "سيرة ذاتية بترتيب عكسي متوافقة أوروبياً مع خوارزميات الفرز الآلي."
+                : "ATS-optimized reverse chronological resume formatted to German standards."}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-3 relative">
+          <div className="flex flex-col items-center">
+            <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-black shrink-0">
+              2
+            </span>
+            <div className="w-0.5 h-10 bg-slate-800 mt-1" />
+          </div>
+          <div className="space-y-0.5 flex-1">
+            <h4 className="text-xs font-bold text-white">
+              {isAr
+                ? `صياغة خطاب الدافع المخصص لـ ${cleanCompany}`
+                : `Anschreiben für ${cleanCompany} erstellen`}
+            </h4>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              {isAr
+                ? "خطاب رسمي يستهدف مسمى الوظيفة ومتطلبات صاحب العمل بدقة."
+                : "Official German Anschreiben addressing role specifications."}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-3">
+          <span className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-black shrink-0">
+            3
+          </span>
+          <div className="space-y-0.5 flex-1">
+            <h4 className="text-xs font-bold text-white">
+              {isAr
+                ? "إرسال الملف الموحد (Bewerbungsmappe) مباشرة"
+                : "Bewerbungsmappe direkt einreichen"}
+            </h4>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              {isAr
+                ? "إرسال الملف عبر البوابة الرسمية للشركة أو بريد الموارد البشرية."
+                : "Submit via official ATS portal or directly to HR email."}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Renders the Quick Overview / Share Card
+  const renderOverviewCard = (keyPrefix = "desktop") => (
+    <div
+      key={`${keyPrefix}-overview`}
+      className="rounded-3xl bg-slate-900/60 border border-slate-800 p-6 space-y-4 text-xs"
+    >
+      <h3 className="font-bold text-white text-sm flex items-center gap-2">
+        <span>ℹ️</span>
+        <span>{isAr ? "بيانات الاعتماد والشاغر" : dict.jobs.details.overviewTitle}</span>
+      </h3>
+
+      <div className="space-y-2.5 text-slate-300">
+        <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
+          <span className="text-slate-400 shrink-0">{dict.jobs.details.company}</span>
+          <span className="font-semibold text-white text-end break-words [overflow-wrap:anywhere]">{job.company}</span>
+        </div>
+
+        <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
+          <span className="text-slate-400 shrink-0">{dict.jobs.details.city}</span>
+          <span className="font-semibold text-white text-end break-words">{job.city || dict.jobs.details.germany}</span>
+        </div>
+
+        <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
+          <span className="text-slate-400 shrink-0">{dict.jobs.details.jobType}</span>
+          <span className="font-semibold text-white text-end">{job.jobType || dict.jobs.details.fullTime}</span>
+        </div>
+
+        <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
+          <span className="text-slate-400 shrink-0">{dict.jobs.details.languageLevel}</span>
+          <span className="font-semibold text-emerald-400 font-mono text-end">{cefrLevel}</span>
+        </div>
+
+        <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
+          <span className="text-slate-400 shrink-0">{isAr ? "كود المرجع:" : "Ref-Nr:"}</span>
+          <span dir="ltr" className="font-mono text-slate-300 font-bold">{referenceNumber}</span>
+        </div>
+
+        <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
+          <span className="text-slate-400 shrink-0">{isAr ? "معيار التقديم:" : "Standard:"}</span>
+          <span dir="ltr" className="font-mono text-blue-400 font-bold">DIN 5008</span>
+        </div>
+
+        <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
+          <span className="text-slate-400 shrink-0">{dict.jobs.details.salary}</span>
+          <span className="font-semibold text-slate-200 text-end break-words">
+            {job.salary || (isAr ? "حسب السلم المنظم (Tarifvertrag)" : "Tarifvertrag")}
+          </span>
+        </div>
+      </div>
+
+      <div className="pt-2">
+        <button
+          type="button"
+          onClick={handleCopyLink}
+          className="w-full min-h-[48px] py-3 px-3 rounded-xl bg-slate-950 hover:bg-slate-800 active:scale-[0.98] border border-slate-800 text-slate-300 hover:text-white transition-all text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+        >
+          <span>🔗</span>
+          <span>{copiedLink ? dict.jobs.details.linkCopied : dict.jobs.details.shareJob}</span>
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-8" dir={dir}>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -580,13 +1180,7 @@ export default function JobDetailClient({
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                 </span>
-                <span>
-                  {isAr
-                    ? "✓ فرصة عمل معتمدة رسمياً • سجل التوظيف الفيدرالي الألماني (BA/ArbeitNow)"
-                    : isDe
-                    ? "✓ Offiziell verifiziert • Bundesagentur für Arbeit (BA/ArbeitNow)"
-                    : "✓ Officially Verified Job Opening • Federal Employment Agency (BA/ArbeitNow)"}
-                </span>
+                <span>{getVerificationBadgeText()}</span>
               </div>
 
               {/* German Standards & Reference ID Chips */}
@@ -621,7 +1215,7 @@ export default function JobDetailClient({
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <h1
                   dir="auto"
-                  className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-snug text-start flex-1"
+                  className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-snug text-start flex-1 break-words [overflow-wrap:anywhere] hyphens-auto"
                 >
                   <bdi>{job.title}</bdi>
                 </h1>
@@ -634,11 +1228,11 @@ export default function JobDetailClient({
               </div>
 
               <div className="flex items-center gap-4 text-sm sm:text-base text-slate-300 flex-wrap">
-                <span className="font-bold text-blue-400 flex items-center gap-1.5" dir="auto">
+                <span className="font-bold text-blue-400 flex items-center gap-1.5 break-words [overflow-wrap:anywhere]" dir="auto">
                   <span>🏢</span>
                   <span>{job.company}</span>
                 </span>
-                <span className="text-slate-400 flex items-center gap-1.5">
+                <span className="text-slate-400 flex items-center gap-1.5 break-words">
                   <span>📍</span>
                   <span>{job.city || dict.jobs.details.germany}</span>
                   {isAr && job.city && GERMAN_CITIES_MAP[job.city] && (
@@ -674,7 +1268,7 @@ export default function JobDetailClient({
                 </span>
               </span>
 
-              <span className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs font-semibold flex items-center gap-1.5">
+              <span className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs font-semibold flex items-center gap-1.5 break-words">
                 <span>💰</span>
                 <span>
                   {job.salary
@@ -712,7 +1306,7 @@ export default function JobDetailClient({
                   {/* Primary CTA */}
                   <Link
                     href={coverLetterUrl}
-                    className="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs sm:text-sm text-center shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2 group ring-1 ring-blue-400/40 cursor-pointer"
+                    className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-black text-xs sm:text-sm text-center shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2 group ring-1 ring-blue-400/40 cursor-pointer"
                   >
                     <span className="text-base">✨</span>
                     <span>
@@ -725,25 +1319,10 @@ export default function JobDetailClient({
                   </Link>
 
                   {/* Secondary CTA */}
-                  {hasPortal ? (
-                    <a
-                      href={job.applyUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 hover:text-white border border-slate-700 hover:border-slate-600 font-bold text-xs sm:text-sm text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
-                    >
-                      <span>
-                        {isAr
-                          ? "بوابة التقديم المباشرة للشركة ↗"
-                          : isDe
-                          ? "Offizielles Unternehmensportal ↗"
-                          : "Direct Employer Portal ↗"}
-                      </span>
-                    </a>
-                  ) : hasEmail ? (
+                  {hasEmail ? (
                     <a
                       href={mailtoLink}
-                      className="w-full py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 hover:text-white border border-slate-700 hover:border-slate-600 font-bold text-xs sm:text-sm text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                      className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-extrabold text-xs sm:text-sm text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-emerald-600/25 ring-1 ring-emerald-400/30"
                     >
                       <span>✉️</span>
                       <span>
@@ -754,10 +1333,25 @@ export default function JobDetailClient({
                           : "Send Application via Email ↗"}
                       </span>
                     </a>
+                  ) : hasPortal ? (
+                    <a
+                      href={job.applyUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-100 hover:text-white border border-slate-700 hover:border-slate-600 font-bold text-xs sm:text-sm text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                    >
+                      <span>
+                        {isAr
+                          ? `بوابة التقديم المباشرة للشركة (${portalInfo.name}) ↗`
+                          : isDe
+                          ? `Offizielles Unternehmensportal (${portalInfo.name}) ↗`
+                          : `Direct Employer Portal (${portalInfo.name}) ↗`}
+                      </span>
+                    </a>
                   ) : (
                     <Link
                       href={atsAnalyzerUrl}
-                      className="w-full py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 hover:text-white border border-slate-700 hover:border-slate-600 font-bold text-xs sm:text-sm text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                      className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-100 hover:text-white border border-slate-700 hover:border-slate-600 font-bold text-xs sm:text-sm text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
                     >
                       <span>🔍</span>
                       <span>{isAr ? "فحص توافق السيرة (ATS)" : "ATS Compatibility Audit"}</span>
@@ -767,14 +1361,8 @@ export default function JobDetailClient({
 
                 {/* Micro-Copy */}
                 <div className="flex items-center gap-2 text-[11px] text-slate-400 pt-1">
-                  <span className="text-emerald-400">🛡️</span>
-                  <span>
-                    {isAr
-                      ? "يتم توجيهك مباشرة لجهة العمل الرسمية دون أي رسوم وسيطة."
-                      : isDe
-                      ? "Sie werden direkt zur offiziellen Bewerbungsseite weitergeleitet – 100% gebührenfrei ohne Vermittler."
-                      : "You are routed directly to the official employer portal without any intermediary fees."}
-                  </span>
+                  <span className="text-emerald-400 text-sm">🛡️</span>
+                  <span>{reassuringMicrocopy}</span>
                 </div>
               </div>
             </div>
@@ -880,6 +1468,12 @@ export default function JobDetailClient({
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Mobile Stack: Immediate Application & AI Tools (clean stacking right below core role description) */}
+            <div className="block lg:hidden space-y-6">
+              {renderDirectApplicationChannels("mobile-primary")}
+              {renderAiSuiteBox("mobile-primary")}
             </div>
 
             {/* ==================================================== */}
@@ -1115,367 +1709,24 @@ export default function JobDetailClient({
               </div>
             </div>
 
+            {/* Mobile Stack: Acceptance Roadmap & Quick Overview (placed at bottom on mobile screens) */}
+            <div className="block lg:hidden space-y-6">
+              {renderRoadmapStepper("mobile-secondary")}
+              {renderOverviewCard("mobile-secondary")}
+            </div>
+
           </div>
 
         </div>
 
         {/* ========================================================= */}
-        {/* Sidebar: High-Trust Architecture (Direct Apply, Stepper, AI) */}
+        {/* Desktop Sidebar: Sticky Top 24                            */}
         {/* ========================================================= */}
-        <div className="lg:col-span-4 space-y-6 sticky top-24">
-
-          {/* Box 1: قناة التقديم المباشرة (Direct Application Method) */}
-          <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-6 space-y-5 shadow-2xl text-slate-100 backdrop-blur-xl">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-bold text-emerald-400">
-                  <span>✓</span>
-                  <span>{isAr ? "تقديم مباشر وموثق 100%" : "Direct & 100% Verified"}</span>
-                </span>
-              </div>
-
-              <h3 className="text-lg font-black text-white">
-                {isAr ? "قناة التقديم المباشرة" : isDe ? "Offizieller Bewerbungsweg" : "Direct Application Method"}
-              </h3>
-
-              <p className="text-xs text-slate-400 leading-relaxed">
-                {isAr
-                  ? `يتم إرسال ترشيحك مباشرة لقسم الموارد البشرية لدى ${cleanCompany} أو عبر بوابتهم المعتمدة دون أي وسيط.`
-                  : `Submit your application directly to ${cleanCompany}'s official HR portal or HR email.`}
-              </p>
-            </div>
-
-            {/* Portal Application Action */}
-            {hasPortal && (
-              <div className="space-y-3">
-                <a
-                  href={job.applyUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-4 px-5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm text-center shadow-xl shadow-blue-600/30 hover:shadow-blue-500/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer ring-1 ring-blue-400/40"
-                >
-                  <span>
-                    {isAr
-                      ? `التقديم عبر البوابة الرسمية (${portalInfo.name}) ↗`
-                      : isDe
-                      ? `Über offizielles Portal bewerben (${portalInfo.name}) ↗`
-                      : `Apply via Official Portal (${portalInfo.name}) ↗`}
-                  </span>
-                </a>
-                <p className="text-[11px] text-slate-400 text-center">
-                  {isAr ? "بوابة توظيف معتمدة وربط مباشر" : "Official authenticated ATS portal link"}
-                </p>
-
-                {/* Helpful Guide Box for German Application Forms */}
-                <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs space-y-2 text-start">
-                  <div className="flex items-center gap-1.5 font-bold text-blue-400 text-[11px]">
-                    <span>💡</span>
-                    <span>
-                      {isAr
-                        ? "دليل التقديم في استمارة الشركة الرسمية (Bewerbungsformular):"
-                        : isDe
-                        ? "Leitfaden für das offizielle Bewerbungsformular:"
-                        : "Guide for the Official Application Form (Bewerbungsformular):"}
-                    </span>
-                  </div>
-                  <ul className="space-y-1.5 text-[11px] text-slate-300 leading-relaxed">
-                    <li className="flex items-start gap-1.5">
-                      <span className="shrink-0 select-none">1️⃣</span>
-                      <span>
-                        {isAr
-                          ? "جهّز وحمّل ملف سيرتك الذاتية (Lebenslauf) وخطاب الدافع (Anschreiben) بصيغة PDF من الأدوات بالأسفل."
-                          : isDe
-                          ? "Erstellen und laden Sie Ihren Lebenslauf & Anschreiben als PDF über die Tools unten herunter."
-                          : "Prepare and download your CV (Lebenslauf) and cover letter (Anschreiben) as PDF from the tools below."}
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="shrink-0 select-none">2️⃣</span>
-                      <span>
-                        {isAr
-                          ? "اضغط على زر البوابة الرسمية أعلاه لفتح استمارة التقديم الخاصة بجهة العمل."
-                          : isDe
-                          ? "Klicken Sie oben auf den Portal-Button, um das Bewerbungsformular des Arbeitgebers zu öffnen."
-                          : "Click the official portal button above to open the employer's application form."}
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="shrink-0 select-none">3️⃣</span>
-                      <span>
-                        {isAr
-                          ? "في استمارة الشركة بالألمانية: اكتب اسمك في (Vorname / Nachname)، بريدك في (E-Mail)، وارفع ملف الـ PDF في خانة (Lebenslauf / Bewerbungsunterlagen) ثم اضغط (Bewerbung absenden)."
-                          : isDe
-                          ? "Im Formular: Name bei (Vorname / Nachname), E-Mail bei (E-Mail) eintragen, PDF bei (Lebenslauf / Bewerbungsunterlagen) hochladen und auf (Bewerbung absenden) klicken."
-                          : "In the German form: enter your name in (Vorname / Nachname), your email in (E-Mail), upload your PDF in (Lebenslauf / Bewerbungsunterlagen), then click (Bewerbung absenden)."}
-                      </span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            )}
-
-            {/* Direct Email Application Action */}
-            {hasEmail && (
-              <div className="space-y-3 pt-2">
-                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-400 font-medium">
-                      {isAr ? "بريد الموارد البشرية الرسمي:" : "Official HR Email:"}
-                    </span>
-                    <span className="text-emerald-400 font-bold flex items-center gap-1 text-[11px]">
-                      <span>✓</span>
-                      <span>{isAr ? "تقديم موثق" : "Verified"}</span>
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 bg-slate-900 px-3 py-2 rounded-xl border border-slate-800 font-mono text-xs text-white" dir="ltr">
-                    <span className="truncate">{effectiveEmail}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleCopyEmail(effectiveEmail)}
-                      className="text-blue-400 hover:text-white shrink-0 cursor-pointer font-sans text-[11px] font-bold"
-                    >
-                      {copiedEmail ? (isAr ? "✓ تم النسخ!" : "Copied!") : (isAr ? "نسخ" : "Copy")}
-                    </button>
-                  </div>
-                </div>
-
-                <a
-                  href={mailtoLink}
-                  className={`w-full py-3.5 px-4 rounded-xl text-center font-extrabold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
-                    hasPortal
-                      ? "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
-                      : "bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/25 ring-1 ring-blue-400/40"
-                  }`}
-                >
-                  <span>✉️</span>
-                  <span>
-                    {isAr
-                      ? "إرسال ملف الترشيح (DIN 5008) عبر الإيميل"
-                      : "Send DIN 5008 Application via Email"}
-                  </span>
-                </a>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleSmartMailSend(effectiveEmail)}
-                    className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs text-center transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <span>🚀</span>
-                    <span>{isAr ? "فتح في Gmail" : "Open in Gmail"}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowEmailModal(true)}
-                    className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs text-center transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <span>📝</span>
-                    <span>{isAr ? "عرض النموذج الألماني" : "Show Template"}</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* In-Card Toast Notification */}
-            {toast && (
-              <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2 animate-fadeIn shadow-inner">
-                <span className="text-sm shrink-0">✓</span>
-                <span className="leading-snug">{toast}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Box 2: مسار الخطوات الثلاث لضمان القبول (3-Step Stepper) */}
-          <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-6 space-y-4 shadow-xl backdrop-blur-xl">
-            <div className="flex items-center gap-2">
-              <span className="text-base select-none">🧭</span>
-              <h3 className="font-bold text-white text-xs sm:text-sm">
-                {isAr
-                  ? "مسار الخطوات الثلاث لضمان القبول"
-                  : isDe
-                  ? "3-Schritte-Erfolgsplan zur Bewerbung"
-                  : "3-Step Acceptance Roadmap"}
-              </h3>
-            </div>
-
-            <div className="space-y-4 pt-1">
-              {/* Step 1 */}
-              <div className="flex items-start gap-3 relative">
-                <div className="flex flex-col items-center">
-                  <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-black shrink-0">
-                    1
-                  </span>
-                  <div className="w-0.5 h-10 bg-slate-800 mt-1" />
-                </div>
-                <div className="space-y-0.5 flex-1">
-                  <h4 className="text-xs font-bold text-white">
-                    {isAr ? "تجهيز السيرة الذاتية (DIN 5008)" : "Lebenslauf vorbereiten (DIN 5008)"}
-                  </h4>
-                  <p className="text-[11px] text-slate-400 leading-relaxed">
-                    {isAr
-                      ? "سيرة ذاتية بترتيب عكسي متوافقة أوروبياً مع خوارزميات الفرز الآلي."
-                      : "ATS-optimized reverse chronological resume formatted to German standards."}
-                  </p>
-                </div>
-              </div>
-
-              {/* Step 2 */}
-              <div className="flex items-start gap-3 relative">
-                <div className="flex flex-col items-center">
-                  <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-black shrink-0">
-                    2
-                  </span>
-                  <div className="w-0.5 h-10 bg-slate-800 mt-1" />
-                </div>
-                <div className="space-y-0.5 flex-1">
-                  <h4 className="text-xs font-bold text-white">
-                    {isAr
-                      ? `صياغة خطاب الدافع المخصص لـ ${cleanCompany}`
-                      : `Anschreiben für ${cleanCompany} erstellen`}
-                  </h4>
-                  <p className="text-[11px] text-slate-400 leading-relaxed">
-                    {isAr
-                      ? "خطاب رسمي يستهدف مسمى الوظيفة ومتطلبات صاحب العمل بدقة."
-                      : "Official German Anschreiben addressing role specifications."}
-                  </p>
-                </div>
-              </div>
-
-              {/* Step 3 */}
-              <div className="flex items-start gap-3">
-                <span className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-black shrink-0">
-                  3
-                </span>
-                <div className="space-y-0.5 flex-1">
-                  <h4 className="text-xs font-bold text-white">
-                    {isAr
-                      ? "إرسال الملف الموحد (Bewerbungsmappe) مباشرة"
-                      : "Bewerbungsmappe direkt einreichen"}
-                  </h4>
-                  <p className="text-[11px] text-slate-400 leading-relaxed">
-                    {isAr
-                      ? "إرسال الملف عبر البوابة الرسمية للشركة أو بريد الموارد البشرية."
-                      : "Submit via official ATS portal or directly to HR email."}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Box 3: أدوات الذكاء الاصطناعي التنافسية (AI Suite) */}
-          <div className="rounded-3xl bg-slate-900/90 border border-blue-500/20 p-6 space-y-4 shadow-xl backdrop-blur-xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-base">⚡</span>
-                <h3 className="font-bold text-white text-xs sm:text-sm">
-                  {isAr ? "أدوات الذكاء الاصطناعي التنافسية" : "AI Career Suite"}
-                </h3>
-              </div>
-
-              {/* Match Boost Badge */}
-              <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 font-mono text-[11px] font-bold">
-                +85% ATS Score
-              </span>
-            </div>
-
-            {/* Tool 1: Cover Letter Generator */}
-            <Link
-              href={coverLetterUrl}
-              className="group block p-4 rounded-2xl bg-slate-950 hover:bg-slate-950/80 border border-slate-800 hover:border-blue-500/40 transition-all space-y-1.5"
-            >
-              <div className="flex items-center justify-between text-white font-bold text-xs group-hover:text-blue-400 transition-colors">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">✨</span>
-                  <span>{isAr ? "توليد خطاب الدافع (Anschreiben)" : "DIN 5008 Cover Letter Studio"}</span>
-                </div>
-                <span className={dir === "rtl" ? "rotate-180" : ""}>→</span>
-              </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                {isAr
-                  ? `صياغة خطاب دافع ألماني مخصص لـ ${cleanCompany} طبقاً لمعايير DIN 5008 معبأ بمتطلبات الشاغر.`
-                  : `Generate a tailored DIN 5008 cover letter pre-filled with ${cleanCompany} and role details.`}
-              </p>
-            </Link>
-
-            {/* Tool 2: ATS Analyzer */}
-            <Link
-              href={atsAnalyzerUrl}
-              className="group block p-4 rounded-2xl bg-slate-950 hover:bg-slate-950/80 border border-slate-800 hover:border-blue-500/40 transition-all space-y-1.5"
-            >
-              <div className="flex items-center justify-between text-white font-bold text-xs group-hover:text-blue-400 transition-colors">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🔍</span>
-                  <span>{isAr ? "فاحص التوافق مع أنظمة الفرز (ATS)" : "ATS Job-Resume Matcher"}</span>
-                </div>
-                <span className={dir === "rtl" ? "rotate-180" : ""}>→</span>
-              </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                {isAr
-                  ? "فحص نسبة تطابق سيرتك الذاتية مع متطلبات هذا الإعلان واكتشاف الكلمات المفتاحية الناقصة فوراً."
-                  : "Audit your CV against this job's keywords and score higher on recruiter ATS scans."}
-              </p>
-            </Link>
-          </div>
-
-          {/* Box 4: بطاقة البيانات الرسمية ومشاركة الفرصة (Quick Overview Card) */}
-          <div className="rounded-3xl bg-slate-900/60 border border-slate-800 p-6 space-y-4 text-xs">
-            <h3 className="font-bold text-white text-sm flex items-center gap-2">
-              <span>ℹ️</span>
-              <span>{isAr ? "بيانات الاعتماد والشاغر" : dict.jobs.details.overviewTitle}</span>
-            </h3>
-
-            <div className="space-y-2.5 text-slate-300">
-              <div className="flex justify-between py-1 border-b border-slate-800/80">
-                <span className="text-slate-400">{dict.jobs.details.company}</span>
-                <span className="font-semibold text-white">{job.company}</span>
-              </div>
-
-              <div className="flex justify-between py-1 border-b border-slate-800/80">
-                <span className="text-slate-400">{dict.jobs.details.city}</span>
-                <span className="font-semibold text-white">{job.city || dict.jobs.details.germany}</span>
-              </div>
-
-              <div className="flex justify-between py-1 border-b border-slate-800/80">
-                <span className="text-slate-400">{dict.jobs.details.jobType}</span>
-                <span className="font-semibold text-white">{job.jobType || dict.jobs.details.fullTime}</span>
-              </div>
-
-              <div className="flex justify-between py-1 border-b border-slate-800/80">
-                <span className="text-slate-400">{dict.jobs.details.languageLevel}</span>
-                <span className="font-semibold text-emerald-400 font-mono">{cefrLevel}</span>
-              </div>
-
-              <div className="flex justify-between py-1 border-b border-slate-800/80">
-                <span className="text-slate-400">{isAr ? "كود المرجع:" : "Ref-Nr:"}</span>
-                <span dir="ltr" className="font-mono text-slate-300 font-bold">{referenceNumber}</span>
-              </div>
-
-              <div className="flex justify-between py-1 border-b border-slate-800/80">
-                <span className="text-slate-400">{isAr ? "معيار التقديم:" : "Standard:"}</span>
-                <span dir="ltr" className="font-mono text-blue-400 font-bold">DIN 5008</span>
-              </div>
-
-              <div className="flex justify-between py-1 border-b border-slate-800/80">
-                <span className="text-slate-400">{dict.jobs.details.salary}</span>
-                <span className="font-semibold text-slate-200">
-                  {job.salary || (isAr ? "حسب السلم المنظم (Tarifvertrag)" : "Tarifvertrag")}
-                </span>
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                className="w-full py-2.5 px-3 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition-all text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>🔗</span>
-                <span>{copiedLink ? dict.jobs.details.linkCopied : dict.jobs.details.shareJob}</span>
-              </button>
-            </div>
-          </div>
-
+        <div className="hidden lg:block lg:col-span-4 space-y-6 sticky top-24">
+          {renderDirectApplicationChannels("desktop")}
+          {renderRoadmapStepper("desktop")}
+          {renderAiSuiteBox("desktop")}
+          {renderOverviewCard("desktop")}
         </div>
 
       </div>
@@ -1540,7 +1791,7 @@ export default function JobDetailClient({
                   setCopiedEmail(true);
                   setTimeout(() => setCopiedEmail(false), 2500);
                 }}
-                className="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                className="flex-1 min-h-[48px] py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-white text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <span>📋</span>
                 <span>{copiedEmail ? dict.jobs.details.copiedSuccess : dict.jobs.details.copyTemplate}</span>
@@ -1549,10 +1800,10 @@ export default function JobDetailClient({
               <button
                 type="button"
                 onClick={() => {
-                  handleSmartMailSend();
+                  handleSmartMailSend(effectiveEmail);
                   setShowEmailModal(false);
                 }}
-                className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold text-center shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-1 cursor-pointer"
+                className="flex-1 min-h-[48px] py-3 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white text-xs sm:text-sm font-extrabold text-center shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-1 cursor-pointer"
               >
                 <span>✉️</span>
                 <span>{dict.jobs.details.openGmail}</span>

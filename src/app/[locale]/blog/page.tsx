@@ -8,12 +8,15 @@ import Footer from "@/components/ui/Footer";
 import BlogCategoryTabs from "@/components/blog/BlogCategoryTabs";
 import { prisma } from "@/lib/prisma";
 import {
+  isCourseLesson,
   isGermanA1Category,
   extractLessonNumber,
   parseLessonTitle,
   calculateReadTime,
   extractCleanExcerpt,
   resolveLessonImage,
+  getArticlesOnlyPrismaFilter,
+  getCourseLessonsPrismaFilter,
 } from "@/lib/courseUtils";
 
 export const revalidate = 60;
@@ -116,7 +119,7 @@ export default async function BlogPage({
   const dir = isAr ? 'rtl' : 'ltr';
 
   const selectedCategory = rawCategory?.trim() || "all";
-  const isGermanA1Selected = isGermanA1Category(selectedCategory);
+  const isGermanA1Selected = isCourseLesson(selectedCategory);
 
   // Determine sort mode for German A1:
   // Default is "sequence" (ascending by lesson number extracted from title).
@@ -130,18 +133,10 @@ export default async function BlogPage({
   const skip = (page - 1) * pageSize;
   const take = pageSize;
 
-  // Build category filter condition
+  // Build category filter condition for editorial articles
   let categoryFilter: Record<string, any> = {};
-  if (selectedCategory !== "all") {
-    if (isGermanA1Selected) {
-      categoryFilter = {
-        OR: [
-          { category: { equals: "German A1", mode: "insensitive" } },
-          { category: { equals: "Deutsch A1", mode: "insensitive" } },
-          { category: { contains: "A1", mode: "insensitive" } },
-        ],
-      };
-    } else if (selectedCategory.toLowerCase() === "jobs") {
+  if (selectedCategory !== "all" && !isGermanA1Selected) {
+    if (selectedCategory.toLowerCase() === "jobs") {
       categoryFilter = {
         OR: [
           { category: { contains: "Job", mode: "insensitive" } },
@@ -162,20 +157,15 @@ export default async function BlogPage({
     }
   }
 
+  // Pure separation: A1 Course query strictly gets lessons; Editorial query strictly gets articles
   const whereCondition: Record<string, any> = {
     published: true,
-    ...categoryFilter,
-    ...(!isGermanA1Selected
-      ? {
-          NOT: {
-            OR: [
-              { category: { equals: "German A1", mode: "insensitive" } },
-              { category: { equals: "Deutsch A1", mode: "insensitive" } },
-              { category: { contains: "A1", mode: "insensitive" } },
-            ],
-          },
-        }
-      : {}),
+    ...(isGermanA1Selected
+      ? getCourseLessonsPrismaFilter()
+      : {
+          ...getArticlesOnlyPrismaFilter(),
+          ...categoryFilter,
+        }),
   };
 
   // Directly query database using Prisma with pagination & count
@@ -196,20 +186,23 @@ export default async function BlogPage({
   let countsMap: Record<string, number> = { total: 0, "German A1": 0, Jobs: 0, General: 0 };
 
   try {
-    const [totalAll, a1Count, jobsCount, generalCount] = await Promise.all([
-      prisma.post.count({ where: { published: true } }),
+    const [articlesCount, a1Count, jobsCount, generalCount] = await Promise.all([
       prisma.post.count({
         where: {
           published: true,
-          OR: [
-            { category: { equals: "German A1", mode: "insensitive" } },
-            { category: { contains: "A1", mode: "insensitive" } },
-          ],
+          ...getArticlesOnlyPrismaFilter(),
         },
       }),
       prisma.post.count({
         where: {
           published: true,
+          ...getCourseLessonsPrismaFilter(),
+        },
+      }),
+      prisma.post.count({
+        where: {
+          published: true,
+          ...getArticlesOnlyPrismaFilter(),
           OR: [
             { category: { contains: "Job", mode: "insensitive" } },
             { category: { contains: "Karriere", mode: "insensitive" } },
@@ -219,6 +212,7 @@ export default async function BlogPage({
       prisma.post.count({
         where: {
           published: true,
+          ...getArticlesOnlyPrismaFilter(),
           OR: [
             { category: { contains: "General", mode: "insensitive" } },
             { category: { equals: "عام", mode: "insensitive" } },
@@ -228,7 +222,7 @@ export default async function BlogPage({
     ]);
 
     countsMap = {
-      total: Math.max(0, totalAll - a1Count),
+      total: articlesCount,
       "German A1": a1Count,
       Jobs: jobsCount,
       General: generalCount,
@@ -277,7 +271,11 @@ export default async function BlogPage({
   const totalPages = Math.ceil(totalPosts / pageSize);
 
   const posts = dbPosts.map((post) => {
-    const isA1 = isGermanA1Category(post.category);
+    const isA1 = isCourseLesson({
+      category: post.category,
+      slug: post.slug,
+      title: post.title,
+    });
     const parsed = isA1
       ? parseLessonTitle(post.title, post.markdown_content)
       : null;
@@ -332,8 +330,8 @@ export default async function BlogPage({
     ar: {
       title: 'المدونة ودليل التوظيف واللغة',
       subtitle: 'دليلك الشامل ومقالاتنا الحصرية حول تعلم اللغة الألمانية، التأشيرات، والعمل والاستقرار في ألمانيا 🇩🇪',
-      readMore: 'اقرأ المزيد ←',
-      startLesson: 'ابدأ الدرس ←',
+      readMore: 'اقرأ المقال ←',
+      startLesson: '🎧 ابدأ الدرس ←',
       noPosts: 'لم يتم العثور على مقالات في هذا القسم.',
       noPostsDesc: 'جرب اختيار تصنيف آخر أو تصفح جميع المقالات المنشورة.',
       noGermanA1Title: 'دروس ومقالات المستوى A1 قيد التجهيز 🇩🇪',
@@ -355,8 +353,8 @@ export default async function BlogPage({
     en: {
       title: 'German Career & Language Blog',
       subtitle: 'Your complete guide to learning German, visa procedures, and building a career in Germany 🇩🇪',
-      readMore: 'Read More →',
-      startLesson: 'Start Lesson →',
+      readMore: 'Read Article →',
+      startLesson: '🎧 Start Lesson →',
       noPosts: 'No articles found in this category.',
       noPostsDesc: 'Try choosing another category or browsing all published articles.',
       noGermanA1Title: 'German A1 Lessons Coming Soon 🇩🇪',
@@ -378,8 +376,8 @@ export default async function BlogPage({
     de: {
       title: 'Ratgeber, Karriere & Deutsch Blog',
       subtitle: 'Ihr umfassender Leitfaden für Deutschlernen, Visa, Leben und Arbeiten in Deutschland 🇩🇪',
-      readMore: 'Weiterlesen →',
-      startLesson: 'Lektion starten →',
+      readMore: 'Artikel lesen →',
+      startLesson: '🎧 Lektion starten →',
       noPosts: 'Keine Beiträge in dieser Kategorie gefunden.',
       noPostsDesc: 'Wählen Sie eine andere Kategorie oder durchsuchen Sie alle Beiträge.',
       noGermanA1Title: 'Deutsch A1 Lektionen in Kürze verfügbar 🇩🇪',
@@ -401,8 +399,8 @@ export default async function BlogPage({
     fr: {
       title: 'Blog Carrière & Allemand',
       subtitle: 'Votre guide complet pour apprendre l\'allemand, obtenir un visa et travailler en Allemagne 🇩🇪',
-      readMore: 'Lire la suite →',
-      startLesson: 'Commencer la leçon →',
+      readMore: "Lire l'article →",
+      startLesson: '🎧 Commencer la leçon →',
       noPosts: 'Aucun article trouvé dans cette catégorie.',
       noPostsDesc: 'Essayez de choisir une autre catégorie ou consultez tous les articles.',
       noGermanA1Title: 'Leçons d\'allemand A1 bientôt disponibles 🇩🇪',
@@ -462,7 +460,7 @@ export default async function BlogPage({
               <div className="h-1 w-20 bg-gradient-to-r from-blue-500 to-blue-400 mx-auto rounded-full" />
             </header>
 
-            {/* Category Filter Tabs */}
+            {/* Category Filter Tabs with Platform Track Switcher */}
             <BlogCategoryTabs
               locale={locale}
               activeCategory={selectedCategory}
@@ -470,8 +468,16 @@ export default async function BlogPage({
             />
           </>
         ) : (
-          /* German A1 Course Hub Banner & Student Sorting Toggle */
-          <div className="mb-10 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-blue-950/70 to-slate-900 border border-blue-500/30 shadow-2xl backdrop-blur-xl">
+          <>
+            {/* Category Filter Tabs with Platform Track Switcher on A1 view */}
+            <BlogCategoryTabs
+              locale={locale}
+              activeCategory={selectedCategory}
+              counts={countsMap}
+            />
+
+            {/* German A1 Course Hub Banner & Student Sorting Toggle */}
+            <div className="mb-10 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-blue-950/70 to-slate-900 border border-blue-500/30 shadow-2xl backdrop-blur-xl">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div className="space-y-3">
                 <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold border border-blue-400/30">
@@ -533,7 +539,8 @@ export default async function BlogPage({
               </div>
             </div>
           </div>
-        )}
+        </>
+      )}
 
         {/* Posts grid / Empty State */}
         {posts.length === 0 ? (
@@ -565,7 +572,11 @@ export default async function BlogPage({
           <>
             <BlogGrid columns={3}>
               {posts.map((post) => {
-                const isA1 = isGermanA1Category(post.tags[0]);
+                const isA1 = isCourseLesson({
+                  category: post.tags[0],
+                  slug: post.slug,
+                  title: post.title,
+                });
                 const parsed = isA1 ? parseLessonTitle(post.title, post.markdown_content) : null;
                 const displayTitle = parsed?.fullTitle || post.title;
                 const displayExcerpt = post.excerpt;
@@ -588,7 +599,8 @@ export default async function BlogPage({
                     date={formattedDate}
                     imageUrl={post.cover_image}
                     readMoreText={isA1 ? ui.startLesson : ui.readMore}
-                    href={`/${locale}/blog/${post.slug}`}
+                    href={`/${locale}/blog/${encodeURIComponent(post.slug)}`}
+                    slug={post.slug}
                     locale={locale}
                     lessonNumber={parsed?.lessonNumber}
                     germanTitle={parsed?.germanTitle}

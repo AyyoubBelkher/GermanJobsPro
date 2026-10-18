@@ -158,48 +158,48 @@ export default function AdminBar({ post, locale = "ar" }: AdminBarProps) {
 
   return (
     <>
-      {/* Top Floating Sticky Admin Bar */}
-      <div dir={dir} className="sticky top-4 z-50 max-w-4xl mx-auto mb-8 px-4">
-        <div className="bg-slate-900/95 border border-amber-500/40 shadow-2xl rounded-2xl p-4 backdrop-blur-xl flex flex-wrap items-center justify-between gap-4 text-slate-100">
-          <div className="flex items-center gap-3">
-            <span className="flex h-3 w-3 relative">
+      {/* Floating Bottom Dock Admin Bar */}
+      <div dir={dir} className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 max-w-xl w-[94%] sm:w-auto px-2 pointer-events-none">
+        <div className="pointer-events-auto bg-slate-900/95 border border-amber-500/50 shadow-2xl rounded-2xl p-3 sm:px-5 sm:py-3.5 backdrop-blur-xl flex items-center justify-between gap-4 sm:gap-6 text-slate-100">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-2.5 w-2.5 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
             </span>
-            <span className="text-xs sm:text-sm font-bold tracking-wide uppercase text-amber-400">
-              {isAr ? "وضع المسؤول ⚡ Admin Mode" : "⚡ Admin Control Bar"}
+            <span className="text-xs sm:text-sm font-bold tracking-wide uppercase text-amber-400 whitespace-nowrap">
+              {isAr ? "وضع المسؤول ⚡" : "⚡ Admin Mode"}
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm">
+          <div className="flex items-center gap-2 text-xs sm:text-sm">
             {/* Edit Button */}
             <button
               onClick={() => setIsEditOpen(true)}
               type="button"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 font-semibold border border-blue-500/30 transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 font-semibold border border-blue-500/30 transition-all active:scale-95 cursor-pointer whitespace-nowrap"
             >
               <span>✏️</span>
-              <span>{isAr ? "تعديل المقال" : "Edit Post"}</span>
+              <span>{isAr ? "تعديل" : "Edit"}</span>
             </button>
 
             {/* Delete Button */}
             <button
               onClick={() => setIsDeleteOpen(true)}
               type="button"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 font-semibold border border-rose-500/30 transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 font-semibold border border-rose-500/30 transition-all active:scale-95 cursor-pointer whitespace-nowrap"
             >
               <span>🗑️</span>
-              <span>{isAr ? "حذف المقال" : "Delete Post"}</span>
+              <span>{isAr ? "حذف" : "Delete"}</span>
             </button>
 
             {/* Logout Button */}
             <button
               onClick={handleLogout}
               type="button"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold border border-slate-700 transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold border border-slate-700 transition-all active:scale-95 cursor-pointer whitespace-nowrap"
             >
               <span>🚪</span>
-              <span>{isAr ? "تسجيل الخروج" : "Logout"}</span>
+              <span>{isAr ? "خروج" : "Logout"}</span>
             </button>
           </div>
         </div>

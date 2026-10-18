@@ -2,7 +2,13 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { isGermanA1Category, parseLessonTitle, calculateReadTime, resolveLessonImage } from "@/lib/courseUtils";
+import {
+  isCourseLesson,
+  isGermanA1Category,
+  parseLessonTitle,
+  calculateReadTime,
+  resolveLessonImage,
+} from "@/lib/courseUtils";
 
 export interface PostCardProps {
   title: string;
@@ -46,7 +52,7 @@ export default function PostCard({
   const imgRef = useRef<HTMLImageElement>(null);
 
   const isArabicLocale = locale === "ar";
-  const isA1 = isGermanA1Category(category);
+  const isA1 = isCourseLesson({ category, slug, title });
 
   // If A1, extract structured lesson details
   const parsedLesson = isA1 ? parseLessonTitle(title) : null;
@@ -71,14 +77,29 @@ export default function PostCard({
   // Fallback read more text
   const defaultCta = isA1
     ? isArabicLocale
-      ? "ابدأ الدرس ←"
+      ? "🎧 ابدأ الدرس ←"
       : locale === "de"
-      ? "Lektion starten →"
-      : "Start Lesson →"
+      ? "🎧 Lektion starten →"
+      : locale === "fr"
+      ? "🎧 Commencer la leçon →"
+      : "🎧 Start Lesson →"
     : isArabicLocale
-    ? "اقرأ المزيد ←"
-    : "Read More →";
-  const actionText = readMoreText || defaultCta;
+    ? "اقرأ المقال ←"
+    : locale === "de"
+    ? "Artikel lesen →"
+    : locale === "fr"
+    ? "Lire l'article →"
+    : "Read Article →";
+
+  const isGenericReadMore =
+    readMoreText === "اقرأ المزيد ←" ||
+    readMoreText === "اقرأ المقال ←" ||
+    readMoreText === "Read More →" ||
+    readMoreText === "Read Article →" ||
+    readMoreText === "Weiterlesen →" ||
+    readMoreText === "Lire la suite →";
+
+  const actionText = (isA1 && isGenericReadMore) ? defaultCta : (readMoreText || defaultCta);
 
   // Inspect image source and resolve A1 lesson fallback / filter out missing static images
   const rawImage = imageUrl || image_url || cover_image;

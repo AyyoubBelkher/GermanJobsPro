@@ -8,11 +8,15 @@ import {
   speakGermanText,
   useIsGermanPlaying,
 } from "./GermanTtsButton";
+import { isCourseLesson } from "@/lib/courseUtils";
 
 interface LessonContentRendererProps {
   content: string;
   category?: string;
   locale: string;
+  mode?: "article" | "lesson";
+  slug?: string;
+  title?: string;
 }
 
 /**
@@ -388,15 +392,16 @@ function EnterpriseCtaCard({
 
 /**
  * Parses and formats inline text:
- * - Converts Arabic phonetic guides [نطق عربي مع تشكيل] into styled amber badges
+ * - Converts Arabic phonetic guides [نطق عربي مع تشكيل] into styled amber badges ONLY in lesson mode
+ * - In article mode, preserves clean editorial text without injecting phonetic audio clutter
  * - Preserves React elements like links and tags
  */
-function renderInlineContent(node: React.ReactNode): React.ReactNode {
+function renderInlineContent(node: React.ReactNode, isLessonMode = false): React.ReactNode {
   if (node === null || node === undefined) return null;
 
   if (typeof node !== "string") {
     if (Array.isArray(node)) {
-      return React.Children.map(node, (child) => renderInlineContent(child));
+      return React.Children.map(node, (child) => renderInlineContent(child, isLessonMode));
     }
     if (React.isValidElement(node)) {
       const element = node as React.ReactElement<{ children?: React.ReactNode }>;
@@ -404,11 +409,16 @@ function renderInlineContent(node: React.ReactNode): React.ReactNode {
         return React.cloneElement(
           element,
           undefined,
-          renderInlineContent(element.props.children)
+          renderInlineContent(element.props.children, isLessonMode)
         );
       }
       return node;
     }
+    return node;
+  }
+
+  // In standard editorial articles, do not inject phonetic lesson badges
+  if (!isLessonMode) {
     return node;
   }
 
@@ -467,59 +477,106 @@ function renderInlineContent(node: React.ReactNode): React.ReactNode {
 }
 
 /**
- * Detects if a text block is an Alert / Callout card:
- * - 💡 / الشرح الصوتي -> Blue Callout
- * - 📌 / ملاحظة / ملاحظة أكاديمية -> Emerald Callout
- * - ⚠️ / تنبيه / تنبيه هام -> Amber Callout
+ * Strips duplicate prefixes from the inner callout text so they aren't repeated twice.
+ * E.g. "تنبيه هام: النص..." -> "النص..."
  */
-function parseAlertBox(rawText: string) {
+function stripAlertPrefix(text: string): string {
+  return text
+    .replace(
+      /^(?:⚠️|📌|💡|تنبيه هام جداً:|تنبيه هام:|تنبيه:|تحذير:|نصيحة هامة جداً:|نصيحة هامة:|نصيحة مهنية:|نصيحة:|إضاءة:|إضاءات:|ملاحظة أكاديمية:|ملاحظة هامة:|ملاحظة أساسية:|ملاحظة:|معلومة أساسية:|معلومة هامة:|قاعدة ذهبية:|قاعدة:|الشرح الصوتي وإضاءات:|الشرح الصوتي:|الشرح الصوتي|Warning:|Important Notice:|Caution:|Tip:|Career Tip:|Note:|Important Note:|Hinweis:|Wichtiger Hinweis:|Tipp:|Praxistipp:|Avis:|Attention:|Conseil:)\s*/iu,
+      ""
+    )
+    .replace(
+      /^(?:تنبيه هام:|تنبيه:|نصيحة هامة:|نصيحة:|ملاحظة هامة:|ملاحظة:|معلومة أساسية:|Warning:|Tip:|Note:)\s*/iu,
+      ""
+    )
+    .trim();
+}
+
+/**
+ * Detects if a text block is an Alert / Callout card:
+ * In Article Mode:
+ * - 💡 / نصيحة -> "💡 نصيحة مهنية هامة" (Career Tip & Insight)
+ * - 📌 / ملاحظة -> "📌 معلومة أساسية" (Key Information)
+ * - ⚠️ / تنبيه -> "⚠️ تنبيه هام" (Important Notice)
+ * In Lesson Mode:
+ * - 💡 -> "💡 الشرح الصوتي وإضاءات"
+ * - 📌 -> "📌 ملاحظة أكاديمية"
+ * - ⚠️ -> "⚠️ تنبيه هام"
+ */
+function parseAlertBox(rawText: string, isLessonMode = false, locale = "ar") {
   const trimmed = rawText.trim();
+  const isAr = locale === "ar";
+  const isDe = locale === "de";
+  const isFr = locale === "fr";
 
   // 1. Warning / Alert (Amber)
   if (
     trimmed.startsWith("⚠️") ||
     trimmed.startsWith("تنبيه") ||
     trimmed.startsWith("تحذير") ||
-    trimmed.startsWith("تنبيه هام")
+    trimmed.startsWith("Warning") ||
+    trimmed.startsWith("Warnung") ||
+    trimmed.startsWith("Attention")
   ) {
-    const cleanText = trimmed.replace(/^(⚠️|تنبيه هام جداً:|تنبيه هام:|تنبيه:|تحذير:)\s*/, "");
+    const cleanText = stripAlertPrefix(trimmed);
+    const title = isAr
+      ? "تنبيه هام"
+      : isDe
+      ? "Wichtiger Hinweis"
+      : isFr
+      ? "Avis Important"
+      : "Important Notice";
+
     return {
       type: "warning" as const,
-      title: "تنبيه هام",
+      title,
       icon: "⚠️",
       content: cleanText,
     };
   }
 
-  // 2. Academic Note / Note (Emerald)
+  // 2. Note / Key Information (Emerald)
   if (
     trimmed.startsWith("📌") ||
     trimmed.startsWith("ملاحظة") ||
-    trimmed.startsWith("ملاحظة أكاديمية:") ||
-    trimmed.startsWith("ملاحظة:") ||
-    trimmed.startsWith("قاعدة ذهبية:")
+    trimmed.startsWith("معلومة أساسية") ||
+    trimmed.startsWith("معلومة هامة") ||
+    trimmed.startsWith("قاعدة ذهبية") ||
+    trimmed.startsWith("Note") ||
+    trimmed.startsWith("Hinweis")
   ) {
-    const cleanText = trimmed.replace(/^(📌|ملاحظة أكاديمية:|ملاحظة:|قاعدة ذهبية:)\s*/, "");
+    const cleanText = stripAlertPrefix(trimmed);
+    const title = isLessonMode
+      ? (isAr ? "ملاحظة أكاديمية" : isDe ? "Akademischer Hinweis" : "Academic Note")
+      : (isAr ? "معلومة أساسية" : isDe ? "Wichtige Information" : isFr ? "Information Clé" : "Key Information");
+
     return {
       type: "note" as const,
-      title: "ملاحظة هامة",
+      title,
       icon: "📌",
       content: cleanText,
     };
   }
 
-  // 3. Phonetic Guide / Insight (Blue)
+  // 3. Insight / Professional Tip (Blue)
   if (
     trimmed.startsWith("💡") ||
-    trimmed.startsWith("الشرح الصوتي:") ||
     trimmed.startsWith("الشرح الصوتي") ||
-    trimmed.startsWith("نصيحة:") ||
-    trimmed.startsWith("إضاءة:")
+    trimmed.startsWith("نصيحة") ||
+    trimmed.startsWith("إضاءة") ||
+    trimmed.startsWith("Tip") ||
+    trimmed.startsWith("Tipp") ||
+    trimmed.startsWith("Conseil")
   ) {
-    const cleanText = trimmed.replace(/^(💡|الشرح الصوتي:|الشرح الصوتي|نصيحة:|إضاءة:)\s*/, "");
+    const cleanText = stripAlertPrefix(trimmed);
+    const title = isLessonMode
+      ? (isAr ? "الشرح الصوتي وإضاءات" : isDe ? "Aussprache & Erklärungen" : "Audio Guide & Insights")
+      : (isAr ? "نصيحة مهنية هامة" : isDe ? "Beruflicher Praxistipp" : isFr ? "Conseil Professionnel" : "Career Tip & Insight");
+
     return {
       type: "info" as const,
-      title: "الشرح الصوتي وإضاءات",
+      title,
       icon: "💡",
       content: cleanText,
     };
@@ -1431,12 +1488,18 @@ export default function LessonContentRenderer({
   content,
   category,
   locale,
+  mode,
+  slug,
+  title,
 }: LessonContentRendererProps) {
   const isAr = locale === "ar";
-  const normalizedContent = React.useMemo(() => normalizeDialogueMarkdown(content), [content]);
+  const isLessonMode = mode === "lesson" || (mode === undefined && isCourseLesson({ category, slug, title }));
+  const normalizedContent = React.useMemo(() => {
+    return isLessonMode ? normalizeDialogueMarkdown(content) : content;
+  }, [content, isLessonMode]);
 
   /**
-   * Helper to render the Enterprise Grammar Card
+   * Helper to render the Enterprise Grammar Card (Lesson Mode Only)
    */
   const renderGrammarCard = (grammar: ReturnType<typeof parseGrammarRule>) => {
     if (!grammar) return null;
@@ -1465,7 +1528,7 @@ export default function LessonContentRenderer({
           {/* Rule Description */}
           {grammar.description && (
             <div className="text-slate-700 dark:text-slate-200 text-base sm:text-lg leading-relaxed font-normal text-right pt-1" dir="rtl">
-              {renderInlineContent(grammar.description)}
+              {renderInlineContent(grammar.description, isLessonMode)}
             </div>
           )}
 
@@ -1514,7 +1577,7 @@ export default function LessonContentRenderer({
             <div className="space-y-2 pt-2 text-right" dir="rtl">
               {grammar.remainingLines.map((rLine, rIdx) => (
                 <div key={`rem-${rIdx}`} className="text-slate-700 dark:text-slate-200 text-base leading-relaxed">
-                  {renderInlineContent(rLine)}
+                  {renderInlineContent(rLine, isLessonMode)}
                 </div>
               ))}
             </div>
@@ -1562,8 +1625,8 @@ export default function LessonContentRenderer({
             if (isCtaSection) {
               return (
                 <div
-                  className="mt-14 mb-6 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-blue-900/30 via-slate-900/70 to-emerald-900/30 border border-blue-500/30 dark:border-blue-800/60 shadow-lg text-right"
-                  dir="rtl"
+                  className="mt-14 mb-6 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-blue-900/30 via-slate-900/70 to-emerald-900/30 border border-blue-500/30 dark:border-blue-800/60 shadow-lg text-start"
+                  dir="auto"
                 >
                   <div className="flex items-center gap-3.5 mb-2">
                     <span className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-emerald-600 text-white flex items-center justify-center text-2xl shrink-0 shadow-md select-none">
@@ -1571,7 +1634,7 @@ export default function LessonContentRenderer({
                     </span>
                     <div>
                       <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-blue-500/20 text-blue-300 border border-blue-400/30 uppercase tracking-wider">
-                        أدوات التوظيف الذكية في ألمانيا
+                        {isAr ? "أدوات التوظيف الذكية في ألمانيا" : "Smart Career Tools"}
                       </span>
                       <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white mt-1 leading-snug">
                         {children}
@@ -1579,21 +1642,24 @@ export default function LessonContentRenderer({
                     </div>
                   </div>
                   <p className="text-slate-300 text-sm sm:text-base mt-2 leading-relaxed">
-                    استخدم أدواتنا الذكية المعتمدة لتجهيز ملفك الوظيفي وزيادة فرص قبولك في الشركات الألمانية:
+                    {isAr
+                      ? "استخدم أدواتنا الذكية المعتمدة لتجهيز ملفك الوظيفي وزيادة فرص قبولك في الشركات الألمانية:"
+                      : "Use our certified tools to prepare your application and increase your interview chances in Germany:"}
                   </p>
                 </div>
               );
             }
 
             const isLessonSection =
-              headingText.includes("المفردات") ||
-              headingText.includes("الشرح الصوتي") ||
-              headingText.includes("الحوار") ||
-              headingText.includes("القواعد") ||
-              headingText.includes("التعارف") ||
-              headingText.includes("التحية") ||
-              headingText.includes("تمارين") ||
-              headingText.includes("حلول");
+              isLessonMode &&
+              (headingText.includes("المفردات") ||
+                headingText.includes("الشرح الصوتي") ||
+                headingText.includes("الحوار") ||
+                headingText.includes("القواعد") ||
+                headingText.includes("التعارف") ||
+                headingText.includes("التحية") ||
+                headingText.includes("تمارين") ||
+                headingText.includes("حلول"));
 
             let badgeIcon = "🇩🇪";
             if (headingText.includes("المفردات")) badgeIcon = "📚";
@@ -1692,50 +1758,8 @@ export default function LessonContentRenderer({
               }
             }
 
-            // 2. Check for Grammar Rule Block
-            const grammar = parseGrammarRule(rawContent);
-            if (grammar) {
-              return renderGrammarCard(grammar);
-            }
-
-            // 3. Check for Exercise Section Title (e.g. "تمارين")
-            if (trimmed === "تمارين" || trimmed === "تمارين وتطبيقات" || trimmed === "التمارين") {
-              return (
-                <div className="mt-10 mb-4 pt-4 border-t border-slate-200 dark:border-slate-800" dir="rtl">
-                  <div className="flex items-center gap-3">
-                    <span className="w-9 h-9 rounded-xl bg-blue-600/15 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 border border-blue-300/40 dark:border-blue-800/50 flex items-center justify-center text-lg shrink-0">
-                      📝
-                    </span>
-                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white text-right">
-                      {trimmed}
-                    </h3>
-                  </div>
-                </div>
-              );
-            }
-
-            // 4. Check for Exercise Instruction Prompt (e.g. "التمرين الأول: اختر الضمير أو الفعل الصحيح...")
-            const exercisePrompt = parseExercisePrompt(rawContent);
-            if (exercisePrompt) {
-              return (
-                <div
-                  className="mt-6 mb-3 p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/50 flex flex-wrap items-center gap-2.5 shadow-2xs"
-                  dir="rtl"
-                >
-                  <span className="px-3 py-1 rounded-xl bg-blue-600 text-white font-bold text-xs sm:text-sm shadow-2xs select-none shrink-0">
-                    📝 {exercisePrompt.title}
-                  </span>
-                  {exercisePrompt.instruction && (
-                    <span className="text-slate-800 dark:text-slate-200 font-semibold text-sm sm:text-base text-right leading-relaxed">
-                      {exercisePrompt.instruction}
-                    </span>
-                  )}
-                </div>
-              );
-            }
-
-            // 5. Check for Alert Box
-            const alert = parseAlertBox(rawContent);
+            // 2. Alert Box (both modes, with editorial titles & prefix stripping)
+            const alert = parseAlertBox(rawContent, isLessonMode, locale);
             if (alert) {
               const borderClasses =
                 alert.type === "warning"
@@ -1754,120 +1778,165 @@ export default function LessonContentRenderer({
                     <span>{alert.title}</span>
                   </div>
                   <div className="text-sm sm:text-base leading-relaxed text-slate-700 dark:text-slate-200 text-right">
-                    {renderInlineContent(alert.content)}
+                    {renderInlineContent(alert.content, isLessonMode)}
                   </div>
                 </div>
               );
             }
 
-            // 6. Check for Solution Block
-            const solution = parseSolutionBlock(rawContent);
-            if (solution) {
-              return (
-                <div className="my-8 p-5 sm:p-7 rounded-3xl bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-300/70 dark:border-emerald-800/60 shadow-sm space-y-4" dir="rtl">
-                  {/* Solution Header (RTL Right-Aligned) */}
-                  <div className="flex items-center gap-2.5 border-b border-emerald-200/60 dark:border-emerald-900/60 pb-3 text-right">
-                    <span className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs sm:text-sm shadow-2xs select-none">
-                      🎯 {solution.header}
-                    </span>
-                  </div>
+            // 3. Lesson-Only interactive components
+            if (isLessonMode) {
+              // Grammar Rule Block
+              const grammar = parseGrammarRule(rawContent);
+              if (grammar) {
+                return renderGrammarCard(grammar);
+              }
 
-                  {/* Solution Content Lines */}
-                  <div className="space-y-3 pt-1">
-                    {solution.contentLines.map((line, idx) => {
-                      const isGermanAnswer = /^[0-9\.\s]*[A-Za-zäöüÄÖÜß]/.test(line) && !line.includes("التمرين");
-                      if (isGermanAnswer) {
-                        return (
-                          <div
-                            key={`sol-line-${idx}`}
-                            className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/90 border border-emerald-200/70 dark:border-emerald-900/60 shadow-2xs text-left"
-                            dir="ltr"
-                          >
-                            <span className="font-bold text-slate-900 dark:text-white text-base sm:text-lg font-sans tracking-wide">
-                              {line}
-                            </span>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <div
-                          key={`sol-line-${idx}`}
-                          className="p-3.5 rounded-2xl bg-white/90 dark:bg-slate-900/80 border border-emerald-200/50 dark:border-emerald-900/40 text-slate-800 dark:text-slate-200 text-sm sm:text-base font-semibold text-right leading-relaxed"
-                          dir="rtl"
-                        >
-                          {line}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            }
-
-            // 7. Check for Dialogues (Multi-turn or single turn)
-            const dialogueTurns = parseDialogues(rawContent);
-            if (dialogueTurns && dialogueTurns.length > 0) {
-              return (
-                <div className="space-y-3.5 my-4">
-                  {dialogueTurns.map((turn, idx) => (
-                    <DialogueCard key={`dialogue-turn-${idx}`} {...turn} />
-                  ))}
-                </div>
-              );
-            }
-
-            // 8. Check for Vocabulary Block (single-line or multi-line vocabulary phrases / trio)
-            const vocabItems = parseVocabularyBlock(rawContent);
-            if (vocabItems && vocabItems.length > 0) {
-              return (
-                <div className="space-y-3 my-4">
-                  {vocabItems.map((vItem, vIdx) => (
-                    <VocabularyCard key={`p-vocab-${vIdx}`} {...vItem} />
-                  ))}
-                </div>
-              );
-            }
-
-            // Pure German paragraph (no Arabic, latin-only)
-            const hasArabic = /[\u0600-\u06FF]/.test(rawContent);
-            const isPureGermanParagraph = !hasArabic && /^[A-Za-zäöüÄÖÜß0-9\s\-.,?!…/():;]+$/.test(trimmed);
-            if (isPureGermanParagraph) {
-              return (
-                <div
-                  dir="ltr"
-                  className="text-left font-bold text-slate-900 dark:text-white text-base sm:text-lg font-sans tracking-wide p-3.5 my-3 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800 flex items-center justify-between gap-3"
-                >
-                  <div className="flex-1 select-text">{children}</div>
-                  <GermanTtsButton text={trimmed} size="sm" variant="blue" />
-                </div>
-              );
-            }
-
-            // Standalone phonetic line fallback
-            if (trimmed.startsWith("النطق:") || trimmed.startsWith("🗣️")) {
-              const cleanPh = stripBrackets(trimmed.replace(/^(النطق:|🗣️)\s*/, ""));
-              if (cleanPh) {
+              // Exercise Section Title (e.g. "تمارين")
+              if (trimmed === "تمارين" || trimmed === "تمارين وتطبيقات" || trimmed === "التمارين") {
                 return (
-                  <div dir="rtl" className="my-2 text-right">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/60 font-semibold text-xs sm:text-sm shadow-2xs shrink-0 select-none">
-                      <span className="text-xs text-amber-600 dark:text-amber-400 select-none">🔊</span>
-                      <span>{cleanPh}</span>
-                    </span>
+                  <div className="mt-10 mb-4 pt-4 border-t border-slate-200 dark:border-slate-800" dir="rtl">
+                    <div className="flex items-center gap-3">
+                      <span className="w-9 h-9 rounded-xl bg-blue-600/15 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 border border-blue-300/40 dark:border-blue-800/50 flex items-center justify-center text-lg shrink-0">
+                        📝
+                      </span>
+                      <h3 className="text-2xl font-bold text-slate-900 dark:text-white text-right">
+                        {trimmed}
+                      </h3>
+                    </div>
                   </div>
                 );
               }
-            }
 
-            // Standalone translation line fallback
-            if (trimmed.startsWith("الترجمة:") || trimmed.startsWith("💬")) {
-              const cleanTr = trimmed.replace(/^(الترجمة:|💬)\s*/, "").trim();
-              if (cleanTr) {
+              // Exercise Instruction Prompt (e.g. "التمرين الأول: اختر الضمير أو الفعل الصحيح...")
+              const exercisePrompt = parseExercisePrompt(rawContent);
+              if (exercisePrompt) {
                 return (
-                  <div dir="rtl" className="my-2 text-right text-slate-700 dark:text-slate-200 text-sm sm:text-base font-normal leading-relaxed">
-                    {cleanTr}
+                  <div
+                    className="mt-6 mb-3 p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/50 flex flex-wrap items-center gap-2.5 shadow-2xs"
+                    dir="rtl"
+                  >
+                    <span className="px-3 py-1 rounded-xl bg-blue-600 text-white font-bold text-xs sm:text-sm shadow-2xs select-none shrink-0">
+                      📝 {exercisePrompt.title}
+                    </span>
+                    {exercisePrompt.instruction && (
+                      <span className="text-slate-800 dark:text-slate-200 font-semibold text-sm sm:text-base text-right leading-relaxed">
+                        {exercisePrompt.instruction}
+                      </span>
+                    )}
                   </div>
                 );
+              }
+
+              // Solution Block
+              const solution = parseSolutionBlock(rawContent);
+              if (solution) {
+                return (
+                  <div className="my-8 p-5 sm:p-7 rounded-3xl bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-300/70 dark:border-emerald-800/60 shadow-sm space-y-4" dir="rtl">
+                    {/* Solution Header (RTL Right-Aligned) */}
+                    <div className="flex items-center gap-2.5 border-b border-emerald-200/60 dark:border-emerald-900/60 pb-3 text-right">
+                      <span className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs sm:text-sm shadow-2xs select-none">
+                        🎯 {solution.header}
+                      </span>
+                    </div>
+
+                    {/* Solution Content Lines */}
+                    <div className="space-y-3 pt-1">
+                      {solution.contentLines.map((line, idx) => {
+                        const isGermanAnswer = /^[0-9\.\s]*[A-Za-zäöüÄÖÜß]/.test(line) && !line.includes("التمرين");
+                        if (isGermanAnswer) {
+                          return (
+                            <div
+                              key={`sol-line-${idx}`}
+                              className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/90 border border-emerald-200/70 dark:border-emerald-900/60 shadow-2xs text-left"
+                              dir="ltr"
+                            >
+                              <span className="font-bold text-slate-900 dark:text-white text-base sm:text-lg font-sans tracking-wide">
+                                {line}
+                              </span>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div
+                            key={`sol-line-${idx}`}
+                            className="p-3.5 rounded-2xl bg-white/90 dark:bg-slate-900/80 border border-emerald-200/50 dark:border-emerald-900/40 text-slate-800 dark:text-slate-200 text-sm sm:text-base font-semibold text-right leading-relaxed"
+                            dir="rtl"
+                          >
+                            {line}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              }
+
+              // Dialogues (Multi-turn or single turn)
+              const dialogueTurns = parseDialogues(rawContent);
+              if (dialogueTurns && dialogueTurns.length > 0) {
+                return (
+                  <div className="space-y-3.5 my-4">
+                    {dialogueTurns.map((turn, idx) => (
+                      <DialogueCard key={`dialogue-turn-${idx}`} {...turn} />
+                    ))}
+                  </div>
+                );
+              }
+
+              // Vocabulary Block (single-line or multi-line vocabulary phrases / trio)
+              const vocabItems = parseVocabularyBlock(rawContent);
+              if (vocabItems && vocabItems.length > 0) {
+                return (
+                  <div className="space-y-3 my-4">
+                    {vocabItems.map((vItem, vIdx) => (
+                      <VocabularyCard key={`p-vocab-${vIdx}`} {...vItem} />
+                    ))}
+                  </div>
+                );
+              }
+
+              // Pure German paragraph (no Arabic, latin-only)
+              const hasArabic = /[\u0600-\u06FF]/.test(rawContent);
+              const isPureGermanParagraph = !hasArabic && /^[A-Za-zäöüÄÖÜß0-9\s\-.,?!…/():;]+$/.test(trimmed);
+              if (isPureGermanParagraph) {
+                return (
+                  <div
+                    dir="ltr"
+                    className="text-left font-bold text-slate-900 dark:text-white text-base sm:text-lg font-sans tracking-wide p-3.5 my-3 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800 flex items-center justify-between gap-3"
+                  >
+                    <div className="flex-1 select-text">{children}</div>
+                    <GermanTtsButton text={trimmed} size="sm" variant="blue" />
+                  </div>
+                );
+              }
+
+              // Standalone phonetic line fallback
+              if (trimmed.startsWith("النطق:") || trimmed.startsWith("🗣️")) {
+                const cleanPh = stripBrackets(trimmed.replace(/^(النطق:|🗣️)\s*/, ""));
+                if (cleanPh) {
+                  return (
+                    <div dir="rtl" className="my-2 text-right">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/60 font-semibold text-xs sm:text-sm shadow-2xs shrink-0 select-none">
+                        <span className="text-xs text-amber-600 dark:text-amber-400 select-none">🔊</span>
+                        <span>{cleanPh}</span>
+                      </span>
+                    </div>
+                  );
+                }
+              }
+
+              // Standalone translation line fallback
+              if (trimmed.startsWith("الترجمة:") || trimmed.startsWith("💬")) {
+                const cleanTr = trimmed.replace(/^(الترجمة:|💬)\s*/, "").trim();
+                if (cleanTr) {
+                  return (
+                    <div dir="rtl" className="my-2 text-right text-slate-700 dark:text-slate-200 text-sm sm:text-base font-normal leading-relaxed">
+                      {cleanTr}
+                    </div>
+                  );
+                }
               }
             }
 
@@ -1876,7 +1945,7 @@ export default function LessonContentRenderer({
                 className="text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed sm:leading-loose mb-6 font-normal text-start"
                 dir="auto"
               >
-                {renderInlineContent(children)}
+                {renderInlineContent(children, isLessonMode)}
               </p>
             );
           },
@@ -1886,7 +1955,7 @@ export default function LessonContentRenderer({
             </ul>
           ),
           ol: ({ children }) => (
-            <ol className="space-y-3 my-4 list-none p-0">
+            <ol className="space-y-3 my-4 list-decimal ps-6">
               {children}
             </ol>
           ),
@@ -1901,7 +1970,6 @@ export default function LessonContentRenderer({
 
               if (toolLink) {
                 const meta = getToolMetadata(toolLink.href, toolLink.text);
-                // Check if there is extra description after the link in the bullet item
                 let extraDesc = "";
                 const colonIdx = clean.indexOf(":");
                 if (colonIdx !== -1 && colonIdx < clean.length - 1) {
@@ -1922,7 +1990,7 @@ export default function LessonContentRenderer({
                 );
               }
 
-              // Generic list item containing non-tool links (keep link fully interactive)
+              // Generic list item containing non-tool links
               return (
                 <li
                   className="text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed my-2 text-start list-none"
@@ -1931,79 +1999,82 @@ export default function LessonContentRenderer({
                   <div className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-blue-500 mt-2.5 shrink-0" />
                     <div className="flex-1 select-text">
-                      {renderInlineContent(children)}
+                      {renderInlineContent(children, isLessonMode)}
                     </div>
                   </div>
                 </li>
               );
             }
 
-            // 2. Check for Grammar Rule in list item
-            const grammar = parseGrammarRule(clean);
-            if (grammar) {
-              return <li className="list-none my-4">{renderGrammarCard(grammar)}</li>;
+            // 2. Lesson-Only items
+            if (isLessonMode) {
+              const grammar = parseGrammarRule(clean);
+              if (grammar) {
+                return <li className="list-none my-4">{renderGrammarCard(grammar)}</li>;
+              }
+
+              const dialogueTurns = parseDialogues(clean);
+              if (dialogueTurns && dialogueTurns.length > 0) {
+                return (
+                  <li className="list-none my-3">
+                    {dialogueTurns.map((turn, idx) => (
+                      <DialogueCard key={`li-dialogue-${idx}`} {...turn} />
+                    ))}
+                  </li>
+                );
+              }
+
+              const parsed = parseBulletItem(clean);
+              if (parsed.type === "vocab") {
+                return (
+                  <li className="list-none my-3">
+                    <VocabularyCard {...parsed.data} />
+                  </li>
+                );
+              }
+
+              const hasLatin = /[A-Za-zäöüÄÖÜß]/.test(clean);
+              const hasArabic = /[\u0600-\u06FF]/.test(clean);
+              const isPureGermanOrExercise =
+                hasLatin &&
+                !hasArabic &&
+                !clean.includes("صوت") &&
+                !clean.includes("حرف") &&
+                !clean.includes("ملاحظة") &&
+                !clean.includes("قاعدة");
+
+              if (isPureGermanOrExercise) {
+                return (
+                  <li className="list-none my-2.5">
+                    <div
+                      dir="ltr"
+                      className="flex items-center gap-3.5 p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/85 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:border-blue-400 dark:hover:border-blue-800/70 transition-all text-left"
+                    >
+                      <span className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 flex items-center justify-center font-mono font-bold text-xs sm:text-sm shrink-0 select-none">
+                        •
+                      </span>
+                      <span className="text-left font-bold text-slate-900 dark:text-white text-base sm:text-lg font-sans tracking-wide select-text flex-1">
+                        {clean}
+                      </span>
+                      <GermanTtsButton text={clean} size="sm" variant="blue" />
+                    </div>
+                  </li>
+                );
+              }
             }
 
-            // 3. Check for Dialogue Turn in list item
-            const dialogueTurns = parseDialogues(clean);
-            if (dialogueTurns && dialogueTurns.length > 0) {
-              return (
-                <li className="list-none my-3">
-                  {dialogueTurns.map((turn, idx) => (
-                    <DialogueCard key={`li-dialogue-${idx}`} {...turn} />
-                  ))}
-                </li>
-              );
-            }
-
-            const parsed = parseBulletItem(clean);
-
-            // 4. Vocabulary Card for vocabulary / phrase item in list
-            if (parsed.type === "vocab") {
-              return (
-                <li className="list-none my-3">
-                  <VocabularyCard {...parsed.data} />
-                </li>
-              );
-            }
-
-            // 5. Check for German Exercise Question / Sentence
-            const hasLatin = /[A-Za-zäöüÄÖÜß]/.test(clean);
-            const hasArabic = /[\u0600-\u06FF]/.test(clean);
-            const isPureGermanOrExercise =
-              hasLatin &&
-              !hasArabic &&
-              !clean.includes("صوت") &&
-              !clean.includes("حرف") &&
-              !clean.includes("ملاحظة") &&
-              !clean.includes("قاعدة");
-
-            if (isPureGermanOrExercise) {
-              return (
-                <li className="list-none my-2.5">
-                  <div
-                    dir="ltr"
-                    className="flex items-center gap-3.5 p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/85 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:border-blue-400 dark:hover:border-blue-800/70 transition-all text-left"
-                  >
-                    <span className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 flex items-center justify-center font-mono font-bold text-xs sm:text-sm shrink-0 select-none">
-                      •
-                    </span>
-                    <span className="text-left font-bold text-slate-900 dark:text-white text-base sm:text-lg font-sans tracking-wide select-text flex-1">
-                      {clean}
-                    </span>
-                    <GermanTtsButton text={clean} size="sm" variant="blue" />
-                  </div>
-                </li>
-              );
-            }
-
-            // Generic Bullet Item (Arabic notes/explanations)
+            // Clean Editorial Bullet Item
             return (
               <li
-                className="text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed my-2 text-start"
+                className="text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed sm:leading-loose my-2 text-start list-none"
                 dir="auto"
               >
-                {renderInlineContent(children)}
+                <div className="flex items-start gap-3">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 mt-3 shrink-0" />
+                  <div className="flex-1 select-text">
+                    {renderInlineContent(children, isLessonMode)}
+                  </div>
+                </div>
               </li>
             );
           },
@@ -2047,7 +2118,10 @@ export default function LessonContentRenderer({
             );
           },
           code: ({ children }) => (
-            <code className="bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-2.5 py-1 rounded-md text-sm font-mono dir-ltr inline-block text-left" dir="ltr">
+            <code
+              className="px-2 py-0.5 mx-1 rounded-md bg-blue-500/10 dark:bg-blue-400/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 font-mono text-sm sm:text-base font-semibold inline align-baseline select-text"
+              dir="ltr"
+            >
               {children}
             </code>
           ),
@@ -2055,6 +2129,38 @@ export default function LessonContentRenderer({
             <pre className="bg-slate-900 text-slate-100 p-5 rounded-2xl overflow-x-auto my-8 text-left dir-ltr border border-slate-800 shadow-md" dir="ltr">
               {children}
             </pre>
+          ),
+          table: ({ children }) => (
+            <div className="my-8 overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+              <table className="w-full text-start border-collapse text-sm sm:text-base" dir="auto">
+                {children}
+              </table>
+            </div>
+          ),
+          thead: ({ children }) => (
+            <thead className="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-bold">
+              {children}
+            </thead>
+          ),
+          tbody: ({ children }) => (
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-950/60">
+              {children}
+            </tbody>
+          ),
+          tr: ({ children }) => (
+            <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-900/50 transition-colors">
+              {children}
+            </tr>
+          ),
+          th: ({ children }) => (
+            <th className="p-4 text-start font-bold text-slate-900 dark:text-white">
+              {children}
+            </th>
+          ),
+          td: ({ children }) => (
+            <td className="p-4 text-start text-slate-700 dark:text-slate-300 leading-relaxed">
+              {children}
+            </td>
           ),
           hr: () => <hr className="my-12 border-slate-200 dark:border-slate-800" />,
         }}

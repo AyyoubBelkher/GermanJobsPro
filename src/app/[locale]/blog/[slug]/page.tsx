@@ -11,10 +11,13 @@ import LessonContentRenderer from "@/components/blog/LessonContentRenderer";
 import CommentSection, { CommentItem } from "@/components/blog/CommentSection";
 import { verifySessionToken } from "@/lib/session";
 import {
+  isCourseLesson,
   isGermanA1Category,
   parseLessonTitle,
   calculateReadTime,
   resolveLessonImage,
+  getArticlesOnlyPrismaFilter,
+  getCourseLessonsPrismaFilter,
 } from "@/lib/courseUtils";
 
 export const revalidate = 60;
@@ -136,7 +139,11 @@ export async function generateMetadata({
     };
   }
 
-  const isA1 = isGermanA1Category(post.category);
+  const isA1 = isCourseLesson({
+    category: post.category,
+    slug: post.slug,
+    title: post.title,
+  });
   const parsedLesson = isA1 ? parseLessonTitle(post.title, post.markdown_content) : null;
   const title = parsedLesson?.fullTitle || post.title;
   const description = extractDescription(post.markdown_content);
@@ -194,7 +201,11 @@ export default async function SinglePostPage({
     isAdmin = false;
   }
 
-  const isA1 = isGermanA1Category(post.category);
+  const isA1 = isCourseLesson({
+    category: post.category,
+    slug: post.slug,
+    title: post.title,
+  });
   const currentLessonParsed = isA1 ? parseLessonTitle(post.title, post.markdown_content) : null;
   const readTime = calculateReadTime(post.markdown_content, locale);
   const resolvedHeroImage = isA1
@@ -225,10 +236,7 @@ export default async function SinglePostPage({
       const allA1Posts = await prisma.post.findMany({
         where: {
           published: true,
-          OR: [
-            { category: { equals: "German A1", mode: "insensitive" } },
-            { category: { contains: "A1", mode: "insensitive" } },
-          ],
+          ...getCourseLessonsPrismaFilter(),
         },
         select: {
           id: true,
@@ -334,24 +342,24 @@ export default async function SinglePostPage({
   let relatedPosts: RelatedPostItem[] = [];
   try {
     if (isA1) {
+      // Course lessons strictly show other lessons from the curriculum
       relatedPosts = await prisma.post.findMany({
         where: {
           id: { not: post.id },
           published: true,
-          OR: [
-            { category: { equals: "German A1", mode: "insensitive" } },
-            { category: { contains: "A1", mode: "insensitive" } },
-          ],
+          ...getCourseLessonsPrismaFilter(),
         },
         select: relatedPostSelect,
         orderBy: { createdAt: "desc" },
         take: 3,
       });
     } else {
+      // Editorial articles strictly exclude all German A1 course lessons
       relatedPosts = await prisma.post.findMany({
         where: {
           id: { not: post.id },
           published: true,
+          ...getArticlesOnlyPrismaFilter(),
         },
         select: relatedPostSelect,
         orderBy: { createdAt: "desc" },
@@ -388,6 +396,8 @@ export default async function SinglePostPage({
       applyButton: string;
       a1CourseIndex: string;
       a1CourseTitle: string;
+      a1Academy: string;
+      careerGuide: string;
       blogRoot: string;
       prevLesson: string;
       nextLesson: string;
@@ -401,14 +411,16 @@ export default async function SinglePostPage({
       authorLabel: "الكاتب:",
       publishedLabel: "تاريخ النشر:",
       minutesRead: "قراءة ٥ دقائق",
-      relatedPosts: isA1 ? "دروس أخرى من مسار A1" : "مقالات ذات صلة",
+      relatedPosts: isA1 ? "الدروس التالية في كورس A1" : "مقالات ذات صلة",
       viewAllPosts: isA1 ? "فهرس دروس A1 ←" : "عرض جميع المقالات ←",
-      readArticle: isA1 ? "ابدأ الدرس ←" : "اقرأ المقال ←",
+      readArticle: isA1 ? "🎧 ابدأ الدرس ←" : "اقرأ المقال ←",
       applyLinkTitle: "رابط التقديم على الوظيفة",
       applyLinkDesc: "اضغط على الزر أدناه للانتقال المباشر إلى صفحة التقديم الرسمية.",
       applyButton: "التقديم الآن 🚀",
       a1CourseIndex: "فهرس دروس A1",
       a1CourseTitle: "مسار تعلم اللغة الألمانية A1",
+      a1Academy: "أكاديمية اللغة الألمانية A1",
+      careerGuide: "دليل العمل والحياة في ألمانيا",
       blogRoot: "المدونة",
       prevLesson: "← الدرس السابق",
       nextLesson: "الدرس التالي →",
@@ -421,14 +433,16 @@ export default async function SinglePostPage({
       authorLabel: "Author:",
       publishedLabel: "Published:",
       minutesRead: "5 min read",
-      relatedPosts: isA1 ? "Other Lessons from A1 Track" : "Related Articles",
+      relatedPosts: isA1 ? "Next Lessons in A1 Course" : "Related Articles",
       viewAllPosts: isA1 ? "A1 Course Index →" : "View all articles →",
-      readArticle: isA1 ? "Start Lesson →" : "Read Article →",
+      readArticle: isA1 ? "🎧 Start Lesson →" : "Read Article →",
       applyLinkTitle: "Job Application Link",
       applyLinkDesc: "Click the button below to go directly to the official application page.",
       applyButton: "Apply Now 🚀",
       a1CourseIndex: "A1 Course Index",
       a1CourseTitle: "German A1 Course",
+      a1Academy: "German A1 Academy",
+      careerGuide: "Career & Life in Germany",
       blogRoot: "Blog",
       prevLesson: "← Previous Lesson",
       nextLesson: "Next Lesson →",
@@ -441,14 +455,16 @@ export default async function SinglePostPage({
       authorLabel: "Autor:",
       publishedLabel: "Veröffentlicht:",
       minutesRead: "5 Min. Lesezeit",
-      relatedPosts: isA1 ? "Weitere Lektionen aus Kurs A1" : "Ähnliche Artikel",
+      relatedPosts: isA1 ? "Nächste Lektionen im A1-Kurs" : "Ähnliche Artikel",
       viewAllPosts: isA1 ? "A1 Kursübersicht →" : "Alle Artikel anzeigen →",
-      readArticle: isA1 ? "Lektion starten →" : "Artikel lesen →",
+      readArticle: isA1 ? "🎧 Lektion starten →" : "Artikel lesen →",
       applyLinkTitle: "Bewerbungslink zur Stelle",
       applyLinkDesc: "Klicken Sie auf den Button, um direkt zur offiziellen Bewerbungsseite zu gelangen.",
       applyButton: "Jetzt bewerben 🚀",
       a1CourseIndex: "A1 Kursübersicht",
       a1CourseTitle: "Deutsch A1 Lernpfad",
+      a1Academy: "Deutsch A1 Akademie",
+      careerGuide: "Karriere & Leben in Deutschland",
       blogRoot: "Blog",
       prevLesson: "← Vorherige Lektion",
       nextLesson: "Nächste Lektion →",
@@ -461,14 +477,16 @@ export default async function SinglePostPage({
       authorLabel: "Auteur :",
       publishedLabel: "Publié le :",
       minutesRead: "5 min de lecture",
-      relatedPosts: isA1 ? "Autres leçons du cours A1" : "Articles connexes",
+      relatedPosts: isA1 ? "Prochaines leçons du cours A1" : "Articles connexes",
       viewAllPosts: isA1 ? "Index du cours A1 →" : "Voir tous les articles →",
-      readArticle: isA1 ? "Commencer la leçon →" : "Lire l'article →",
+      readArticle: isA1 ? "🎧 Commencer la leçon →" : "Lire l'article →",
       applyLinkTitle: "Lien de candidature à l'emploi",
       applyLinkDesc: "Cliquez sur le bouton ci-dessous pour accéder directement à la page de candidature officielle.",
       applyButton: "Postuler maintenant 🚀",
       a1CourseIndex: "Index des leçons A1",
       a1CourseTitle: "Cours d'allemand A1",
+      a1Academy: "Académie d'Allemand A1",
+      careerGuide: "Guide Carrière & Vie en Allemagne",
       blogRoot: "Blog",
       prevLesson: "← Leçon précédente",
       nextLesson: "Leçon suivante →",
@@ -541,7 +559,7 @@ export default async function SinglePostPage({
                 <span>/</span>
                 <Link href={`/${locale}/blog?category=German+A1`} className="hover:text-blue-500 transition-colors flex items-center gap-1 text-slate-400">
                   <span>🇩🇪</span>
-                  <span>{ui.a1CourseTitle}</span>
+                  <span>{ui.a1Academy}</span>
                 </Link>
                 <span>/</span>
                 <span className="text-blue-600 dark:text-blue-400 font-bold">
@@ -550,6 +568,10 @@ export default async function SinglePostPage({
               </>
             ) : (
               <>
+                <span>/</span>
+                <Link href={`/${locale}/blog`} className="hover:text-blue-500 transition-colors text-slate-400">
+                  <span>{ui.careerGuide}</span>
+                </Link>
                 <span>/</span>
                 <span className="text-blue-600 dark:text-blue-400 font-bold line-clamp-1 max-w-[200px] sm:max-w-xs">
                   {post.title}
@@ -582,14 +604,14 @@ export default async function SinglePostPage({
             {isA1 ? (
               <span className="px-3.5 py-1.5 rounded-full text-xs font-black bg-gradient-to-r from-blue-600 to-indigo-600 text-white border border-blue-400/30 shadow-md">
                 {isAr
-                  ? `🇩🇪 الدرس ${currentLessonParsed?.lessonNumber || "•"} • A1`
+                  ? `🇩🇪 الدرس ${currentLessonParsed?.lessonNumber || "•"} • أكاديمية A1`
                   : locale === "de"
-                  ? `🇩🇪 Lektion ${currentLessonParsed?.lessonNumber || "•"} • A1`
-                  : `🇩🇪 Lesson ${currentLessonParsed?.lessonNumber || "•"} • A1`}
+                  ? `🇩🇪 Lektion ${currentLessonParsed?.lessonNumber || "•"} • A1 Akademie`
+                  : `🇩🇪 Lesson ${currentLessonParsed?.lessonNumber || "•"} • A1 Academy`}
               </span>
             ) : (
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40">
-                {post.category}
+              <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 shadow-sm">
+                {post.category || ui.careerGuide}
               </span>
             )}
 
@@ -736,6 +758,9 @@ export default async function SinglePostPage({
             content={stripLeadingH1(post.markdown_content)}
             category={post.category}
             locale={locale}
+            mode={isA1 ? "lesson" : "article"}
+            slug={post.slug}
+            title={post.title}
           />
         </div>
 
@@ -901,7 +926,11 @@ export default async function SinglePostPage({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {relatedPosts.map((relPost) => {
-                const relIsA1 = isGermanA1Category(relPost.category);
+                const relIsA1 = isCourseLesson({
+                  category: relPost.category,
+                  slug: relPost.slug,
+                  title: relPost.title,
+                });
                 const relParsed = relIsA1 ? parseLessonTitle(relPost.title, relPost.markdown_content) : null;
                 const relTitle = relParsed?.fullTitle || relPost.title;
                 const relCover = relIsA1
@@ -969,7 +998,7 @@ export default async function SinglePostPage({
                         href={`/${locale}/blog/${encodeURIComponent(relPost.slug)}`}
                         className="inline-flex items-center text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                       >
-                        {ui.readArticle}
+                        {relIsA1 ? (isAr ? "🎧 ابدأ الدرس ←" : "🎧 Start Lesson →") : ui.readArticle}
                       </Link>
                     </div>
                   </div>
