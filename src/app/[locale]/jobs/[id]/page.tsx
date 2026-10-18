@@ -16,11 +16,17 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string; id: string }>;
 }): Promise<Metadata> {
-  const { locale, id } = await params;
-  const isAr = locale === "ar";
-  const isDe = locale === "de";
-
   try {
+    const { locale, id } = await params;
+    const isAr = locale === "ar";
+    const isDe = locale === "de";
+
+    if (!id) {
+      return {
+        title: isAr ? "الوظيفة غير موجودة | GermanJobsPro 🇩🇪" : "Job not found | GermanJobsPro 🇩🇪",
+      };
+    }
+
     const job = await prisma.job.findUnique({
       where: { id },
       select: {
@@ -41,21 +47,22 @@ export async function generateMetadata({
       };
     }
 
-    const shortDesc = stripHtml(job.requirements || job.descriptionRaw || "").slice(0, 160);
+    const shortDesc = stripHtml(job.requirements || job.descriptionRaw || job.title || "").slice(0, 160);
 
     return {
       title: isAr
-        ? `${job.title} في شركة ${job.company} (${job.city || "ألمانيا"}) | GermanJobsPro 🇩🇪`
+        ? `${job.title || "فرصة عمل"} في شركة ${job.company || "ألمانيا"} (${job.city || "ألمانيا"}) | GermanJobsPro 🇩🇪`
         : isDe
-        ? `${job.title} bei ${job.company} in ${job.city || "Deutschland"} | GermanJobsPro 🇩🇪`
-        : `${job.title} at ${job.company} (${job.city || "Germany"}) | GermanJobsPro 🇩🇪`,
+        ? `${job.title || "Stellenangebot"} bei ${job.company || "Deutschland"} in ${job.city || "Deutschland"} | GermanJobsPro 🇩🇪`
+        : `${job.title || "Job Offer"} at ${job.company || "Germany"} (${job.city || "Germany"}) | GermanJobsPro 🇩🇪`,
       description:
         shortDesc ||
         (isAr
-          ? `تفاصيل وظيفة ${job.title} في شركة ${job.company}. قدم الآن مع إمكانية توليد خطاب الدافع Anschreiben وفحص التوافق ATS.`
-          : `Stellenangebot für ${job.title} bei ${job.company}. Jetzt mit KI-Anschreiben bewerben.`),
+          ? `تفاصيل وظيفة ${job.title || "شاغر وظيفي"} في شركة ${job.company || "ألمانيا"}. قدم الآن مع إمكانية توليد خطاب الدافع Anschreiben وفحص التوافق ATS.`
+          : `Stellenangebot für ${job.title || "Stelle"} bei ${job.company || "Deutschland"}. Jetzt mit KI-Anschreiben bewerben.`),
     };
-  } catch {
+  } catch (err) {
+    console.error("[JobDetailPage] Error in generateMetadata:", err);
     return {
       title: "Job Details | GermanJobsPro 🇩🇪",
     };
@@ -75,9 +82,11 @@ export default async function JobDetailPage({
   // Fetch job details
   let job = null;
   try {
-    job = await prisma.job.findUnique({
-      where: { id },
-    });
+    if (id) {
+      job = await prisma.job.findUnique({
+        where: { id },
+      });
+    }
   } catch (error) {
     console.error("[JobDetailPage] Error fetching job:", error);
   }
@@ -101,31 +110,12 @@ export default async function JobDetailPage({
   }> = [];
 
   try {
-    similarJobs = await prisma.job.findMany({
-      where: {
-        status: "ACTIVE",
-        id: { not: job.id },
-        category: job.category,
-      },
-      select: {
-        id: true,
-        title: true,
-        company: true,
-        city: true,
-        category: true,
-        languageReq: true,
-        salary: true,
-      },
-      orderBy: { publishedAt: "desc" },
-      take: 3,
-    });
-
-    if (similarJobs.length < 3) {
-      const excludedIds = [job.id, ...similarJobs.map((j) => j.id)];
-      const fallbackJobs = await prisma.job.findMany({
+    if (job?.id) {
+      similarJobs = await prisma.job.findMany({
         where: {
           status: "ACTIVE",
-          id: { notIn: excludedIds },
+          id: { not: job.id },
+          category: job.category || undefined,
         },
         select: {
           id: true,
@@ -137,9 +127,30 @@ export default async function JobDetailPage({
           salary: true,
         },
         orderBy: { publishedAt: "desc" },
-        take: 3 - similarJobs.length,
+        take: 3,
       });
-      similarJobs = [...similarJobs, ...fallbackJobs];
+
+      if (similarJobs.length < 3) {
+        const excludedIds = [job.id, ...similarJobs.map((j) => j.id)];
+        const fallbackJobs = await prisma.job.findMany({
+          where: {
+            status: "ACTIVE",
+            id: { notIn: excludedIds },
+          },
+          select: {
+            id: true,
+            title: true,
+            company: true,
+            city: true,
+            category: true,
+            languageReq: true,
+            salary: true,
+          },
+          orderBy: { publishedAt: "desc" },
+          take: 3 - similarJobs.length,
+        });
+        similarJobs = [...similarJobs, ...fallbackJobs];
+      }
     }
   } catch (err) {
     console.error("[JobDetailPage] Error fetching similar jobs:", err);
@@ -149,29 +160,37 @@ export default async function JobDetailPage({
 
   const jobData: JobDetailData = {
     id: job.id,
-    title: job.title,
-    company: job.company,
+    title: job.title || "Job Offer",
+    company: job.company || "Employer",
     city: job.city,
-    category: job.category,
+    category: job.category || "General",
     jobType: job.jobType,
     languageReq: job.languageReq,
     salary: job.salary,
-    applyUrl: job.applyUrl,
+    applyUrl: job.applyUrl || "",
     contactEmail: cleanEmail,
     requirements: job.requirements,
     descriptionRaw: job.descriptionRaw,
     publishedAt:
       job.publishedAt instanceof Date
         ? (!isNaN(job.publishedAt.getTime()) ? job.publishedAt.toISOString() : new Date().toISOString())
-        : String(job.publishedAt),
+        : job.publishedAt
+        ? String(job.publishedAt)
+        : new Date().toISOString(),
     isVerified: job.isVerified ?? true,
   };
 
-  const publishedTime = new Date(job.publishedAt).getTime();
-  const isPublishedValid = !isNaN(publishedTime);
   const fallbackDate = new Date().toISOString();
+  let publishedTime = NaN;
+  if (job?.publishedAt) {
+    publishedTime = new Date(job.publishedAt).getTime();
+  }
+  const isPublishedValid = !isNaN(publishedTime);
 
-  const expiresTime = job.expiresAt ? new Date(job.expiresAt).getTime() : NaN;
+  let expiresTime = NaN;
+  if (job?.expiresAt) {
+    expiresTime = new Date(job.expiresAt).getTime();
+  }
   const isExpiresValid = !isNaN(expiresTime);
 
   const datePosted = isPublishedValid ? new Date(publishedTime).toISOString() : fallbackDate;
@@ -184,14 +203,14 @@ export default async function JobDetailPage({
   const jobPostingLd = {
     "@context": "https://schema.org",
     "@type": "JobPosting",
-    title: job.title,
-    description: stripHtml(job.descriptionRaw || job.requirements || job.title),
+    title: job.title || "Job Offer",
+    description: stripHtml(job.descriptionRaw || job.requirements || job.title || "Job Offer in Germany"),
     datePosted,
     validThrough,
-    employmentType: /ausbildung|تدريب/i.test(job.category) ? "INTERN" : "FULL_TIME",
+    employmentType: /ausbildung|تدريب/i.test(job.category || "") ? "INTERN" : "FULL_TIME",
     hiringOrganization: {
       "@type": "Organization",
-      name: job.company,
+      name: job.company || "Employer",
     },
     jobLocation: {
       "@type": "Place",
@@ -228,7 +247,7 @@ export default async function JobDetailPage({
           </Link>
           <span>/</span>
           <span className="text-slate-200 truncate max-w-xs font-semibold" dir="auto">
-            {job.title}
+            {job.title || (isAr ? "تفاصيل الوظيفة" : "Job Offer")}
           </span>
         </div>
 

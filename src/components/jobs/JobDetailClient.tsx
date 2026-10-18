@@ -24,8 +24,8 @@ export interface JobDetailData {
 }
 
 interface JobDetailClientProps {
-  job: JobDetailData;
-  locale: string;
+  job?: JobDetailData | null;
+  locale?: string | null;
   initialUser?: {
     id: string;
     email: string;
@@ -35,13 +35,18 @@ interface JobDetailClientProps {
 }
 
 // Extracts Latin/German title inside parentheses e.g. "مدير تسويق (Marketing Manager)" -> "Marketing Manager"
-const extractGermanTitle = (rawTitle: string): string => {
-  const match = rawTitle.match(/\(([A-Za-z0-9\s/&+\-_.,]+)\)/);
-  if (match && match[1]?.trim()) {
-    return match[1].trim();
+export const extractGermanTitle = (rawTitle?: string | null): string => {
+  if (!rawTitle || typeof rawTitle !== "string") return "Stelle in Deutschland";
+  try {
+    const match = rawTitle.match(/\(([A-Za-z0-9\s/&+\-_.,]+)\)/);
+    if (match && match[1]?.trim()) {
+      return match[1].trim();
+    }
+    const latinOnly = rawTitle.replace(/[\u0600-\u06FF:،–—]/g, "").trim();
+    return latinOnly.length > 2 ? latinOnly : rawTitle;
+  } catch {
+    return rawTitle || "Stelle in Deutschland";
   }
-  const latinOnly = rawTitle.replace(/[\u0600-\u06FF:،–—]/g, "").trim();
-  return latinOnly.length > 2 ? latinOnly : rawTitle;
 };
 
 const GERMAN_CITIES_MAP: Record<string, string> = {
@@ -70,83 +75,103 @@ const GERMAN_CITIES_MAP: Record<string, string> = {
   "ألمانيا": "Deutschland",
 };
 
-const extractGermanCity = (rawCity?: string | null): string => {
-  if (!rawCity) return "Deutschland";
-  const trimmed = rawCity.trim();
-  if (GERMAN_CITIES_MAP[trimmed]) {
-    return GERMAN_CITIES_MAP[trimmed];
+export const extractGermanCity = (rawCity?: string | null): string => {
+  if (!rawCity || typeof rawCity !== "string") return "Deutschland";
+  try {
+    const trimmed = rawCity.trim();
+    if (!trimmed) return "Deutschland";
+    if (GERMAN_CITIES_MAP[trimmed]) {
+      return GERMAN_CITIES_MAP[trimmed];
+    }
+    for (const [ar, de] of Object.entries(GERMAN_CITIES_MAP)) {
+      if (trimmed.includes(ar)) return de;
+    }
+    if (/[\u0600-\u06FF]/.test(trimmed)) {
+      const latinOnly = trimmed.replace(/[\u0600-\u06FF:،–—]/g, "").trim();
+      return latinOnly.length > 2 ? latinOnly : "Deutschland";
+    }
+    return trimmed;
+  } catch {
+    return "Deutschland";
   }
-  for (const [ar, de] of Object.entries(GERMAN_CITIES_MAP)) {
-    if (trimmed.includes(ar)) return de;
-  }
-  if (/[\u0600-\u06FF]/.test(trimmed)) {
-    const latinOnly = trimmed.replace(/[\u0600-\u06FF:،–—]/g, "").trim();
-    return latinOnly.length > 2 ? latinOnly : "Deutschland";
-  }
-  return trimmed;
 };
 
 // Generates an official German job reference ID (Ref-Nr: DE-2026-XXXX)
-export function extractReferenceNumber(job: JobDetailData): string {
-  if (job.applyUrl) {
-    const urlMatch = job.applyUrl.match(/-(\d{5,8})(?:[/?#]|$)/);
-    if (urlMatch && urlMatch[1]) {
-      return `DE-2026-${urlMatch[1]}`;
+export function extractReferenceNumber(job?: Partial<JobDetailData> | null): string {
+  if (!job) return "DE-2026-8421";
+  try {
+    if (job.applyUrl && typeof job.applyUrl === "string") {
+      const urlMatch = job.applyUrl.match(/-(\d{5,8})(?:[/?#]|$)/);
+      if (urlMatch && urlMatch[1]) {
+        return `DE-2026-${urlMatch[1]}`;
+      }
     }
+    const idStr = typeof job.id === "string" ? job.id : "";
+    const cleanId = idStr.replace(/[^a-zA-Z0-9]/g, "").slice(-5).toUpperCase();
+    return `DE-2026-${cleanId || "8421"}`;
+  } catch {
+    return "DE-2026-8421";
   }
-  const cleanId = job.id.replace(/[^a-zA-Z0-9]/g, "").slice(-5).toUpperCase();
-  return `DE-2026-${cleanId || "8421"}`;
 }
 
 // Extracts or normalizes the CEFR language requirement (e.g. B2, C1, B1/B2)
 export function extractCefrLevel(languageReq?: string | null, requirements?: string | null): string {
-  if (languageReq && languageReq.trim()) {
-    const match = languageReq.match(/\b([ABC][12](?:\s*[\/\-]\s*[ABC][12])?)\b/i);
-    if (match) return match[1].toUpperCase();
-    return languageReq.trim();
+  try {
+    if (languageReq && typeof languageReq === "string" && languageReq.trim()) {
+      const match = languageReq.match(/\b([ABC][12](?:\s*[\/\-]\s*[ABC][12])?)\b/i);
+      if (match) return match[1].toUpperCase();
+      return languageReq.trim();
+    }
+    if (requirements && typeof requirements === "string") {
+      const match = requirements.match(/\b([ABC][12](?:\s*[\/\-]\s*[ABC][12])?)\b/i);
+      if (match) return match[1].toUpperCase();
+    }
+    return "B1/B2";
+  } catch {
+    return "B1/B2";
   }
-  if (requirements) {
-    const match = requirements.match(/\b([ABC][12](?:\s*[\/\-]\s*[ABC][12])?)\b/i);
-    if (match) return match[1].toUpperCase();
-  }
-  return "B1/B2";
 }
 
 // Detects the ATS or portal service name
-export function detectPortalInfo(applyUrl?: string): { name: string; isAgentur: boolean; isArbeitNow: boolean } {
-  if (!applyUrl) return { name: "Bewerbungsportal", isAgentur: false, isArbeitNow: false };
-  const lower = applyUrl.toLowerCase();
-  if (lower.includes("arbeitsagentur.de")) {
-    return { name: "Bundesagentur für Arbeit (BA)", isAgentur: true, isArbeitNow: false };
+export function detectPortalInfo(applyUrl?: string | null): { name: string; isAgentur: boolean; isArbeitNow: boolean } {
+  const fallback = { name: "بوابة التوظيف المباشرة للشركة", isAgentur: false, isArbeitNow: false };
+  if (!applyUrl || typeof applyUrl !== "string") return fallback;
+  try {
+    const lower = applyUrl.toLowerCase();
+    if (lower.includes("arbeitsagentur.de")) {
+      return { name: "Bundesagentur für Arbeit (BA)", isAgentur: true, isArbeitNow: false };
+    }
+    if (lower.includes("arbeitnow.com")) {
+      return { name: "ArbeitNow Partnernetzwerk", isAgentur: false, isArbeitNow: true };
+    }
+    if (lower.includes("personio")) {
+      return { name: "Personio Recruiting Portal", isAgentur: false, isArbeitNow: false };
+    }
+    if (lower.includes("workday") || lower.includes("myworkday")) {
+      return { name: "Workday ATS", isAgentur: false, isArbeitNow: false };
+    }
+    if (lower.includes("softgarden")) {
+      return { name: "Softgarden e-Recruiting", isAgentur: false, isArbeitNow: false };
+    }
+    if (lower.includes("greenhouse")) {
+      return { name: "Greenhouse Portal", isAgentur: false, isArbeitNow: false };
+    }
+    if (lower.includes("lever.co")) {
+      return { name: "Lever Portal", isAgentur: false, isArbeitNow: false };
+    }
+    if (lower.includes("recruitee")) {
+      return { name: "Recruitee Portal", isAgentur: false, isArbeitNow: false };
+    }
+    if (lower.includes("join.com")) {
+      return { name: "JOIN Portal", isAgentur: false, isArbeitNow: false };
+    }
+    if (lower.includes("smartrecruiters")) {
+      return { name: "SmartRecruiters Portal", isAgentur: false, isArbeitNow: false };
+    }
+    return fallback;
+  } catch {
+    return fallback;
   }
-  if (lower.includes("arbeitnow.com")) {
-    return { name: "ArbeitNow Partnernetzwerk", isAgentur: false, isArbeitNow: true };
-  }
-  if (lower.includes("personio")) {
-    return { name: "Personio Recruiting Portal", isAgentur: false, isArbeitNow: false };
-  }
-  if (lower.includes("workday") || lower.includes("myworkday")) {
-    return { name: "Workday ATS", isAgentur: false, isArbeitNow: false };
-  }
-  if (lower.includes("softgarden")) {
-    return { name: "Softgarden e-Recruiting", isAgentur: false, isArbeitNow: false };
-  }
-  if (lower.includes("greenhouse")) {
-    return { name: "Greenhouse Portal", isAgentur: false, isArbeitNow: false };
-  }
-  if (lower.includes("lever.co")) {
-    return { name: "Lever Portal", isAgentur: false, isArbeitNow: false };
-  }
-  if (lower.includes("recruitee")) {
-    return { name: "Recruitee Portal", isAgentur: false, isArbeitNow: false };
-  }
-  if (lower.includes("join.com")) {
-    return { name: "JOIN Portal", isAgentur: false, isArbeitNow: false };
-  }
-  if (lower.includes("smartrecruiters")) {
-    return { name: "SmartRecruiters Portal", isAgentur: false, isArbeitNow: false };
-  }
-  return { name: "بوابة التوظيف المباشرة للشركة", isAgentur: false, isArbeitNow: false };
 }
 
 /**
@@ -194,158 +219,182 @@ export const FAKE_EMAIL_EXACT = new Set([
  */
 export function isValidHrEmail(email?: string | null): boolean {
   if (!email || typeof email !== "string") return false;
-  const clean = email.trim().toLowerCase().replace(/^mailto:/i, "").trim();
+  try {
+    const clean = email.trim().toLowerCase().replace(/^mailto:/i, "").trim();
+    if (!clean) return false;
 
-  // Basic RFC 5322 regex validation
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  if (!emailRegex.test(clean)) return false;
+    // Basic RFC 5322 regex validation
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(clean)) return false;
 
-  if (FAKE_EMAIL_EXACT.has(clean)) return false;
+    if (FAKE_EMAIL_EXACT.has(clean)) return false;
 
-  const domain = clean.split("@")[1];
-  if (!domain || FAKE_EMAIL_DOMAINS.has(domain)) return false;
+    const parts = clean.split("@");
+    if (parts.length !== 2) return false;
+    const domain = parts[1];
+    if (!domain || FAKE_EMAIL_DOMAINS.has(domain)) return false;
 
-  // Filter out image extensions or syntax accidents (e.g. user@domain.png)
-  if (/\.(png|jpg|jpeg|gif|svg|webp|pdf)$/i.test(clean)) return false;
+    // Filter out image extensions or syntax accidents (e.g. user@domain.png)
+    if (/\.(png|jpg|jpeg|gif|svg|webp|pdf)$/i.test(clean)) return false;
 
-  return true;
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
  * Extracts a robust, verified HR email from contactEmail, applyUrl (mailto:), or description/requirements.
  */
-export function extractCleanHrEmail(job: {
+export function extractCleanHrEmail(job?: {
   contactEmail?: string | null;
   applyUrl?: string | null;
   descriptionRaw?: string | null;
   requirements?: string | null;
-}): string | null {
-  // 1. Check contactEmail
-  if (isValidHrEmail(job.contactEmail)) {
-    return job.contactEmail!.trim().toLowerCase();
-  }
-
-  // 2. Check applyUrl for mailto:
-  if (job.applyUrl && job.applyUrl.toLowerCase().startsWith("mailto:")) {
-    const rawMailto = job.applyUrl.replace(/^mailto:/i, "").split("?")[0].trim();
-    if (isValidHrEmail(rawMailto)) {
-      return rawMailto.toLowerCase();
+} | null): string | null {
+  if (!job) return null;
+  try {
+    // 1. Check contactEmail
+    if (job.contactEmail && isValidHrEmail(job.contactEmail)) {
+      return job.contactEmail.trim().toLowerCase();
     }
-  }
 
-  // 3. Scan descriptionRaw and requirements for HR application email
-  const textToScan = `${job.descriptionRaw || ""} ${job.requirements || ""}`;
-  if (textToScan) {
-    const emailMatches = textToScan.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
-    if (emailMatches && emailMatches.length > 0) {
-      // Prioritize HR/application-specific mailboxes
-      for (const candidate of emailMatches) {
-        if (isValidHrEmail(candidate)) {
-          const lower = candidate.toLowerCase();
-          if (/bewerbung|karriere|jobs|recruiting|personal|hr|kontakt/i.test(lower)) {
-            return lower;
+    // 2. Check applyUrl for mailto:
+    if (job.applyUrl && typeof job.applyUrl === "string" && job.applyUrl.toLowerCase().startsWith("mailto:")) {
+      const rawMailto = job.applyUrl.replace(/^mailto:/i, "").split("?")[0]?.trim();
+      if (isValidHrEmail(rawMailto)) {
+        return rawMailto.toLowerCase();
+      }
+    }
+
+    // 3. Scan descriptionRaw and requirements for HR application email
+    const desc = typeof job.descriptionRaw === "string" ? job.descriptionRaw : "";
+    const reqs = typeof job.requirements === "string" ? job.requirements : "";
+    const textToScan = `${desc} ${reqs}`.trim();
+    if (textToScan) {
+      const emailMatches = textToScan.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
+      if (emailMatches && emailMatches.length > 0) {
+        // Prioritize HR/application-specific mailboxes
+        for (const candidate of emailMatches) {
+          if (isValidHrEmail(candidate)) {
+            const lower = candidate.toLowerCase();
+            if (/bewerbung|karriere|jobs|recruiting|personal|hr|kontakt/i.test(lower)) {
+              return lower;
+            }
+          }
+        }
+        // Otherwise, take the first valid one if legitimate
+        for (const candidate of emailMatches) {
+          if (isValidHrEmail(candidate)) {
+            return candidate.toLowerCase();
           }
         }
       }
-      // Otherwise, take the first valid one if legitimate
-      for (const candidate of emailMatches) {
-        if (isValidHrEmail(candidate)) {
-          return candidate.toLowerCase();
-        }
-      }
     }
-  }
 
-  return null;
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 // Returns Anerkennung (diploma equivalence) guidance based on role category
-export function getAnerkennungDetails(category: string, isAr: boolean, isDe: boolean) {
-  const cat = (category || "").toLowerCase();
-  const isHealthcare =
-    cat.includes("health") ||
-    cat.includes("تمريض") ||
-    cat.includes("رعاية") ||
-    cat.includes("صحة") ||
-    cat.includes("pflege") ||
-    cat.includes("medizin");
-  const isAusbildung = cat.includes("ausbildung") || cat.includes("تدريب");
+export function getAnerkennungDetails(category?: string | null, isAr = false, isDe = false) {
+  try {
+    const cat = typeof category === "string" ? category.toLowerCase() : "";
+    const isHealthcare =
+      cat.includes("health") ||
+      cat.includes("تمريض") ||
+      cat.includes("رعاية") ||
+      cat.includes("صحة") ||
+      cat.includes("pflege") ||
+      cat.includes("medizin");
+    const isAusbildung = cat.includes("ausbildung") || cat.includes("تدريب");
 
-  if (isHealthcare) {
+    if (isHealthcare) {
+      return {
+        type: "regulated",
+        badge: isAr
+          ? "مهنة منظمة قانونياً (Reglementierter Beruf)"
+          : isDe
+          ? "Reglementierter Beruf"
+          : "Regulated Profession",
+        title: isAr
+          ? "الاعتراف المهني للرعاية والتمريض (Berufsanerkennung)"
+          : isDe
+          ? "Berufliche Anerkennung Pflege"
+          : "Nursing Recognition (Anerkennung)",
+        desc: isAr
+          ? "تتطلب ممارسة مهنة التمريض والرعاية الطبية في ألمانيا استكمال إجراءات المعادلة الرسمية (Berufsanerkennung) أو الحصول على إشعار النقص (Defizitbescheid) للالتحاق بدورة تعديل (Anpassungslehrgang)."
+          : isDe
+          ? "Für die Ausübung dieses Pflegeberufs ist die behördliche Anerkennung oder ein Defizitbescheid für Anpassungsmaßnahmen erforderlich."
+          : "Practicing nursing in Germany requires official recognition (Anerkennung) or a Defizitbescheid for adaptation training.",
+        statusText: isAr
+          ? "مطلوب تعديل رسمي أو إشعار نقص (Defizitbescheid)"
+          : isDe
+          ? "Anerkennung oder Anpassungslehrgang erforderlich"
+          : "Official recognition or adaptation course required",
+      };
+    }
+
+    if (isAusbildung) {
+      return {
+        type: "ausbildung",
+        badge: isAr
+          ? "عقد تدريب مهني معتمد (Duale Ausbildung)"
+          : isDe
+          ? "Duale Berufsausbildung"
+          : "Dual Vocational Training",
+        title: isAr
+          ? "معادلة الشهادة المدرسية (Zeugnisanerkennung)"
+          : isDe
+          ? "Schulabschluss-Anerkennung"
+          : "School Certificate Recognition",
+        desc: isAr
+          ? "للالتحاق بعقود التدريب المهني، يلزم تعديل الشهادة المدرسية الثانوية أو الإعدادية (Mittlere Reife) عبر هيئة تعديل الشهادات في الولاية الألمانية المستهدفة."
+          : isDe
+          ? "Für eine duale Ausbildung ist in der Regel die behördliche Anerkennung des Schulabschlusses erforderlich."
+          : "For dual vocational training, recognition of your secondary school diploma by the state office is required.",
+        statusText: isAr
+          ? "شهادة ثانوية معترف بها (Mittlere Reife / Abitur)"
+          : isDe
+          ? "Anerkannter Schulabschluss"
+          : "Recognized secondary school diploma",
+      };
+    }
+
     return {
-      type: "regulated",
+      type: "academic",
       badge: isAr
-        ? "مهنة منظمة قانونياً (Reglementierter Beruf)"
+        ? "اعتماد أكاديمي وخبرة (Anabin / ZAB Standard)"
         : isDe
-        ? "Reglementierter Beruf"
-        : "Regulated Profession",
+        ? "Anabin / ZAB Hochschulabschluss"
+        : "Anabin / ZAB Academic Recognition",
       title: isAr
-        ? "الاعتراف المهني للرعاية والتمريض (Berufsanerkennung)"
+        ? "معادلة الشهادات والمؤهل العلمي (Anerkennung der Berufsqualifikation)"
         : isDe
-        ? "Berufliche Anerkennung Pflege"
-        : "Nursing Recognition (Anerkennung)",
+        ? "Anerkennung des Hochschulabschlusses"
+        : "Degree & Professional Recognition",
       desc: isAr
-        ? "تتطلب ممارسة مهنة التمريض والرعاية الطبية في ألمانيا استكمال إجراءات المعادلة الرسمية (Berufsanerkennung) أو الحصول على إشعار النقص (Defizitbescheid) للالتحاق بدورة تعديل (Anpassungslehrgang)."
+        ? "تُقبل الشهادات الجامعية الصادرة خارج ألمانيا المعترف بها في قاعدة بيانات (Anabin) بدرجة H+، أو ما يعادلها من خبرات مهنية عملية موثقة في القطاع التقني والتجاري."
         : isDe
-        ? "Für die Ausübung dieses Pflegeberufs ist die behördliche Anerkennung oder ein Defizitbescheid für Anpassungsmaßnahmen erforderlich."
-        : "Practicing nursing in Germany requires official recognition (Anerkennung) or a Defizitbescheid for adaptation training.",
+        ? "Ausländische Hochschulabschlüsse müssen in der Anabin-Datenbank (Status H+) gelistet sein oder einer ZAB-Gleichwertigkeitsprüfung entsprechen."
+        : "Foreign degrees must be recognized in the Anabin database (H+ status) or have documented relevant professional experience.",
       statusText: isAr
-        ? "مطلوب تعديل رسمي أو إشعار نقص (Defizitbescheid)"
+        ? "شهادة معترف بها (Anabin H+) أو سنوات خبرة موثقة"
         : isDe
-        ? "Anerkennung oder Anpassungslehrgang erforderlich"
-        : "Official recognition or adaptation course required",
+        ? "Vergleichbarer Abschluss (Anabin H+) oder Berufserfahrung"
+        : "Comparable degree (Anabin H+) or certified experience",
+    };
+  } catch {
+    return {
+      type: "academic",
+      badge: isAr ? "معايير سوق العمل الألماني" : "German Labor Standard",
+      title: isAr ? "المعادلة المهنية والأكاديمية" : "Professional Equivalence",
+      desc: isAr ? "تخضع المؤهلات للتقييم بحسب معايير الجهات الألمانية المختصة." : "Qualifications assessed per German guidelines.",
+      statusText: isAr ? "مؤهل مهني أو جامعي معتمد" : "Recognized Qualification",
     };
   }
-
-  if (isAusbildung) {
-    return {
-      type: "ausbildung",
-      badge: isAr
-        ? "عقد تدريب مهني معتمد (Duale Ausbildung)"
-        : isDe
-        ? "Duale Berufsausbildung"
-        : "Dual Vocational Training",
-      title: isAr
-        ? "معادلة الشهادة المدرسية (Zeugnisanerkennung)"
-        : isDe
-        ? "Schulabschluss-Anerkennung"
-        : "School Certificate Recognition",
-      desc: isAr
-        ? "للالتحاق بعقود التدريب المهني، يلزم تعديل الشهادة المدرسية الثانوية أو الإعدادية (Mittlere Reife) عبر هيئة تعديل الشهادات في الولاية الألمانية المستهدفة."
-        : isDe
-        ? "Für eine duale Ausbildung ist in der Regel die behördliche Anerkennung des Schulabschlusses erforderlich."
-        : "For dual vocational training, recognition of your secondary school diploma by the state office is required.",
-      statusText: isAr
-        ? "شهادة ثانوية معترف بها (Mittlere Reife / Abitur)"
-        : isDe
-        ? "Anerkannter Schulabschluss"
-        : "Recognized secondary school diploma",
-    };
-  }
-
-  return {
-    type: "academic",
-    badge: isAr
-      ? "اعتماد أكاديمي وخبرة (Anabin / ZAB Standard)"
-      : isDe
-      ? "Anabin / ZAB Hochschulabschluss"
-      : "Anabin / ZAB Academic Recognition",
-    title: isAr
-      ? "معادلة الشهادات والمؤهل العلمي (Anerkennung der Berufsqualifikation)"
-      : isDe
-      ? "Anerkennung des Hochschulabschlusses"
-      : "Degree & Professional Recognition",
-    desc: isAr
-      ? "تُقبل الشهادات الجامعية الصادرة خارج ألمانيا المعترف بها في قاعدة بيانات (Anabin) بدرجة H+، أو ما يعادلها من خبرات مهنية عملية موثقة في القطاع التقني والتجاري."
-      : isDe
-      ? "Ausländische Hochschulabschlüsse müssen in der Anabin-Datenbank (Status H+) gelistet sein oder einer ZAB-Gleichwertigkeitsprüfung entsprechen."
-      : "Foreign degrees must be recognized in the Anabin database (H+ status) or have documented relevant professional experience.",
-    statusText: isAr
-      ? "شهادة معترف بها (Anabin H+) أو سنوات خبرة موثقة"
-      : isDe
-      ? "Vergleichbarer Abschluss (Anabin H+) oder Berufserfahrung"
-      : "Comparable degree (Anabin H+) or certified experience",
-  };
 }
 
 // Parses raw description into clean, structured segments
@@ -355,82 +404,89 @@ interface ParsedDescription {
   additionalDetails: string[];
 }
 
-function parseDescriptionSections(raw: string | null): ParsedDescription {
-  const cleaned = stripHtml(raw);
-  if (!cleaned) {
+function parseDescriptionSections(raw?: string | null): ParsedDescription {
+  if (!raw || typeof raw !== "string") {
     return { intro: "", responsibilities: [], additionalDetails: [] };
   }
+  try {
+    const cleaned = stripHtml(raw);
+    if (!cleaned) {
+      return { intro: "", responsibilities: [], additionalDetails: [] };
+    }
 
-  // Split into paragraphs by newlines
-  const rawParagraphs = cleaned
-    .split(/\r?\n+/)
-    .map((p) => p.trim())
-    .filter(Boolean);
+    // Split into paragraphs by newlines
+    const rawParagraphs = cleaned
+      .split(/\r?\n+/)
+      .map((p) => p.trim())
+      .filter(Boolean);
 
-  if (rawParagraphs.length === 0) {
-    return { intro: "", responsibilities: [], additionalDetails: [] };
-  }
+    if (rawParagraphs.length === 0) {
+      return { intro: "", responsibilities: [], additionalDetails: [] };
+    }
 
-  const intro = rawParagraphs[0];
-  const responsibilities: string[] = [];
-  const additionalDetails: string[] = [];
+    const intro = rawParagraphs[0];
+    const responsibilities: string[] = [];
+    const additionalDetails: string[] = [];
 
-  for (let i = 1; i < rawParagraphs.length; i++) {
-    const p = rawParagraphs[i];
+    for (let i = 1; i < rawParagraphs.length; i++) {
+      const p = rawParagraphs[i];
 
-    // Check if the paragraph has bullet characters
-    if (/[•\-\*\u2022]/.test(p)) {
-      const items = p
-        .split(/[•\-\*\u2022]/)
-        .map((s) => s.trim().replace(/^[:،.\s]+|[:،.\s]+$/g, ""))
-        .filter((s) => s.length > 5);
-      responsibilities.push(...items);
-    } else {
-      // Split by sentence delimiters if it's a long paragraph
-      const sentences = p
-        .split(/(?<=[.!؟])\s+/)
-        .map((s) => s.trim())
-        .filter((s) => s.length > 15);
-
-      if (sentences.length > 1) {
-        for (const s of sentences) {
-          if (
-            /ستعمل|ستتركز|مسؤولياتك|مهامك|ستقوم|تتضمن|ستشارك|ستتولى|تقديم الدعم|تطوير|متابعة|إدارة|Aufgaben|Verantwortung|Tasks|Responsibilities/i.test(
-              s
-            ) ||
-            responsibilities.length < 6
-          ) {
-            responsibilities.push(s);
-          } else {
-            additionalDetails.push(s);
-          }
-        }
+      // Check if the paragraph has bullet characters
+      if (/[•\-\*\u2022]/.test(p)) {
+        const items = p
+          .split(/[•\-\*\u2022]/)
+          .map((s) => s.trim().replace(/^[:،.\s]+|[:،.\s]+$/g, ""))
+          .filter((s) => s.length > 5);
+        responsibilities.push(...items);
       } else {
-        if (responsibilities.length < 5) {
-          responsibilities.push(p);
+        // Split by sentence delimiters if it's a long paragraph
+        const sentences = p
+          .split(/(?<=[.!؟])\s+/)
+          .map((s) => s.trim())
+          .filter((s) => s.length > 15);
+
+        if (sentences.length > 1) {
+          for (const s of sentences) {
+            if (
+              /ستعمل|ستتركز|مسؤولياتك|مهامك|ستقوم|تتضمن|ستشارك|ستتولى|تقديم الدعم|تطوير|متابعة|إدارة|Aufgaben|Verantwortung|Tasks|Responsibilities/i.test(
+                s
+              ) ||
+              responsibilities.length < 6
+            ) {
+              responsibilities.push(s);
+            } else {
+              additionalDetails.push(s);
+            }
+          }
         } else {
-          additionalDetails.push(p);
+          if (responsibilities.length < 5) {
+            responsibilities.push(p);
+          } else {
+            additionalDetails.push(p);
+          }
         }
       }
     }
-  }
 
-  // Fallback: If no subsequent paragraphs, extract sentences from intro
-  if (responsibilities.length === 0 && intro.length > 150) {
-    const sentences = intro
-      .split(/(?<=[.!؟])\s+/)
-      .map((s) => s.trim())
-      .filter((s) => s.length > 15);
-    if (sentences.length >= 3) {
-      return {
-        intro: sentences.slice(0, 1).join(" "),
-        responsibilities: sentences.slice(1),
-        additionalDetails: [],
-      };
+    // Fallback: If no subsequent paragraphs, extract sentences from intro
+    if (responsibilities.length === 0 && intro.length > 150) {
+      const sentences = intro
+        .split(/(?<=[.!؟])\s+/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 15);
+      if (sentences.length >= 3) {
+        return {
+          intro: sentences.slice(0, 1).join(" "),
+          responsibilities: sentences.slice(1),
+          additionalDetails: [],
+        };
+      }
     }
-  }
 
-  return { intro, responsibilities, additionalDetails };
+    return { intro, responsibilities, additionalDetails };
+  } catch {
+    return { intro: "", responsibilities: [], additionalDetails: [] };
+  }
 }
 
 // Parses raw requirements into structured categories
@@ -441,12 +497,12 @@ interface ParsedRequirements {
 }
 
 function parseRequirementsSections(
-  rawRequirements: string | null,
-  languageReq: string | null
+  rawRequirements?: string | null,
+  languageReq?: string | null
 ): ParsedRequirements {
   let list: string[] = [];
 
-  if (rawRequirements) {
+  if (rawRequirements && typeof rawRequirements === "string") {
     try {
       const parsed = JSON.parse(rawRequirements);
       if (Array.isArray(parsed)) {
@@ -462,11 +518,13 @@ function parseRequirementsSections(
     }
   }
 
+  const safeLangReq = typeof languageReq === "string" ? languageReq : null;
   let languageItem: string | null = null;
   let degreeItem: string | null = null;
   const skillsItems: string[] = [];
 
   for (const item of list) {
+    if (!item || typeof item !== "string") continue;
     const lower = item.toLowerCase();
     const isLang =
       /لغة|لغوي|ألمانية|إنجليزية|deutsch|englisch|sprache|cefr|c1|c2|b1|b2|a1|a2/i.test(
@@ -489,13 +547,14 @@ function parseRequirementsSections(
   return {
     languageItem:
       languageItem ||
-      (languageReq ? `إتقان اللغة الألمانية / الإنجليزية بمستوى ${languageReq}` : null),
+      (safeLangReq ? `إتقان اللغة الألمانية / الإنجليزية بمستوى ${safeLangReq}` : null),
     degreeItem,
     skillsItems,
   };
 }
 
-function formatJobDate(dateInput: string | Date, isAr: boolean, isDe: boolean): string {
+function formatJobDate(dateInput?: string | Date | null, isAr = false, isDe = false): string {
+  if (!dateInput) return isAr ? "محدث حديثاً" : isDe ? "Kürzlich aktualisiert" : "Recently updated";
   try {
     const d = new Date(dateInput);
     if (isNaN(d.getTime())) return isAr ? "محدث حديثاً" : isDe ? "Kürzlich aktualisiert" : "Recently updated";
@@ -504,7 +563,7 @@ function formatJobDate(dateInput: string | Date, isAr: boolean, isDe: boolean): 
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffDays === 0) {
+    if (diffDays <= 0) {
       return isAr ? "اليوم" : isDe ? "Heute" : "Today";
     }
     if (diffDays === 1) {
@@ -524,16 +583,35 @@ function formatJobDate(dateInput: string | Date, isAr: boolean, isDe: boolean): 
 }
 
 export default function JobDetailClient({
-  job,
-  locale,
-  initialUser,
+  job: initialJob,
+  locale = "ar",
+  initialUser = null,
 }: JobDetailClientProps) {
-  const activeLocale: Locale = isValidLocale(locale) ? locale : DEFAULT_LOCALE;
+  const safeLocaleStr = typeof locale === "string" ? locale : DEFAULT_LOCALE;
+  const activeLocale: Locale = isValidLocale(safeLocaleStr) ? (safeLocaleStr as Locale) : DEFAULT_LOCALE;
   const dict = getDictionary(activeLocale);
   const currentMeta = LOCALE_METADATA[activeLocale];
   const isAr = activeLocale === "ar";
   const isDe = activeLocale === "de";
-  const dir = currentMeta.dir;
+  const dir = currentMeta?.dir || (isAr ? "rtl" : "ltr");
+
+  // Defensive fallback job object to prevent SSR crashes if job is null or undefined
+  const job: JobDetailData = {
+    id: initialJob?.id || "job-default",
+    title: initialJob?.title || (isAr ? "فرصة عمل في ألمانيا" : "Stelle in Deutschland"),
+    company: initialJob?.company || (isAr ? "جهة عمل معتمدة" : "Arbeitgeber"),
+    city: initialJob?.city || "Deutschland",
+    category: initialJob?.category || "General",
+    jobType: initialJob?.jobType || "Vollzeit",
+    languageReq: initialJob?.languageReq || "B1",
+    salary: initialJob?.salary || null,
+    applyUrl: initialJob?.applyUrl || "",
+    contactEmail: initialJob?.contactEmail || null,
+    requirements: initialJob?.requirements || null,
+    descriptionRaw: initialJob?.descriptionRaw || "",
+    publishedAt: initialJob?.publishedAt || new Date().toISOString(),
+    isVerified: initialJob?.isVerified ?? true,
+  };
 
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedRef, setCopiedRef] = useState(false);
@@ -544,7 +622,10 @@ export default function JobDetailClient({
   // Derived metadata & helpers
   const germanTitle = extractGermanTitle(job.title);
   const germanCity = extractGermanCity(job.city);
-  const cleanCompany = job.company?.replace(/[\u0600-\u06FF]/g, "").trim() || job.company;
+  const cleanCompany =
+    (job.company || "").replace(/[\u0600-\u06FF]/g, "").trim() ||
+    job.company ||
+    "Arbeitgeber";
   const referenceNumber = extractReferenceNumber(job);
   const cefrLevel = extractCefrLevel(job.languageReq, job.requirements);
   const portalInfo = detectPortalInfo(job.applyUrl);
@@ -554,10 +635,12 @@ export default function JobDetailClient({
   const parsedDescription = parseDescriptionSections(job.descriptionRaw);
   const parsedRequirements = parseRequirementsSections(job.requirements, job.languageReq);
 
-  // URLs for AI suites
+  // URLs for AI suites with safe URI encoding
   const coverLetterUrl = `/${activeLocale}/dashboard/cover-letters/new?jobTitle=${encodeURIComponent(
-    job.title
-  )}&companyName=${encodeURIComponent(cleanCompany)}&jobId=${job.id}&jobDescription=${encodeURIComponent(
+    job.title || ""
+  )}&companyName=${encodeURIComponent(cleanCompany || "")}&jobId=${encodeURIComponent(
+    job.id || ""
+  )}&jobDescription=${encodeURIComponent(
     job.requirements || job.descriptionRaw || ""
   )}`;
 
@@ -598,6 +681,7 @@ export default function JobDetailClient({
 
   const isApplyUrlWeb = Boolean(
     job.applyUrl &&
+      typeof job.applyUrl === "string" &&
       !job.applyUrl.toLowerCase().startsWith("mailto:") &&
       (job.applyUrl.startsWith("http://") ||
         job.applyUrl.startsWith("https://") ||
@@ -608,7 +692,7 @@ export default function JobDetailClient({
   const hasEmail = Boolean(effectiveEmail && effectiveEmail.length > 0);
 
   const handleCopyEmail = async (emailToCopy?: string | null) => {
-    const target = emailToCopy || effectiveEmail || job.contactEmail;
+    const target = (emailToCopy || effectiveEmail || job.contactEmail || "").trim();
     if (!target) return;
     await copyToClipboard(target);
     setCopiedEmail(true);
@@ -616,6 +700,7 @@ export default function JobDetailClient({
   };
 
   const handleCopyRef = async () => {
+    if (!referenceNumber) return;
     await copyToClipboard(referenceNumber);
     setCopiedRef(true);
     setTimeout(() => setCopiedRef(false), 2500);
@@ -645,14 +730,18 @@ export default function JobDetailClient({
   ].join("\n");
 
   const handleSmartMailSend = async (emailToSend?: string | null) => {
-    const target = emailToSend || effectiveEmail || job.contactEmail;
+    const target = (emailToSend || effectiveEmail || job.contactEmail || "").trim();
     if (!target) return;
 
     await copyToClipboard(target);
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 3000);
 
-    const toastMessage = dict.jobs.details.emailDraftToast;
+    const toastMessage =
+      dict?.jobs?.details?.emailDraftToast ||
+      (isAr
+        ? "✓ تم نسخ بريد الشركة وفتح مسودة التقديم!"
+        : "✓ E-Mail kopiert & Bewerbungsentwurf geöffnet!");
     setToast(toastMessage);
     setTimeout(() => setToast(null), 4500);
 
@@ -666,36 +755,44 @@ export default function JobDetailClient({
   };
 
   const mailtoLink = effectiveEmail
-    ? `mailto:${effectiveEmail}?subject=${encodeURIComponent(emailSubject)}`
+    ? `mailto:${encodeURIComponent(effectiveEmail)}?subject=${encodeURIComponent(emailSubject)}`
     : "";
 
-  const getVerificationBadgeText = () => {
-    if (portalInfo.isAgentur) {
+  const getVerificationBadgeText = (): string => {
+    try {
+      if (portalInfo?.isAgentur) {
+        return isAr
+          ? "✓ فرصة عمل معتمدة رسمياً • وكالة التوظيف الفيدرالية الألمانية (BA)"
+          : isDe
+          ? "✓ Offiziell verifiziert • Bundesagentur für Arbeit (BA)"
+          : "✓ Officially Verified • German Federal Employment Agency (BA)";
+      }
+      if (portalInfo?.isArbeitNow) {
+        return isAr
+          ? "✓ فرصة عمل معتمدة رسمياً • سجل التوظيف الفيدرالي الألماني (BA/ArbeitNow)"
+          : isDe
+          ? "✓ Offiziell verifiziert • Bundesagentur für Arbeit (BA/ArbeitNow)"
+          : "✓ Officially Verified Job Opening • Federal Partner Feed (BA/ArbeitNow)";
+      }
+      if (effectiveEmail) {
+        return isAr
+          ? "✓ فرصة عمل مباشرة ومعتمدة • قسم الموارد البشرية لدى جهة العمل الرسمية"
+          : isDe
+          ? "✓ Offiziell verifiziert • Direkter HR-Kontakt des Arbeitgebers"
+          : "✓ Officially Verified • Direct Employer HR Contact";
+      }
       return isAr
-        ? "✓ فرصة عمل معتمدة رسمياً • وكالة التوظيف الفيدرالية الألمانية (BA)"
+        ? "✓ فرصة عمل معتمدة رسمياً • بوابة التوظيف الرسمية لجهة العمل المباشرة"
         : isDe
-        ? "✓ Offiziell verifiziert • Bundesagentur für Arbeit (BA)"
-        : "✓ Officially Verified • German Federal Employment Agency (BA)";
-    }
-    if (portalInfo.isArbeitNow) {
+        ? "✓ Offiziell verifiziert • Direktes Unternehmensportal"
+        : "✓ Officially Verified • Direct Employer Career Portal";
+    } catch {
       return isAr
-        ? "✓ فرصة عمل معتمدة رسمياً • سجل التوظيف الفيدرالي الألماني (BA/ArbeitNow)"
+        ? "✓ فرصة عمل معتمدة رسمياً"
         : isDe
-        ? "✓ Offiziell verifiziert • Bundesagentur für Arbeit (BA/ArbeitNow)"
-        : "✓ Officially Verified Job Opening • Federal Partner Feed (BA/ArbeitNow)";
+        ? "✓ Offiziell verifiziertes Stellenangebot"
+        : "✓ Officially Verified Job Opening";
     }
-    if (effectiveEmail) {
-      return isAr
-        ? "✓ فرصة عمل مباشرة ومعتمدة • قسم الموارد البشرية لدى جهة العمل الرسمية"
-        : isDe
-        ? "✓ Offiziell verifiziert • Direkter HR-Kontakt des Arbeitgebers"
-        : "✓ Officially Verified • Direct Employer HR Contact";
-    }
-    return isAr
-      ? "✓ فرصة عمل معتمدة رسمياً • بوابة التوظيف الرسمية لجهة العمل المباشرة"
-      : isDe
-      ? "✓ Offiziell verifiziert • Direktes Unternehmensportal"
-      : "✓ Officially Verified • Direct Employer Career Portal";
   };
 
   const reassuringMicrocopy = isAr
@@ -734,7 +831,7 @@ export default function JobDetailClient({
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/25 text-xs font-bold text-blue-400">
                 <span>✓</span>
-                <span>{isAr ? `بوابة التقديم المعتمدة (${portalInfo.name})` : `Official Portal (${portalInfo.name})`}</span>
+                <span>{isAr ? `بوابة التقديم المعتمدة (${portalInfo?.name || "Offizielles Portal"})` : `Official Portal (${portalInfo?.name || "Official Portal"})`}</span>
               </span>
             )}
           </div>
@@ -851,8 +948,8 @@ export default function JobDetailClient({
                   <span>🌐</span>
                   <span>
                     {isAr
-                      ? `أو التقديم عبر بوابة الشركة الرسمية (${portalInfo.name}) ↗`
-                      : `Or apply via Portal (${portalInfo.name}) ↗`}
+                      ? `أو التقديم عبر بوابة الشركة الرسمية (${portalInfo?.name || "Offizielles Portal"}) ↗`
+                      : `Or apply via Portal (${portalInfo?.name || "Official Portal"}) ↗`}
                   </span>
                 </a>
               </div>
@@ -871,10 +968,10 @@ export default function JobDetailClient({
             >
               <span>
                 {isAr
-                  ? `التقديم عبر البوابة الرسمية (${portalInfo.name}) ↗`
+                  ? `التقديم عبر البوابة الرسمية (${portalInfo?.name || "Offizielles Portal"}) ↗`
                   : isDe
-                  ? `Über offizielles Portal bewerben (${portalInfo.name}) ↗`
-                  : `Apply via Official Portal (${portalInfo.name}) ↗`}
+                  ? `Über offizielles Portal bewerben (${portalInfo?.name || "Offizielles Portal"}) ↗`
+                  : `Apply via Official Portal (${portalInfo?.name || "Official Portal"}) ↗`}
               </span>
             </a>
             <p className="text-[11px] text-slate-400 text-center">
@@ -1105,27 +1202,27 @@ export default function JobDetailClient({
     >
       <h3 className="font-bold text-white text-sm flex items-center gap-2">
         <span>ℹ️</span>
-        <span>{isAr ? "بيانات الاعتماد والشاغر" : dict.jobs.details.overviewTitle}</span>
+        <span>{isAr ? "بيانات الاعتماد والشاغر" : dict?.jobs?.details?.overviewTitle || "Übersicht"}</span>
       </h3>
 
       <div className="space-y-2.5 text-slate-300">
         <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
-          <span className="text-slate-400 shrink-0">{dict.jobs.details.company}</span>
+          <span className="text-slate-400 shrink-0">{dict?.jobs?.details?.company || (isAr ? "الشركة" : "Unternehmen")}</span>
           <span className="font-semibold text-white text-end break-words [overflow-wrap:anywhere]">{job.company}</span>
         </div>
 
         <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
-          <span className="text-slate-400 shrink-0">{dict.jobs.details.city}</span>
-          <span className="font-semibold text-white text-end break-words">{job.city || dict.jobs.details.germany}</span>
+          <span className="text-slate-400 shrink-0">{dict?.jobs?.details?.city || (isAr ? "المدينة" : "Standort")}</span>
+          <span className="font-semibold text-white text-end break-words">{job.city || dict?.jobs?.details?.germany || "Deutschland"}</span>
         </div>
 
         <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
-          <span className="text-slate-400 shrink-0">{dict.jobs.details.jobType}</span>
-          <span className="font-semibold text-white text-end">{job.jobType || dict.jobs.details.fullTime}</span>
+          <span className="text-slate-400 shrink-0">{dict?.jobs?.details?.jobType || (isAr ? "نوع العمل" : "Anstellungsart")}</span>
+          <span className="font-semibold text-white text-end">{job.jobType || dict?.jobs?.details?.fullTime || "Vollzeit"}</span>
         </div>
 
         <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
-          <span className="text-slate-400 shrink-0">{dict.jobs.details.languageLevel}</span>
+          <span className="text-slate-400 shrink-0">{dict?.jobs?.details?.languageLevel || (isAr ? "مستوى اللغة" : "Sprachniveau")}</span>
           <span className="font-semibold text-emerald-400 font-mono text-end">{cefrLevel}</span>
         </div>
 
@@ -1140,7 +1237,7 @@ export default function JobDetailClient({
         </div>
 
         <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
-          <span className="text-slate-400 shrink-0">{dict.jobs.details.salary}</span>
+          <span className="text-slate-400 shrink-0">{dict?.jobs?.details?.salary || (isAr ? "الراتب" : "Gehalt")}</span>
           <span className="font-semibold text-slate-200 text-end break-words">
             {job.salary || (isAr ? "حسب السلم المنظم (Tarifvertrag)" : "Tarifvertrag")}
           </span>
@@ -1154,7 +1251,7 @@ export default function JobDetailClient({
           className="w-full min-h-[48px] py-3 px-3 rounded-xl bg-slate-950 hover:bg-slate-800 active:scale-[0.98] border border-slate-800 text-slate-300 hover:text-white transition-all text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer shadow-sm"
         >
           <span>🔗</span>
-          <span>{copiedLink ? dict.jobs.details.linkCopied : dict.jobs.details.shareJob}</span>
+          <span>{copiedLink ? (dict?.jobs?.details?.linkCopied || "✓ Kopiert!") : (dict?.jobs?.details?.shareJob || "Job teilen")}</span>
         </button>
       </div>
     </div>
@@ -1234,7 +1331,7 @@ export default function JobDetailClient({
                 </span>
                 <span className="text-slate-400 flex items-center gap-1.5 break-words">
                   <span>📍</span>
-                  <span>{job.city || dict.jobs.details.germany}</span>
+                  <span>{job.city || dict?.jobs?.details?.germany || "Deutschland"}</span>
                   {isAr && job.city && GERMAN_CITIES_MAP[job.city] && (
                     <span dir="ltr" className="text-xs text-slate-500 font-mono">
                       ({GERMAN_CITIES_MAP[job.city]})
@@ -1257,7 +1354,7 @@ export default function JobDetailClient({
 
               <span className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-200 text-xs font-medium flex items-center gap-1.5">
                 <span>💼</span>
-                <span>{job.jobType || dict.jobs.details.fullTime}</span>
+                <span>{job.jobType || dict?.jobs?.details?.fullTime || "Vollzeit"}</span>
               </span>
 
               <span className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center gap-1.5">
@@ -1342,10 +1439,10 @@ export default function JobDetailClient({
                     >
                       <span>
                         {isAr
-                          ? `بوابة التقديم المباشرة للشركة (${portalInfo.name}) ↗`
+                          ? `بوابة التقديم المباشرة للشركة (${portalInfo?.name || "Offizielles Portal"}) ↗`
                           : isDe
-                          ? `Offizielles Unternehmensportal (${portalInfo.name}) ↗`
-                          : `Direct Employer Portal (${portalInfo.name}) ↗`}
+                          ? `Offizielles Unternehmensportal (${portalInfo?.name || "Offizielles Portal"}) ↗`
+                          : `Direct Employer Portal (${portalInfo?.name || "Official Portal"}) ↗`}
                       </span>
                     </a>
                   ) : (
@@ -1450,7 +1547,7 @@ export default function JobDetailClient({
                 </div>
               ) : (
                 <p className="text-xs text-slate-400">
-                  {dict.jobs.details.noDescription}
+                  {dict?.jobs?.details?.noDescription || (isAr ? "لا يوجد وصف إضافي متوفر للشاغر حالياً." : "Keine Beschreibung verfügbar.")}
                 </p>
               )}
 
@@ -1739,7 +1836,7 @@ export default function JobDetailClient({
               <div className="flex items-center gap-2.5 flex-wrap">
                 <span className="text-2xl">📝</span>
                 <h3 className="text-base sm:text-lg font-bold text-white">
-                  {dict.jobs.details.templateModalTitle}
+                  {dict?.jobs?.details?.templateModalTitle || (isAr ? "نموذج رسالة التقديم بالألمانية" : "Muster-Bewerbungsschreiben")}
                 </h3>
                 <GermanTtsButton
                   text={emailBody}
@@ -1759,7 +1856,7 @@ export default function JobDetailClient({
 
             <div className="space-y-2">
               <label className="block text-xs font-bold text-slate-400">
-                {dict.jobs.details.subject}
+                {dict?.jobs?.details?.subject || (isAr ? "موضوع الرسالة" : "Betreff")}
               </label>
               <input
                 type="text"
@@ -1772,7 +1869,7 @@ export default function JobDetailClient({
 
             <div className="space-y-2">
               <label className="block text-xs font-bold text-slate-400">
-                {dict.jobs.details.bodyText}
+                {dict?.jobs?.details?.bodyText || (isAr ? "نص الرسالة" : "Nachrichtentext")}
               </label>
               <textarea
                 readOnly
@@ -1794,7 +1891,7 @@ export default function JobDetailClient({
                 className="flex-1 min-h-[48px] py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-white text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <span>📋</span>
-                <span>{copiedEmail ? dict.jobs.details.copiedSuccess : dict.jobs.details.copyTemplate}</span>
+                <span>{copiedEmail ? (dict?.jobs?.details?.copiedSuccess || "✓ Kopiert!") : (dict?.jobs?.details?.copyTemplate || "Vorlage kopieren")}</span>
               </button>
 
               <button
@@ -1806,7 +1903,7 @@ export default function JobDetailClient({
                 className="flex-1 min-h-[48px] py-3 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white text-xs sm:text-sm font-extrabold text-center shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-1 cursor-pointer"
               >
                 <span>✉️</span>
-                <span>{dict.jobs.details.openGmail}</span>
+                <span>{dict?.jobs?.details?.openGmail || "In Gmail öffnen"}</span>
               </button>
             </div>
           </div>
