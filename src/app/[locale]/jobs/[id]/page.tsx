@@ -11,6 +11,22 @@ import { stripHtml } from "@/lib/cover-letter";
 
 export const revalidate = 60;
 
+/**
+ * Safely converts any Date, string, or number to an ISO-8601 string,
+ * returning null if the input is missing, invalid, or produces NaN.
+ */
+function toSafeIsoString(val: unknown): string | null {
+  if (!val) return null;
+  if (val instanceof Date) {
+    return isNaN(val.getTime()) ? null : val.toISOString();
+  }
+  if (typeof val === "string" || typeof val === "number") {
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? null : d.toISOString();
+  }
+  return null;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -61,7 +77,10 @@ export async function generateMetadata({
           ? `تفاصيل وظيفة ${job.title || "شاغر وظيفي"} في شركة ${job.company || "ألمانيا"}. قدم الآن مع إمكانية توليد خطاب الدافع Anschreiben وفحص التوافق ATS.`
           : `Stellenangebot für ${job.title || "Stelle"} bei ${job.company || "Deutschland"}. Jetzt mit KI-Anschreiben bewerben.`),
     };
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.digest?.startsWith?.("NEXT_")) {
+      throw err;
+    }
     console.error("[JobDetailPage] Error in generateMetadata:", err);
     return {
       title: "Job Details | GermanJobsPro 🇩🇪",
@@ -87,16 +106,47 @@ export default async function JobDetailPage({
         where: { id },
       });
     }
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.digest?.startsWith?.("NEXT_")) {
+      throw error;
+    }
     console.error("[JobDetailPage] Error fetching job:", error);
   }
 
+  // CRITICAL NEXT.JS RULE: notFound() must NEVER be trapped inside a try/catch
   if (!job) {
     notFound();
   }
 
-  const authResult = await getUserSession();
-  const user = authResult ? authResult.user : null;
+  // Safe user session extraction with plain-object serialization
+  let safeUser: {
+    id: string;
+    email: string;
+    name: string | null;
+    plan: string;
+    aiCredits: number;
+    planExpiresAt?: string | null;
+  } | null = null;
+
+  try {
+    const authResult = await getUserSession();
+    if (authResult?.user) {
+      safeUser = {
+        id: String(authResult.user.id),
+        email: String(authResult.user.email),
+        name: authResult.user.name ? String(authResult.user.name) : null,
+        plan: String(authResult.user.plan || "FREE"),
+        aiCredits: typeof authResult.user.aiCredits === "number" ? authResult.user.aiCredits : 0,
+        planExpiresAt: toSafeIsoString(authResult.user.planExpiresAt),
+      };
+    }
+  } catch (err: any) {
+    if (err?.digest?.startsWith?.("NEXT_")) {
+      throw err;
+    }
+    console.error("[JobDetailPage] Error resolving user session:", err);
+    safeUser = null;
+  }
 
   // Query up to 3 similar active jobs in the same category, falling back to latest active jobs
   let similarJobs: Array<{
@@ -152,75 +202,84 @@ export default async function JobDetailPage({
         similarJobs = [...similarJobs, ...fallbackJobs];
       }
     }
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.digest?.startsWith?.("NEXT_")) {
+      throw err;
+    }
     console.error("[JobDetailPage] Error fetching similar jobs:", err);
+    similarJobs = [];
   }
+
+  // Strictly serialize similar jobs
+  const safeSimilarJobs = (similarJobs || []).map((j) => ({
+    id: String(j.id),
+    title: String(j.title || "Job Offer"),
+    company: String(j.company || "Employer"),
+    city: j.city ? String(j.city) : null,
+    category: String(j.category || "General"),
+    languageReq: j.languageReq ? String(j.languageReq) : null,
+    salary: j.salary ? String(j.salary) : null,
+  }));
 
   const cleanEmail = extractCleanHrEmail(job);
 
+  // Strict Plain-Object Serialization: Convert all Dates to ISO strings or null
+  const safePublishedAt = toSafeIsoString(job.publishedAt) || new Date().toISOString();
+  const safeExpiresAt = toSafeIsoString(job.expiresAt);
+  const safeCreatedAt = toSafeIsoString(job.createdAt);
+  const safeUpdatedAt = toSafeIsoString(job.updatedAt);
+
   const jobData: JobDetailData = {
-    id: job.id,
-    title: job.title || "Job Offer",
-    company: job.company || "Employer",
-    city: job.city,
-    category: job.category || "General",
-    jobType: job.jobType,
-    languageReq: job.languageReq,
-    salary: job.salary,
-    applyUrl: job.applyUrl || "",
-    contactEmail: cleanEmail,
-    requirements: job.requirements,
-    descriptionRaw: job.descriptionRaw,
-    publishedAt:
-      job.publishedAt instanceof Date
-        ? (!isNaN(job.publishedAt.getTime()) ? job.publishedAt.toISOString() : new Date().toISOString())
-        : job.publishedAt
-        ? String(job.publishedAt)
-        : new Date().toISOString(),
-    isVerified: job.isVerified ?? true,
+    id: String(job.id),
+    title: String(job.title || "Job Offer"),
+    company: String(job.company || "Employer"),
+    city: job.city ? String(job.city) : null,
+    category: String(job.category || "General"),
+    jobType: job.jobType ? String(job.jobType) : null,
+    languageReq: job.languageReq ? String(job.languageReq) : null,
+    salary: job.salary ? String(job.salary) : null,
+    applyUrl: String(job.applyUrl || ""),
+    contactEmail: cleanEmail ? String(cleanEmail) : null,
+    requirements: job.requirements ? String(job.requirements) : null,
+    descriptionRaw: job.descriptionRaw ? String(job.descriptionRaw) : null,
+    publishedAt: safePublishedAt,
+    expiresAt: safeExpiresAt,
+    createdAt: safeCreatedAt,
+    updatedAt: safeUpdatedAt,
+    isVerified: Boolean(job.isVerified ?? true),
   };
 
-  const fallbackDate = new Date().toISOString();
-  let publishedTime = NaN;
-  if (job?.publishedAt) {
-    publishedTime = new Date(job.publishedAt).getTime();
-  }
-  const isPublishedValid = !isNaN(publishedTime);
-
-  let expiresTime = NaN;
-  if (job?.expiresAt) {
-    expiresTime = new Date(job.expiresAt).getTime();
-  }
-  const isExpiresValid = !isNaN(expiresTime);
-
-  const datePosted = isPublishedValid ? new Date(publishedTime).toISOString() : fallbackDate;
-  const validThrough = isExpiresValid
-    ? new Date(expiresTime).toISOString()
-    : isPublishedValid
-    ? new Date(publishedTime + 30 * 24 * 60 * 60 * 1000).toISOString()
-    : fallbackDate;
+  const datePosted = safePublishedAt;
+  const validThrough =
+    safeExpiresAt ||
+    (() => {
+      const pTime = new Date(safePublishedAt).getTime();
+      return !isNaN(pTime)
+        ? new Date(pTime + 30 * 24 * 60 * 60 * 1000).toISOString()
+        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    })();
 
   const jobPostingLd = {
     "@context": "https://schema.org",
     "@type": "JobPosting",
-    title: job.title || "Job Offer",
-    description: stripHtml(job.descriptionRaw || job.requirements || job.title || "Job Offer in Germany"),
+    title: jobData.title,
+    description: stripHtml(jobData.descriptionRaw || jobData.requirements || jobData.title || "Job Offer in Germany"),
     datePosted,
     validThrough,
-    employmentType: /ausbildung|تدريب/i.test(job.category || "") ? "INTERN" : "FULL_TIME",
+    employmentType: /ausbildung|تدريب/i.test(jobData.category || "") ? "INTERN" : "FULL_TIME",
     hiringOrganization: {
       "@type": "Organization",
-      name: job.company || "Employer",
+      name: jobData.company,
     },
     jobLocation: {
       "@type": "Place",
       address: {
         "@type": "PostalAddress",
-        addressLocality: job.city || "Deutschland",
+        addressLocality: jobData.city || "Deutschland",
         addressCountry: "DE",
       },
     },
-    directApply: Boolean(cleanEmail || job.applyUrl),
+    directApply: Boolean(cleanEmail || jobData.applyUrl),
   };
 
   return (
@@ -230,10 +289,12 @@ export default async function JobDetailPage({
     >
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jobPostingLd).replace(/</g, "\\u003c"),
+        }}
       />
 
-      <Navbar locale={locale} initialUser={user} />
+      <Navbar locale={locale} initialUser={safeUser} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 w-full flex-1 space-y-8">
         {/* Breadcrumb Navigation */}
@@ -247,7 +308,7 @@ export default async function JobDetailPage({
           </Link>
           <span>/</span>
           <span className="text-slate-200 truncate max-w-xs font-semibold" dir="auto">
-            {job.title || (isAr ? "تفاصيل الوظيفة" : "Job Offer")}
+            {jobData.title}
           </span>
         </div>
 
@@ -255,11 +316,11 @@ export default async function JobDetailPage({
         <JobDetailClient
           job={jobData}
           locale={locale}
-          initialUser={user}
+          initialUser={safeUser}
         />
 
         {/* Similar Jobs in the Same Field */}
-        {similarJobs.length > 0 && (
+        {safeSimilarJobs.length > 0 && (
           <section className="space-y-4 pt-6 border-t border-slate-800/80">
             <div className="flex items-center justify-between">
               <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
@@ -282,7 +343,7 @@ export default async function JobDetailPage({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {similarJobs.map((relJob) => (
+              {safeSimilarJobs.map((relJob) => (
                 <Link
                   key={relJob.id}
                   href={`/${locale}/jobs/${relJob.id}`}

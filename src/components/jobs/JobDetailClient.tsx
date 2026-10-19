@@ -20,6 +20,9 @@ export interface JobDetailData {
   requirements: string | null;
   descriptionRaw: string | null;
   publishedAt: string | Date;
+  expiresAt?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
   isVerified?: boolean;
 }
 
@@ -31,6 +34,8 @@ interface JobDetailClientProps {
     email: string;
     name: string | null;
     plan: string;
+    aiCredits?: number;
+    planExpiresAt?: string | null;
   } | null;
 }
 
@@ -609,7 +614,14 @@ export default function JobDetailClient({
     contactEmail: initialJob?.contactEmail || null,
     requirements: initialJob?.requirements || null,
     descriptionRaw: initialJob?.descriptionRaw || "",
-    publishedAt: initialJob?.publishedAt || new Date().toISOString(),
+    publishedAt: initialJob?.publishedAt
+      ? typeof initialJob.publishedAt === "string"
+        ? initialJob.publishedAt
+        : (initialJob.publishedAt as Date).toISOString?.() || new Date().toISOString()
+      : new Date().toISOString(),
+    expiresAt: initialJob?.expiresAt || null,
+    createdAt: initialJob?.createdAt || null,
+    updatedAt: initialJob?.updatedAt || null,
     isVerified: initialJob?.isVerified ?? true,
   };
 
@@ -1340,7 +1352,7 @@ export default function JobDetailClient({
                 </span>
                 <span className="text-slate-400 flex items-center gap-1.5 text-xs">
                   <span>📅</span>
-                  <span>{formattedDate}</span>
+                  <span suppressHydrationWarning>{formattedDate}</span>
                 </span>
               </div>
             </div>
