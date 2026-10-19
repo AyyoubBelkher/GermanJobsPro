@@ -6,7 +6,8 @@ import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
 import { prisma } from "@/lib/prisma";
 import { getUserSession } from "@/lib/user-session";
-import JobDetailClient, { JobDetailData, extractCleanHrEmail } from "@/components/jobs/JobDetailClient";
+import JobDetailClient from "@/components/jobs/JobDetailClient";
+import { JobDetailData, extractCleanHrEmail } from "@/lib/jobUtils";
 import { stripHtml } from "@/lib/cover-letter";
 
 export const revalidate = 60;
@@ -245,7 +246,13 @@ export default async function JobDetailPage({
     salary: j.salary ? String(j.salary) : null,
   }));
 
-  const cleanEmail = extractCleanHrEmail(job);
+  let cleanEmail: string | null = null;
+  try {
+    cleanEmail = extractCleanHrEmail(job);
+  } catch (emailErr: any) {
+    console.error(`[JobDetailPage][${correlationId}] Error extracting HR email for job "${job?.id}":`, emailErr);
+    cleanEmail = null;
+  }
 
   // Strict Plain-Object Serialization: Convert all Dates to ISO strings or null
   const safePublishedAt = toSafeIsoString(job.publishedAt) || new Date().toISOString();
