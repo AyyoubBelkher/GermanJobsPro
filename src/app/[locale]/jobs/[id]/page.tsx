@@ -14,20 +14,14 @@ export const revalidate = 60;
 /**
  * Request-scoped cached job fetcher shared between generateMetadata and JobDetailPage.
  * Prevents duplicate concurrent Prisma queries / Neon connection pool exhaustion on the same request.
+ * Note: Database connection/query errors are intentionally allowed to throw so they can be
+ * caught by error boundaries rather than silently converting a DB outage into a 404 "not found".
  */
 const getJobById = cache(async (id: string) => {
   if (!id || typeof id !== "string") return null;
-  try {
-    return await prisma.job.findUnique({
-      where: { id },
-    });
-  } catch (error: any) {
-    if (error?.digest?.startsWith?.("NEXT_")) {
-      throw error;
-    }
-    console.error("[getJobById] Error fetching job:", error);
-    return null;
-  }
+  return await prisma.job.findUnique({
+    where: { id },
+  });
 });
 
 /**
@@ -66,7 +60,20 @@ export async function generateMetadata({
       };
     }
 
-    const job = await getJobById(id);
+    let job = null;
+    try {
+      job = await getJobById(id);
+    } catch (dbErr: any) {
+      if (dbErr?.digest?.startsWith?.("NEXT_")) throw dbErr;
+      console.error(`[generateMetadata] Database query error for job "${id}":`, dbErr?.message || dbErr);
+      return {
+        title: isAr
+          ? "فرص العمل في ألمانيا | GermanJobsPro 🇩🇪"
+          : isDe
+          ? "Stellenangebote in Deutschland | GermanJobsPro 🇩🇪"
+          : "Jobs in Germany | GermanJobsPro 🇩🇪",
+      };
+    }
 
     if (!job) {
       return {
@@ -111,6 +118,9 @@ export default async function JobDetailPage({
   const isDe = locale === "de";
   const dir = isAr ? "rtl" : "ltr";
 
+  // Request correlation ID for safe, non-sensitive diagnostic logging
+  const correlationId = `job_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+
   // Fetch job details (cached per request across generateMetadata and page)
   let job = null;
   try {
@@ -121,11 +131,13 @@ export default async function JobDetailPage({
     if (error?.digest?.startsWith?.("NEXT_")) {
       throw error;
     }
-    console.error("[JobDetailPage] Error fetching job:", error);
-    job = null;
+    // CRITICAL: Do NOT silently convert database outage into "not found"!
+    // Re-throw so error.tsx displays the retryable recovery UI rather than an inaccurate 404.
+    console.error(`[JobDetailPage][${correlationId}] Database query error for job "${id}":`, error?.message || error);
+    throw error;
   }
 
-  // CRITICAL NEXT.JS RULE: notFound() must NEVER be trapped inside a try/catch
+  // Intentional 404: The query succeeded, but no job with this ID exists in the database
   if (!job) {
     notFound();
   }
