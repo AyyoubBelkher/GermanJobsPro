@@ -587,6 +587,38 @@ function formatJobDate(dateInput?: string | Date | null, isAr = false, isDe = fa
   }
 }
 
+function toSafeIsoString(val: unknown): string {
+  if (!val) return new Date().toISOString();
+  try {
+    if (val instanceof Date) {
+      return isNaN(val.getTime()) ? new Date().toISOString() : val.toISOString();
+    }
+    if (typeof val === "string" || typeof val === "number") {
+      const d = new Date(val);
+      return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+    }
+  } catch {
+    return new Date().toISOString();
+  }
+  return new Date().toISOString();
+}
+
+function toSafeOptionalIsoString(val: unknown): string | null {
+  if (!val) return null;
+  try {
+    if (val instanceof Date) {
+      return isNaN(val.getTime()) ? null : val.toISOString();
+    }
+    if (typeof val === "string" || typeof val === "number") {
+      const d = new Date(val);
+      return isNaN(d.getTime()) ? null : d.toISOString();
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 export default function JobDetailClient({
   job: initialJob,
   locale = "ar",
@@ -614,14 +646,10 @@ export default function JobDetailClient({
     contactEmail: initialJob?.contactEmail || null,
     requirements: initialJob?.requirements || null,
     descriptionRaw: initialJob?.descriptionRaw || "",
-    publishedAt: initialJob?.publishedAt
-      ? typeof initialJob.publishedAt === "string"
-        ? initialJob.publishedAt
-        : (initialJob.publishedAt as Date).toISOString?.() || new Date().toISOString()
-      : new Date().toISOString(),
-    expiresAt: initialJob?.expiresAt || null,
-    createdAt: initialJob?.createdAt || null,
-    updatedAt: initialJob?.updatedAt || null,
+    publishedAt: toSafeIsoString(initialJob?.publishedAt),
+    expiresAt: toSafeOptionalIsoString(initialJob?.expiresAt),
+    createdAt: toSafeOptionalIsoString(initialJob?.createdAt),
+    updatedAt: toSafeOptionalIsoString(initialJob?.updatedAt),
     isVerified: initialJob?.isVerified ?? true,
   };
 
@@ -1329,7 +1357,7 @@ export default function JobDetailClient({
                   <bdi>{job.title}</bdi>
                 </h1>
                 <GermanTtsButton
-                  text={germanTitle}
+                  text={germanTitle || "Stelle in Deutschland"}
                   size="sm"
                   variant="blue"
                   label={isAr ? "نطق المسمى بالألمانية" : isDe ? "Aussprache" : "Pronounce"}
@@ -1851,7 +1879,7 @@ export default function JobDetailClient({
                   {dict?.jobs?.details?.templateModalTitle || (isAr ? "نموذج رسالة التقديم بالألمانية" : "Muster-Bewerbungsschreiben")}
                 </h3>
                 <GermanTtsButton
-                  text={emailBody}
+                  text={emailBody || ""}
                   size="sm"
                   variant="emerald"
                   label={isAr ? "استمع لنص الرسالة" : isDe ? "Vorlesen" : "Listen"}

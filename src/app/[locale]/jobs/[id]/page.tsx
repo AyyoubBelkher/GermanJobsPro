@@ -1,4 +1,4 @@
-import React from "react";
+import React, { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
@@ -12,17 +12,40 @@ import { stripHtml } from "@/lib/cover-letter";
 export const revalidate = 60;
 
 /**
+ * Request-scoped cached job fetcher shared between generateMetadata and JobDetailPage.
+ * Prevents duplicate concurrent Prisma queries / Neon connection pool exhaustion on the same request.
+ */
+const getJobById = cache(async (id: string) => {
+  if (!id || typeof id !== "string") return null;
+  try {
+    return await prisma.job.findUnique({
+      where: { id },
+    });
+  } catch (error: any) {
+    if (error?.digest?.startsWith?.("NEXT_")) {
+      throw error;
+    }
+    console.error("[getJobById] Error fetching job:", error);
+    return null;
+  }
+});
+
+/**
  * Safely converts any Date, string, or number to an ISO-8601 string,
  * returning null if the input is missing, invalid, or produces NaN.
  */
 function toSafeIsoString(val: unknown): string | null {
   if (!val) return null;
-  if (val instanceof Date) {
-    return isNaN(val.getTime()) ? null : val.toISOString();
-  }
-  if (typeof val === "string" || typeof val === "number") {
-    const d = new Date(val);
-    return isNaN(d.getTime()) ? null : d.toISOString();
+  try {
+    if (val instanceof Date) {
+      return isNaN(val.getTime()) ? null : val.toISOString();
+    }
+    if (typeof val === "string" || typeof val === "number") {
+      const d = new Date(val);
+      return isNaN(d.getTime()) ? null : d.toISOString();
+    }
+  } catch {
+    return null;
   }
   return null;
 }
@@ -43,17 +66,7 @@ export async function generateMetadata({
       };
     }
 
-    const job = await prisma.job.findUnique({
-      where: { id },
-      select: {
-        title: true,
-        company: true,
-        city: true,
-        category: true,
-        descriptionRaw: true,
-        requirements: true,
-      },
-    });
+    const job = await getJobById(id);
 
     if (!job) {
       return {
@@ -98,19 +111,18 @@ export default async function JobDetailPage({
   const isDe = locale === "de";
   const dir = isAr ? "rtl" : "ltr";
 
-  // Fetch job details
+  // Fetch job details (cached per request across generateMetadata and page)
   let job = null;
   try {
     if (id) {
-      job = await prisma.job.findUnique({
-        where: { id },
-      });
+      job = await getJobById(id);
     }
   } catch (error: any) {
     if (error?.digest?.startsWith?.("NEXT_")) {
       throw error;
     }
     console.error("[JobDetailPage] Error fetching job:", error);
+    job = null;
   }
 
   // CRITICAL NEXT.JS RULE: notFound() must NEVER be trapped inside a try/catch
@@ -253,10 +265,16 @@ export default async function JobDetailPage({
   const validThrough =
     safeExpiresAt ||
     (() => {
-      const pTime = new Date(safePublishedAt).getTime();
-      return !isNaN(pTime)
-        ? new Date(pTime + 30 * 24 * 60 * 60 * 1000).toISOString()
-        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      try {
+        const pTime = new Date(safePublishedAt).getTime();
+        if (!isNaN(pTime)) {
+          const expDate = new Date(pTime + 30 * 24 * 60 * 60 * 1000);
+          if (!isNaN(expDate.getTime())) {
+            return expDate.toISOString();
+          }
+        }
+      } catch {}
+      return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     })();
 
   const jobPostingLd = {

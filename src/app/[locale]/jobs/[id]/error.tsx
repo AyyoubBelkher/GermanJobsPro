@@ -91,8 +91,18 @@ export default function JobDetailError({ error, reset }: JobErrorProps) {
 
         {/* Digest Info */}
         {error?.digest && (
-          <div className="text-[10px] text-slate-600 font-mono select-all">
+          <div className="text-[10px] text-slate-500 font-mono select-all">
             ID: {error.digest}
+          </div>
+        )}
+
+        {/* Diagnostic Message */}
+        {error?.message && (
+          <div
+            className="text-[11px] text-rose-400/90 font-mono bg-rose-950/40 border border-rose-900/50 rounded-xl p-3 max-h-32 overflow-y-auto break-all select-all text-start"
+            dir="ltr"
+          >
+            {error.message}
           </div>
         )}
 
