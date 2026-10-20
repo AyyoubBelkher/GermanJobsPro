@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAutomationSecret } from "@/lib/admin-auth";
+import { isValidHrEmail } from "@/lib/jobUtils";
 
 export const dynamic = "force-dynamic";
 
@@ -42,13 +43,14 @@ const ATS_DOMAIN_PATTERNS = [
 /**
  * Scans employer text/HTML for genuine HR application emails and direct ATS form URLs.
  * Strict zero-fabrication: if no real email exists in the text, returns contactEmail: null.
+ * NEVER invents, guesses, or extrapolates contactEmail from company name or website domain!
  */
 function extractVerifiedEmailAndForm(rawHtmlOrText: string): ExtractedVerifiedInfo {
   if (!rawHtmlOrText || typeof rawHtmlOrText !== "string") {
     return { contactEmail: null, directAtsUrl: null };
   }
 
-  // 1. Scan exclusively for genuine HR / employer application emails
+  // 1. Scan exclusively for genuine HR / employer application emails literally present in text
   let contactEmail: string | null = null;
   const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi;
   const emailMatches = rawHtmlOrText.match(emailRegex) || [];
@@ -56,7 +58,7 @@ function extractVerifiedEmailAndForm(rawHtmlOrText: string): ExtractedVerifiedIn
   for (const rawEmail of emailMatches) {
     const lowerEmail = rawEmail.toLowerCase().trim();
     const isIgnored = IGNORED_EMAIL_PATTERNS.some((pat) => lowerEmail.includes(pat));
-    if (!isIgnored) {
+    if (!isIgnored && isValidHrEmail(lowerEmail)) {
       contactEmail = lowerEmail;
       break;
     }

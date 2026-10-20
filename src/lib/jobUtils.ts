@@ -26,6 +26,137 @@ export interface JobDetailData {
   isVerified?: boolean;
 }
 
+export const GENERIC_HR_PREFIXES = [
+  "jobs@",
+  "hr@",
+  "karriere@",
+  "info@",
+  "contact@",
+  "recruiting@",
+  "bewerbung@",
+  "personal@",
+  "careers@",
+  "bewerbungen@",
+  "kontakt@",
+];
+
+/**
+ * Splits a bilingual job title (Arabic + German/English in parentheses)
+ * so that the Arabic title and Latin subtitle can be rendered with independent text directions,
+ * preventing bidirectional parenthesis flipping (e.g. "(m/w/d)" jumping or breaking).
+ */
+export function splitBilingualTitle(rawTitle?: string | null): {
+  primaryTitle: string;
+  latinSubtitle: string | null;
+} {
+  if (!rawTitle || typeof rawTitle !== "string") {
+    return { primaryTitle: "", latinSubtitle: null };
+  }
+  const trimmed = rawTitle.trim();
+  if (!trimmed) {
+    return { primaryTitle: "", latinSubtitle: null };
+  }
+
+  // If no Arabic characters exist, it's already purely Latin/German/English
+  const hasArabic = /[\u0600-\u06FF]/.test(trimmed);
+  if (!hasArabic) {
+    return { primaryTitle: trimmed, latinSubtitle: null };
+  }
+
+  // Scan top-level parenthesized blocks
+  const blocks: Array<{ start: number; end: number; content: string; isLatin: boolean }> = [];
+  let depth = 0;
+  let startIdx = -1;
+
+  for (let i = 0; i < trimmed.length; i++) {
+    const ch = trimmed[i];
+    if (ch === "(") {
+      if (depth === 0) startIdx = i;
+      depth++;
+    } else if (ch === ")") {
+      if (depth > 0) {
+        depth--;
+        if (depth === 0) {
+          const content = trimmed.slice(startIdx + 1, i).trim();
+          const latinCount = (content.match(/[a-zA-Z]/g) || []).length;
+          const arabicCount = (content.match(/[\u0600-\u06FF]/g) || []).length;
+          const isGenderPill = /^(m\/w\/d|w\/m\/d|f\/m\/d|all genders|gn)$/i.test(content);
+          const isLatin = (latinCount >= 2 && latinCount > arabicCount) || isGenderPill;
+          blocks.push({
+            start: startIdx,
+            end: i + 1,
+            content,
+            isLatin,
+          });
+        }
+      }
+    }
+  }
+
+  const latinBlocks = blocks.filter((b) => b.isLatin);
+  if (latinBlocks.length === 0) {
+    return { primaryTitle: trimmed, latinSubtitle: null };
+  }
+
+  const firstBlock = latinBlocks[0];
+  const lastBlock = latinBlocks[latinBlocks.length - 1];
+  const between = trimmed.slice(firstBlock.end, lastBlock.start).trim();
+
+  let mergedSubtitle = "";
+  let startCut = firstBlock.start;
+  let endCut = lastBlock.end;
+
+  if (latinBlocks.length > 1 && (!between || /^[/\-,\s]+$/.test(between))) {
+    mergedSubtitle = latinBlocks
+      .map((b) => {
+        return /^(m\/w\/d|w\/m\/d|f\/m\/d|all genders|gn)$/i.test(b.content)
+          ? `(${b.content})`
+          : b.content;
+      })
+      .join(" ");
+  } else {
+    const mainBlock = latinBlocks.reduce((prev, curr) =>
+      (curr.content.match(/[a-zA-Z]/g) || []).length >
+      (prev.content.match(/[a-zA-Z]/g) || []).length
+        ? curr
+        : prev
+    );
+    const mainIdx = blocks.indexOf(mainBlock);
+    if (mainIdx !== -1 && mainIdx + 1 < blocks.length && blocks[mainIdx + 1].isLatin) {
+      const nextB = blocks[mainIdx + 1];
+      const gap = trimmed.slice(mainBlock.end, nextB.start).trim();
+      if (!gap) {
+        startCut = mainBlock.start;
+        endCut = nextB.end;
+        mergedSubtitle = `${mainBlock.content} (${nextB.content})`;
+      } else {
+        startCut = mainBlock.start;
+        endCut = mainBlock.end;
+        mergedSubtitle = mainBlock.content;
+      }
+    } else {
+      startCut = mainBlock.start;
+      endCut = mainBlock.end;
+      mergedSubtitle = mainBlock.content;
+    }
+  }
+
+  const before = trimmed.slice(0, startCut).trim();
+  const after = trimmed.slice(endCut).trim();
+  const primaryTitle = [before, after]
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s{2,}/g, " ")
+    .replace(/^[:\-\s،,]+|[:\-\s،,]+$/g, "")
+    .trim();
+
+  if (!primaryTitle) {
+    return { primaryTitle: mergedSubtitle, latinSubtitle: null };
+  }
+
+  return { primaryTitle, latinSubtitle: mergedSubtitle };
+}
+
 // Extracts Latin/German title inside parentheses e.g. "مدير تسويق (Marketing Manager)" -> "Marketing Manager"
 export const extractGermanTitle = (rawTitle?: string | null): string => {
   if (!rawTitle || typeof rawTitle !== "string") return "Stelle in Deutschland";
@@ -237,6 +368,14 @@ export function isValidHrEmail(email?: string | null): boolean {
 
 /**
  * Extracts a robust, verified HR email from contactEmail, applyUrl (mailto:), or description/requirements.
+ * 
+ * Strict Zero-Fabrication Rule:
+ * - If applyUrl starts with "http" (e.g. ArbeitNow, Arbeitsagentur, or external ATS portal)
+ *   AND contactEmail is NOT literally present inside descriptionRaw or requirements,
+ *   generic prefixes (jobs@, hr@, karriere@, info@, contact@, recruiting@, bewerbung@, personal@, careers@)
+ *   are treated as unverified/guessed and REJECTED (returns null).
+ * - contactEmail is ONLY trusted if an explicit @ email address literally appears in original raw job description,
+ *   requirements, or applyUrl (mailto:).
  */
 export function extractCleanHrEmail(job?: {
   contactEmail?: string | null;
@@ -246,23 +385,49 @@ export function extractCleanHrEmail(job?: {
 } | null): string | null {
   if (!job) return null;
   try {
-    // 1. Check contactEmail
-    if (job.contactEmail && isValidHrEmail(job.contactEmail)) {
-      return job.contactEmail.trim().toLowerCase();
-    }
+    const rawApplyUrl = typeof job.applyUrl === "string" ? job.applyUrl.trim() : "";
+    const isApplyMailto = rawApplyUrl.toLowerCase().startsWith("mailto:");
+    const isApplyHttp =
+      rawApplyUrl.toLowerCase().startsWith("http://") ||
+      rawApplyUrl.toLowerCase().startsWith("https://");
 
-    // 2. Check applyUrl for mailto:
-    if (job.applyUrl && typeof job.applyUrl === "string" && job.applyUrl.toLowerCase().startsWith("mailto:")) {
-      const rawMailto = job.applyUrl.replace(/^mailto:/i, "").split("?")[0]?.trim();
+    const desc = typeof job.descriptionRaw === "string" ? job.descriptionRaw : "";
+    const reqs = typeof job.requirements === "string" ? job.requirements : "";
+    const textToScan = `${desc} ${reqs}`.trim();
+    const combinedLower = textToScan.toLowerCase();
+
+    // 1. Check applyUrl for mailto:
+    if (isApplyMailto) {
+      const rawMailto = rawApplyUrl.replace(/^mailto:/i, "").split("?")[0]?.trim();
       if (isValidHrEmail(rawMailto)) {
         return rawMailto.toLowerCase();
       }
     }
 
-    // 3. Scan descriptionRaw and requirements for HR application email
-    const desc = typeof job.descriptionRaw === "string" ? job.descriptionRaw : "";
-    const reqs = typeof job.requirements === "string" ? job.requirements : "";
-    const textToScan = `${desc} ${reqs}`.trim();
+    // 2. Check contactEmail if provided
+    if (job.contactEmail && isValidHrEmail(job.contactEmail)) {
+      const emailCandidate = job.contactEmail.trim().toLowerCase();
+      const hasGenericPrefix = GENERIC_HR_PREFIXES.some((prefix) => emailCandidate.startsWith(prefix));
+
+      if (isApplyHttp) {
+        // If applying via external HTTP portal:
+        // Must literally appear in job descriptionRaw or requirements!
+        if (combinedLower.includes(emailCandidate)) {
+          return emailCandidate;
+        }
+        // Generic prefixes not found in text are 100% guessed/fabricated -> discard
+        if (hasGenericPrefix) {
+          // Fall through to text scanning
+        } else {
+          // Even non-generic emails are unverified if not in the source text
+          // Fall through to text scanning
+        }
+      } else {
+        return emailCandidate;
+      }
+    }
+
+    // 3. Scan descriptionRaw and requirements for verified HR email
     if (textToScan) {
       const emailMatches = textToScan.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
       if (emailMatches && emailMatches.length > 0) {
@@ -270,12 +435,12 @@ export function extractCleanHrEmail(job?: {
         for (const candidate of emailMatches) {
           if (isValidHrEmail(candidate)) {
             const lower = candidate.toLowerCase();
-            if (/bewerbung|karriere|jobs|recruiting|personal|hr|kontakt/i.test(lower)) {
+            if (/bewerbung|karriere|jobs|recruiting|personal|hr|kontakt|contact|careers/i.test(lower)) {
               return lower;
             }
           }
         }
-        // Otherwise, take the first valid one if legitimate
+        // Otherwise, take the first valid non-fake email
         for (const candidate of emailMatches) {
           if (isValidHrEmail(candidate)) {
             return candidate.toLowerCase();

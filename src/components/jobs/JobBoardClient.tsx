@@ -5,6 +5,7 @@ import Link from "next/link";
 import { extractGermanJobTitle, stripHtml } from "@/lib/cover-letter";
 import GermanTtsButton from "@/components/blog/GermanTtsButton";
 import { getDictionary, isValidLocale, DEFAULT_LOCALE, LOCALE_METADATA, type Locale } from "@/lib/i18n";
+import { splitBilingualTitle, extractCleanHrEmail } from "@/lib/jobUtils";
 
 export { stripHtml };
 
@@ -340,11 +341,10 @@ export default function JobBoardClient({
         /* CARDS GRID VIEW */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {jobs.map((job) => {
-            const hasDirectEmail = Boolean(
-              job.contactEmail?.trim() ||
-              (job.applyUrl && job.applyUrl.toLowerCase().startsWith("mailto:"))
-            );
-            const spokenGermanTitle = extractGermanJobTitle(job.title) || job.title;
+            const cleanEmail = extractCleanHrEmail(job);
+            const hasDirectEmail = Boolean(cleanEmail);
+            const { primaryTitle, latinSubtitle } = splitBilingualTitle(job.title);
+            const spokenGermanTitle = latinSubtitle || extractGermanJobTitle(job.title) || job.title;
 
             return (
               <div
@@ -357,9 +357,27 @@ export default function JobBoardClient({
                       <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
                         {job.category}
                       </span>
-                      {hasDirectEmail && (
+                      {hasDirectEmail ? (
                         <span className="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-1">
-                          {isAr ? "✉️ بريد مباشر" : isDe ? "✉️ Direktkontakt" : "✉️ Direct Email"}
+                          <span>✉️</span>
+                          <span>
+                            {isAr
+                              ? "تقديم مباشر عبر البريد الإلكتروني"
+                              : isDe
+                              ? "Direkte E-Mail-Bewerbung"
+                              : "Direct Email Application"}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-300 text-xs font-medium flex items-center gap-1">
+                          <span>🌐</span>
+                          <span>
+                            {isAr
+                              ? "تقديم مباشر عبر الموقع الرسمي للشركة"
+                              : isDe
+                              ? "Offizielles Unternehmensportal"
+                              : "Official Company Portal"}
+                          </span>
                         </span>
                       )}
                     </div>
@@ -370,7 +388,15 @@ export default function JobBoardClient({
                     <div className="flex items-start justify-between gap-2">
                       <h3 dir="auto" className="font-extrabold text-white text-base leading-snug hover:text-blue-400 transition-colors text-start flex-1">
                         <Link href={`/${activeLocale}/jobs/${job.id}`} className="block text-start" dir="auto">
-                          {job.title}
+                          <span>{primaryTitle}</span>
+                          {latinSubtitle && (
+                            <span
+                              dir="ltr"
+                              className="block mt-1.5 font-medium text-xs text-slate-400 dir-ltr text-left [direction:ltr] [unicode-bidi:isolate]"
+                            >
+                              {latinSubtitle}
+                            </span>
+                          )}
                         </Link>
                       </h3>
                       <GermanTtsButton
@@ -379,7 +405,7 @@ export default function JobBoardClient({
                         variant="blue"
                       />
                     </div>
-                    <p dir="auto" className="text-xs text-slate-400 mt-1 text-start">🏢 {job.company}</p>
+                    <p dir="auto" className="text-xs text-slate-400 mt-1.5 text-start">🏢 {job.company}</p>
                   </div>
 
                 <div className="flex items-center gap-2 flex-wrap text-xs">

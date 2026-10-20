@@ -152,6 +152,8 @@ export async function handleJobIngestion(request: NextRequest): Promise<NextResp
       salary: salary !== undefined && salary !== null && String(salary).trim() ? String(salary).trim() : null,
       requirements: requirements !== undefined && requirements !== null && String(requirements).trim() ? String(requirements).trim() : null,
       descriptionRaw: descriptionRaw !== undefined && descriptionRaw !== null && String(descriptionRaw).trim() ? String(descriptionRaw).trim() : null,
+      applyUrl: finalApplyUrl,
+      contactEmail: finalContactEmail,
     });
 
     const newJob = await prisma.job.create({
@@ -159,7 +161,7 @@ export async function handleJobIngestion(request: NextRequest): Promise<NextResp
         title: sanitized.title.trim(),
         company: company.trim(),
         applyUrl: finalApplyUrl,
-        contactEmail: finalContactEmail,
+        contactEmail: sanitized.contactEmail !== undefined ? sanitized.contactEmail : finalContactEmail,
         city: city !== undefined && city !== null && String(city).trim() ? String(city).trim() : "Germany",
         category: sanitized.category ? String(sanitized.category).trim() : "General",
         jobType: jobType !== undefined && jobType !== null && String(jobType).trim() ? String(jobType).trim() : "Full-time",

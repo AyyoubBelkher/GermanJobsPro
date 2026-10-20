@@ -9,6 +9,7 @@ import { getDictionary, isValidLocale, DEFAULT_LOCALE, LOCALE_METADATA, type Loc
 import {
   JobDetailData,
   extractGermanTitle,
+  splitBilingualTitle,
   GERMAN_CITIES_MAP,
   extractGermanCity,
   extractReferenceNumber,
@@ -292,7 +293,8 @@ export default function JobDetailClient({
   const [toast, setToast] = useState<string | null>(null);
 
   // Derived metadata & helpers
-  const germanTitle = extractGermanTitle(job.title);
+  const { primaryTitle, latinSubtitle } = splitBilingualTitle(job.title);
+  const germanTitle = latinSubtitle || extractGermanTitle(job.title);
   const germanCity = extractGermanCity(job.city);
   const cleanCompany =
     (job.company || "").replace(/[\u0600-\u06FF]/g, "").trim() ||
@@ -432,38 +434,22 @@ export default function JobDetailClient({
 
   const getVerificationBadgeText = (): string => {
     try {
-      if (portalInfo?.isAgentur) {
-        return isAr
-          ? "✓ فرصة عمل معتمدة رسمياً • وكالة التوظيف الفيدرالية الألمانية (BA)"
-          : isDe
-          ? "✓ Offiziell verifiziert • Bundesagentur für Arbeit (BA)"
-          : "✓ Officially Verified • German Federal Employment Agency (BA)";
-      }
-      if (portalInfo?.isArbeitNow) {
-        return isAr
-          ? "✓ فرصة عمل معتمدة رسمياً • سجل التوظيف الفيدرالي الألماني (BA/ArbeitNow)"
-          : isDe
-          ? "✓ Offiziell verifiziert • Bundesagentur für Arbeit (BA/ArbeitNow)"
-          : "✓ Officially Verified Job Opening • Federal Partner Feed (BA/ArbeitNow)";
-      }
       if (effectiveEmail) {
         return isAr
-          ? "✓ فرصة عمل مباشرة ومعتمدة • قسم الموارد البشرية لدى جهة العمل الرسمية"
+          ? "✉️ تقديم مباشر عبر البريد الإلكتروني"
           : isDe
-          ? "✓ Offiziell verifiziert • Direkter HR-Kontakt des Arbeitgebers"
-          : "✓ Officially Verified • Direct Employer HR Contact";
+          ? "✉️ Direkte E-Mail-Bewerbung"
+          : "✉️ Direct Email Application";
       }
       return isAr
-        ? "✓ فرصة عمل معتمدة رسمياً • بوابة التوظيف الرسمية لجهة العمل المباشرة"
+        ? "🌐 تقديم مباشر عبر الموقع الرسمي للشركة"
         : isDe
-        ? "✓ Offiziell verifiziert • Direktes Unternehmensportal"
-        : "✓ Officially Verified • Direct Employer Career Portal";
+        ? "🌐 Direkte Bewerbung über das Unternehmensportal"
+        : "🌐 Direct Official Portal Application";
     } catch {
       return isAr
-        ? "✓ فرصة عمل معتمدة رسمياً"
-        : isDe
-        ? "✓ Offiziell verifiziertes Stellenangebot"
-        : "✓ Officially Verified Job Opening";
+        ? "🌐 تقديم مباشر عبر الموقع الرسمي للشركة"
+        : "🌐 Direct Official Portal Application";
     }
   };
 
@@ -494,16 +480,13 @@ export default function JobDetailClient({
           <div className="flex items-center gap-2 flex-wrap">
             {hasEmail ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-xs font-bold text-emerald-400">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                </span>
-                <span>{isAr ? "بريد الموارد البشرية المعتمد والمباشر" : "Direct Verified HR Email"}</span>
+                <span>✉️</span>
+                <span>{isAr ? "تقديم مباشر عبر البريد الإلكتروني" : isDe ? "Direkte E-Mail-Bewerbung" : "Direct Email Application"}</span>
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/25 text-xs font-bold text-blue-400">
-                <span>✓</span>
-                <span>{isAr ? `بوابة التقديم المعتمدة (${portalInfo?.name || "Offizielles Portal"})` : `Official Portal (${portalInfo?.name || "Official Portal"})`}</span>
+                <span>🌐</span>
+                <span>{isAr ? "تقديم مباشر عبر الموقع الرسمي للشركة" : isDe ? "Offizielles Unternehmensportal" : "Official Company Portal"}</span>
               </span>
             )}
           </div>
@@ -511,144 +494,171 @@ export default function JobDetailClient({
           <h3 className="text-lg sm:text-xl font-black text-white">
             {hasEmail
               ? isAr
-                ? "قناة التواصل المباشر مع الموارد البشرية"
+                ? "التقديم المباشر عبر البريد الإلكتروني"
                 : isDe
-                ? "Direkter HR-Bewerbungsweg"
-                : "Direct HR Application Channel"
+                ? "Direkt per E-Mail bewerben"
+                : "Direct Email Application"
               : isAr
-              ? "قناة التقديم الرسمية المعتمدة"
+              ? "التقديم عبر موقع الشركة الرسمي"
               : isDe
-              ? "Offizieller Bewerbungsweg"
-              : "Direct Application Method"}
+              ? "Bewerbung über das offizielle Portal"
+              : "Apply via Official Company Portal"}
           </h3>
 
           <p className="text-xs text-slate-300 leading-relaxed">
             {hasEmail
               ? isAr
-                ? `تم استخراج والتحقق من البريد المباشر لقسم التوظيف لدى ${cleanCompany}. يمكنك إرسال ملف ترشيحك DIN 5008 مباشرة بدون وسيط.`
-                : `Verified direct HR contact for ${cleanCompany}. You can submit your DIN 5008 dossier directly to recruiter inboxes.`
+                ? `يمكنك مراسلة قسم التوظيف لدى ${cleanCompany} مباشرة وإرسال سيرتك الذاتية دون أي وسيط.`
+                : `Direct recruiter contact for ${cleanCompany}. Send your CV directly to their hiring inbox.`
               : isAr
-              ? `يتم إرسال ترشيحك مباشرة عبر البوابة الرسمية المعتمدة لدى ${cleanCompany} دون أي وسطاء أو رسوم.`
-              : `Submit your application directly through ${cleanCompany}'s official recruitment portal.`}
+              ? `يتم التقديم لهذه الفرصة مباشرة عبر بوابة التوظيف الرسمية الخاصة بـ ${cleanCompany} بدون أي رسوم أو وسطاء.`
+              : `Apply directly through ${cleanCompany}'s official careers portal with zero intermediary fees.`}
           </p>
         </div>
 
         {/* State A: Direct HR Email Display & Actions */}
         {hasEmail && effectiveEmail && (
-          <div className="space-y-3.5 pt-1">
-            <div className="p-4 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-2">
+          <div className="space-y-4 pt-1">
+            <div className="p-4 rounded-2xl bg-slate-950/90 border border-emerald-500/20 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-400 font-semibold">
-                  {isAr ? "البريد الإلكتروني للتوظيف:" : "Official Recruiter Email:"}
+                  {isAr ? "البريد الإلكتروني للتوظيف:" : isDe ? "E-Mail für Bewerbungen:" : "Official Recruiter Email:"}
                 </span>
                 <span className="text-emerald-400 font-bold flex items-center gap-1 text-[11px]">
-                  <span>✓</span>
-                  <span>{isAr ? "موثق 100%" : "Verified"}</span>
+                  <span>✉️</span>
+                  <span>{isAr ? "بريد رسمي مباشر" : isDe ? "Direktkontakt" : "Direct Email"}</span>
                 </span>
               </div>
 
-              <div className="flex items-center justify-between gap-2 bg-slate-900/90 p-3 rounded-xl border border-slate-800 font-mono text-xs sm:text-sm text-white" dir="ltr">
-                <span className="break-all font-bold select-all text-emerald-300">
+              <div className="flex items-center justify-between gap-2 bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 font-mono text-xs sm:text-sm text-white" dir="ltr">
+                <span className="break-all font-bold select-all text-emerald-300 dir-ltr text-left [direction:ltr]" dir="ltr">
                   {effectiveEmail}
                 </span>
               </div>
             </div>
 
-            {/* Direct Mailto Action */}
-            <a
-              href={mailtoLink}
-              className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/30 ring-1 ring-emerald-400/40"
-            >
-              <span className="text-base">✉️</span>
-              <span>
-                {isAr
-                  ? "إرسال السيرة عبر الإيميل (DIN 5008)"
-                  : "Send DIN 5008 Application via Email"}
-              </span>
-            </a>
+            {/* 1 Primary (Open in Gmail) + 1 Secondary (Copy Email) right next to it */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => handleSmartMailSend(effectiveEmail)}
+                className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-extrabold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/30 ring-1 ring-emerald-400/40"
+              >
+                <span>✉️</span>
+                <span>
+                  {isAr
+                    ? "فتح في Gmail وإرسال السيرة ✉️"
+                    : isDe
+                    ? "In Gmail öffnen & senden ✉️"
+                    : "Open in Gmail & Send ✉️"}
+                </span>
+              </button>
 
-            {/* 1-Click Copy and Gmail Buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <button
                 type="button"
                 onClick={() => handleCopyEmail(effectiveEmail)}
-                className="w-full min-h-[48px] py-3 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-100 hover:text-white border border-slate-700 font-bold text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                className="w-full min-h-[48px] py-3.5 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-100 hover:text-white border border-slate-700 font-bold text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
               >
                 <span>📋</span>
                 <span>
                   {copiedEmail
                     ? isAr
                       ? "✓ تم نسخ الإيميل!"
-                      : "Copied!"
+                      : "✓ Copied!"
                     : isAr
-                    ? "نسخ الإيميل"
-                    : "Copy Email"}
+                    ? "نسخ الإيميل 📋"
+                    : "Copy Email 📋"}
                 </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSmartMailSend(effectiveEmail)}
-                className="w-full min-h-[48px] py-3 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-100 hover:text-white border border-slate-700 font-bold text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
-              >
-                <span>🚀</span>
-                <span>{isAr ? "فتح في Gmail" : "Open in Gmail"}</span>
               </button>
             </div>
 
-            {/* German Template Modal Trigger */}
-            <button
-              type="button"
-              onClick={() => setShowEmailModal(true)}
-              className="w-full min-h-[44px] py-2.5 px-3 rounded-xl bg-slate-950/70 hover:bg-slate-950 text-slate-300 hover:text-white border border-slate-800 text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            {/* Preparation secondary CTA */}
+            <Link
+              href={coverLetterUrl}
+              className="w-full min-h-[44px] py-2.5 px-3.5 rounded-xl bg-blue-600/15 hover:bg-blue-600/25 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>📝</span>
+              <span>✨</span>
               <span>
-                {isAr ? "عرض وقراءة نص الإيميل بالألمانية (Muster-Vorlage)" : "Show German Email Template"}
+                {isAr
+                  ? "تجهيز خطاب الدافع (Anschreiben) لهذه الوظيفة ✨"
+                  : isDe
+                  ? "Anschreiben für diese Stelle vorbereiten ✨"
+                  : "Prepare Tailored Cover Letter ✨"}
               </span>
-            </button>
+            </Link>
 
-            {/* Secondary Portal Link if ATS URL exists */}
-            {hasPortal && (
-              <div className="pt-2 border-t border-slate-800/80">
+            {/* German Template Toggle & Optional Company Web Page Link */}
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowEmailModal(true)}
+                className="w-full sm:flex-1 min-h-[42px] py-2.5 px-3 rounded-xl bg-slate-950/70 hover:bg-slate-950 text-slate-300 hover:text-white border border-slate-800 text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <span>📝</span>
+                <span>
+                  {isAr
+                    ? "عرض نموذج الإيميل بالألمانية (Muster-Vorlage)"
+                    : isDe
+                    ? "E-Mail-Vorlage anzeigen"
+                    : "Show German Email Template"}
+                </span>
+              </button>
+
+              {hasPortal && (
                 <a
                   href={job.applyUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full min-h-[44px] py-2.5 px-3 rounded-xl bg-slate-800/60 hover:bg-slate-800 active:scale-[0.98] text-slate-300 hover:text-white border border-slate-700/60 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full sm:flex-1 min-h-[42px] py-2.5 px-3 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center"
                 >
                   <span>🌐</span>
                   <span>
                     {isAr
-                      ? `أو التقديم عبر بوابة الشركة الرسمية (${portalInfo?.name || "Offizielles Portal"}) ↗`
-                      : `Or apply via Portal (${portalInfo?.name || "Official Portal"}) ↗`}
+                      ? "زيارة إعلان الوظيفة بموقع الشركة ↗"
+                      : isDe
+                      ? "Unternehmensseite besuchen ↗"
+                      : "View on company site ↗"}
                   </span>
                 </a>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 
         {/* State B: Official Employer Portal (when no direct email) */}
         {!hasEmail && hasPortal && (
-          <div className="space-y-3.5 pt-1">
+          <div className="space-y-4 pt-1">
+            {/* One primary, prominent button */}
             <a
               href={job.applyUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full min-h-[48px] py-3.5 px-5 rounded-2xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-extrabold text-sm text-center shadow-xl shadow-blue-600/30 hover:shadow-blue-500/40 transition-all flex items-center justify-center gap-2 cursor-pointer ring-1 ring-blue-400/40"
+              className="w-full min-h-[52px] py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-black text-sm sm:text-base text-center shadow-xl shadow-blue-600/30 hover:shadow-blue-500/40 transition-all flex items-center justify-center gap-2 cursor-pointer ring-1 ring-blue-400/40"
             >
+              <span>🌐</span>
               <span>
                 {isAr
-                  ? `التقديم عبر البوابة الرسمية (${portalInfo?.name || "Offizielles Portal"}) ↗`
+                  ? "التقديم الآن عبر موقع الشركة الرسمي ↗"
                   : isDe
-                  ? `Über offizielles Portal bewerben (${portalInfo?.name || "Offizielles Portal"}) ↗`
-                  : `Apply via Official Portal (${portalInfo?.name || "Official Portal"}) ↗`}
+                  ? "Jetzt über Unternehmensportal bewerben ↗"
+                  : "Apply Now on Company Portal ↗"}
               </span>
             </a>
-            <p className="text-[11px] text-slate-400 text-center">
-              {isAr ? "بوابة توظيف معتمدة وربط مباشر بدون أي وسطاء" : "Official authenticated ATS portal link with zero intermediary"}
-            </p>
+
+            {/* Secondary button: prepare Anschreiben */}
+            <Link
+              href={coverLetterUrl}
+              className="w-full min-h-[46px] py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-100 hover:text-white border border-slate-700 font-bold text-xs sm:text-sm text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+            >
+              <span>✨</span>
+              <span>
+                {isAr
+                  ? "تجهيز خطاب الدافع (Anschreiben) لهذه الوظيفة ✨"
+                  : isDe
+                  ? "Anschreiben für diese Stelle vorbereiten ✨"
+                  : "Prepare Tailored Cover Letter (Anschreiben) ✨"}
+              </span>
+            </Link>
 
             {/* German Bewerbungsformular Guide */}
             <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs space-y-2 text-start">
@@ -667,30 +677,30 @@ export default function JobDetailClient({
                   <span className="shrink-0 select-none">1️⃣</span>
                   <span>
                     {isAr
-                      ? "جهّز وحمّل ملف سيرتك الذاتية (Lebenslauf) وخطاب الدافع (Anschreiben) بصيغة PDF من الأدوات بالأسفل."
+                      ? "جهّز ملف سيرتك الذاتية (Lebenslauf) وخطاب الدافع (Anschreiben) بصيغة PDF."
                       : isDe
-                      ? "Erstellen und laden Sie Ihren Lebenslauf & Anschreiben als PDF über die Tools unten herunter."
-                      : "Prepare and download your CV (Lebenslauf) and cover letter (Anschreiben) as PDF from the tools below."}
+                      ? "Bereiten Sie Lebenslauf & Anschreiben als PDF vor."
+                      : "Prepare your CV (Lebenslauf) and cover letter (Anschreiben) as PDF."}
                   </span>
                 </li>
                 <li className="flex items-start gap-1.5">
                   <span className="shrink-0 select-none">2️⃣</span>
                   <span>
                     {isAr
-                      ? "اضغط على زر البوابة الرسمية أعلاه لفتح استمارة التقديم الخاصة بجهة العمل."
+                      ? "اضغط على زر التقديم الرسمي أعلاه لفتح استمارة جهة العمل المباشرة."
                       : isDe
-                      ? "Klicken Sie oben auf den Portal-Button, um das Bewerbungsformular des Arbeitgebers zu öffnen."
-                      : "Click the official portal button above to open the employer's application form."}
+                      ? "Klicken Sie oben auf den Button, um das Bewerbungsformular zu öffnen."
+                      : "Click the official button above to open the employer's form."}
                   </span>
                 </li>
                 <li className="flex items-start gap-1.5">
                   <span className="shrink-0 select-none">3️⃣</span>
                   <span>
                     {isAr
-                      ? "في استمارة الشركة بالألمانية: اكتب اسمك في (Vorname / Nachname)، بريدك في (E-Mail)، وارفع ملف الـ PDF في خانة (Lebenslauf / Bewerbungsunterlagen) ثم اضغط (Bewerbung absenden)."
+                      ? "في استمارة الشركة: املأ اسمك وبريدك وارفع ملف PDF في خانة (Lebenslauf / Unterlagen) ثم اضغط (Bewerbung absenden)."
                       : isDe
-                      ? "Im Formular: Name bei (Vorname / Nachname), E-Mail bei (E-Mail) eintragen, PDF bei (Lebenslauf / Bewerbungsunterlagen) hochladen und auf (Bewerbung absenden) klicken."
-                      : "In the German form: enter your name in (Vorname / Nachname), your email in (E-Mail), upload your PDF in (Lebenslauf / Bewerbungsunterlagen), then click (Bewerbung absenden)."}
+                      ? "Im Formular: Name & E-Mail eintragen, PDF bei (Lebenslauf / Unterlagen) hochladen und absenden."
+                      : "In the form: enter your name and email, upload your PDF under (Lebenslauf / Unterlagen) and submit."}
                   </span>
                 </li>
               </ul>
@@ -706,7 +716,7 @@ export default function JobDetailClient({
               className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-extrabold text-sm text-center shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>✨</span>
-              <span>{isAr ? "تجهيز ملف الترشيح الكامل (DIN 5008)" : "Prepare DIN 5008 Dossier"}</span>
+              <span>{isAr ? "تجهيز خطاب الدافع (Anschreiben) لهذه الوظيفة ✨" : "Prepare Tailored Cover Letter ✨"}</span>
             </Link>
           </div>
         )}
@@ -908,12 +918,14 @@ export default function JobDetailClient({
           <span dir="ltr" className="font-mono text-blue-400 font-bold">DIN 5008</span>
         </div>
 
-        <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
-          <span className="text-slate-400 shrink-0">{dict?.jobs?.details?.salary || (isAr ? "الراتب" : "Gehalt")}</span>
-          <span className="font-semibold text-slate-200 text-end break-words">
-            {job.salary || (isAr ? "حسب السلم المنظم (Tarifvertrag)" : "Tarifvertrag")}
-          </span>
-        </div>
+        {job.salary && (
+          <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
+            <span className="text-slate-400 shrink-0">{dict?.jobs?.details?.salary || (isAr ? "الراتب" : "Gehalt")}</span>
+            <span className="font-semibold text-emerald-400 text-end break-words">
+              {job.salary}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="pt-2">
@@ -982,14 +994,26 @@ export default function JobDetailClient({
             {/* Job Title & Corporate Details */}
             <div className="space-y-3">
               <div className="flex items-start justify-between gap-4 flex-wrap">
-                <h1
-                  dir="auto"
-                  className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-snug text-start flex-1 break-words [overflow-wrap:anywhere] hyphens-auto"
-                >
-                  <bdi>{job.title}</bdi>
-                </h1>
+                <div className="space-y-2 flex-1">
+                  <h1
+                    dir="auto"
+                    className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-snug text-start break-words [overflow-wrap:anywhere]"
+                  >
+                    <bdi>{primaryTitle}</bdi>
+                  </h1>
+                  {latinSubtitle && (
+                    <div className="pt-0.5">
+                      <span
+                        dir="ltr"
+                        className="inline-block px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-medium text-xs sm:text-sm font-mono dir-ltr text-left [direction:ltr] [unicode-bidi:isolate]"
+                      >
+                        {latinSubtitle}
+                      </span>
+                    </div>
+                  )}
+                </div>
                 <GermanTtsButton
-                  text={germanTitle || "Stelle in Deutschland"}
+                  text={latinSubtitle || germanTitle || "Stelle in Deutschland"}
                   size="sm"
                   variant="blue"
                   label={isAr ? "نطق المسمى بالألمانية" : isDe ? "Aussprache" : "Pronounce"}
@@ -1037,104 +1061,16 @@ export default function JobDetailClient({
                 </span>
               </span>
 
-              <span className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs font-semibold flex items-center gap-1.5 break-words">
-                <span>💰</span>
-                <span>
-                  {job.salary
-                    ? job.salary
-                    : isAr
-                    ? "حسب السلم المهني والأجور المنظمة (Tarifvertrag)"
-                    : isDe
-                    ? "Nach Tarifvertrag / TVöD"
-                    : "Regulated tariff salary (Tarifvertrag)"}
+              {job.salary && (
+                <span className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold flex items-center gap-1.5 break-words">
+                  <span>💰</span>
+                  <span>{job.salary}</span>
                 </span>
-              </span>
+              )}
             </div>
 
-            {/* 2. Primary Action Hub (Hero Conversion Banner) */}
-            <div className="rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950/40 border border-blue-500/30 p-5 sm:p-6 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-80 h-80 bg-blue-600/10 blur-3xl pointer-events-none -mr-20 -mt-20" />
-              
-              <div className="relative space-y-4">
-                <div className="space-y-1">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-blue-500/15 text-blue-400 text-[11px] font-bold">
-                    <span>⚡</span>
-                    <span>{isAr ? "بوابة التقديم السريع المعتمد" : "Fast-Track German Application"}</span>
-                  </div>
-                  <h3 className="text-base sm:text-lg font-black text-white">
-                    {isAr
-                      ? "جهّز ملف ترشيحك المعتمد وقدّم للوظيفة مباشرة"
-                      : isDe
-                      ? "Bewerbungsmappe nach DIN 5008 erstellen & bewerben"
-                      : "Generate DIN 5008 Application Dossier & Apply"}
-                  </h3>
-                </div>
-
-                {/* Primary & Secondary CTAs */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  {/* Primary CTA */}
-                  <Link
-                    href={coverLetterUrl}
-                    className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-black text-xs sm:text-sm text-center shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2 group ring-1 ring-blue-400/40 cursor-pointer"
-                  >
-                    <span className="text-base">✨</span>
-                    <span>
-                      {isAr
-                        ? "توليد ملف الترشيح الكامل (Anschreiben DIN 5008) ✨"
-                        : isDe
-                        ? "Vollständige Bewerbungsmappe generieren (DIN 5008) ✨"
-                        : "Generate Complete Dossier (DIN 5008) ✨"}
-                    </span>
-                  </Link>
-
-                  {/* Secondary CTA */}
-                  {hasEmail ? (
-                    <a
-                      href={mailtoLink}
-                      className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-extrabold text-xs sm:text-sm text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-emerald-600/25 ring-1 ring-emerald-400/30"
-                    >
-                      <span>✉️</span>
-                      <span>
-                        {isAr
-                          ? "إرسال الترشيح لقسم الموارد البشرية ↗"
-                          : isDe
-                          ? "Bewerbung per E-Mail senden ↗"
-                          : "Send Application via Email ↗"}
-                      </span>
-                    </a>
-                  ) : hasPortal ? (
-                    <a
-                      href={job.applyUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-100 hover:text-white border border-slate-700 hover:border-slate-600 font-bold text-xs sm:text-sm text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
-                    >
-                      <span>
-                        {isAr
-                          ? `بوابة التقديم المباشرة للشركة (${portalInfo?.name || "Offizielles Portal"}) ↗`
-                          : isDe
-                          ? `Offizielles Unternehmensportal (${portalInfo?.name || "Offizielles Portal"}) ↗`
-                          : `Direct Employer Portal (${portalInfo?.name || "Official Portal"}) ↗`}
-                      </span>
-                    </a>
-                  ) : (
-                    <Link
-                      href={atsAnalyzerUrl}
-                      className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-100 hover:text-white border border-slate-700 hover:border-slate-600 font-bold text-xs sm:text-sm text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
-                    >
-                      <span>🔍</span>
-                      <span>{isAr ? "فحص توافق السيرة (ATS)" : "ATS Compatibility Audit"}</span>
-                    </Link>
-                  )}
-                </div>
-
-                {/* Micro-Copy */}
-                <div className="flex items-center gap-2 text-[11px] text-slate-400 pt-1">
-                  <span className="text-emerald-400 text-sm">🛡️</span>
-                  <span>{reassuringMicrocopy}</span>
-                </div>
-              </div>
-            </div>
+            {/* 2. Direct Application Action Hub (Case A: Direct Verified Email / Case B: Official Portal) */}
+            {renderDirectApplicationChannels("main-hero")}
 
           </div>
 
@@ -1239,9 +1175,8 @@ export default function JobDetailClient({
               )}
             </div>
 
-            {/* Mobile Stack: Immediate Application & AI Tools (clean stacking right below core role description) */}
+            {/* Mobile Stack: AI Career Tools */}
             <div className="block lg:hidden space-y-6">
-              {renderDirectApplicationChannels("mobile-primary")}
               {renderAiSuiteBox("mobile-primary")}
             </div>
 
@@ -1492,7 +1427,6 @@ export default function JobDetailClient({
         {/* Desktop Sidebar: Sticky Top 24                            */}
         {/* ========================================================= */}
         <div className="hidden lg:block lg:col-span-4 space-y-6 sticky top-24">
-          {renderDirectApplicationChannels("desktop")}
           {renderRoadmapStepper("desktop")}
           {renderAiSuiteBox("desktop")}
           {renderOverviewCard("desktop")}

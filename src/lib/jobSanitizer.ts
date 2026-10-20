@@ -10,6 +10,8 @@ export interface JobSanitizerInput {
   salary?: string | null;
   requirements?: string | null;
   descriptionRaw?: string | null;
+  applyUrl?: string | null;
+  contactEmail?: string | null;
   [key: string]: any;
 }
 
@@ -149,10 +151,14 @@ export function sanitizeJobPayload<T extends JobSanitizerInput>(input: T): T {
     // Update category if it was false Healthcare or empty
     const newCategory = isHealthcareCategory || !input.category ? trueCategory : input.category;
 
-    // c) Replace false healthcare salary boilerplate
+    // c) Eliminate false healthcare or generic fallback salary boilerplate
     let newSalary = input.salary ?? null;
-    if (newSalary && /(?:لل|ال)?رعاية\s*الصحية/u.test(newSalary)) {
-      newSalary = "حسب الخبرة والاتفاق (Verhandlungsbasis)";
+    if (
+      newSalary &&
+      (/(?:لل|ال)?رعاية\s*الصحية/u.test(newSalary) ||
+        /(?:حسب\s*الخبرة\s*والاتفاق|Verhandlungsbasis|حسب\s*السلم\s*(?:المهني|المنظم)|Tarifvertrag)/i.test(newSalary))
+    ) {
+      newSalary = null;
     }
 
     // d) Clean requirements of false nursing boilerplate
@@ -228,6 +234,35 @@ export function sanitizeJobPayload<T extends JobSanitizerInput>(input: T): T {
       ...result,
       category: reclassifiedCategory,
     };
+  }
+
+  // 3. Strict credibility & transparency: eliminate fake fallback salary boilerplate across all jobs
+  if (
+    result.salary &&
+    (/(?:لل|ال)?رعاية\s*الصحية/u.test(result.salary) ||
+      /(?:حسب\s*الخبرة\s*والاتفاق|Verhandlungsbasis|حسب\s*السلم\s*(?:المهني|المنظم)|Tarifvertrag)/i.test(
+        result.salary
+      ))
+  ) {
+    result = {
+      ...result,
+      salary: null,
+    };
+  }
+
+  // 4. Strict credibility & transparency: eliminate guessed/fake HR emails
+  if (result.contactEmail && result.applyUrl) {
+    const rawUrl = String(result.applyUrl).toLowerCase().trim();
+    if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
+      const emailLower = String(result.contactEmail).trim().toLowerCase();
+      const textToScan = `${result.descriptionRaw || ""} ${result.requirements || ""}`.toLowerCase();
+      if (!textToScan.includes(emailLower)) {
+        result = {
+          ...result,
+          contactEmail: null,
+        };
+      }
+    }
   }
 
   return result;

@@ -1,13 +1,7 @@
 import "dotenv/config";
 import { Pool as PgPool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { neonConfig } from "@neondatabase/serverless";
-import { PrismaNeon } from "@prisma/adapter-neon";
-import ws from "ws";
 import { PrismaClient } from "../generated/prisma/client";
-
-// Ensure WebSocket constructor is available in Node.js runtime for Neon
-neonConfig.webSocketConstructor = ws;
 
 export type ExtendedPrismaClient = PrismaClient & {
   cV: {
@@ -17,6 +11,7 @@ export type ExtendedPrismaClient = PrismaClient & {
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: ExtendedPrismaClient;
+  pgPool?: PgPool;
 };
 
 /**
@@ -53,21 +48,23 @@ function getPrismaClient(): ExtendedPrismaClient {
     throw new Error("Missing DATABASE_URL or DIRECT_URL in environment configuration.");
   }
 
-  const isNeon = connectionString.includes("neon.tech");
+  const pool =
+    globalForPrisma.pgPool ??
+    new PgPool({
+      connectionString,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+      connectionTimeoutMillis: 15000,
+      idleTimeoutMillis: 30000,
+      max: 10,
+    });
 
-  const adapter = isNeon
-    ? new PrismaNeon({ connectionString })
-    : new PrismaPg(
-        new PgPool({
-          connectionString,
-          ssl: {
-            rejectUnauthorized: false,
-          },
-          connectionTimeoutMillis: 30000,
-          idleTimeoutMillis: 30000,
-          max: 10,
-        })
-      );
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.pgPool = pool;
+  }
+
+  const adapter = new PrismaPg(pool);
 
   const client = new PrismaClient({
     adapter,
