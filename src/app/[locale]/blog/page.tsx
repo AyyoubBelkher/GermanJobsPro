@@ -571,7 +571,7 @@ export default async function BlogPage({
         ) : (
           <>
             <BlogGrid columns={3}>
-              {posts.map((post) => {
+              {posts.map((post, index) => {
                 const isA1 = isCourseLesson({
                   category: post.tags[0],
                   slug: post.slug,
@@ -606,6 +606,7 @@ export default async function BlogPage({
                     germanTitle={parsed?.germanTitle}
                     arabicSubtitle={parsed?.arabicSubtitle}
                     readTime={readTime}
+                    priority={index < 3}
                   />
                 );
               })}

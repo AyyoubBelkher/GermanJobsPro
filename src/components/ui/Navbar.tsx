@@ -42,6 +42,12 @@ function buildSwitchLocaleUrl(
   return `${newPath}${searchParamsString ? `?${searchParamsString}` : ""}`;
 }
 
+function setPreferredLocaleCookie(targetLocale: Locale) {
+  if (typeof document !== "undefined") {
+    document.cookie = `preferred_locale=${targetLocale}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+  }
+}
+
 function LanguageSwitcherDesktop({ activeLocale, isAr }: { activeLocale: Locale; isAr: boolean }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -101,7 +107,10 @@ function LanguageSwitcherDesktop({ activeLocale, isAr }: { activeLocale: Locale;
               <Link
                 key={loc}
                 href={getSwitchLocaleUrl(loc)}
-                onClick={() => setLangDropdownOpen(false)}
+                onClick={() => {
+                  setPreferredLocaleCookie(loc);
+                  setLangDropdownOpen(false);
+                }}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition-colors ${
                   isActive
                     ? "bg-blue-600/20 text-blue-400 font-bold border border-blue-500/30"
@@ -223,7 +232,10 @@ function LanguageSwitcherHeaderMobile({
               <Link
                 key={loc}
                 href={getSwitchLocaleUrl(loc)}
-                onClick={() => setLangDropdownOpen(false)}
+                onClick={() => {
+                  setPreferredLocaleCookie(loc);
+                  setLangDropdownOpen(false);
+                }}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition-colors ${
                   isActive
                     ? "bg-blue-600/20 text-blue-400 font-bold border border-blue-500/30"
@@ -304,7 +316,10 @@ function LanguageSwitcherMobile({
           <Link
             key={loc}
             href={getSwitchLocaleUrl(loc)}
-            onClick={onSelect}
+            onClick={() => {
+              setPreferredLocaleCookie(loc);
+              onSelect();
+            }}
             className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
               isActive
                 ? "bg-blue-600 text-white shadow-md shadow-blue-600/25"

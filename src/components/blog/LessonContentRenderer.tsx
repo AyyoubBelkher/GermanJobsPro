@@ -1520,6 +1520,133 @@ export function normalizeDialogueMarkdown(markdownContent: string): string {
 }
 
 /**
+ * Normalizes markdown formatting for both articles and lessons:
+ * 1. Merges broken numbered subheadings on two lines (e.g. "### 1." followed by "### Title" or "Title").
+ * 2. Converts short single-line triple-backtick blocks (numbers, amounts, terms <= 80 chars) to inline code.
+ * 3. Merges isolated inline code with previous/next line if they split a continuous sentence.
+ */
+export function normalizeMarkdownFormatting(raw: string): string {
+  if (!raw || typeof raw !== "string") return "";
+
+  let text = raw;
+
+  // 1. Convert single-line short triple backtick blocks (<= 80 chars, no \n) to inline code
+  // Handles ```45,300 يورو``` or ```text 45,300 يورو``` or ```41,041.80 يورو```
+  text = text.replace(/```(?:[a-zA-Z]{2,10}\s+)?([^\r\n`]{1,80})```/g, (_m, code) => {
+    return `\`${code.trim()}\``;
+  });
+
+  // Handles 3-line blocks containing only a single short line between ```
+  // ```
+  // 45,300 يورو
+  // ```
+  text = text.replace(/^[ \t]*```[a-zA-Z0-9_-]*\r?\n([^\r\n`]{1,80})\r?\n[ \t]*```[ \t]*$/gm, (_m, code) => {
+    return `\`${code.trim()}\``;
+  });
+
+  // 2. Merge split numbered headings on two lines:
+  // e.g. "### 1." followed directly or with empty lines by "### Title" or "Title"
+  // ^(#{1,4})\s*(\d+[\.\-\)]?)\s*$ followed by ^(?:#{1,4}\s*)?([^\n]+)$ -> $1 $2 $3
+  const lines = text.split("\n");
+  const mergedLines: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const headingMatch = line.match(/^(#{1,4})\s*(\d+[\.\-\)]?)\s*$/);
+
+    if (headingMatch) {
+      const hashes = headingMatch[1];
+      const numPart = headingMatch[2];
+
+      // Look ahead for the next non-empty line
+      let nextIdx = i + 1;
+      while (nextIdx < lines.length && lines[nextIdx].trim() === "") {
+        nextIdx++;
+      }
+
+      if (nextIdx < lines.length) {
+        const nextLine = lines[nextIdx].trim();
+        // Check if next line is a title or title text (not another number heading, divider, list, quote)
+        if (
+          nextLine &&
+          !nextLine.startsWith("---") &&
+          !nextLine.startsWith("***") &&
+          !nextLine.startsWith("___") &&
+          !nextLine.startsWith("- ") &&
+          !nextLine.startsWith("* ") &&
+          !nextLine.startsWith("> ") &&
+          !/^(#{1,4})\s*(\d+[\.\-\)]?)\s*$/.test(nextLine)
+        ) {
+          const titleMatch = nextLine.match(/^(?:#{1,4}\s*)?([^\n]+)$/);
+          if (titleMatch && titleMatch[1].trim()) {
+            const headingTitle = titleMatch[1].trim();
+            mergedLines.push(`${hashes} ${numPart} ${headingTitle}`);
+            i = nextIdx; // Skip past the merged line
+            continue;
+          }
+        }
+      }
+    }
+
+    mergedLines.push(line);
+  }
+
+  // 3. Merge short inline code that was isolated on its own line / paragraph and breaks a continuous Arabic sentence
+  const finalLines: string[] = [];
+  for (let i = 0; i < mergedLines.length; i++) {
+    const curr = mergedLines[i];
+    const trimmed = curr.trim();
+
+    // Check if current line is solely an inline code block like `45,300 يورو`
+    const isIsolatedInlineCode = /^`[^`\n]{1,80}`$/.test(trimmed);
+
+    if (isIsolatedInlineCode && finalLines.length > 0) {
+      // Find previous non-empty line
+      let prevIdx = finalLines.length - 1;
+      while (prevIdx >= 0 && finalLines[prevIdx].trim() === "") {
+        prevIdx--;
+      }
+
+      // Find next non-empty line
+      let nextIdx = i + 1;
+      while (nextIdx < mergedLines.length && mergedLines[nextIdx].trim() === "") {
+        nextIdx++;
+      }
+
+      const prevLine = prevIdx >= 0 ? finalLines[prevIdx].trim() : "";
+      const nextLine = nextIdx < mergedLines.length ? mergedLines[nextIdx].trim() : "";
+
+      const isHeadingOrSpecial = (l: string) =>
+        /^#{1,6}\s/.test(l) ||
+        /^[-*]\s/.test(l) ||
+        /^\d+[\.\)]\s/.test(l) ||
+        l.startsWith(">") ||
+        l.startsWith("|") ||
+        l.startsWith("---");
+
+      // If previous line is regular text and not heading/list/special
+      if (prevLine && !isHeadingOrSpecial(prevLine)) {
+        // If next line is also regular continuation text
+        if (nextLine && !isHeadingOrSpecial(nextLine)) {
+          finalLines[prevIdx] = `${prevLine} ${trimmed} ${nextLine}`;
+          finalLines.length = prevIdx + 1;
+          i = nextIdx; // advance past nextLine
+          continue;
+        } else {
+          finalLines[prevIdx] = `${prevLine} ${trimmed}`;
+          finalLines.length = prevIdx + 1;
+          continue;
+        }
+      }
+    }
+
+    finalLines.push(curr);
+  }
+
+  return finalLines.join("\n");
+}
+
+/**
  * High-performance, rich markdown renderer tailored for German A1 educational lessons
  * with Enterprise CTA Cards, Grammar Cards, 3-tier Vocabulary & Dialogue layouts, and clickable links.
  */
@@ -1534,7 +1661,8 @@ export default function LessonContentRenderer({
   const isAr = locale === "ar";
   const isLessonMode = mode === "lesson" || (mode === undefined && isCourseLesson({ category, slug, title }));
   const normalizedContent = React.useMemo(() => {
-    return isLessonMode ? normalizeDialogueMarkdown(content) : content;
+    const formatted = normalizeMarkdownFormatting(content);
+    return isLessonMode ? normalizeDialogueMarkdown(formatted) : formatted;
   }, [content, isLessonMode]);
 
   /**
@@ -1753,7 +1881,7 @@ export default function LessonContentRenderer({
 
             return (
               <h3
-                className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mt-8 mb-4 leading-snug flex items-center gap-2 text-start"
+                className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mt-8 mb-4 leading-snug flex items-baseline gap-2.5 text-start"
                 dir="auto"
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0" />
@@ -2217,7 +2345,19 @@ export default function LessonContentRenderer({
             );
           },
           pre: ({ children }) => {
-            const text = getNodeText(children);
+            const text = getNodeText(children).trim();
+
+            if (!text.includes("\n") && text.length < 80) {
+              return (
+                <span
+                  dir="auto"
+                  className="px-2.5 py-0.5 mx-1 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-300 border border-blue-500/30 font-bold text-sm sm:text-base inline-block align-baseline"
+                >
+                  {text}
+                </span>
+              );
+            }
+
             const hasArabic = /[\u0600-\u06FF]/.test(text);
 
             return (

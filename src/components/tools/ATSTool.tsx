@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { ATSImportedFix } from "./LebenslaufTool";
+import UpgradeModal from "@/components/pricing/UpgradeModal";
 
 export interface AtsResult {
   score: number;
@@ -32,6 +33,7 @@ export default function ATSTool({ onApplyFixToBuilder }: ATSToolProps) {
   // Auto-Fix states
   const [isFixing, setIsFixing] = useState<boolean>(false);
   const [fixError, setFixError] = useState<string>("");
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -74,6 +76,11 @@ export default function ATSTool({ onApplyFixToBuilder }: ATSToolProps) {
       });
 
       const data = await res.json();
+      if (res.status === 402 || data.error === "INSUFFICIENT_CREDITS" || data.outOfCredits) {
+        setShowUpgradeModal(true);
+        setIsAnalyzing(false);
+        return;
+      }
       if (!res.ok || !data.success) {
         throw new Error(data.error || "فشل تحليل السيرة الذاتية.");
       }
@@ -112,6 +119,11 @@ export default function ATSTool({ onApplyFixToBuilder }: ATSToolProps) {
       });
 
       const data = await res.json();
+      if (res.status === 402 || data.error === "INSUFFICIENT_CREDITS" || data.outOfCredits) {
+        setShowUpgradeModal(true);
+        setIsFixing(false);
+        return;
+      }
       if (!res.ok || !data.success) {
         throw new Error(data.error || "فشل تصحيح السيرة الذاتية بواسطة الذكاء الاصطناعي.");
       }
@@ -481,6 +493,14 @@ export default function ATSTool({ onApplyFixToBuilder }: ATSToolProps) {
       );
     })()
   )}
+
+      {/* Contextual Paywall Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        locale="ar"
+        triggerFeature="ats"
+      />
     </div>
   );
 }

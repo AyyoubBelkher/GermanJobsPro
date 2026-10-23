@@ -81,6 +81,8 @@ export async function POST(request: NextRequest) {
 
     const jobTitle = typeof rawJobTitle === "string" ? rawJobTitle.trim() : "Allgemeine Position";
     const jobDesc = typeof rawJobDesc === "string" ? rawJobDesc.trim() : "";
+    const currentDate = new Date().toISOString().split("T")[0];
+    const currentYear = new Date().getUTCFullYear();
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -89,6 +91,7 @@ export async function POST(request: NextRequest) {
 
     const ai = new GoogleGenAI({ apiKey });
     const prompt = `You are a Senior German ATS Auditor and Career Specialist.
+CURRENT DATE CONTEXT: Today's date is ${currentDate} (Year: ${currentYear}).
 Analyze this CV against the German ATS standard and target position with STRICT PRODUCT CREDIBILITY AND FAIRNESS.
 
 TARGET JOB: ${jobTitle}
@@ -98,14 +101,18 @@ CV TEXT:
 ${cvText.slice(0, 8000)}
 """
 
+DATE EVALUATION & TYPO TOLERANCE RULES:
+- Any date in 2024, 2025, or up to ${currentDate} is a valid historical/present date. NEVER flag 2025 or past/current ${currentYear} dates as "future dates".
+- If a date is slightly in the future or has an obvious 1-digit year typo (e.g., "23.01.2026 - 23.02.2026" alongside 2025 entries), DO NOT tank the overall score to 35% or accuse the candidate of falsification. Deduct at most 3–5 points in DIN 5008 rating and add a polite, constructive note in improvements advising the user to verify the year typo.
+
 CRITICAL FAIR SCORING & INTEGRITY RULES:
-1. STRICT FAIRNESS & CREDIBILITY:
+1. STRICT FAIRNESS & CREDIBILITY FOR GOOD CVs (score >= 80):
    - If the uploaded CV is already well-structured in German (tabular DIN 5008 layout, clear reverse-chronological experience and education, required contact details, language proficiencies) and aligns well with the target role:
      * Give it an honest passing score (score >= 80, typically between 80 and 95).
-     * State CLEARLY and EXPLICITLY in "summary" (in Arabic) that the CV is accepted, meets German ATS and DIN 5008 standards, and is ready for submission to German employers without requiring modifications (e.g. "سيرتك الذاتية مقبولة ومتوافقة بنسبة ممتازة مع معايير الـ ATS والتنسيق الألماني DIN 5008، وهي جاهزة للتقديم مباشرة على أرباب العمل في ألمانيا ولا تحتاج إلى أي تعديل إضافي.").
+     * State CLEARLY and EXPLICITLY in "summary" (in Arabic) that the CV is accepted, meets German ATS and DIN 5008 standards, and is ready for submission to German employers without requiring modifications or auto-fix tools (e.g. "سيرتك الذاتية مقبولة ومتوافقة بنسبة ممتازة مع معايير الـ ATS والتنسيق الألماني DIN 5008، وهي جاهزة للتقديم مباشرة على أرباب العمل في ألمانيا ولا تحتاج إلى أي تعديل إضافي أو أداة إصلاح.").
      * DO NOT invent artificial flaws, phantom red flags, or fake criticisms on an already good CV.
-     * Keep "missingKeywords", "improvements", and "rewriteSuggestions" empty or strictly limited to optional minor polish if the CV is already solid.
-2. DEFICIENT OR NON-GERMAN CVs:
+     * When score >= 80, return "improvements: []", "missingKeywords: []", and "rewriteSuggestions: []" (or at most 1–2 optional minor polish points).
+2. DEFICIENT OR NON-GERMAN CVs (score < 80):
    - If the CV is written in another language (Arabic, English, French), lacks German DIN 5008 tabular formatting, lacks essential German technical terminology (Fachbegriffe), or has major gaps:
      * Give an accurate score reflecting genuine deficiencies (score < 80).
      * In "summary" (in Arabic), explain why it needs restructuring/translation to pass German ATS filters.
@@ -114,10 +121,10 @@ CRITICAL FAIR SCORING & INTEGRITY RULES:
 Return JSON:
 {
   "score": number (0-100),
-  "summary": "Arabic summary of ATS compatibility and German market readiness (explicitly confirming acceptance and readiness if score >= 80)",
+  "summary": "Arabic summary of ATS compatibility and German market readiness (explicitly confirming acceptance and readiness without needing modifications if score >= 80)",
   "missingKeywords": ["German keywords/Fachbegriffe missing for this role (empty array if none missing)"],
-  "improvements": ["Concrete Arabic suggestions for improvements (empty array if none needed)"],
-  "rewriteSuggestions": ["Bullet point rewrite suggestions in German (empty array if none needed)"],
+  "improvements": ["Concrete Arabic suggestions for improvements (empty array if score >= 80 or none needed)"],
+  "rewriteSuggestions": ["Bullet point rewrite suggestions in German (empty array if score >= 80 or none needed)"],
   "germanTips": ["Tips for German DIN 5008 standards"]
 }`;
 

@@ -4,6 +4,7 @@ import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AtsAnalysisResult } from "@/lib/gemini";
+import UpgradeModal from "@/components/pricing/UpgradeModal";
 
 interface CvOption {
   id: string;
@@ -51,6 +52,15 @@ export default function AtsAnalyzerClient({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<AtsAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  // Interactive Keywords states
+  const [copiedKeyword, setCopiedKeyword] = useState<string | null>(null);
+  const [addedKeywords, setAddedKeywords] = useState<string[]>([]);
+
+  // Inline CV Text Editor states
+  const [isEditingText, setIsEditingText] = useState(false);
+  const textEditorRef = useRef<HTMLDivElement>(null);
 
   const handleFileUpload = async (file: File) => {
     setUploadError(null);
@@ -147,6 +157,11 @@ export default function AtsAnalyzerClient({
       });
 
       const data = await res.json();
+      if (res.status === 402 || data.error === "INSUFFICIENT_CREDITS" || data.outOfCredits) {
+        setShowUpgradeModal(true);
+        setIsAnalyzing(false);
+        return;
+      }
       if (!res.ok || !data.success) {
         throw new Error(data.error || "Failed to analyze CV");
       }
@@ -157,6 +172,37 @@ export default function AtsAnalyzerClient({
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const handleCopyKeyword = (kw: string) => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(kw);
+      setCopiedKeyword(kw);
+      setTimeout(() => {
+        setCopiedKeyword((current) => (current === kw ? null : current));
+      }, 2000);
+    }
+  };
+
+  const handleAddKeywordToText = (kw: string) => {
+    if (addedKeywords.includes(kw)) return;
+    setCvText((prev) => {
+      const sectionHeader = "Fähigkeiten & Fachbegriffe:";
+      if (prev.includes(sectionHeader)) {
+        return prev.replace(sectionHeader, `${sectionHeader}\n• ${kw}`);
+      } else {
+        const cleanPrev = prev.trim();
+        return cleanPrev ? `${cleanPrev}\n\n${sectionHeader}\n• ${kw}\n` : `${sectionHeader}\n• ${kw}\n`;
+      }
+    });
+    setAddedKeywords((prev) => [...prev, kw]);
+  };
+
+  const openTextEditor = () => {
+    setIsEditingText(true);
+    setTimeout(() => {
+      textEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
   };
 
   const handleMagicImport = async () => {
@@ -180,12 +226,17 @@ export default function AtsAnalyzerClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           cvText: cvText.trim(),
-          targetJobTitle: jobDescription.slice(0, 100),
+          targetJobTitle: undefined,
           locale,
         }),
       });
 
       const data = await res.json();
+      if (res.status === 402 || data.error === "INSUFFICIENT_CREDITS" || data.outOfCredits) {
+        setShowUpgradeModal(true);
+        setIsMagicImporting(false);
+        return;
+      }
       if (!res.ok || !data.success || !data.cvId) {
         throw new Error(
           data.message ||
@@ -495,6 +546,93 @@ export default function AtsAnalyzerClient({
         const isCvAccepted = analysis.overallScore >= 80;
         return (
           <div className="space-y-8 animate-fadeIn">
+            {/* Inline CV Text Editor & Instant Re-scan Panel */}
+            {isEditingText && (
+              <div
+                ref={textEditorRef}
+                className="p-6 rounded-3xl bg-slate-900 border border-blue-500/40 shadow-2xl space-y-4 animate-fadeIn"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 text-blue-400">
+                    <span className="text-xl">✏️</span>
+                    <h4 className="text-base font-bold text-white">
+                      {isAr
+                        ? "تعديل نص السيرة الذاتية وتصحيح الأخطاء يدوياً"
+                        : isDe
+                        ? "Lebenslauf-Text manuell korrigieren"
+                        : "Edit CV Text & Correct Manually"}
+                    </h4>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingText(false)}
+                    className="text-xs text-slate-400 hover:text-white px-2.5 py-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    {isAr ? "إغلاق ✕" : isDe ? "Schließen ✕" : "Close ✕"}
+                  </button>
+                </div>
+
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {isAr
+                    ? "قم بتعديل التواريخ أو المسميات أو إضافة الأقسام والكلمات الناقصة مباشرة في المربع أدناه، ثم اضغط على زر إعادة الفحص لتحديث التقييم فوراً."
+                    : isDe
+                    ? "Korrigieren Sie Daten, Begriffe oder fehlende Abschnitte direkt hier und starten Sie eine erneute Prüfung."
+                    : "Correct dates, terms, or missing sections directly below, then click re-scan to update your evaluation immediately."}
+                </p>
+
+                <textarea
+                  dir="ltr"
+                  rows={10}
+                  value={cvText}
+                  onChange={(e) => setCvText(e.target.value)}
+                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white text-xs font-mono focus:border-blue-500 focus:outline-hidden"
+                  placeholder="CV text..."
+                />
+
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                  <span className="text-xs text-slate-400 font-mono">
+                    {cvText.length} {isAr ? "حرف" : "characters"}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingText(false)}
+                      className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer"
+                    >
+                      {isAr ? "إلغاء" : isDe ? "Abbrechen" : "Cancel"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => handleAnalyze(e)}
+                      disabled={isAnalyzing}
+                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-blue-600/25 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                          </svg>
+                          <span>{isAr ? "جاري إعادة الفحص..." : isDe ? "Prüfung läuft..." : "Re-scanning..."}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>🔄</span>
+                          <span>
+                            {isAr
+                              ? "🔄 إعادة فحص السيرة بعد التصحيح"
+                              : isDe
+                              ? "🔄 Nach Korrektur erneut prüfen"
+                              : "🔄 Re-scan Corrected CV"}
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Top Score Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {/* Overall ATS Score */}
@@ -634,9 +772,9 @@ export default function AtsAnalyzerClient({
                 )}
 
                 {(inputMode === "upload" || inputMode === "paste") && cvText.trim().length > 0 && (
-                  <div className="pt-2 space-y-2">
+                  <div className="pt-2 flex flex-wrap items-center gap-3">
                     {magicImportError && (
-                      <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-semibold">
+                      <div className="w-full p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-semibold">
                         {magicImportError}
                       </div>
                     )}
@@ -663,12 +801,27 @@ export default function AtsAnalyzerClient({
                       ) : (
                         <span>
                           {isAr
-                            ? "✨ إصلاح السيرة الذاتية وإنشاء نسخة ألمانية مصححة الآن (DIN 5008)"
+                            ? "✨ إصلاح وتنسيق السيرة الذاتية تلقائياً (DIN 5008)"
                             : isDe
-                            ? "✨ Lebenslauf jetzt reparieren & DIN 5008 Version erstellen (DIN 5008)"
-                            : "✨ Auto-Fix CV & Create DIN 5008 Version Now (DIN 5008)"}
+                            ? "✨ Lebenslauf automatisch nach DIN 5008 optimieren"
+                            : "✨ Auto-Optimize CV to DIN 5008 Standard"}
                         </span>
                       )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={openTextEditor}
+                      className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 hover:text-white font-bold text-xs sm:text-sm transition-all cursor-pointer"
+                    >
+                      <span>✏️</span>
+                      <span>
+                        {isAr
+                          ? "✏️ تعديل نص السيرة وتصحيح الأخطاء يدوياً"
+                          : isDe
+                          ? "✏️ Text manuell korrigieren"
+                          : "✏️ Edit CV Text Manually"}
+                      </span>
                     </button>
                   </div>
                 )}
@@ -706,37 +859,144 @@ export default function AtsAnalyzerClient({
 
             {/* Weaknesses / Red Flags */}
             <div className="bg-slate-900/80 border border-rose-500/20 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl">
-              <h3 className="text-base font-bold text-rose-400 flex items-center gap-2">
-                <span>⚠️</span>
-                <span>{isAr ? "النقاط السلبية والفجوات (Red Flags)" : isDe ? "Schwächen & Lücken" : "Weaknesses & Red Flags"}</span>
-              </h3>
-              <ul className="space-y-2.5">
-                {analysis.weaknesses.map((item, idx) => (
-                  <li key={idx} className="text-xs sm:text-sm text-slate-300 flex items-start gap-2 leading-relaxed">
-                    <span className="text-rose-400 font-bold">•</span>
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="text-base font-bold text-rose-400 flex items-center gap-2">
+                  <span>⚠️</span>
+                  <span>{isAr ? "النقاط السلبية والفجوات (Red Flags)" : isDe ? "Schwächen & Lücken" : "Weaknesses & Red Flags"}</span>
+                </h3>
+                {(inputMode === "upload" || inputMode === "paste") && cvText.trim().length > 0 && (
+                  <button
+                    type="button"
+                    onClick={openTextEditor}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-bold transition-all cursor-pointer"
+                  >
+                    <span>✏️</span>
+                    <span>
+                      {isAr
+                        ? "✏️ تعديل نص السيرة وتصحيح الأخطاء يدوياً"
+                        : isDe
+                        ? "✏️ Text manuell korrigieren"
+                        : "✏️ Edit CV Text Manually"}
+                    </span>
+                  </button>
+                )}
+              </div>
+              {analysis.weaknesses.length === 0 ? (
+                <p className="text-xs sm:text-sm text-emerald-400 font-medium">
+                  {isAr
+                    ? "لا توجد فجوات أو أخطاء جوهرية في سيرتك الذاتية! التنسيق والمحتوى ممتاز."
+                    : isDe
+                    ? "Keine wesentlichen Schwächen oder Lücken gefunden! Struktur und Inhalt sind hervorragend."
+                    : "No significant weaknesses or red flags detected! Formatting and content are solid."}
+                </p>
+              ) : (
+                <ul className="space-y-2.5">
+                  {analysis.weaknesses.map((item, idx) => (
+                    <li key={idx} className="text-xs sm:text-sm text-slate-300 flex items-start gap-2 leading-relaxed">
+                      <span className="text-rose-400 font-bold">•</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
 
-          {/* Missing Keywords */}
+          {/* Interactive German Keywords */}
           {analysis.missingKeywords.length > 0 && (
             <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl">
-              <h3 className="text-base font-bold text-amber-400 flex items-center gap-2">
-                <span>🔑</span>
-                <span>{isAr ? "كلمات مفتاحية ألمانية موصى بإضافتها" : isDe ? "Fehlende Schlüsselbegriffe" : "Missing Keywords to Include"}</span>
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {analysis.missingKeywords.map((kw, idx) => (
-                  <span
-                    key={idx}
-                    className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold"
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="text-base font-bold text-amber-400 flex items-center gap-2">
+                  <span>🔑</span>
+                  <span>{isAr ? "كلمات مفتاحية ألمانية موصى بإضافتها" : isDe ? "Fehlende Schlüsselbegriffe" : "Missing Keywords to Include"}</span>
+                </h3>
+                <span className="text-xs text-slate-400">
+                  {isAr ? "انقر لنسخ الكلمة للحافظة" : isDe ? "Klicken zum Kopieren" : "Click to copy keyword"}
+                </span>
+              </div>
+
+              {addedKeywords.length > 0 && (
+                <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex flex-wrap items-center justify-between gap-3 animate-fadeIn">
+                  <div className="flex items-center gap-2 text-xs font-bold text-blue-300">
+                    <span>ℹ️</span>
+                    <span>
+                      {isAr
+                        ? `تمت إضافة (${addedKeywords.length}) من الكلمات المفتاحية إلى نص السيرة بنجاح!`
+                        : isDe
+                        ? `(${addedKeywords.length}) Schlüsselbegriffe wurden zum Lebenslauf hinzugefügt!`
+                        : `(${addedKeywords.length}) keywords added to CV text successfully!`}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => handleAnalyze(e)}
+                    disabled={isAnalyzing}
+                    className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                   >
-                    + {kw}
-                  </span>
-                ))}
+                    <span>🔄</span>
+                    <span>
+                      {isAr
+                        ? "إعادة فحص السيرة الآن"
+                        : isDe
+                        ? "Jetzt erneut prüfen"
+                        : "Re-scan CV Now"}
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2.5">
+                {analysis.missingKeywords.map((kw, idx) => {
+                  const isCopied = copiedKeyword === kw;
+                  const isAdded = addedKeywords.includes(kw);
+                  const canAddToText = inputMode === "upload" || inputMode === "paste";
+
+                  return (
+                    <div
+                      key={idx}
+                      className={`inline-flex items-center gap-1.5 rounded-xl border p-1 text-xs font-semibold transition-all ${
+                        isAdded
+                          ? "bg-blue-500/10 border-blue-500/30 text-blue-300"
+                          : "bg-amber-500/10 border-amber-500/20 text-amber-300 hover:border-amber-500/40"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleCopyKeyword(kw)}
+                        title={isAr ? "نسخ الكلمة للحافظة" : "Copy keyword"}
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-amber-500/20 transition-colors cursor-pointer"
+                      >
+                        <span>{isCopied ? "✓" : "📋"}</span>
+                        <span className="font-mono">{kw}</span>
+                        {isCopied && (
+                          <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">
+                            {isAr ? "تم النسخ" : "Copied"}
+                          </span>
+                        )}
+                      </button>
+
+                      {canAddToText && (
+                        <button
+                          type="button"
+                          onClick={() => handleAddKeywordToText(kw)}
+                          disabled={isAdded}
+                          className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
+                            isAdded
+                              ? "bg-blue-600/20 text-blue-400 cursor-default"
+                              : "bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white"
+                          }`}
+                          title={isAr ? "إضافة الكلمة مباشرة إلى نص السيرة" : "Add keyword directly into CV text"}
+                        >
+                          {isAdded ? (
+                            <span>✓ {isAr ? "مضافة" : isDe ? "Hinzugefügt" : "Added"}</span>
+                          ) : (
+                            <span>{isAr ? "+ إضافتها للنص" : isDe ? "+ Zum Text hinzufügen" : "+ Add to CV"}</span>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -792,7 +1052,21 @@ export default function AtsAnalyzerClient({
             )}
 
             {!isCvAccepted && (inputMode === "upload" || inputMode === "paste") && cvText.trim().length > 0 && (
-              <div className="pt-4 flex justify-end">
+              <div className="pt-4 flex flex-wrap items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={openTextEditor}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 hover:text-white font-bold text-xs sm:text-sm transition-all cursor-pointer"
+                >
+                  <span>✏️</span>
+                  <span>
+                    {isAr
+                      ? "✏️ تعديل نص السيرة وتصحيح الأخطاء يدوياً"
+                      : isDe
+                      ? "✏️ Text manuell korrigieren"
+                      : "✏️ Edit CV Text Manually"}
+                  </span>
+                </button>
                 <button
                   type="button"
                   onClick={handleMagicImport}
@@ -816,10 +1090,10 @@ export default function AtsAnalyzerClient({
                   ) : (
                     <span>
                       {isAr
-                        ? "✨ إصلاح السيرة الذاتية وإنشاء نسخة ألمانية مصححة الآن (DIN 5008)"
+                        ? "✨ إصلاح وتنسيق السيرة الذاتية تلقائياً (DIN 5008)"
                         : isDe
-                        ? "✨ Lebenslauf jetzt reparieren & DIN 5008 Version erstellen (DIN 5008)"
-                        : "✨ Auto-Fix CV & Create DIN 5008 Version Now (DIN 5008)"}
+                        ? "✨ Lebenslauf automatisch nach DIN 5008 optimieren"
+                        : "✨ Auto-Optimize CV to DIN 5008 Standard"}
                     </span>
                   )}
                 </button>
@@ -829,6 +1103,14 @@ export default function AtsAnalyzerClient({
         </div>
       );
     })()}
+
+      {/* Contextual Paywall Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        locale={locale}
+        triggerFeature="ats"
+      />
     </div>
   );
 }

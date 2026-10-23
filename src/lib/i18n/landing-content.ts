@@ -56,7 +56,40 @@ export interface LandingContent {
     positiveRate: string;
     positivePoints: [string, string, string, string];
   };
-  pricing: {
+  freeValue: {
+    badge: string;
+    title: string;
+    subtitle: string;
+    card1: {
+      badge: string;
+      title: string;
+      desc: string;
+      f1: string;
+      f2: string;
+      f3: string;
+      cta: string;
+    };
+    card2: {
+      badge: string;
+      title: string;
+      desc: string;
+      f1: string;
+      f2: string;
+      f3: string;
+      cta: string;
+    };
+    card3: {
+      badge: string;
+      title: string;
+      desc: string;
+      f1: string;
+      f2: string;
+      f3: string;
+      cta: string;
+    };
+    pricingLinkText: string;
+  };
+  pricing?: {
     badge: string;
     title: string;
     subtitle: string;
@@ -253,52 +286,38 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         "Dossier complet Bewerbungsmappe 3-en-1",
       ],
     },
-    pricing: {
-      badge: "Tarifs clairs",
-      title: "Tarifs clairs • Aucun abonnement récurrent masqué",
-      subtitle: "Choisissez la formule adaptée à votre rythme de recherche d'emploi, avec paiement unique.",
-      starter: {
-        category: "Formule gratuite",
-        title: "Starter",
-        desc: "Création d'un CV DIN 5008, recherche d'offres et accès au cours A1.",
-        price: "$0",
-        period: "/ toujours",
-        f1: "Création d'un CV conforme DIN 5008",
-        f2: "Recherche et enregistrement d'offres en Allemagne",
-        f3: "Accès complet au cours d'allemand A1",
-        f4: "3 crédits IA initiaux offerts",
-        f5: "Compilateur Bewerbungsmappe 3-en-1",
-        cta: "Commencer gratuitement",
+    freeValue: {
+      badge: "✨ Valeur Gratuite Immédiate — Zéro Risque",
+      title: "Commencez 100% Gratuitement : Tout pour Réussir en Allemagne",
+      subtitle: "Sans carte bancaire et sans abonnement caché. Créez votre CV DIN 5008, apprenez l'allemand A1 en audio et testez le scanner ATS dès maintenant.",
+      card1: {
+        badge: "100% Toujours Gratuit",
+        title: "Générateur de CV DIN 5008",
+        desc: "Créez et exportez votre CV tabulaire selon la norme officielle allemande DIN 5008 attendue par tous les recruteurs.",
+        f1: "Structure tabulaire allemande officielle",
+        f2: "Export PDF conforme DIN 5008 sans frais",
+        f3: "Sauvegarde et modification à tout moment",
+        cta: "Créer mon CV gratuit →",
       },
-      quickSprint: {
-        category: "Pass Sprint 30 jours",
-        title: "Quick Sprint",
-        desc: "Validité 30 jours, 20 requêtes IA/jour, audit ATS, exports PDF illimités.",
-        price: "$9.99",
-        period: "/ 30 jours",
-        subtext: "Paiement unique • Activation immédiate",
-        f1: "Validité complète de 30 jours",
-        f2: "20 requêtes IA quotidiennes (Fair Use)",
-        f3: "Audit de conformité ATS allemand",
-        f4: "Exports PDF officiels illimités",
-        cta: "Choisir Quick Sprint",
+      card2: {
+        badge: "Cours Audio 100% Gratuit",
+        title: "Académie d'Allemand A1 avec Audio",
+        desc: "Plus de 20 leçons interactives alignées sur l'Institut Goethe avec audio natif, dialogues du quotidien et vocabulaire professionnel.",
+        f1: "Plus de 20 leçons interactives ouvertes à tous",
+        f2: "Prononciation allemande native et phonétique claire",
+        f3: "Fiches de grammaire et préparation aux entretiens",
+        cta: "Commencer les cours gratuits →",
       },
-      proJobPass: {
-        popularBadge: "Le plus populaire • Économisez 35%",
-        category: "Pass Carrière Complet",
-        title: "PRO Job Pass",
-        desc: "Couverture complète du cycle d'embauche (90 jours), compilateur Bewerbungsmappe, adaptation intelligente.",
-        price: "$19.99",
-        period: "/ 90 jours",
-        subtext: "Paiement unique • Aucun abonnement masqué",
-        f1: "90 jours complets couvrant le cycle de recrutement",
-        f2: "1-Click PDF to DIN 5008 Auto-Adapt",
-        f3: "Compilateur Bewerbungsmappe 3-en-1",
-        f4: "20 requêtes IA prioritaires par jour",
-        f5: "Lettres de motivation personnalisées par offre",
-        cta: "Obtenir PRO Job Pass",
+      card3: {
+        badge: "Essai IA Gratuit de Bienvenue",
+        title: "Audit ATS & Lettre de Motivation IA",
+        desc: "Recevez des crédits d'essai offerts pour auditer votre CV contre les filtres ATS allemands ou rédiger un Anschreiben percutant.",
+        f1: "Crédits d'essai offerts dès l'inscription",
+        f2: "Vérification de compatibilité ATS avec les offres",
+        f3: "Conseils ciblés pour franchir les filtres RH",
+        cta: "Tester le scanner ATS →",
       },
-      comparisonLink: "Voir le comparatif détaillé des fonctionnalités →",
+      pricingLinkText: "Vous recherchez nos forfaits ? Voir les détails des tarifs et la transparence →",
     },
     howItWorks: {
       badge: "Comment ça marche",
@@ -393,7 +412,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       title: "Démarrez votre carrière en Allemagne dès aujourd'hui 🇩🇪",
       subtitle: "Rejoignez des milliers de professionnels qui ont créé un dossier DIN 5008 certifié et décroché des entretiens en Allemagne.",
       primaryBtn: "Créer votre CV allemand gratuit 🇩🇪",
-      secondaryBtn: "Voir les tarifs (sans abonnement)",
+      secondaryBtn: "Parcourir les Emplois Vérifiés 💼",
     },
   },
 
@@ -467,52 +486,38 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         "حزمة ترشيح متكاملة (Deckblatt + Anschreiben + Lebenslauf).",
       ],
     },
-    pricing: {
-      badge: "باقات واضحة وشفافة",
-      title: "دفع لمرة واحدة • بدون أي اشتراك دوري خفي",
-      subtitle: "اختر الباقة المناسبة لمرحلة بحثك عن عمل في ألمانيا، بدون تجديد تلقائي أو مفاجآت في بطاقتك.",
-      starter: {
-        category: "المستوى المجاني",
-        title: "Starter",
-        desc: "لبناء سيرة ذاتية قياسية وتصفح مسار الألمانية A1",
-        price: "$0",
-        period: "/ دائماً",
-        f1: "إنشاء سيرة ذاتية واحدة بتنسيق DIN 5008",
-        f2: "البحث في آلاف الوظائف الألمانية وحفظها",
-        f3: "وصول مجاني لكافة دروس مسار الألمانية A1",
-        f4: "3 أرصدة ذكاء اصطناعي تجريبية",
-        f5: "تجميع ملف الترشيح الكامل (Bewerbungsmappe)",
-        cta: "ابدأ مجاناً الآن",
+    freeValue: {
+      badge: "✨ قيمة مجانية فورية بدون أي مخاطرة",
+      title: "ابدأ مجاناً 100% اليوم: كل ما تحتاجه للانطلاق في ألمانيا",
+      subtitle: "بدون بطاقة بنكية وبدون اشتراكات مخفية. صمم سيرتك الألمانية، تعلم الألمانية A1 بالصوت، وجرّب فحص الـ ATS فوراً.",
+      card1: {
+        badge: "مجاني دائماً 100%",
+        title: "منشئ السيرة الذاتية DIN 5008",
+        desc: "أنشئ سيرتك الذاتية وفق المعيار الألماني الرسمي DIN 5008 بتنسيق جدول احترافي Tabellarischer Lebenslauf معترف به في كافة الشركات.",
+        f1: "تنسيق متوافق مع معايير الشركات الألمانية",
+        f2: "تحميل وطباعة بتنسيق PDF قياسي مجاناً",
+        f3: "حفظ وتعديل بياناتك في أي وقت بسهولة",
+        cta: "أنشئ سيرتك مجاناً ←",
       },
-      quickSprint: {
-        category: "تصريح الـ 30 يوماً",
-        title: "Quick Sprint",
-        desc: "صلاحية 30 يوماً للتقديمات السريعة والمكثفة على الوظائف",
-        price: "$9.99",
-        period: "/ 30 يوماً",
-        subtext: "دفع لمرة واحدة • تفعيل فوري",
-        f1: "صلاحية 30 يوماً كاملة",
-        f2: "20 طلب ذكاء اصطناعي يومياً (Fair Use)",
-        f3: "فحص التوافق مع أنظمة ATS الألمانية",
-        f4: "تصدير غير محدود لسير ذاتية بصيغة PDF",
-        cta: "اختيار Quick Sprint ⚡",
+      card2: {
+        badge: "أكاديمية مجانية بالكامل",
+        title: "مسار دروس الألمانية A1 بالصوت",
+        desc: "أكثر من 20 درساً تفاعلياً متوافقاً مع معايير معهد غوته للمبتدئين مع نطق صوتي بشري نقي ونطق صوتي مرشد ومفردات سوق العمل.",
+        f1: "20+ درساً تفاعلياً مجانياً ومتاحاً للجميع",
+        f2: "نطق ألماني بشري عالي النقاء لكل كلمة وجملة",
+        f3: "شروحات مبسطة وقواعد نحوية وتدريبات عملية",
+        cta: "ابدأ تعلم الألمانية مجاناً ←",
       },
-      proJobPass: {
-        popularBadge: "الأكثر طلباً • وفر 35%",
-        category: "جواز الباحث عن عمل الشامل",
-        title: "PRO Job Pass",
-        desc: "تغطية كاملة لدورة التوظيف الألمانية مع جميع الأدوات والمتابعة",
-        price: "$19.99",
-        period: "/ 90 يوماً",
-        subtext: "دفع لمرة واحدة • بدون اشتراك دوري",
-        f1: "90 يوماً كاملة تغطي دورة التوظيف",
-        f2: "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)",
-        f3: "استوديو الملف المتكامل (Bewerbungsmappe)",
-        f4: "20 طلب ذكاء اصطناعي يومياً عالي الدقة",
-        f5: "خطابات دافع مخصصة لكل إعلان وظيفي",
-        cta: "احصل على PRO Job Pass 💎",
+      card3: {
+        badge: "تجربة ذكاء اصطناعي ترحيبية",
+        title: "فاحص ATS ومولد خطابات الدافع",
+        desc: "احصل على رصيد ترحيبي مجاني لفحص سيرتك الذاتية وتوافقها مع خوارزميات الشركات وتوليد خطاب دافع ألماني Anschreiben مخصص.",
+        f1: "رصيد ترحيبي مجاني فور إنشاء الحساب",
+        f2: "فحص توافق السيرة مع إعلانات الوظائف الألمانية",
+        f3: "اقتراحات فورية لتجاوز أنظمة الفرز الآلي",
+        cta: "جرّب الفاحص مجاناً ←",
       },
-      comparisonLink: "عرض المقارنة التفصيلية لجميع الميزات ←",
+      pricingLinkText: "هل تبحث عن باقاتنا وترخيص المحترفين؟ استعرض تفاصيل الأسعار والشفافية التامة ←",
     },
     howItWorks: {
       badge: "كيف تعمل المنصة",
@@ -607,7 +612,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       title: "ابدأ خطوتك الأولى نحو مستقبلك المهني في ألمانيا اليوم 🇩🇪",
       subtitle: "انضم إلى آلاف المهنيين الذين أنشأوا ملفات ترشيح ألمانية متكاملة واجتازوا فلاتر ATS بنجاح.",
       primaryBtn: "أنشئ سيرتك الذاتية مجاناً 🇩🇪",
-      secondaryBtn: "عرض باقات الأسعار (بدون اشتراك دوري)",
+      secondaryBtn: "تصفح أحدث الوظائف الشاغرة 💼",
     },
   },
 
@@ -681,52 +686,38 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         "Vollständige Bewerbungsmappe 3-in-1 (Deckblatt + Anschreiben + Lebenslauf).",
       ],
     },
-    pricing: {
-      badge: "Faire Preise",
-      title: "Transparente Preise • Kein verstecktes Abonnement",
-      subtitle: "Wählen Sie das passende Paket für Ihre Bewerbungsphase – ohne automatische Verlängerung.",
-      starter: {
-        category: "Kostenlos",
-        title: "Starter",
-        desc: "Für den Einstieg und die Vorbereitung eines DIN 5008 Lebenslaufs und den Deutsch A1 Kurs.",
-        price: "$0",
-        period: "/ dauerhaft",
-        f1: "1 DIN 5008 Lebenslauf-Ersteller",
-        f2: "Stellenangebote durchsuchen & speichern",
-        f3: "Voller Zugang zum Deutsch A1 Kurs",
-        f4: "3 Start-Guthaben für KI-Funktionen",
-        f5: "Bewerbungsmappe 3-in-1 Compiler",
-        cta: "Kostenlos starten",
+    freeValue: {
+      badge: "✨ 100% Kostenloser Sofortwert — Ohne Risiko",
+      title: "Starten Sie kostenlos: Alles für Bewerbung & Sprachstart in Deutschland",
+      subtitle: "Keine Kreditkarte, keine Abofallen. DIN 5008 Lebenslauf erstellen, Deutsch A1 mit Audio lernen und ATS-Audit sofort testen.",
+      card1: {
+        badge: "Dauerhaft 100% Kostenlos",
+        title: "DIN 5008 Lebenslauf-Generator",
+        desc: "Erstellen und exportieren Sie Ihren tabellarischen Lebenslauf nach offizieller deutscher DIN 5008 Norm – direkt von deutschen Arbeitgebern anerkannt.",
+        f1: "Vollständig konform mit deutschen HR-Standards",
+        f2: "Kostenloser PDF-Export nach DIN 5008",
+        f3: "Jederzeit online bearbeiten und speichern",
+        cta: "Lebenslauf kostenlos erstellen →",
       },
-      quickSprint: {
-        category: "30-Tage-Pass",
-        title: "Quick Sprint",
-        desc: "30 Tage Gültigkeit für schnelle und zielgerichtete Bewerbungen mit ATS-Audit.",
-        price: "$9.99",
-        period: "/ 30 Tage",
-        subtext: "Einmalzahlung • Sofortiger Zugang",
-        f1: "Volle 30 Tage Gültigkeit",
-        f2: "20 tägliche KI-Anfragen (Fair Use)",
-        f3: "Deutscher ATS-Audit-Check",
-        f4: "Unbegrenzte offizielle PDF-Exporte",
-        cta: "Quick Sprint wählen ⚡",
+      card2: {
+        badge: "100% Kostenloser Sprachkurs",
+        title: "A1 Deutsch-Akademie mit Audio & Phonetik",
+        desc: "Über 20 interaktive Lektionen nach Goethe-Standard mit nativer Sprachausgabe für Alltag, Behörden und Vorstellungsgespräche in Deutschland.",
+        f1: "Über 20 interaktive Lektionen dauerhaft offen",
+        f2: "Kristallklare deutsche Aussprache per Klick",
+        f3: "Grammatik-Karten und Übungen für den Berufsstart",
+        cta: "Kostenlos Deutsch lernen →",
       },
-      proJobPass: {
-        popularBadge: "Bestseller • 35% Sparen",
-        category: "Kompletter Karriere-Pass",
-        title: "PRO Job Pass",
-        desc: "Vollständige Abdeckung für den gesamten deutschen Bewerbungszyklus (90 Tage).",
-        price: "$19.99",
-        period: "/ 90 Tage",
-        subtext: "Einmalzahlung • Kein Abo",
-        f1: "90 volle Tage für den gesamten Bewerbungszyklus",
-        f2: "1-Click PDF to DIN 5008 Auto-Adapt",
-        f3: "Bewerbungsmappe 3-in-1 Compiler",
-        f4: "20 tägliche Prioritäts-KI-Anfragen",
-        f5: "Individuelle Anschreiben für jede Stelle",
-        cta: "PRO Job Pass sichern 💎",
+      card3: {
+        badge: "Kostenloses KI-Startguthaben",
+        title: "ATS-Audit & KI-Anschreiben Generator",
+        desc: "Testen Sie das deutsche ATS-Prüfungstool und erstellen Sie ein maßgeschneidertes Anschreiben mit kostenlosem Startguthaben.",
+        f1: "Kostenloses Startguthaben bei Registrierung",
+        f2: "Sofortige ATS-Prüfung gegen Stellenanzeigen",
+        f3: "Konkrete Optimierungsvorschläge für HR-Filter",
+        cta: "ATS-Checker kostenlos testen →",
       },
-      comparisonLink: "Detaillierten Funktionsvergleich ansehen →",
+      pricingLinkText: "Suchen Sie unsere PRO-Pässe? Alle Preisdetails & Transparenz ansehen →",
     },
     howItWorks: {
       badge: "So funktioniert's",
@@ -821,7 +812,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       title: "Starten Sie Ihre Karriere in Deutschland noch heute 🇩🇪",
       subtitle: "Erstellen Sie Ihr professionelles DIN 5008 Bewerbungspaket und überzeugen Sie deutsche Arbeitgeber.",
       primaryBtn: "Kostenlosen Lebenslauf erstellen 🇩🇪",
-      secondaryBtn: "Preise & Tarife (Ohne Abo)",
+      secondaryBtn: "Verifizierte Jobs durchsuchen 💼",
     },
   },
 
@@ -895,52 +886,38 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         "Complete Bewerbungsmappe (Cover page, letter, and resume).",
       ],
     },
-    pricing: {
-      badge: "Transparent Pricing",
-      title: "Transparent Pricing • No Hidden Subscriptions",
-      subtitle: "Pick the pass that fits your job search timeline with zero recurring fees or traps.",
-      starter: {
-        category: "Free Plan",
-        title: "Starter",
-        desc: "For building your initial CV and exploring A1",
-        price: "$0",
-        period: "/ forever",
-        f1: "1 standard DIN 5008 CV builder",
-        f2: "Search & bookmark German jobs",
-        f3: "Full access to German A1 course",
-        f4: "3 initial AI credits",
-        f5: "Bewerbungsmappe dossier compiler",
-        cta: "Start Free Now",
+    freeValue: {
+      badge: "✨ Instant Free Value — Zero Risk",
+      title: "Start 100% Free: Everything You Need to Land Jobs in Germany",
+      subtitle: "No credit card required, no subscription traps. Build your DIN 5008 CV, learn German A1 with native audio, and test the ATS scanner right away.",
+      card1: {
+        badge: "100% Always Free",
+        title: "German DIN 5008 Resume Builder",
+        desc: "Build and export your tabular German CV adhering to the official DIN 5008 employment standard required by German companies.",
+        f1: "100% aligned with German employer standards",
+        f2: "Free PDF export formatted to DIN 5008",
+        f3: "Save and edit your data anytime",
+        cta: "Create Free CV →",
       },
-      quickSprint: {
-        category: "30-Day Sprint Pass",
-        title: "Quick Sprint",
-        desc: "30 days validity for fast job applications",
-        price: "$9.99",
-        period: "/ 30 days",
-        subtext: "One-time payment • Instant access",
-        f1: "Full 30 days validity",
-        f2: "20 daily AI requests (Fair Use)",
-        f3: "German ATS audit checks",
-        f4: "Unlimited official PDF exports",
-        cta: "Choose Quick Sprint ⚡",
+      card2: {
+        badge: "100% Free Audio Course",
+        title: "German A1 Career Academy with Audio",
+        desc: "Over 20+ Goethe-aligned interactive lessons with crystal-clear native pronunciation, dialogues, and vocabulary for life and work in Germany.",
+        f1: "20+ comprehensive interactive lessons open to all",
+        f2: "Crystal-clear native German pronunciation audio",
+        f3: "Grammar breakdown cards & job-ready vocab",
+        cta: "Start Free Lessons →",
       },
-      proJobPass: {
-        popularBadge: "Most Popular • Save 35%",
-        category: "Complete Career Pass",
-        title: "PRO Job Pass",
-        desc: "Complete coverage for the entire German hiring cycle",
-        price: "$19.99",
-        period: "/ 90 days",
-        subtext: "One-time payment • No recurring fees",
-        f1: "90 full days covering hiring cycle",
-        f2: "1-Click PDF to DIN 5008 Auto-Adapt",
-        f3: "Bewerbungsmappe 3-in-1 Compiler",
-        f4: "20 daily priority AI requests",
-        f5: "Tailored cover letters per vacancy",
-        cta: "Get PRO Job Pass 💎",
+      card3: {
+        badge: "Free AI Welcome Trial",
+        title: "German ATS Audit & AI Cover Letter",
+        desc: "Get complimentary trial credits to scan your resume against German ATS filters or generate a tailored Anschreiben for your dream job.",
+        f1: "Complimentary trial credits upon registration",
+        f2: "Instant ATS compatibility match vs German job ads",
+        f3: "Actionable keyword & phrasing recommendations",
+        cta: "Try Free ATS Scanner →",
       },
-      comparisonLink: "View Detailed Feature Comparison →",
+      pricingLinkText: "Looking for our pricing plans? View pricing & transparency details →",
     },
     howItWorks: {
       badge: "How It Works",
@@ -1035,7 +1012,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       title: "Take Your First Step Toward a Career in Germany Today 🇩🇪",
       subtitle: "Join thousands of candidates who generated certified DIN 5008 dossiers and landed German interviews.",
       primaryBtn: "Create Your Free German CV 🇩🇪",
-      secondaryBtn: "View Pricing (No Subscriptions)",
+      secondaryBtn: "Browse Verified Jobs 💼",
     },
   },
 };

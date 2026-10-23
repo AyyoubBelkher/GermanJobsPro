@@ -690,6 +690,9 @@ export default async function SinglePostPage({
             <img
               src={resolvedHeroImage}
               alt={post.title}
+              fetchPriority="high"
+              decoding="async"
+              loading="eager"
               className="w-full h-full object-cover rounded-3xl"
             />
           </div>
@@ -948,6 +951,8 @@ export default async function SinglePostPage({
                         <img
                           src={relCover}
                           alt={relTitle}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : relIsA1 ? (

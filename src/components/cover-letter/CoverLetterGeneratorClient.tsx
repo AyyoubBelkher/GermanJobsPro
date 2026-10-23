@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { extractGermanJobTitle } from "@/lib/cover-letter";
 import FieldTooltip from "@/components/cv/FieldTooltip";
+import UpgradeModal from "@/components/pricing/UpgradeModal";
 
 interface CvOption {
   id: string;
@@ -50,6 +51,7 @@ export default function CoverLetterGeneratorClient({
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const isAr = locale === "ar";
   const isDe = locale === "de";
@@ -93,6 +95,12 @@ export default function CoverLetterGeneratorClient({
       });
 
       const data = await res.json();
+
+      if (res.status === 402 || data.error === "INSUFFICIENT_CREDITS" || data.outOfCredits) {
+        setShowUpgradeModal(true);
+        setIsGenerating(false);
+        return;
+      }
 
       if (!res.ok || !data.success) {
         throw new Error(data.error || "Failed to generate cover letter");
@@ -532,6 +540,14 @@ export default function CoverLetterGeneratorClient({
           </div>
         </div>
       </div>
+
+      {/* Contextual Paywall Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        locale={locale}
+        triggerFeature="cover_letter"
+      />
     </div>
   );
 }

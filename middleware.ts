@@ -3,6 +3,45 @@ import type { NextRequest } from "next/server";
 import { verifySessionToken } from "@/lib/session";
 import { DEFAULT_LOCALE, isValidLocale, type Locale } from "@/lib/i18n";
 
+function resolvePreferredLocale(request: NextRequest): Locale {
+  // 1. Check request.cookies.get("preferred_locale")?.value — if valid, return it
+  const cookieLocale = request.cookies.get("preferred_locale")?.value;
+  if (cookieLocale && isValidLocale(cookieLocale)) {
+    return cookieLocale;
+  }
+
+  // 2. Parse request.headers.get("accept-language") in order of q weight
+  const acceptLanguage = request.headers.get("accept-language");
+  if (acceptLanguage) {
+    const candidates = acceptLanguage
+      .split(",")
+      .map((part) => {
+        const [lang, qPart] = part.trim().split(";");
+        let q = 1.0;
+        if (qPart) {
+          const match = qPart.match(/q=([0-9.]+)/);
+          if (match) {
+            const parsed = parseFloat(match[1]);
+            if (!isNaN(parsed)) q = parsed;
+          }
+        }
+        const baseCode = lang.split("-")[0].toLowerCase().trim();
+        return { code: baseCode, q };
+      })
+      .sort((a, b) => b.q - a.q)
+      .map((item) => item.code);
+
+    for (const code of candidates) {
+      if (isValidLocale(code)) {
+        return code;
+      }
+    }
+  }
+
+  // 3. Fallback to DEFAULT_LOCALE ('ar')
+  return DEFAULT_LOCALE;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
@@ -22,8 +61,15 @@ export async function middleware(request: NextRequest) {
 
   // If path lacks a valid locale prefix or contains an unsupported locale, redirect using a 307 temporary redirect
   if (!potentialLocale || !isValidLocale(potentialLocale)) {
-    const targetPath = `/${DEFAULT_LOCALE}${pathname === "/" ? "" : pathname}${search}`;
-    return NextResponse.redirect(new URL(targetPath, request.url), 307);
+    const resolvedLocale = resolvePreferredLocale(request);
+    const targetPath = `/${resolvedLocale}${pathname === "/" ? "" : pathname}${search}`;
+    const redirectRes = NextResponse.redirect(new URL(targetPath, request.url), 307);
+    redirectRes.cookies.set("preferred_locale", resolvedLocale, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
+    return redirectRes;
   }
 
   const locale = potentialLocale as Locale;
@@ -36,7 +82,13 @@ export async function middleware(request: NextRequest) {
       const adminSession = request.cookies.get("admin_session")?.value;
       if (!(await verifySessionToken(adminSession))) {
         const loginUrl = new URL(`/${locale}/admin/login`, request.url);
-        return NextResponse.redirect(loginUrl);
+        const res = NextResponse.redirect(loginUrl);
+        res.cookies.set("preferred_locale", locale, {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 365,
+          sameSite: "lax",
+        });
+        return res;
       }
     }
   }
@@ -47,7 +99,13 @@ export async function middleware(request: NextRequest) {
     const userSession = request.cookies.get("user_session")?.value;
     if (!userSession || userSession.trim() === "") {
       const loginUrl = new URL(`/${locale}/auth/login`, request.url);
-      return NextResponse.redirect(loginUrl);
+      const res = NextResponse.redirect(loginUrl);
+      res.cookies.set("preferred_locale", locale, {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+      });
+      return res;
     }
   }
 
@@ -55,11 +113,20 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-locale", locale);
 
-  return NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
+
+  // Remember the user's explicit language choice
+  response.cookies.set("preferred_locale", locale, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+  });
+
+  return response;
 }
 
 export const config = {

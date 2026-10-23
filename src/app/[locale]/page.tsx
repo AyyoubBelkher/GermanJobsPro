@@ -543,203 +543,163 @@ export default async function LandingPage({
 
 
         {/* ========================================================= */}
-        {/* 4. TRANSPARENT PRICING PREVIEW */}
+        {/* 4. FRICTIONLESS FREE VALUE & FEATURE SHOWCASE */}
         {/* ========================================================= */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider">
-              <span>💳</span>
-              <span>{t.pricing.badge}</span>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+              <span>✨</span>
+              <span>{t.freeValue.badge}</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white">
-              {t.pricing.title}
+              {t.freeValue.title}
             </h2>
-            <p className="text-slate-400 text-sm sm:text-base">
-              {t.pricing.subtitle}
+            <p className="text-slate-400 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
+              {t.freeValue.subtitle}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch pt-2">
-            {/* Tier 1: Starter ($0) */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-7 space-y-6 flex flex-col justify-between">
+            {/* Value Card 1: Free Starter Access (DIN 5008 CV) */}
+            <div className="bg-slate-900/60 border border-slate-800 hover:border-slate-700/80 rounded-3xl p-7 space-y-6 flex flex-col justify-between transition-all group shadow-xl">
               <div className="space-y-5">
-                <div className="space-y-1.5">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    {t.pricing.starter.category}
-                  </span>
-                  <h3 className="text-2xl font-black text-white">{t.pricing.starter.title}</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    {t.pricing.starter.desc}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                      📄
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-bold">
+                      {t.freeValue.card1.badge}
+                    </span>
+                  </div>
+                  <h3 className="text-2xl font-black text-white group-hover:text-blue-400 transition-colors pt-2">
+                    {t.freeValue.card1.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                    {t.freeValue.card1.desc}
                   </p>
-                </div>
-
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-4xl sm:text-5xl font-black text-white">{t.pricing.starter.price}</span>
-                  <span className="text-xs text-slate-400 font-medium">
-                    {t.pricing.starter.period}
-                  </span>
                 </div>
 
                 <ul className="space-y-3.5 text-xs text-slate-300 pt-5 border-t border-slate-800">
                   <li className="flex items-start gap-2.5">
                     <span className="text-emerald-400 font-bold text-sm">✓</span>
-                    <span>{t.pricing.starter.f1}</span>
+                    <span>{t.freeValue.card1.f1}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <span className="text-emerald-400 font-bold text-sm">✓</span>
-                    <span>{t.pricing.starter.f2}</span>
+                    <span>{t.freeValue.card1.f2}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <span className="text-emerald-400 font-bold text-sm">✓</span>
-                    <span>{t.pricing.starter.f3}</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-emerald-400 font-bold text-sm">✓</span>
-                    <span>{t.pricing.starter.f4}</span>
-                  </li>
-                  <li className="flex items-start gap-2.5 text-slate-500">
-                    <span className="text-slate-600 font-bold text-sm">✕</span>
-                    <span>{t.pricing.starter.f5}</span>
+                    <span>{t.freeValue.card1.f3}</span>
                   </li>
                 </ul>
               </div>
 
               <Link
                 href={`/${locale}/dashboard/cv/new`}
-                className="w-full py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs text-center border border-slate-700/60 transition-all block"
+                className="w-full py-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm text-center border border-slate-700/80 hover:border-blue-500/50 transition-all block shadow-md hover:shadow-blue-500/10"
               >
-                {t.pricing.starter.cta}
+                {t.freeValue.card1.cta}
               </Link>
             </div>
 
-            {/* Tier 2: Quick Sprint ($9.99 / 30 Days) */}
-            <div className="bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-3xl p-7 space-y-6 flex flex-col justify-between shadow-xl transition-all">
+            {/* Value Card 2: Free German A1 Academy (Featured Value) */}
+            <div className="relative bg-gradient-to-b from-slate-900 via-blue-950/30 to-slate-950 border-2 border-blue-500/60 hover:border-blue-500 rounded-3xl p-7 space-y-6 flex flex-col justify-between transition-all group shadow-2xl shadow-blue-500/10">
               <div className="space-y-5">
-                <div className="space-y-1.5">
-                  <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
-                    {t.pricing.quickSprint.category}
-                  </span>
-                  <h3 className="text-2xl font-black text-white">{t.pricing.quickSprint.title}</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    {t.pricing.quickSprint.desc}
-                  </p>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-4xl sm:text-5xl font-black text-white">{t.pricing.quickSprint.price}</span>
-                    <span className="text-xs text-slate-400 font-medium">
-                      {t.pricing.quickSprint.period}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-400/30 text-blue-300 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                      🎧
+                    </span>
+                    <span className="px-3.5 py-1 rounded-full bg-blue-600 text-white text-[11px] font-black shadow-lg shadow-blue-600/30 border border-blue-400/40">
+                      {t.freeValue.card2.badge}
                     </span>
                   </div>
-                  <p className="text-[11px] text-emerald-400 font-semibold">
-                    {t.pricing.quickSprint.subtext}
+                  <h3 className="text-2xl font-black text-white group-hover:text-blue-300 transition-colors pt-2">
+                    {t.freeValue.card2.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                    {t.freeValue.card2.desc}
                   </p>
                 </div>
 
                 <ul className="space-y-3.5 text-xs text-slate-200 pt-5 border-t border-slate-800">
                   <li className="flex items-start gap-2.5">
                     <span className="text-blue-400 font-bold text-sm">✓</span>
-                    <span className="font-semibold text-white">{t.pricing.quickSprint.f1}</span>
+                    <span className="font-semibold text-white">{t.freeValue.card2.f1}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <span className="text-blue-400 font-bold text-sm">✓</span>
-                    <span>{t.pricing.quickSprint.f2}</span>
+                    <span className="font-semibold text-white">{t.freeValue.card2.f2}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <span className="text-blue-400 font-bold text-sm">✓</span>
-                    <span>{t.pricing.quickSprint.f3}</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-blue-400 font-bold text-sm">✓</span>
-                    <span>{t.pricing.quickSprint.f4}</span>
+                    <span>{t.freeValue.card2.f3}</span>
                   </li>
                 </ul>
               </div>
 
               <Link
-                href={`/${locale}/pricing`}
-                className="w-full py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm transition-all shadow-md text-center block border border-slate-700"
+                href={`/${locale}/blog?category=German+A1`}
+                className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs sm:text-sm text-center border border-blue-400/30 transition-all block shadow-xl shadow-blue-600/25 hover:scale-[1.01]"
               >
-                {t.pricing.quickSprint.cta}
+                {t.freeValue.card2.cta}
               </Link>
             </div>
 
-            {/* Tier 3: PRO Job Pass ($19.99 / 90 Days - FEATURED) */}
-            <div className="relative bg-gradient-to-b from-slate-900 via-blue-950/40 to-slate-950 border-2 border-blue-500 rounded-3xl p-7 space-y-6 shadow-2xl shadow-blue-500/10 flex flex-col justify-between transition-all">
-              {/* Featured Badge - Blue strictly */}
-              <div className="absolute -top-3.5 start-6 px-3.5 py-1 rounded-full bg-blue-600 text-white font-extrabold text-[11px] shadow-lg shadow-blue-600/30 flex items-center gap-1.5 border border-blue-400/40">
-                <span>⭐</span>
-                <span>{t.pricing.proJobPass.popularBadge}</span>
-              </div>
-
-              <div className="space-y-5 pt-1">
-                <div className="space-y-1.5">
-                  <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
-                    {t.pricing.proJobPass.category}
-                  </span>
-                  <h3 className="text-2xl font-black text-white flex items-center gap-2">
-                    <span>{t.pricing.proJobPass.title}</span>
-                    <span className="text-xl">💎</span>
-                  </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    {t.pricing.proJobPass.desc}
-                  </p>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-200">
-                      {t.pricing.proJobPass.price}
+            {/* Value Card 3: Free AI Welcome Trial */}
+            <div className="bg-slate-900/60 border border-slate-800 hover:border-slate-700/80 rounded-3xl p-7 space-y-6 flex flex-col justify-between transition-all group shadow-xl">
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="w-12 h-12 rounded-2xl bg-purple-600/10 border border-purple-500/20 text-purple-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                      🎯
                     </span>
-                    <span className="text-xs text-slate-400 font-medium">
-                      {t.pricing.proJobPass.period}
+                    <span className="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-[11px] font-bold">
+                      {t.freeValue.card3.badge}
                     </span>
                   </div>
-                  <p className="text-[11px] text-emerald-400 font-semibold">
-                    {t.pricing.proJobPass.subtext}
+                  <h3 className="text-2xl font-black text-white group-hover:text-purple-300 transition-colors pt-2">
+                    {t.freeValue.card3.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                    {t.freeValue.card3.desc}
                   </p>
                 </div>
 
-                <ul className="space-y-3.5 text-xs text-slate-200 pt-5 border-t border-slate-800">
+                <ul className="space-y-3.5 text-xs text-slate-300 pt-5 border-t border-slate-800">
                   <li className="flex items-start gap-2.5">
-                    <span className="text-blue-400 font-bold text-sm">✓</span>
-                    <span className="font-semibold text-white">{t.pricing.proJobPass.f1}</span>
+                    <span className="text-purple-400 font-bold text-sm">✓</span>
+                    <span>{t.freeValue.card3.f1}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
-                    <span className="text-blue-400 font-bold text-sm">✓</span>
-                    <span className="font-semibold text-white">{t.pricing.proJobPass.f2}</span>
+                    <span className="text-purple-400 font-bold text-sm">✓</span>
+                    <span>{t.freeValue.card3.f2}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
-                    <span className="text-blue-400 font-bold text-sm">✓</span>
-                    <span className="font-semibold text-white">{t.pricing.proJobPass.f3}</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-blue-400 font-bold text-sm">✓</span>
-                    <span>{t.pricing.proJobPass.f4}</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-blue-400 font-bold text-sm">✓</span>
-                    <span>{t.pricing.proJobPass.f5}</span>
+                    <span className="text-purple-400 font-bold text-sm">✓</span>
+                    <span>{t.freeValue.card3.f3}</span>
                   </li>
                 </ul>
               </div>
 
               <Link
-                href={`/${locale}/pricing`}
-                className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs sm:text-sm transition-all shadow-xl shadow-blue-600/30 text-center block border border-blue-400/30"
+                href={`/${locale}/dashboard/ats-analyzer`}
+                className="w-full py-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm text-center border border-slate-700/80 hover:border-purple-500/50 transition-all block shadow-md hover:shadow-purple-500/10"
               >
-                {t.pricing.proJobPass.cta}
+                {t.freeValue.card3.cta}
               </Link>
             </div>
           </div>
 
+          {/* Subtle Trust-Building Pricing Link at Bottom */}
           <div className="text-center pt-2">
             <Link
               href={`/${locale}/pricing`}
-              className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-400 hover:text-blue-400 transition-colors"
             >
-              <span>{t.pricing.comparisonLink}</span>
+              <span>{t.freeValue.pricingLinkText}</span>
             </Link>
           </div>
         </section>
@@ -1142,10 +1102,10 @@ export default async function LandingPage({
               </Link>
 
               <Link
-                href={`/${locale}/pricing`}
+                href={`/${locale}/jobs`}
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-white font-bold text-base border border-slate-700 transition-all flex items-center justify-center gap-2"
               >
-                <span>💳</span>
+                <span>💼</span>
                 <span>{t.finalCta.secondaryBtn}</span>
               </Link>
             </div>

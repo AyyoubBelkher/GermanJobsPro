@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import Link from "next/link";
+import UpgradeModal from "@/components/pricing/UpgradeModal";
 
 interface CvOption {
   id: string;
@@ -57,6 +58,7 @@ export default function DossierCompilerClient({
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [isCompiling, setIsCompiling] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const handlePhotoSelect = (file: File | null) => {
     if (!file) {
@@ -178,8 +180,23 @@ export default function DossierCompilerClient({
         body: formData,
       });
 
+      if (res.status === 402) {
+        setShowUpgradeModal(true);
+        setIsCompiling(false);
+        return;
+      }
+
       if (!res.ok) {
         const errorData = await res.json().catch(() => null);
+        if (
+          errorData?.error === "INSUFFICIENT_CREDITS" ||
+          errorData?.outOfCredits ||
+          errorData?.requiresPro
+        ) {
+          setShowUpgradeModal(true);
+          setIsCompiling(false);
+          return;
+        }
         throw new Error(errorData?.error || "Failed to compile dossier PDF");
       }
 
@@ -771,6 +788,14 @@ export default function DossierCompilerClient({
             </div>
           </div>
         </div>
-    </div>
+
+        {/* Contextual Paywall Upgrade Modal */}
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          locale={locale}
+          triggerFeature="dossier"
+        />
+      </div>
   );
 }

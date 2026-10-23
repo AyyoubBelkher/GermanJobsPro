@@ -195,10 +195,14 @@ export async function POST(request: NextRequest) {
     // 2. Execute AI Magic Import & DIN 5008 Optimization
     let parsedCv;
     const aiStartTime = performance.now();
+    const cleanShortTitle =
+      typeof targetJobTitle === "string" && targetJobTitle.trim().length > 0 && targetJobTitle.trim().length <= 60
+        ? targetJobTitle.trim()
+        : undefined;
     try {
       parsedCv = await magicImportCvAI({
         rawCvText,
-        targetJobTitle,
+        targetJobTitle: cleanShortTitle,
         locale,
       });
     } catch (aiErr) {
@@ -224,7 +228,11 @@ export async function POST(request: NextRequest) {
 
     // 3. Atomically persist to Database in Prisma
     try {
-      const jobTitle = targetJobTitle || parsedCv.personalInfo?.targetJobTitle || "Fachkraft";
+      const jobTitle =
+        cleanShortTitle ||
+        parsedCv.personalInfo?.targetJobTitle ||
+        (typeof targetJobTitle === "string" ? targetJobTitle.trim().slice(0, 60) : null) ||
+        "Fachkraft";
       const cvTitle = parsedCv.title || `Lebenslauf - ${jobTitle}`;
 
       const newCv = await prisma.cv.create({
@@ -253,7 +261,7 @@ export async function POST(request: NextRequest) {
               company: exp.company || "Unternehmen",
               position: exp.position || "Position",
               city: exp.city || null,
-              country: exp.country || "Deutschland",
+              country: exp.country || null,
               startDate: parseDateSafe(exp.startDate),
               endDate: exp.isCurrent ? null : parseNullableDate(exp.endDate),
               isCurrent: Boolean(exp.isCurrent),

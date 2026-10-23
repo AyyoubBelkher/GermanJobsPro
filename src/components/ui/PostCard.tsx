@@ -26,6 +26,7 @@ export interface PostCardProps {
   germanTitle?: string | null;
   arabicSubtitle?: string | null;
   readTime?: string | null;
+  priority?: boolean;
 }
 
 const DEFAULT_UNSPLASH_IMAGE =
@@ -47,7 +48,9 @@ export default function PostCard({
   germanTitle: propGermanTitle,
   arabicSubtitle: propArabicSubtitle,
   readTime: propReadTime,
+  priority = false,
 }: PostCardProps) {
+  const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
@@ -119,6 +122,8 @@ export default function PostCard({
     if (imgRef.current && imgRef.current.complete) {
       if (imgRef.current.naturalWidth === 0) {
         setImgError(true);
+      } else if (imgRef.current.naturalWidth > 0) {
+        setImgLoaded(true);
       }
     }
   }, [hasValidRawImage, resolvedCover]);
@@ -181,22 +186,36 @@ export default function PostCard({
           ) : (
             /* Image Cover with Category / Lesson Badge Overlay */
             <>
+              {/* Lightweight Skeleton placeholder before image is loaded */}
+              {!imgLoaded && !imgError && (
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 bg-slate-800/60 animate-pulse pointer-events-none"
+                />
+              )}
+
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 ref={imgRef}
                 src={finalImageUrl}
                 alt={isA1 ? "" : title}
+                loading={priority ? "eager" : "lazy"}
+                decoding="async"
+                fetchPriority={priority ? "high" : "low"}
+                onLoad={() => setImgLoaded(true)}
                 onError={() => setImgError(true)}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                className={`w-full h-full object-cover group-hover:scale-105 transition-opacity duration-300 ${
+                  imgLoaded ? "opacity-100" : "opacity-0"
+                }`}
               />
 
               {/* Badge overlay on top of cover image */}
               {isA1 ? (
-                <span className="absolute top-4 start-4 text-xs font-black px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white backdrop-blur-md border border-blue-400/40 shadow-lg shadow-blue-900/40 flex items-center gap-1.5 tracking-tight">
+                <span className="absolute top-4 start-4 text-xs font-black px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white backdrop-blur-md border border-blue-400/40 shadow-lg shadow-blue-900/40 flex items-center gap-1.5 tracking-tight z-10">
                   {lessonBadgeText}
                 </span>
               ) : (
-                <span className="absolute top-4 start-4 text-xs font-semibold px-3 py-1 rounded-full bg-slate-900/80 text-white backdrop-blur-sm border border-slate-700/50">
+                <span className="absolute top-4 start-4 text-xs font-semibold px-3 py-1 rounded-full bg-slate-900/80 text-white backdrop-blur-sm border border-slate-700/50 z-10">
                   {category}
                 </span>
               )}

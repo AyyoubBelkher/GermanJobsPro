@@ -35,6 +35,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // PRO Plan or Credit Guardrail for 3-in-1 Bewerbungsmappe Compiler
+    const isPro = Boolean(
+      (authResult.user.plan === "PRO" || authResult.user.plan === "SPRINT") &&
+      authResult.user.planExpiresAt &&
+      new Date(authResult.user.planExpiresAt) > new Date()
+    );
+
+    if (!isPro && (authResult.user.aiCredits ?? 0) <= 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "INSUFFICIENT_CREDITS",
+          requiresPro: true,
+          outOfCredits: true,
+          message: "تجميع ملف الترشيح (Bewerbungsmappe) ميزة متقدمة تتطلب رصيداً أو ترقية إلى باقة PRO.",
+        },
+        { status: 402 }
+      );
+    }
+
     const formData = await request.formData().catch(() => null);
     if (!formData) {
       return NextResponse.json(

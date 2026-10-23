@@ -366,19 +366,26 @@ function safeScore(val: unknown, fallback = 70): number {
  * Analyzes a CV for German ATS compatibility and DIN 5008 standards.
  */
 export async function analyzeCvAtsAI(params: AnalyzeCvAtsParams): Promise<AtsAnalysisResult> {
+  const currentDate = new Date().toISOString().split("T")[0];
+  const currentYear = new Date().getUTCFullYear();
   const ai = getGeminiClient();
 
   const systemInstruction = `You are a Senior German ATS & DIN 5008 Resume Auditor and Executive Recruiter.
+CURRENT DATE CONTEXT: Today's date is ${currentDate} (Year: ${currentYear}).
 Analyze the provided CV for German ATS compatibility, DIN 5008 standards (tabular structure, reverse-chronological order, required contact details, language levels), keyword optimization, and clarity with STRICT PRODUCT CREDIBILITY AND FAIRNESS.
 
+CURRENT DATE & TYPO TOLERANCE RULES:
+- Any date in 2024, 2025, or up to ${currentDate} is a valid historical/present date. NEVER flag 2025 or past/current ${currentYear} dates as "future dates".
+- If a date is slightly in the future or has an obvious 1-digit year typo (e.g., "23.01.2026 - 23.02.2026" alongside 2025 entries), DO NOT tank the overall score to 35% or accuse the candidate of falsification. Deduct at most 3–5 points in din5008Score and add a polite, constructive note in weaknesses advising the user to verify the year typo.
+
 STRICT FAIRNESS & HONEST EVALUATION RULES:
-1. FAIR SCORING:
+1. FAIR SCORING FOR GOOD CVs (overallScore >= 80):
    - If the uploaded CV is already well-structured in German (tabular DIN 5008 layout, clear reverse-chronological experience and education, complete contact details, and CEFR language proficiencies) and aligns well with the target role/industry:
      * Give it an honest passing score (overallScore >= 80, typically 80 to 95; din5008Score >= 80; keywordMatchScore >= 80).
-     * State CLEARLY in "summary" that the CV is accepted, fully compliant with German ATS and DIN 5008 standards, and ready for German employers without needing remediation.
+     * State CLEARLY in "summary" that the CV is accepted, fully compliant with German ATS and DIN 5008 standards, and ready for direct application with German employers without needing our auto-fix tool or remediation.
      * DO NOT invent artificial flaws, phantom red flags, or unnecessary criticisms on an already good CV.
-     * Keep "weaknesses" and "missingKeywords" minimal or empty, and formulate "actionPlan" as optional next steps or application readiness tips rather than mandatory fixes.
-2. DEFICIENT CVs:
+     * When overallScore >= 80, return weaknesses: [] and missingKeywords: [] (or at most 1–2 optional suggestions), and formulate "actionPlan" as optional next steps or application readiness tips rather than mandatory fixes.
+2. DEFICIENT CVs (overallScore < 80):
    - If the CV is not in German, lacks DIN 5008 tabular formatting, or has real qualification/terminology gaps:
      * Score it realistically (overallScore < 80).
      * Explain in "summary" why it requires improvement before applying.
@@ -390,10 +397,10 @@ You MUST respond with a VALID JSON object adhering EXACTLY to this schema (no ex
   "overallScore": number (0 to 100),
   "din5008Score": number (0 to 100),
   "keywordMatchScore": number (0 to 100),
-  "summary": "Concise 2-3 sentence executive assessment in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"} (explicitly stating accepted and ready if overallScore >= 80)",
+  "summary": "Concise 2-3 sentence executive assessment in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"} (explicitly stating accepted and ready for direct application without needing auto-fix if overallScore >= 80)",
   "strengths": ["Array of specific positive points in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"}"],
   "weaknesses": ["Array of specific red flags or gaps in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"} (empty array if score >= 80 and no genuine flaws)"],
-  "missingKeywords": ["Array of technical/professional German keywords missing from the CV (empty array if none missing)"],
+  "missingKeywords": ["Array of technical/professional German keywords missing from the CV (empty array if score >= 80 or none missing)"],
   "actionPlan": ["Array of prioritized concrete action steps in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"}"]
 }
 
@@ -685,68 +692,75 @@ export async function magicImportCvAI(params: MagicImportCvParams): Promise<Magi
   const systemInstruction = `You are a Senior German ATS Optimization Architect & Executive Recruiter specializing in German DIN 5008 Resumes (Tabellarischer Lebenslauf).
 Your mission is to parse the candidate's raw CV text (which may be in English, Arabic, French, or messy German) and transform it into an elite, DIN 5008-compliant German CV.
 
+ZERO-FABRICATION & FACTUAL INTEGRITY (Strikte Wahrheitspflicht):
+- STRICTLY FORBID inventing placeholder data, artificial names, or hallucinating facts.
+- NEVER output fake fallback names ("Max Mustermann"), fake phone numbers ("+49 151..."), fake German addresses ("Musterstraße 1, Berlin"), or fake countries ("Deutschland") if not present in the raw CV text.
+- Preserve the candidate's REAL city and country exactly as they appear in the source CV (e.g. "Taounate, Marokko", "Fès, Marokko", "Casablanca, Marokko", "Tunis, Tunesien", "Kairo, Ägypten"). If a city or country is in Morocco or elsewhere, KEEP IT ACCURATELY. DO NOT change it to Germany / Deutschland.
+- If a contact or personal field (such as address, phone, birth date, links) is missing in the source CV, return "" (empty string). NEVER invent fake German contact details.
+- Keep the candidate's exact dates; only normalize their format to "YYYY-MM-DD" or "YYYY-MM-01". Do not alter the actual months/years.
+
 Strict Transformation Rules:
 1. Language & Phrasing:
    - ALL work descriptions, job titles, education degrees, and summaries MUST be translated and formulated into professional, high-standard German (Hochdeutsch).
    - Use German action nouns and nominal phrasing (Substantivstil standard in German CVs, e.g. "Konzeption und Entwicklung von...", "Optimierung der Systemarchitektur", "Führung eines interdisziplinären Teams", "Kundenbetreuung und Bedarfsanalyse").
    - Format bullet points cleanly starting with "• ".
 2. Dates:
-   - Convert all date ranges into standardized "YYYY-MM-01" or "YYYY-MM-DD" format.
+   - Keep the candidate's exact dates; only normalize their format to "YYYY-MM-01" or "YYYY-MM-DD".
    - If currently employed or ongoing, set isCurrent: true and endDate: null.
 3. German Education Equivalencies:
    - Map academic degrees to their standard German equivalents (e.g. "Bachelor of Science (B.Sc.)", "Master of Science (M.Sc.)", "Staatlich geprüfter Techniker", "Abitur / Allgemeine Hochschulreife", "Berufsausbildung").
 4. Languages:
    - Standardize language proficiencies to official German CEFR designations (e.g. "Muttersprache (C2)", "Verhandlungssicher (C1)", "Fließend in Wort und Schrift (B2)", "Gute Kenntnisse (B1)", "Grundkenntnisse (A2/A1)").
 5. Personal Details & Contact:
-   - Extract legal full name, email, phone with international prefix, city/address, nationality, and birth date/place if available.
-   - Target Job Title: Use ${params.targetJobTitle ? `"${params.targetJobTitle}"` : "the most relevant professional German target title (e.g. 'Softwareentwickler (m/w/d)', 'Pflegefachkraft (m/w/d)', 'Projektmanager (m/w/d)')"}.
-   - Summary: Write a compelling 2-3 sentence German Kurzprofil highlighting experience, core technologies/competencies, and motivation.
+   - Extract real legal full name, email, phone with international prefix, city/address, nationality, and birth date/place if present. If not in CV, use empty string "".
+   - Target Job Title: Use ${params.targetJobTitle ? `"${params.targetJobTitle}"` : "the most relevant professional German target title extracted from CV (e.g. 'Softwareentwickler (m/w/d)', 'Pflegefachkraft (m/w/d)', 'Projektmanager (m/w/d)')"}.
+   - Summary: Write a compelling 2-3 sentence German Kurzprofil highlighting candidate's real experience, core technologies/competencies, and motivation.
 
 You MUST return a VALID JSON object adhering EXACTLY to this schema (no markdown fences, no explanatory chat):
 {
   "title": "Lebenslauf - [Position / Name]",
   "personalInfo": {
-    "fullName": "Max Mustermann",
-    "email": "max@example.com",
-    "phone": "+49 151 12345678",
-    "address": "Musterstraße 1, 10115 Berlin, Deutschland",
-    "birthDate": "YYYY-MM-DD or empty",
-    "birthPlace": "City, Country or empty",
-    "nationality": "German / Moroccan / Syrian / etc.",
-    "targetJobTitle": "Senior Frontend-Entwickler (m/w/d)",
-    "linkedinUrl": "url or empty",
-    "xingUrl": "url or empty",
-    "summary": "2-3 sentence German summary"
+    "fullName": "Candidate real full name from CV (or empty string)",
+    "email": "Candidate real email from CV (or empty string)",
+    "phone": "Candidate real phone with country code (or empty string)",
+    "address": "Candidate real address/city/country from CV (or empty string - NEVER inject fake German address or Deutschland unless explicitly in CV)",
+    "birthDate": "YYYY-MM-DD or empty string",
+    "birthPlace": "Candidate real birth place/country or empty string",
+    "nationality": "Candidate real nationality or empty string",
+    "targetJobTitle": "German target job title",
+    "linkedinUrl": "Candidate real LinkedIn URL or empty string",
+    "xingUrl": "Candidate real XING URL or empty string",
+    "summary": "2-3 sentence German Kurzprofil"
   },
   "experiences": [
     {
-      "company": "Company Name",
-      "position": "German Job Title",
-      "city": "City",
-      "country": "Country",
-      "startDate": "YYYY-MM-01",
-      "endDate": "YYYY-MM-01 or null",
+      "company": "Real company name from CV",
+      "position": "German translated position title",
+      "city": "Real city from CV or empty string",
+      "country": "Real country from CV (e.g. 'Marokko', 'Tunesien', 'Deutschland') or empty string - DO NOT default to Deutschland if located abroad",
+      "startDate": "Candidate start date normalized to YYYY-MM-01 or YYYY-MM-DD",
+      "endDate": "Candidate end date normalized to YYYY-MM-01 or null if current",
       "isCurrent": boolean,
       "description": "• German bullet 1 in Substantivstil\n• German bullet 2\n• German bullet 3"
     }
   ],
   "educations": [
     {
-      "institution": "University / School Name",
+      "institution": "Real university or school name from CV",
       "degree": "German Degree Name (e.g., Bachelor of Science)",
       "fieldOfStudy": "Field of Study in German (e.g., Informatik)",
-      "city": "City",
-      "country": "Country",
+      "city": "Real city from CV or empty string",
+      "country": "Real country from CV or empty string",
       "startDate": "YYYY-MM-01",
       "endDate": "YYYY-MM-01 or null",
       "isCurrent": boolean,
-      "grade": "Grade / Note or empty",
-      "description": "Short details or empty"
+      "grade": "Grade / Note or empty string",
+      "description": "Short details or empty string"
     }
   ],
   "skills": [
     {
-      "name": "Skill / Tool Name",
+      "name": "Skill / Tool Name from CV",
       "category": "Fachkenntnisse | IT & Software | Methoden & Tools | Soft Skills",
       "level": "Experte | Fortgeschritten | Grundkenntnisse"
     }
@@ -761,7 +775,7 @@ You MUST return a VALID JSON object adhering EXACTLY to this schema (no markdown
     {
       "name": "Certificate Name",
       "issuer": "Issuing Body",
-      "issueDate": "YYYY-MM-01 or empty"
+      "issueDate": "YYYY-MM-01 or empty string"
     }
   ]
 }`;
