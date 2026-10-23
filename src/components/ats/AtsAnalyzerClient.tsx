@@ -226,7 +226,15 @@ export default function AtsAnalyzerClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           cvText: cvText.trim(),
-          targetJobTitle: undefined,
+          jobDescription: jobDescription.trim() || undefined,
+          priorAnalysis: analysis
+            ? {
+                overallScore: analysis.overallScore,
+                weaknesses: analysis.weaknesses,
+                missingKeywords: analysis.missingKeywords,
+                actionPlan: analysis.actionPlan,
+              }
+            : undefined,
           locale,
         }),
       });

@@ -653,14 +653,14 @@ export default async function LandingPage({
               <div className="space-y-5">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="w-12 h-12 rounded-2xl bg-purple-600/10 border border-purple-500/20 text-purple-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                    <span className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                       🎯
                     </span>
-                    <span className="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-[11px] font-bold">
+                    <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] font-bold">
                       {t.freeValue.card3.badge}
                     </span>
                   </div>
-                  <h3 className="text-2xl font-black text-white group-hover:text-purple-300 transition-colors pt-2">
+                  <h3 className="text-2xl font-black text-white group-hover:text-amber-300 transition-colors pt-2">
                     {t.freeValue.card3.title}
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
@@ -670,15 +670,15 @@ export default async function LandingPage({
 
                 <ul className="space-y-3.5 text-xs text-slate-300 pt-5 border-t border-slate-800">
                   <li className="flex items-start gap-2.5">
-                    <span className="text-purple-400 font-bold text-sm">✓</span>
+                    <span className="text-amber-400 font-bold text-sm">✓</span>
                     <span>{t.freeValue.card3.f1}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
-                    <span className="text-purple-400 font-bold text-sm">✓</span>
+                    <span className="text-amber-400 font-bold text-sm">✓</span>
                     <span>{t.freeValue.card3.f2}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
-                    <span className="text-purple-400 font-bold text-sm">✓</span>
+                    <span className="text-amber-400 font-bold text-sm">✓</span>
                     <span>{t.freeValue.card3.f3}</span>
                   </li>
                 </ul>
@@ -686,7 +686,7 @@ export default async function LandingPage({
 
               <Link
                 href={`/${locale}/dashboard/ats-analyzer`}
-                className="w-full py-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm text-center border border-slate-700/80 hover:border-purple-500/50 transition-all block shadow-md hover:shadow-purple-500/10"
+                className="w-full py-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm text-center border border-slate-700/80 hover:border-amber-500/50 transition-all block shadow-md hover:shadow-amber-500/10"
               >
                 {t.freeValue.card3.cta}
               </Link>

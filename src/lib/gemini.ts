@@ -625,6 +625,13 @@ Important Rules:
 export interface MagicImportCvParams {
   rawCvText: string;
   targetJobTitle?: string | null;
+  jobDescription?: string | null;
+  priorAnalysis?: {
+    overallScore?: number;
+    weaknesses?: string[];
+    missingKeywords?: string[];
+    actionPlan?: string[];
+  } | null;
   locale?: string;
 }
 
@@ -679,6 +686,12 @@ export interface MagicImportCvData {
     issuer: string;
     issueDate?: string;
   }>;
+  projects?: Array<{
+    title: string;
+    role?: string;
+    url?: string;
+    description?: string;
+  }>;
 }
 
 /**
@@ -694,10 +707,21 @@ Your mission is to parse the candidate's raw CV text (which may be in English, A
 
 ZERO-FABRICATION & FACTUAL INTEGRITY (Strikte Wahrheitspflicht):
 - STRICTLY FORBID inventing placeholder data, artificial names, or hallucinating facts.
+- NEVER invent companies, institutions, dates, degrees, or hard skills/certifications that are not in the candidate's raw CV text.
 - NEVER output fake fallback names ("Max Mustermann"), fake phone numbers ("+49 151..."), fake German addresses ("Musterstraße 1, Berlin"), or fake countries ("Deutschland") if not present in the raw CV text.
 - Preserve the candidate's REAL city and country exactly as they appear in the source CV (e.g. "Taounate, Marokko", "Fès, Marokko", "Casablanca, Marokko", "Tunis, Tunesien", "Kairo, Ägypten"). If a city or country is in Morocco or elsewhere, KEEP IT ACCURATELY. DO NOT change it to Germany / Deutschland.
 - If a contact or personal field (such as address, phone, birth date, links) is missing in the source CV, return "" (empty string). NEVER invent fake German contact details.
 - Keep the candidate's exact dates; only normalize their format to "YYYY-MM-DD" or "YYYY-MM-01". Do not alter the actual months/years.
+
+DIN 5008 REMEDIATION & PRIOR ATS AUDIT INTEGRATION:
+- When a target job description or prior ATS analysis report is provided:
+  * Zero Fabrication (Strikte Wahrheitspflicht): Never invent companies, institutions, dates, degrees, or hard skills/certifications that are not in the candidate's raw CV text. If a missing keyword from priorAnalysis.missingKeywords is a German domain term (Fachbegriff) that accurately describes work the candidate ACTUALLY performed (e.g., translating nursing care duties into "Grundpflege", "Vitalzeichenkontrolle", "Patientenbegleitung", "Hygieneunterstützung"), naturally weave it into experiences[].description, skills, or personalInfo.summary. If a missing keyword is an unverified hard skill, programming language, degree, or license not in the CV, do NOT fabricate it.
+  * Fix Identified Weaknesses: Explicitly address all formatting and structural issues listed in priorAnalysis.weaknesses:
+    - Convert numbered or dashed lists ("1-", "2-", "-") into clean "• " Substantivstil bullet points.
+    - Separate actual work/internships (Praktika, stages, professional experience) into "experiences", and move short 1-3 day courses (e.g., "Erste-Hilfe-Kurs") or language exams (e.g., "Telc Zertifikat B2", Goethe-Zertifikat) into "certifications".
+    - Preserve driver's licenses (e.g., "Führerschein Klasse B") in "skills".
+    - Preserve candidate's genuine cities and countries (e.g., "Fès, Marokko", "Taounate, Marokko") instead of overwriting them with "Deutschland".
+    - Preserve candidate projects cleanly into "projects".
 
 Strict Transformation Rules:
 1. Language & Phrasing:
@@ -713,8 +737,10 @@ Strict Transformation Rules:
    - Standardize language proficiencies to official German CEFR designations (e.g. "Muttersprache (C2)", "Verhandlungssicher (C1)", "Fließend in Wort und Schrift (B2)", "Gute Kenntnisse (B1)", "Grundkenntnisse (A2/A1)").
 5. Personal Details & Contact:
    - Extract real legal full name, email, phone with international prefix, city/address, nationality, and birth date/place if present. If not in CV, use empty string "".
-   - Target Job Title: Use ${params.targetJobTitle ? `"${params.targetJobTitle}"` : "the most relevant professional German target title extracted from CV (e.g. 'Softwareentwickler (m/w/d)', 'Pflegefachkraft (m/w/d)', 'Projektmanager (m/w/d)')"}.
+   - Target Job Title: Use ${params.targetJobTitle ? `"${params.targetJobTitle}"` : "the most relevant professional German target title extracted from CV or job description (e.g. 'Softwareentwickler (m/w/d)', 'Pflegefachkraft (m/w/d)', 'Projektmanager (m/w/d)')"}.
    - Summary: Write a compelling 2-3 sentence German Kurzprofil highlighting candidate's real experience, core technologies/competencies, and motivation.
+6. Projects:
+   - Include candidate projects in "projects" schema so projects are never lost.
 
 You MUST return a VALID JSON object adhering EXACTLY to this schema (no markdown fences, no explanatory chat):
 {
@@ -777,12 +803,29 @@ You MUST return a VALID JSON object adhering EXACTLY to this schema (no markdown
       "issuer": "Issuing Body",
       "issueDate": "YYYY-MM-01 or empty string"
     }
+  ],
+  "projects": [
+    {
+      "title": "Project Name",
+      "role": "Role in Project or empty string",
+      "url": "Project URL or empty string",
+      "description": "Short German description in Substantivstil or empty string"
+    }
   ]
 }`;
 
-  let userPrompt = `Target Job Title: ${params.targetJobTitle || "Automatic from CV"}\n\n`;
+  let userPrompt = "";
+  if (params.targetJobTitle) {
+    userPrompt += `TARGET JOB TITLE:\n${params.targetJobTitle}\n\n`;
+  }
+  if (params.jobDescription && params.jobDescription.trim()) {
+    userPrompt += `TARGET JOB DESCRIPTION / CONTEXT:\n${params.jobDescription.trim().slice(0, 10000)}\n\n`;
+  }
+  if (params.priorAnalysis) {
+    userPrompt += `PRIOR ATS AUDIT REPORT (REMEDIATE ALL IDENTIFIED ISSUES):\n${JSON.stringify(params.priorAnalysis, null, 2)}\n\n`;
+  }
   userPrompt += `<<<RAW_CV_CONTENT>>>\n${params.rawCvText.slice(0, 15000)}\n<<<RAW_CV_CONTENT>>>\n\n`;
-  userPrompt += `Please parse, translate to German, optimize to DIN 5008 standards, and return pure JSON.`;
+  userPrompt += `Please parse, translate to German, remediate prior audit weaknesses without fabrication, optimize to DIN 5008 standards, and return pure JSON.`;
 
   const text = await generateContentWithFallback(ai, {
     contents: userPrompt,

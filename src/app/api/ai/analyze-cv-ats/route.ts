@@ -8,6 +8,25 @@ import { consumeAiCredit, refundAiCredit, deductAiCreditAtomic } from "@/lib/mon
 import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 import { logAiUsage } from "@/lib/ai-telemetry";
 
+function formatGermanDate(dateVal: Date | string | null | undefined): string {
+  if (!dateVal) return "";
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return String(dateVal);
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const year = d.getUTCFullYear();
+  return `${day}.${month}.${year}`;
+}
+
+function formatGermanMonthYear(dateVal: Date | string | null | undefined): string {
+  if (!dateVal) return "";
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return String(dateVal);
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const year = d.getUTCFullYear();
+  return `${month}/${year}`;
+}
+
 /**
  * POST /api/ai/analyze-cv-ats
  * Analyzes a CV for German ATS compatibility and DIN 5008 compliance.
@@ -80,7 +99,7 @@ export async function POST(request: NextRequest) {
         lines.push(`E-Mail: ${userCv.personalInfo.email}`);
         if (userCv.personalInfo.phone) lines.push(`Telefon: ${userCv.personalInfo.phone}`);
         if (userCv.personalInfo.address) lines.push(`Adresse: ${userCv.personalInfo.address}`);
-        if (userCv.personalInfo.birthDate) lines.push(`Geburtsdatum: ${userCv.personalInfo.birthDate.toISOString().split("T")[0]}`);
+        if (userCv.personalInfo.birthDate) lines.push(`Geburtsdatum: ${formatGermanDate(userCv.personalInfo.birthDate)}`);
         if (userCv.personalInfo.birthPlace) lines.push(`Geburtsort: ${userCv.personalInfo.birthPlace}`);
         if (userCv.personalInfo.nationality) lines.push(`Staatsangehörigkeit: ${userCv.personalInfo.nationality}`);
         if (userCv.personalInfo.targetJobTitle) lines.push(`Angestrebte Position: ${userCv.personalInfo.targetJobTitle}`);
@@ -90,9 +109,11 @@ export async function POST(request: NextRequest) {
       if (userCv.experiences.length > 0) {
         lines.push(`\n--- BERUFSERFAHRUNG ---`);
         userCv.experiences.forEach((exp) => {
-          const start = exp.startDate.toISOString().split("T")[0];
-          const end = exp.isCurrent ? "heute" : exp.endDate ? exp.endDate.toISOString().split("T")[0] : "heute";
-          lines.push(`* ${start} - ${end}: ${exp.position} bei ${exp.company} (${exp.city || "Deutschland"})`);
+          const start = formatGermanMonthYear(exp.startDate);
+          const end = exp.isCurrent ? "heute" : exp.endDate ? formatGermanMonthYear(exp.endDate) : "heute";
+          const location = [exp.city, exp.country].filter(Boolean).map((s) => s!.trim()).filter(Boolean).join(", ");
+          const locStr = location ? ` (${location})` : "";
+          lines.push(`* ${start} - ${end}: ${exp.position} bei ${exp.company}${locStr}`);
           if (exp.description) lines.push(`  ${exp.description}`);
         });
       }
@@ -100,10 +121,14 @@ export async function POST(request: NextRequest) {
       if (userCv.educations.length > 0) {
         lines.push(`\n--- AUSBILDUNG & STUDIUM ---`);
         userCv.educations.forEach((edu) => {
-          const start = edu.startDate.toISOString().split("T")[0];
-          const end = edu.isCurrent ? "heute" : edu.endDate ? edu.endDate.toISOString().split("T")[0] : "heute";
-          lines.push(`* ${start} - ${end}: ${edu.degree} in ${edu.fieldOfStudy || "Fachrichtung"} an ${edu.institution}`);
+          const start = formatGermanMonthYear(edu.startDate);
+          const end = edu.isCurrent ? "heute" : edu.endDate ? formatGermanMonthYear(edu.endDate) : "heute";
+          const fieldStr = edu.fieldOfStudy && edu.fieldOfStudy.trim() ? ` in ${edu.fieldOfStudy.trim()}` : "";
+          const location = [edu.city, edu.country].filter(Boolean).map((s) => s!.trim()).filter(Boolean).join(", ");
+          const locStr = location ? ` (${location})` : "";
+          lines.push(`* ${start} - ${end}: ${edu.degree}${fieldStr} an ${edu.institution}${locStr}`);
           if (edu.grade) lines.push(`  Abschlussnote: ${edu.grade}`);
+          if (edu.description) lines.push(`  ${edu.description}`);
         });
       }
 
@@ -119,7 +144,10 @@ export async function POST(request: NextRequest) {
 
       if (userCv.certifications.length > 0) {
         lines.push(`\n--- ZERTIFIKATE ---`);
-        userCv.certifications.forEach((c) => lines.push(`* ${c.name} (${c.issuer})`));
+        userCv.certifications.forEach((c) => {
+          const dateStr = c.issueDate ? ` (${formatGermanMonthYear(c.issueDate)})` : "";
+          lines.push(`* ${c.name} (${c.issuer})${dateStr}`);
+        });
       }
 
       if (userCv.projects.length > 0) {
