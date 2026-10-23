@@ -4,129 +4,111 @@ import path from "path";
 import { prisma } from "../src/lib/prisma";
 import { sanitizeJobPayload } from "../src/lib/jobSanitizer";
 import { ensurePermanentImageUrl, isExpiringSocialCdnUrl } from "../src/lib/imageUtils";
-import { extractLessonNumber, parseLessonTitle, isCustomLessonImage } from "../src/lib/courseUtils";
+import { extractLessonNumber, isCustomLessonImage } from "../src/lib/courseUtils";
 
 const LESSON_18_MARKDOWN_CONTENT = `# الدرس 18: Termine vereinbaren und Uhrzeiten (حجز المواعيد والتوقيت في الحياة اليومية)
 
 الدرس 18: حجز المواعيد والتوقيت في الحياة اليومية (Termine vereinbaren und Uhrzeiten)
+المستوى: CEFR A1.2
 
 ## المقدمة
 
-مرحباً بكم في الدرس الثامن عشر من سلسلة تعلم اللغة الألمانية للمبتدئين مستوى A1.
-في هذا الدرس، سنتعلم مهارة لا غنى عنها في الحياة اليومية في ألمانيا والدول الناطقة بالألمانية: كيفية السؤال عن الوقت والتعبير عن الساعات بدقة (Uhrzeiten)، وكيفية حجز المواعيد، تأكيدها، تأجيلها أو إلغائها (Termine vereinbaren, verschieben und absagen) سواء كان موعداً لدى الطبيب (beim Arzt)، في دائرة رسمية (beim Amt)، أو لقاء مع الأصدقاء.
+أهلاً بكم في الدرس الثامن عشر من سلسلة تعلم اللغة الألمانية للمبتدئين وفق الإطار الأوروبي المرجعي المشترك CEFR A1.
+في هذا الدرس، سنتعلم مهارة حيوية لا غنى عنها في الحياة اليومية والمهنية داخل ألمانيا: كيفية السؤال عن الوقت والتعبير عن الساعات بدقة (Uhrzeiten)، وكيفية حجز المواعيد وتأكيدها أو تأجيلها أو إلغائها (Termine vereinbaren, verschieben und absagen) سواء كان موعداً لدى الطبيب (beim Arzt)، في دائرة حكومية رسمية (beim Amt)، أو لقاءً مع الأصدقاء.
 
 ## المفردات والنطق
 
-فيما يلي أهم المفردات والعبارات المتعلقة بالوقت وحجز المواعيد، موضحة بالنطق العربي والترجمة:
+فيما يلي أهم 15 مفردة وتعبير زمني لحجز المواعيد والتعبير عن الوقت باللغة الألمانية:
 
-1. der Termin [دير تِيغمِين] - الموعد
-2. die Uhrzeit [دي أُوغا تْسَايْت] - التوقيت / الساعة
-3. pünktlich [بُونكْتْلِش] - منضبط / في الموعد المحدد
-4. die Verspätung [دي فيا شْبِيتُنغ] - التأخير
-5. vereinbaren [فِيا آنْ بَاغَن] - يتفق على / يحجز (موعداً)
-6. verschieben [فِيا شِيبَن] - يؤجل (موعداً)
-7. absagen [أَبْ زَاغَن] - يلغي (موعداً)
-8. der Vormittag [دير فُوغا مِيتَاغ] - قبل الظهر
-9. der Nachmittag [دير نَاخْ مِيتَاغ] - بعد الظهر
-10. die Öffnungszeiten [دي أُوفْنُنغْس تْسَايْتِن] - أوقات الدوام / الفتح
-11. Wann? [فَانْ] - متى؟
-12. Um wie viel Uhr? [أُم في فِييل أُوغا] - في أي ساعة؟
-13. Wie spät ist es? [فِي شْبِيت إِسْت إِس] - كم الساعة؟
+1. der Termin [دِيرْ تِيرْمِينْ] - الموعد
+2. die Uhrzeit [دِي أُورْ تْسَايْتْ] - التوقيت / الوقت بالساعة
+3. pünktlich [بُونكْتْلِشْ] - في الموعد المحدد / منضبط
+4. die Verspätung [دِي فِيرْشْبِيتُونغْ] - التأخير
+5. einen Termin vereinbaren [أَيْنَن تِيرْمِينْ فِيرْآيْنْ بَارَن] - حجز موعد / الاتفاق على موعد
+6. den Termin verschieben [دِين تِيرْمِينْ فِيرْشِيبَن] - تأجيل الموعد إلى وقت لاحق
+7. den Termin absagen [دِين تِيرْمِينْ أَبْ زَاغَن] - إلغاء الموعد تماماً
+8. Wie spät ist es? [فِي شْبِيتْ إِسْتْ إِسْ؟] - كم الساعة الآن؟
+9. Um wie viel Uhr? [أُم فِي فِيلْ أُورْ؟] - في أي ساعة؟
+10. Es ist acht Uhr [إِسْ إِسْتْ أَخْتْ أُورْ] - إنها الساعة الثامنة تماماً
+11. Viertel nach acht [فِيرْتَلْ نَاخْ أَخْتْ] - الثامنة والربع (توقيت غير رسمي)
+12. halb neun [هَالْبْ نُويْنْ] - الثامنة والنصف (حرفياً: نصف التاسعة)
+13. Viertel vor neun [فِيرْتَلْ فُورْ نُويْنْ] - التاسعة إلا ربع (توقيت غير رسمي)
+14. acht Uhr fünfzehn [أَخْتْ أُورْ فُونْفْتْسِينْ] - الثامنة وخمس عشرة دقيقة (توقيت رسمي 24h)
+15. die Öffnungszeiten [دِي أُوفْنُونغْسْ تْسَايْتِنْ] - مواعيد العمل / أوقات الدوام
 
-## التعبير عن الوقت في اللغة الألمانية (Die Uhrzeit)
+## الشرح الصوتي
 
-هناك طريقتان للتعبير عن الوقت باللغة الألمانية:
+💡 الشرح الصوتي وإضاءات: في اللغة الألمانية، تختلف طريقة نطق مصطلحات الوقت والمواعيد وفق قواعد صوتية أساسية:
+1. كلمة Uhr (الساعة): حرف (U) ينطق مضموماً ممدوداً [أُو]، وحرف (R) في نهايتها يلفظ كصوت ألف خفيفة مهواة [أُوغا].
+2. كلمة Viertel (الربع): المقطع (V) في بداية الكلمة ينطق دائماً كحرف الفاء [فِيرْتَلْ] وليس كالفاء الإنجليزية (V).
+3. كلمة halb (النصف): حرف (h) يخرج هاءً واضحة مهموسة [هَالْبْ]، واللام خفيفة مرققة.
+4. كلمة der Termin (الموعد): يقع النبر الصوتي (Betonung) دائماً على المقطع الأخير الممدود [تِيرْمِينْ].
 
-### 1. التوقيت غير الرسمي (Inoffizielle Uhrzeit) - المستخدم في الحديث اليومي:
-نستخدم كلمة **nach** (بعد / و) و **vor** (قبل / إلا):
-* **08:00**: Es ist acht Uhr. (إنها الثامنة تماماً)
-* **08:15**: Es ist Viertel nach acht. (الثامنة والربع)
-* **08:30**: Es ist halb neun. (الثامنة والنصف - لاحظ أن الألمان يقولون نصف التاسعة!)
-* **08:45**: Es ist Viertel vor neun. (التاسعة إلا ربع)
-* **08:10**: Es ist zehn nach acht. (الثامنة وعشر دقائق)
-* **08:50**: Es ist zehn vor neun. (التاسعة إلا عشر دقائق)
+📌 ملاحظة أكاديمية: انتبه جيداً لنطق التوقيت غير الرسمي عند نصف الساعة؛ عندما يقول المتحدث الألماني "halb neun"، فهو يقصد أن الساعة الآن هي 08:30 (أي بقي نصف ساعة للوصول إلى التاسعة)، ولا تعني أبداً 09:30!
 
-### 2. التوقيت الرسمي (Offizielle Uhrzeit) - المستخدم في المحطات والمطارات والمواعيد الرسمية (نظام 24 ساعة):
-* **08:15**: Es ist acht Uhr fünfzehn.
-* **14:30**: Es ist vierzehn Uhr dreißig.
-* **20:45**: Es ist zwanzig Uhr fünfundvierzig.
+## الحوار والتطبيق
 
-## القواعد اللغوية وحروف الجر الزمنية (Temporale Präpositionen)
+### الحوار الأول: حجز موعد في عيادة الطبيب (Termin in der Arztpraxis)
 
-تُستخدم حروف الجر التالية مع الأوقات والمواعيد:
-* **um**: تُستخدم مع الساعات المحددة:
-  - *Der Film beginnt **um 20:00 Uhr**.* (يبدأ الفيلم في تمام الساعة 20:00).
-* **am**: تُستخدم مع أيام الأسبوع وفترات اليوم (ما عدا الليل):
-  - *Ich habe **am Montag** einen Termin.* (لدي موعد يوم الإثنين).
-  - *Ich komme **am Nachmittag**.* (سآتي بعد الظهر).
-* **im**: تُستخدم مع الأشهر وفصول السنة:
-  - *Der Termin ist **im Mai**.* (الموعد في شهر مايو).
-* **von ... bis ...**: من ... إلى ... :
-  - *Die Praxis ist **von 8:00 bis 16:00 Uhr** geöffnet.* (العيادة مفتوحة من الساعة 8:00 حتى 16:00).
+Herr Mansour: Guten Tag, Praxis Dr. Schmidt? Mein Name ist Ali Mansour. [غُوتْنْ تَاكْ، بْرَاكْسِيسْ دُوكْتُورْ شْمِيدْتْ؟ مَايْنْ نَامَ إِيسْتْ عَلِي مَانْصُورْ.] - نهارك سعيد، عيادة الدكتور شميت؟ اسمي علي منصور.
+Frau Weber: Guten Tag, Herr Mansour. Was fehlt Ihnen denn? [غُوتْنْ تَاكْ، هِيرْ مَانْصُورْ. فَاسْ فِيلْتْ إِينَن دِينْ؟] - نهارك سعيد سيد منصور. مما تشكو؟
+Herr Mansour: Ich habe seit gestern starke Halsschmerzen und Fieber. Ich brauche einen Termin. [إِخْ هَابَ زَايْتْ غِيسْتَرْنْ شْتَارْكَه هَالْسْ شْمِيرْتْسِنْ أُونْدْ فِيبَرْ. إِخْ بْرَاوخَ أَيْنَن تِيرْمِينْ.] - لدي ألم شديد في الحلق وحمى منذ أمس. أحتاج إلى موعد.
+Frau Weber: Haben Sie heute um vierzehn Uhr dreißig Zeit? [هَابَن زِي هُويْتَ أُم فِيرْتْسِين أُور دْرَايْسِش تْسَايْت؟] - هل لديك وقت اليوم في تمام الساعة 14:30 (الثانية والنصف ظهراً)؟
+Herr Mansour: Ja, um 14:30 Uhr passt mir sehr gut. Vielen Dank! [يَا، أُم فِيرْتْسِين أُور دْرَايْسِش بَاسْت مِير زِير غُوت. فِيلِن دَانْك!] - نعم، الساعة 14:30 تناسبني تماماً. شكراً جزيلاً!
+Frau Weber: Bitte bringen Sie Ihre Krankenversicherungskarte mit. Bis später! [بِيتَ بْرِينغَن زِي إِيرَ كْرَانْكِن فِيرْزِيخِيرُونغْسْ كَارْتَ مِيت. بِيسْ شْبِيتَرْ!] - من فضلك أحضر بطاقة التأمين الصحي معك. إلى اللقاء لاحقاً!
 
-## عبارات شائعة لحجز المواعيد (Redemittel für Termine)
+### الحوار الثاني: ترتيب موعد بين صديقين في محطة القطار (Treffen am Bahnhof)
 
-### طلب موعد:
-* *Ich möchte bitte einen Termin vereinbaren.* (أود تحديد موعد من فضلك).
-* *Haben Sie am Dienstag Zeit?* (هل لديك وقت يوم الثلاثاء؟).
-* *Geht es am Mittwoch um 10 Uhr?* (هل يناسبك يوم الأربعاء في الساعة العاشرة؟).
-* *Passt es Ihnen morgen?* (هل يناسبكم غداً؟).
+Luca: Hallo Jonas! Hast du am Samstag Zeit? [هَالُو يُونَاسْ! هَاسْتْ دُو أَمْ زَامْسْتَاكْ تْسَايْتْ؟] - مرحباً يوناس! هل لديك وقت يوم السبت؟
+Jonas: Hallo Luca! Am Samstag kann ich leider nicht, da muss ich arbeiten. [هَالُو لُوكَا! أَمْ زَامْسْتَاكْ كَانْ إِخْ لَايْدَرْ نِيخْت، دَا مُوسْ إِخْ أَرْبَايْتِن.] - مرحباً لوكا! يوم السبت لا أستطيع للأسف، يجب أن أعمل حينها.
+Luca: Schade! Passt es dir am Sonntag? [شَادَ! بَاسْتْ إِسْ دِيرْ أَمْ زُونْتَاكْ؟] - يا للخسارة! هل يناسبك يوم الأحد؟
+Jonas: Ja, Sonntag passt super. Um wie viel Uhr treffen wir uns? [يَا، زُونْتَاكْ بَاسْتْ زُوبَرْ. أُم فِي فِيلْ أُورْ تْرِيفِن فِير أُونْسْ؟] - نعم، يوم الأحد ممتاز جداً. في أي ساعة نلتقي؟
+Luca: Treffen wir uns um Viertel nach vier am Hauptbahnhof? [تْرِيفِن فِير أُونْس أُم فِيرْتَل نَاخ فِير أَم هَاوْبْت بَانْهُوف؟] - هل نلتقي في الساعة الرابعة والربع عند محطة القطار الرئيسية؟
+Jonas: Perfekt! Also am Sonntag um 16:15 Uhr. Bis dann! [بِيرْفِيكْت! أَلْزُو أَم زُونْتَاك أُم زِيكْسْتْسِين أُور فُونْفْتْسِين. بِيس دَان!] - ممتاز! إذن يوم الأحد الساعة 16:15. إلى اللقاء حينها!
 
-### تأكيد الموعد والموافقة:
-* *Ja, das passt mir sehr gut.* (نعم، هذا يناسبني جداً).
-* *Dienstag um 10 Uhr geht in Ordnung.* (يوم الثلاثاء الساعة 10 مناسب تماماً).
-* *Ich bin pünktlich da.* (سأكون هناك في الموعد).
+## القواعد
 
-### الاعتذار وتغيير الموعد أو إلغاؤه:
-* *Leider habe ich am Freitag keine Zeit.* (للأسف ليس لدي وقت يوم الجمعة).
-* *Können wir den Termin verschieben?* (هل يمكننا تأجيل الموعد؟).
-* *Ich muss den Termin leider absagen.* (يجب علي للأسف إلغاء الموعد).
+قاعدة: حروف الجر الزمنية مع الساعات والمواعيد (Temporale Präpositionen: um, am, im, von ... bis)
+تُستخدم حروف الجر الزمنية لتحديد مواعيد الأنشطة بدقة؛ حيث تُستخدم um مع الساعات المحددة، و am مع أيام الأسبوع وفترات اليوم، و im مع الأشهر وفصول السنة، و von ... bis للتعبير عن بداية ونهاية فترة زمنية محددة.
+مثال: Der Deutschkurs beginnt um 18:00 Uhr (um: حرف الجر الزمني مع الساعات, 18:00 Uhr: الساعة المحددة)
 
-## حوارات من الحياة اليومية (Dialoge)
+قاعدة: التعبير عن الوقت والتوقيت باللغة الألمانية (Die Uhrzeit: offiziell vs. inoffiziell)
+يوجد نظامان للتعبير عن التوقيت؛ التوقيت غير الرسمي يستخدم في الحديث اليومي مع nach و vor و Viertel و halb (halb neun تعني الثامنة والنصف)، والتوقيت الرسمي المعتمد في المحطات والمواعيد الرسمية بنظام 24 ساعة.
+مثال: Es ist Viertel vor neun (Viertel vor: إلا ربع, neun: التاسعة)
 
-### الحوار الأول: موعد عند الطبيب (Beim Arzt)
-* **المريض:** Guten Tag, Praxis Dr. Schmidt? Mein Name ist Ali Mansour. Ich möchte bitte einen Termin vereinbaren.
-* **الموظفة:** Guten Tag, Herr Mansour. Was fehlt Ihnen denn?
-* **المريض:** Ich habe seit gestern starke Halsschmerzen und Fieber.
-* **الموظفة:** Haben Sie heute um 14:30 Uhr Zeit?
-* **المريض:** Ja, 14:30 Uhr passt mir sehr gut. Vielen Dank!
-* **الموظفة:** Bitte bringen Sie Ihre Krankenversicherungskarte mit. Bis später!
+## تمارين
 
-### الحوار الثاني: ترتيب موعد بين صديقين (Treffen mit einem Freund)
-* **لوكا:** Hallo Jonas! Hast du am Samstag Zeit? Wir können zusammen ins Café gehen.
-* **يوناس:** Hallo Luca! Am Samstag kann ich leider nicht, da muss ich arbeiten. Aber hast du am Sonntag Zeit?
-* **لوكا:** Ja, Sonntag passt super. Um wie viel Uhr treffen wir uns?
-* **يوناس:** Um 16:00 Uhr am Hauptbahnhof?
-* **لوكا:** Perfekt! Bis Sonntag um 16:00 Uhr.
+التمرين الأول: اختر حرف الجر الزمني المناسب مما بين القوسين (um / am / im / von ... bis):
+1. Der Deutschkurs beginnt __________ 18:00 Uhr.
+2. Wir haben __________ Freitag einen Arzttermin.
+3. Mein Geburtstag ist __________ Juli.
+4. Die Praxis ist __________ 08:00 __________ 16:00 Uhr geöffnet.
 
-## تمارين تفاعلية (Übungen)
-
-### التمرين الأول: اختر حرف الجر المناسب (um / am / im):
-1. Der Deutschkurs beginnt _______ 18:00 Uhr.
-2. Wir haben _______ Freitag eine Prüfung.
-3. Mein Geburtstag ist _______ Juli.
-4. Arztpraxis Dr. Weber hat _______ Vormittag geöffnet.
-
-### التمرين الثاني: اكتب الساعة بالكلمات (غير رسمي):
+التمرين الثاني: اكتب التوقيت بالكلمات بالطريقة غير الرسمية (Inoffizielle Uhrzeit):
 1. 07:15 -> ________________________________________
-2. 10:30 -> ________________________________________
-3. 12:45 -> ________________________________________
+2. 08:30 -> ________________________________________
+3. 11:45 -> ________________________________________
 
-## حلول التمارين (Lösungen)
+## حلول التمارين
 
-### حل التمرين الأول:
-1. um (الساعة 18:00)
-2. am (يوم الجمعة)
-3. im (شهر يوليو)
-4. am (فترة قبل الظهر)
+حلول التمارين للتأكد من فهمك:
 
-### حل التمرين الثاني:
+حل التمرين الأول:
+1. um (تُستخدم مع الساعة المحددة 18:00)
+2. am (تُستخدم مع أيام الأسبوع Freitag)
+3. im (تُستخدم مع الأشهر Juli)
+4. von ... bis (تُستخدم لتحديد البداية والنهاية من 08:00 إلى 16:00)
+
+حل التمرين الثاني:
 1. Es ist Viertel nach sieben.
-2. Es ist halb elf.
-3. Es ist Viertel vor eins.
+2. Es ist halb neun.
+3. Es ist Viertel vor zwölf.
 
-## نصيحة الدرس (Tipp)
-في ألمانيا، يُعتبر الالتزام بالمواعيد (Pünktlichkeit) جزءاً أساسياً من الثقافة والاحترام المتبادل. إذا كنت ستتأخر أكثر من 5 إلى 10 دقائق عن أي موعد سواء كان رسمياً أو خاصاً، فمن اللباقة الاتصال هاتفياً وإبلاغ الطرف الآخر مسبقاً بقول: *"Entschuldigung, ich verspäte mich um 10 Minuten."*
+---
+
+### 🚀 هل تستعد للعمل في ألمانيا؟
+- [فاحص السيرة الذاتية (ATS Analyzer)](https://germanjobspro.com/ar/dashboard/ats-analyzer)
+- [توليد خطاب التغطية (Anschreiben DIN 5008)](https://germanjobspro.com/ar/dashboard/cover-letters/new)
 `;
 
 /**
@@ -358,15 +340,7 @@ async function cleanLiveDatabase() {
   });
 
   if (lesson18Post) {
-    let md18 = lesson18Post.markdown_content || LESSON_18_MARKDOWN_CONTENT;
-    if (md18.length < 500 || !md18.includes("Termine vereinbaren")) {
-      md18 = LESSON_18_MARKDOWN_CONTENT;
-    } else {
-      md18 = md18.replace(/#\s*الدرس\s*20\s*:/gu, "# الدرس 18:");
-      md18 = md18.replace(/الدرس\s*20\s*:/gu, "الدرس 18:");
-      md18 = md18.replace(/الدرس\s*20\b/gu, "الدرس 18");
-      md18 = md18.replace(/الدرس العشرين/gu, "الدرس الثامن عشر");
-    }
+    const md18 = LESSON_18_MARKDOWN_CONTENT;
 
     const targetTitle = "الدرس 18: Termine vereinbaren und Uhrzeiten (حجز المواعيد والتوقيت في الحياة اليومية)";
     const targetSlug = "german-a1-lesson-18";
@@ -482,10 +456,10 @@ async function cleanLiveDatabase() {
       post.title.includes("الدرس");
 
     let updatedTitle = post.title;
-    let updatedSlug = post.slug;
+    const updatedSlug = post.slug;
     let updatedContent = post.markdown_content;
     let updatedImageUrl = post.image_url;
-    let updatedPublished = post.published;
+    const updatedPublished = post.published;
 
     // 1. Strip duplicated "الدرس X: الدرس X:" -> "الدرس X:"
     const normalizedTitle = updatedTitle.replace(

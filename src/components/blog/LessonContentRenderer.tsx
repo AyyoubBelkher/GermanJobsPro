@@ -608,7 +608,26 @@ export function getSpeakerTheme(speaker: string) {
     cleanName.startsWith("السيد") ||
     cleanName.includes("müller") ||
     cleanName.includes("mueller") ||
+    cleanName.includes("mansour") ||
+    cleanName.includes("منصور") ||
+    cleanName.includes("patient") ||
+    cleanName.includes("المريض") ||
+    cleanName.includes("مريض") ||
+    cleanName.includes("arzt") ||
+    cleanName.includes("الطبيب") ||
+    cleanName.includes("طبيب") ||
+    cleanName.includes("doktor") ||
+    cleanName.includes("دكتور") ||
+    cleanName.includes("luca") ||
+    cleanName.includes("لوكا") ||
     cleanName.includes("lukas") ||
+    cleanName.includes("لوكس") ||
+    cleanName.includes("ali") ||
+    cleanName.includes("علي") ||
+    cleanName.includes("ahmed") ||
+    cleanName.includes("أحمد") ||
+    cleanName.includes("mark") ||
+    cleanName.includes("مارك") ||
     cleanName.includes("thomas") ||
     cleanName.includes("max") ||
     cleanName.includes("alex") ||
@@ -618,11 +637,11 @@ export function getSpeakerTheme(speaker: string) {
     cleanName.includes("felix") ||
     cleanName.includes("noah") ||
     cleanName.includes("elias") ||
-    cleanName.includes("jonas") ||
     cleanName.includes("ben") ||
     cleanName.includes("leon") ||
     cleanName.includes("paul") ||
     cleanName.includes("sami") ||
+    cleanName.includes("سامي") ||
     cleanName.includes("شخص 1") ||
     cleanName.includes("الشخص 1") ||
     cleanName.includes("طرف أ") ||
@@ -855,6 +874,9 @@ function parseDialogueLineContent(rawContent: string): {
   };
 }
 
+const RESERVED_SPEAKER_KEYWORD_REGEX =
+  /^(?:مثال|beispiel|ملاحظة|hinweis|قاعدة|regel|تنبيه|achtung|warnung|النطق|aussprache|الترجمة|übersetzung|التمرين|تمرين|übung|حل|حلول|lösung|lösungen)(?:[\s:：]|$)/iu;
+
 /**
  * Parses raw text into one or more DialogueTurns.
  * Correctly sanitizes leading punctuation, splits multiple turns in a single block,
@@ -864,18 +886,17 @@ export function parseDialogues(rawText: string): DialogueTurnData[] | null {
   const lines = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
   if (lines.length === 0) return null;
 
-  const dialogueSpeakerRegex = /^([A-Za-zäöüÄÖÜß\u0600-\u06FF0-9\s\-.\(\)/']+?)\s*[:：]\s*(.+)$/u;
+  const dialogueSpeakerRegex = /^([A-Za-zäöüÄÖÜß\u0600-\u06FF0-9\s\-.\(\)/']{2,35})\s*[:：]\s*(.+)$/u;
 
   const hasDialogueIndicator = lines.some((line) => {
     const sanitized = sanitizeSpeakerLine(line);
     const match = sanitized.match(dialogueSpeakerRegex);
     if (!match) return false;
     const spk = match[1].trim();
+    if (RESERVED_SPEAKER_KEYWORD_REGEX.test(spk)) return false;
+    const content = match[2].trim();
     return (
-      /^(Herr|Frau|Lukas|Sami|Thomas|Mona|Sarah|Emma|Anna|Max|Alex|Lisa|Jan|Tim|Laura|Julia|Marie|Leon|Paul|Felix|David|Noah|Elias|Jonas|Ben|Lea|Mia|Hannah|Sofia|Lena|Emily|Lina|Clara|Elena|Person\s*\d*|Sprecher\s*\d*|Kunde|Verkäufer|Kellner|Gast|Arzt|Patient|Lehrer|Schüler|Chef|Kollege|Bewerber|Interviewer|A|B|السيد|السيدة|الشخص|الطرف)/iu.test(
-        spk
-      ) ||
-      /^[A-Za-zäöüÄÖÜß\u0600-\u06FF\s\-.]+$/u.test(spk) ||
+      /[A-Za-zäöüÄÖÜß]/.test(content) ||
       lines.some(
         (l) =>
           l.startsWith("النطق:") ||
@@ -930,17 +951,12 @@ export function parseDialogues(rawText: string): DialogueTurnData[] | null {
 
     const speakerMatch = sanitized.match(dialogueSpeakerRegex);
 
-    // 3. If it's a speaker line (e.g. "Herr Müller: Guten Tag!" or "السيد مولر: نهارك سعيد!")
+    // 3. If it's a speaker line (e.g. "Herr Müller: Guten Tag!" or "السيد مولر: نهارك سعيد!" or "المريض: Guten Tag!")
     if (speakerMatch) {
       const spk = speakerMatch[1].trim();
       const contentAfterSpeaker = speakerMatch[2].trim();
 
-      const isKnownSpeaker =
-        /^(Herr|Frau|Lukas|Sami|Thomas|Mona|Sarah|Emma|Anna|Max|Alex|Lisa|Jan|Tim|Laura|Julia|Marie|Leon|Paul|Felix|David|Noah|Elias|Jonas|Ben|Lea|Mia|Hannah|Sofia|Lena|Emily|Lina|Clara|Elena|Person\s*\d*|Sprecher\s*\d*|Kunde|Verkäufer|Kellner|Gast|Arzt|Patient|Lehrer|Schüler|Chef|Kollege|Bewerber|Interviewer|A|B|السيد|السيدة|الشخص|الطرف)/iu.test(
-          spk
-        ) || /^[A-Za-zäöüÄÖÜß\u0600-\u06FF0-9\s\-.\(\)/']+$/u.test(spk);
-
-      if (isKnownSpeaker) {
+      if (!RESERVED_SPEAKER_KEYWORD_REGEX.test(spk)) {
         const parsedContent = parseDialogueLineContent(contentAfterSpeaker);
 
         // Check if this line is an Arabic translation line (no German Latin characters)
@@ -1044,10 +1060,11 @@ export function parseVocabularyLine(rawText: string): VocabularyItemData | null 
   if (!clean) return null;
 
   // Skip dialogue speaker lines so Dialogue parser handles them
+  const dialogueMatch = clean.match(/^([A-Za-zäöüÄÖÜß\u0600-\u06FF0-9\s\-.\(\)/']{2,35})\s*[:：]\s*([A-Za-zäöüÄÖÜß].+)$/u);
   if (
-    /^(Herr|Frau|Lukas|Sami|Thomas|Mona|Sarah|Emma|Anna|Max|Alex|Lisa|Jan|Tim|Laura|Julia|Marie|Leon|Paul|Felix|David|Noah|Elias|Jonas|Ben|Lea|Mia|Hannah|Sofia|Lena|Emily|Lina|Clara|Elena|Person\s*\d*|Sprecher\s*\d*|Kunde|Verkäufer|Kellner|Gast|Arzt|Patient|Lehrer|Schüler|Chef|Kollege|Bewerber|Interviewer|A|B|السيد|السيدة|الشخص|الطرف)\s*[:：]/iu.test(
-      clean
-    )
+    dialogueMatch &&
+    !RESERVED_SPEAKER_KEYWORD_REGEX.test(dialogueMatch[1]) &&
+    !dialogueMatch[1].includes("[")
   ) {
     return null;
   }
@@ -1261,6 +1278,30 @@ function parseSolutionBlock(rawText: string) {
 }
 
 /**
+ * Detects and parses markdown tables inside paragraph blocks when not parsed into table elements.
+ */
+function parseMarkdownTable(rawText: string): { headers: string[]; rows: string[][] } | null {
+  const lines = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (lines.length < 2) return null;
+
+  const separatorRegex = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$/;
+  if (!separatorRegex.test(lines[1])) return null;
+
+  const parseRow = (rowStr: string): string[] => {
+    let clean = rowStr.trim();
+    if (clean.startsWith("|")) clean = clean.substring(1);
+    if (clean.endsWith("|")) clean = clean.substring(0, clean.length - 1);
+    return clean.split("|").map((cell) => cell.trim());
+  };
+
+  const headers = parseRow(lines[0]);
+  if (headers.length < 2) return null;
+
+  const rows = lines.slice(2).map(parseRow);
+  return { headers, rows };
+}
+
+/**
  * Isolated Vocabulary Card component:
  * - Tier 1: German text strictly on its own top line, Left-Aligned (text-left) with dir="ltr",
  *   bold font (text-lg sm:text-xl font-sans tracking-wide). Ensures question marks (?) and exclamation marks (!)
@@ -1425,11 +1466,9 @@ export function normalizeDialogueMarkdown(markdownContent: string): string {
 
   const isSpeakerLine = (l: string) => {
     const s = sanitizeSpeakerLine(l);
-    return (
-      /^(?:Herr|Frau|Lukas|Sami|Thomas|Mona|Sarah|Emma|Anna|Max|Alex|Lisa|Jan|Tim|Laura|Julia|Marie|Leon|Paul|Felix|David|Noah|Elias|Jonas|Ben|Lea|Mia|Hannah|Sofia|Lena|Emily|Lina|Clara|Elena|Person\s*\d*|Sprecher\s*\d*|Kunde|Verkäufer|Kellner|Gast|Arzt|Patient|Lehrer|Schüler|Chef|Kollege|Bewerber|Interviewer|A|B|السيد|السيدة|الشخص|الطرف)(?:[\s:：]|$)/iu.test(
-        s
-      ) && /[:：]/.test(s)
-    );
+    const match = s.match(/^([A-Za-zäöüÄÖÜß\u0600-\u06FF0-9\s\-.\(\)/']{2,35})\s*[:：]\s*(.+)$/u);
+    if (!match) return false;
+    return !RESERVED_SPEAKER_KEYWORD_REGEX.test(match[1]);
   };
 
   const isDialogueFollowupLine = (l: string) => {
@@ -1758,7 +1797,38 @@ export default function LessonContentRenderer({
               }
             }
 
-            // 2. Alert Box (both modes, with editorial titles & prefix stripping)
+            // 2. Check for Markdown Table (if rendered inside paragraph)
+            const markdownTable = parseMarkdownTable(trimmed);
+            if (markdownTable) {
+              return (
+                <div className="my-8 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl">
+                  <table className="w-full text-right border-collapse text-xs sm:text-sm text-slate-200" dir="rtl">
+                    <thead className="bg-slate-950/90 text-blue-400 font-bold border-b border-slate-800">
+                      <tr>
+                        {markdownTable.headers.map((h, hIdx) => (
+                          <th key={`th-${hIdx}`} className="p-3.5 sm:p-4 text-right font-bold border-b border-slate-800/60 text-blue-400">
+                            {renderInlineContent(h, isLessonMode)}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="bg-transparent">
+                      {markdownTable.rows.map((row, rIdx) => (
+                        <tr key={`tr-${rIdx}`} className="hover:bg-slate-800/40 transition-colors">
+                          {row.map((cell, cIdx) => (
+                            <td key={`td-${rIdx}-${cIdx}`} className="p-3.5 sm:p-4 text-right border-b border-slate-800/60 text-slate-200 leading-relaxed">
+                              {renderInlineContent(cell, isLessonMode)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            }
+
+            // 3. Alert Box (both modes, with editorial titles & prefix stripping)
             const alert = parseAlertBox(rawContent, isLessonMode, locale);
             if (alert) {
               const borderClasses =
@@ -1955,7 +2025,7 @@ export default function LessonContentRenderer({
             </ul>
           ),
           ol: ({ children }) => (
-            <ol className="space-y-3 my-4 list-decimal ps-6">
+            <ol className="space-y-3 my-6 list-none p-0">
               {children}
             </ol>
           ),
@@ -2117,48 +2187,88 @@ export default function LessonContentRenderer({
               </a>
             );
           },
-          code: ({ children }) => (
-            <code
-              className="px-2 py-0.5 mx-1 rounded-md bg-blue-500/10 dark:bg-blue-400/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 font-mono text-sm sm:text-base font-semibold inline align-baseline select-text"
-              dir="ltr"
-            >
-              {children}
-            </code>
-          ),
-          pre: ({ children }) => (
-            <pre className="bg-slate-900 text-slate-100 p-5 rounded-2xl overflow-x-auto my-8 text-left dir-ltr border border-slate-800 shadow-md" dir="ltr">
-              {children}
-            </pre>
-          ),
+          code: ({ children, className, ...props }: React.ComponentPropsWithoutRef<"code"> & { isPre?: boolean }) => {
+            const codeText = getNodeText(children);
+            const isArabic = /[\u0600-\u06FF]/.test(codeText);
+            const isBlock = Boolean(props.isPre || className?.includes("language-") || codeText.includes("\n"));
+
+            if (isBlock) {
+              return (
+                <code
+                  dir={isArabic ? "rtl" : "ltr"}
+                  className={`text-slate-200 select-text ${isArabic ? "font-sans text-right" : "font-mono text-left"}`}
+                  style={isArabic ? { fontFamily: "'Amiri', 'Cairo', var(--font-cairo), sans-serif" } : undefined}
+                >
+                  {children}
+                </code>
+              );
+            }
+
+            return (
+              <code
+                className={`px-2 py-0.5 mx-1 rounded-md bg-blue-500/10 dark:bg-blue-400/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 text-sm sm:text-base font-semibold inline align-baseline select-text ${
+                  isArabic ? "font-sans" : "font-mono"
+                }`}
+                dir={isArabic ? "rtl" : "ltr"}
+                style={isArabic ? { fontFamily: "'Amiri', 'Cairo', var(--font-cairo), sans-serif" } : undefined}
+              >
+                {children}
+              </code>
+            );
+          },
+          pre: ({ children }) => {
+            const text = getNodeText(children);
+            const hasArabic = /[\u0600-\u06FF]/.test(text);
+
+            return (
+              <pre
+                dir={hasArabic ? "rtl" : "ltr"}
+                className={`my-8 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/90 p-4 text-xs sm:text-sm text-slate-200 shadow-xl ${
+                  hasArabic ? "text-right font-sans" : "text-left font-mono"
+                }`}
+                style={hasArabic ? { fontFamily: "'Amiri', 'Cairo', var(--font-cairo), sans-serif" } : undefined}
+              >
+                {React.Children.map(children, (child) => {
+                  if (React.isValidElement(child)) {
+                    return React.cloneElement(
+                      child as React.ReactElement<{ isPre?: boolean; hasArabic?: boolean }>,
+                      { isPre: true, hasArabic }
+                    );
+                  }
+                  return child;
+                })}
+              </pre>
+            );
+          },
           table: ({ children }) => (
-            <div className="my-8 overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <table className="w-full text-start border-collapse text-sm sm:text-base" dir="auto">
+            <div className="my-8 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl">
+              <table className="w-full text-right border-collapse text-xs sm:text-sm text-slate-200" dir="rtl">
                 {children}
               </table>
             </div>
           ),
           thead: ({ children }) => (
-            <thead className="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-bold">
+            <thead className="bg-slate-950/90 text-blue-400 font-bold border-b border-slate-800">
               {children}
             </thead>
           ),
           tbody: ({ children }) => (
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-950/60">
+            <tbody className="bg-transparent">
               {children}
             </tbody>
           ),
           tr: ({ children }) => (
-            <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-900/50 transition-colors">
+            <tr className="hover:bg-slate-800/40 transition-colors">
               {children}
             </tr>
           ),
           th: ({ children }) => (
-            <th className="p-4 text-start font-bold text-slate-900 dark:text-white">
+            <th className="p-3.5 sm:p-4 text-right font-bold border-b border-slate-800/60 text-blue-400">
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="p-4 text-start text-slate-700 dark:text-slate-300 leading-relaxed">
+            <td className="p-3.5 sm:p-4 text-right border-b border-slate-800/60 text-slate-200 leading-relaxed">
               {children}
             </td>
           ),
