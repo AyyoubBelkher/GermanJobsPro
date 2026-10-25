@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import CvPhotoUpload from "@/components/cv/CvPhotoUpload";
 import FieldTooltip from "@/components/cv/FieldTooltip";
 import CvMagicImportModal from "@/components/cv/CvMagicImportModal";
+import { formatDateRange } from "@/lib/cv-date-utils";
 
 export interface FullCvData {
   id: string;
@@ -1495,12 +1496,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                   {cv.experiences.map((exp, idx) => (
                     <div key={idx} className="grid grid-cols-12 gap-4 text-xs text-left items-start">
                       <div className="col-span-4 sm:col-span-3 text-slate-500 font-bold text-xs text-left">
-                        {new Date(exp.startDate).toLocaleDateString("de-DE", { month: "2-digit", year: "numeric" })} –{" "}
-                        {exp.isCurrent
-                          ? "heute"
-                          : exp.endDate
-                          ? new Date(exp.endDate).toLocaleDateString("de-DE", { month: "2-digit", year: "numeric" })
-                          : "heute"}
+                        {formatDateRange(exp.startDate, exp.endDate, exp.isCurrent, false)}
                       </div>
                       <div className="col-span-8 sm:col-span-9 space-y-1 text-left">
                         <div className="font-bold text-slate-900 text-sm text-left">
@@ -1529,12 +1525,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                   {cv.educations.map((edu, idx) => (
                     <div key={idx} className="grid grid-cols-12 gap-4 text-xs text-left items-start">
                       <div className="col-span-4 sm:col-span-3 text-slate-500 font-bold text-xs text-left">
-                        {new Date(edu.startDate).toLocaleDateString("de-DE", { month: "2-digit", year: "numeric" })} –{" "}
-                        {edu.isCurrent
-                          ? "heute"
-                          : edu.endDate
-                          ? new Date(edu.endDate).toLocaleDateString("de-DE", { month: "2-digit", year: "numeric" })
-                          : "heute"}
+                        {formatDateRange(edu.startDate, edu.endDate, edu.isCurrent, false)}
                       </div>
                       <div className="col-span-8 sm:col-span-9 space-y-0.5 text-left">
                         <div className="font-bold text-slate-900 text-sm text-left">

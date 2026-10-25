@@ -2,6 +2,7 @@
 
 import React, { useEffect } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 
 export default function CoverLetterEditorError({
   error,
@@ -10,6 +11,9 @@ export default function CoverLetterEditorError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const params = useParams();
+  const locale = (params?.locale as string) || "ar";
+
   useEffect(() => {
     console.error("[Cover Letter Editor Error]:", error);
   }, [error]);
@@ -31,7 +35,7 @@ export default function CoverLetterEditorError({
           إعادة المحاولة
         </button>
         <Link
-          href="/dashboard/cover-letters"
+          href={`/${locale}/dashboard/cover-letters`}
           className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium"
         >
           خطابات التقديم

@@ -8,7 +8,28 @@ import {
   speakGermanText,
   useIsGermanPlaying,
 } from "./GermanTtsButton";
-import { isCourseLesson } from "@/lib/courseUtils";
+import {
+  isCourseLesson,
+  normalizeMarkdownFormatting,
+  parseAsciiOrMarkdownTable,
+  parseAsciiDiagram,
+  type ParsedTable,
+  type ParsedDiagram,
+} from "@/lib/courseUtils";
+
+export {
+  normalizeMarkdownFormatting,
+  formatBidiInlineText,
+  parseAsciiOrMarkdownTable,
+  parseAsciiDiagram,
+} from "@/lib/courseUtils";
+export type {
+  ParsedTable,
+  ParsedDiagram,
+  ParsedBranchingDiagram,
+  ParsedTimelineDiagram,
+  ParsedGenericDiagram,
+} from "@/lib/courseUtils";
 
 interface LessonContentRendererProps {
   content: string;
@@ -393,15 +414,24 @@ function EnterpriseCtaCard({
 /**
  * Parses and formats inline text:
  * - Converts Arabic phonetic guides [نطق عربي مع تشكيل] into styled amber badges ONLY in lesson mode
- * - In article mode, preserves clean editorial text without injecting phonetic audio clutter
+ * - Converts markdown backtick inline code `...` into <code> with before:content-none after:content-none font-mono
+ * - Converts markdown bold **...** into <strong>
+ * - In Arabic mode, isolates parenthetical Latin/German terms in <bdi dir="ltr"> with RTL marks for punctuation
+ * - In Arabic mode, isolates standalone status tokens like H+, H-, H+/- in <bdi dir="ltr">
  * - Preserves React elements like links and tags
  */
-function renderInlineContent(node: React.ReactNode, isLessonMode = false): React.ReactNode {
+function renderInlineContent(
+  node: React.ReactNode,
+  isLessonMode = false,
+  isAr = true
+): React.ReactNode {
   if (node === null || node === undefined) return null;
 
   if (typeof node !== "string") {
     if (Array.isArray(node)) {
-      return React.Children.map(node, (child) => renderInlineContent(child, isLessonMode));
+      return React.Children.map(node, (child) =>
+        renderInlineContent(child, isLessonMode, isAr)
+      );
     }
     if (React.isValidElement(node)) {
       const element = node as React.ReactElement<{ children?: React.ReactNode }>;
@@ -409,7 +439,7 @@ function renderInlineContent(node: React.ReactNode, isLessonMode = false): React
         return React.cloneElement(
           element,
           undefined,
-          renderInlineContent(element.props.children, isLessonMode)
+          renderInlineContent(element.props.children, isLessonMode, isAr)
         );
       }
       return node;
@@ -417,25 +447,36 @@ function renderInlineContent(node: React.ReactNode, isLessonMode = false): React
     return node;
   }
 
-  // In standard editorial articles, do not inject phonetic lesson badges
-  if (!isLessonMode) {
-    return node;
-  }
+  const rawText = node;
 
-  const text = node;
-  // Regex to match bracketed Arabic phonetic guides like [هَالُو] or [إِخْ]
-  const bracketRegex = /\[([\u0600-\u06FF\s:!؟،.\-_…]+)\]/g;
+  // 1. Fix nested/unbalanced parentheses (e.g. "(ZAB (Zentralstelle...")
+  const text = isAr
+    ? rawText.replace(
+        /\(([A-Za-z0-9\s]+?)\s*\(([A-Za-zäöüÄÖÜß0-9\s\-/]+?)(?:\)+|(\s*)(?=[\u0600-\u06FF]|$))/g,
+        (_m, p1, p2, space) => `(${p1.trim()} - ${p2.trim()})${space || ""}`
+      )
+    : rawText;
+
+  // 2. Tokenize inline code, bold, phonetic brackets (if lesson mode), parentheticals (if isAr), and status tokens (if isAr)
+  // Group 1: `code`
+  // Group 2: **bold**
+  // Group 3: [phonetic] (when isLessonMode)
+  // Group 4 & 5: (Latin parenthetical) and trailing punctuation (when isAr)
+  // Group 6 & 7: standalone status token (H+, H-, H+/-) and trailing punctuation (when isAr)
+  const tokenRegex = isAr
+    ? /(`[^`]+`)|(\*\*[^*]+\*\*)|\[([\u0600-\u06FF\s:!؟،.\-_…]+)\]|(\([A-Za-zäöüÄÖÜß0-9][^()]*\))([:؟،.;])?|(?<=^|[\s،,.:;!؟])(H\+\/-|H\+|H\-)([:؟،.;])?(?=[\s،,.:;!؟]|$)/g
+    : /(`[^`]+`)|(\*\*[^*]+\*\*)|\[([\u0600-\u06FF\s:!؟،.\-_…]+)\]/g;
 
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = bracketRegex.exec(text)) !== null) {
+  while ((match = tokenRegex.exec(text)) !== null) {
     const matchStart = match.index;
-    const matchEnd = bracketRegex.lastIndex;
+    const matchEnd = tokenRegex.lastIndex;
 
-    // Skip if followed by '(' which indicates a markdown link like [text](url)
-    if (text[matchEnd] === "(") {
+    // Skip if bracketed phonetic match is followed by '(' which indicates a markdown link like [text](url)
+    if (match[3] && text[matchEnd] === "(") {
       continue;
     }
 
@@ -443,23 +484,94 @@ function renderInlineContent(node: React.ReactNode, isLessonMode = false): React
       parts.push(text.substring(lastIndex, matchStart));
     }
 
-    const innerPhonetic = match[1];
-    const cleanPhonetic = stripBrackets(innerPhonetic);
-    const hasArabic = /[\u0600-\u06FF]/.test(cleanPhonetic);
+    const codeMatch = match[1];
+    const boldMatch = match[2];
+    const phoneticMatch = match[3];
+    const parenSegment = match[4];
+    const parenPunct = match[5];
+    const statusToken = match[6];
+    const statusPunct = match[7];
 
-    if (hasArabic && cleanPhonetic.length > 0) {
+    if (codeMatch) {
+      const codeText = codeMatch.slice(1, -1);
       parts.push(
-        <span
-          key={`phonetic-${matchStart}`}
-          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 my-0.5 mx-1 rounded-xl bg-amber-500/10 dark:bg-amber-950/50 text-amber-900 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/60 font-semibold text-sm sm:text-base shadow-2xs"
-          dir="rtl"
+        <code
+          key={`code-${matchStart}`}
+          dir="ltr"
+          className="px-2 py-0.5 mx-1 rounded-md bg-blue-500/10 dark:bg-blue-400/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 text-sm sm:text-base font-semibold inline align-baseline select-text font-mono before:content-none after:content-none"
         >
-          <span className="text-xs text-amber-600 dark:text-amber-400 select-none">🔊</span>
-          <span>{cleanPhonetic}</span>
-        </span>
+          {codeText}
+        </code>
+      );
+    } else if (boldMatch) {
+      const boldText = boldMatch.slice(2, -2);
+      parts.push(
+        <strong
+          key={`bold-${matchStart}`}
+          className="font-bold text-slate-900 dark:text-white"
+        >
+          {renderInlineContent(boldText, isLessonMode, isAr)}
+        </strong>
+      );
+    } else if (phoneticMatch && isLessonMode) {
+      const cleanPhonetic = stripBrackets(phoneticMatch);
+      const hasArabic = /[\u0600-\u06FF]/.test(cleanPhonetic);
+
+      if (hasArabic && cleanPhonetic.length > 0) {
+        parts.push(
+          <span
+            key={`phonetic-${matchStart}`}
+            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 my-0.5 mx-1 rounded-xl bg-amber-500/10 dark:bg-amber-950/50 text-amber-900 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/60 font-semibold text-sm sm:text-base shadow-2xs"
+            dir="rtl"
+          >
+            <span className="text-xs text-amber-600 dark:text-amber-400 select-none">🔊</span>
+            <span>{cleanPhonetic}</span>
+          </span>
+        );
+      } else {
+        parts.push(cleanPhonetic);
+      }
+    } else if (parenSegment) {
+      const isShort = parenSegment.length <= 38;
+      const bdiEl = (
+        <bdi
+          key={`bdi-p-${matchStart}`}
+          dir="ltr"
+          className={isShort ? "inline-block whitespace-nowrap" : "inline"}
+        >
+          {parenSegment}
+        </bdi>
+      );
+
+      if (parenPunct) {
+        parts.push(
+          <React.Fragment key={`frag-p-${matchStart}`}>
+            {bdiEl}
+            {"\u200F" + parenPunct}
+          </React.Fragment>
+        );
+      } else {
+        parts.push(bdiEl);
+      }
+    } else if (statusToken) {
+      const bdiEl = (
+        <bdi
+          key={`bdi-s-${matchStart}`}
+          dir="ltr"
+          className="inline-block whitespace-nowrap font-mono font-bold"
+        >
+          {statusToken}
+        </bdi>
+      );
+
+      parts.push(
+        <React.Fragment key={`frag-s-${matchStart}`}>
+          {bdiEl}
+          {statusPunct ? "\u200F" + statusPunct : "\u200F"}
+        </React.Fragment>
       );
     } else {
-      parts.push(cleanPhonetic);
+      parts.push(match[0]);
     }
 
     lastIndex = matchEnd;
@@ -1278,30 +1390,6 @@ function parseSolutionBlock(rawText: string) {
 }
 
 /**
- * Detects and parses markdown tables inside paragraph blocks when not parsed into table elements.
- */
-function parseMarkdownTable(rawText: string): { headers: string[]; rows: string[][] } | null {
-  const lines = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
-  if (lines.length < 2) return null;
-
-  const separatorRegex = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$/;
-  if (!separatorRegex.test(lines[1])) return null;
-
-  const parseRow = (rowStr: string): string[] => {
-    let clean = rowStr.trim();
-    if (clean.startsWith("|")) clean = clean.substring(1);
-    if (clean.endsWith("|")) clean = clean.substring(0, clean.length - 1);
-    return clean.split("|").map((cell) => cell.trim());
-  };
-
-  const headers = parseRow(lines[0]);
-  if (headers.length < 2) return null;
-
-  const rows = lines.slice(2).map(parseRow);
-  return { headers, rows };
-}
-
-/**
  * Isolated Vocabulary Card component:
  * - Tier 1: German text strictly on its own top line, Left-Aligned (text-left) with dir="ltr",
  *   bold font (text-lg sm:text-xl font-sans tracking-wide). Ensures question marks (?) and exclamation marks (!)
@@ -1520,130 +1608,286 @@ export function normalizeDialogueMarkdown(markdownContent: string): string {
 }
 
 /**
- * Normalizes markdown formatting for both articles and lessons:
- * 1. Merges broken numbered subheadings on two lines (e.g. "### 1." followed by "### Title" or "Title").
- * 2. Converts short single-line triple-backtick blocks (numbers, amounts, terms <= 80 chars) to inline code.
- * 3. Merges isolated inline code with previous/next line if they split a continuous sentence.
+ * Renders parsed ASCII / markdown tables as responsive HTML <table> elements.
  */
-export function normalizeMarkdownFormatting(raw: string): string {
-  if (!raw || typeof raw !== "string") return "";
+function renderHtmlTable(
+  table: ParsedTable,
+  isAr: boolean,
+  isLessonMode: boolean
+) {
+  const maxCols = Math.max(
+    table.headers.length,
+    ...table.rows.map((r) => r.length)
+  );
 
-  let text = raw;
+  return (
+    <div className="my-8 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl">
+      <table
+        className={`w-full border-collapse text-xs sm:text-sm text-slate-200 ${
+          isAr ? "text-right" : "text-left"
+        }`}
+        dir={isAr ? "rtl" : "ltr"}
+      >
+        <thead className="bg-slate-950/90 text-blue-400 font-bold border-b border-slate-800">
+          <tr>
+            {table.headers.map((h, hIdx) => {
+              const colSpan =
+                table.headers.length === 1 && maxCols > 1 ? maxCols : 1;
+              return (
+                <th
+                  key={`th-${hIdx}`}
+                  colSpan={colSpan}
+                  className={`p-3.5 sm:p-4 font-bold border-b border-slate-800/60 text-blue-400 ${
+                    colSpan > 1
+                      ? "text-center"
+                      : isAr
+                      ? "text-right"
+                      : "text-left"
+                  }`}
+                >
+                  {renderInlineContent(h, isLessonMode, isAr)}
+                </th>
+              );
+            })}
+          </tr>
+        </thead>
+        <tbody className="bg-transparent">
+          {table.rows.map((row, rIdx) => (
+            <tr
+              key={`tr-${rIdx}`}
+              className="hover:bg-slate-800/40 transition-colors"
+            >
+              {row.map((cell, cIdx) => (
+                <td
+                  key={`td-${rIdx}-${cIdx}`}
+                  className={`p-3.5 sm:p-4 border-b border-slate-800/60 text-slate-200 leading-relaxed ${
+                    isAr ? "text-right" : "text-left"
+                  }`}
+                >
+                  {renderInlineContent(cell, isLessonMode, isAr)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
-  // 1. Convert single-line short triple backtick blocks (<= 80 chars, no \n) to inline code
-  // Handles ```45,300 يورو``` or ```text 45,300 يورو``` or ```41,041.80 يورو```
-  text = text.replace(/```(?:[a-zA-Z]{2,10}\s+)?([^\r\n`]{1,80})```/g, (_m, code) => {
-    return `\`${code.trim()}\``;
-  });
+/**
+ * Renders parsed ASCII diagrams and flowcharts as responsive visual UI cards.
+ */
+function renderDiagramUI(
+  diagram: ParsedDiagram,
+  isAr: boolean,
+  isLessonMode: boolean
+) {
+  if (diagram.type === "branching") {
+    return (
+      <div
+        className="my-10 p-6 sm:p-8 rounded-3xl bg-slate-900/95 border border-slate-800 shadow-2xl space-y-6"
+        dir={isAr ? "rtl" : "ltr"}
+      >
+        {/* Top Root Card */}
+        <div className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 sm:p-6 text-center shadow-lg space-y-2">
+          <div className="text-base sm:text-lg font-black text-white">
+            {renderInlineContent(diagram.root.title, isLessonMode, isAr)}
+          </div>
+          {diagram.root.subtitle && (
+            <div>
+              <span className="inline-block px-3.5 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 text-xs font-bold tracking-wide">
+                <bdi dir="ltr">{diagram.root.subtitle}</bdi>
+              </span>
+            </div>
+          )}
+        </div>
 
-  // Handles 3-line blocks containing only a single short line between ```
-  // ```
-  // 45,300 يورو
-  // ```
-  text = text.replace(/^[ \t]*```[a-zA-Z0-9_-]*\r?\n([^\r\n`]{1,80})\r?\n[ \t]*```[ \t]*$/gm, (_m, code) => {
-    return `\`${code.trim()}\``;
-  });
+        {/* Down Arrow Connector */}
+        <div
+          className="flex flex-col items-center justify-center -my-2 select-none"
+          aria-hidden="true"
+        >
+          <div className="w-0.5 h-6 bg-gradient-to-b from-blue-500 to-indigo-500" />
+          <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-400 flex items-center justify-center text-sm font-black shadow-sm">
+            ↓
+          </div>
+        </div>
 
-  // 2. Merge split numbered headings on two lines:
-  // e.g. "### 1." followed directly or with empty lines by "### Title" or "Title"
-  // ^(#{1,4})\s*(\d+[\.\-\)]?)\s*$ followed by ^(?:#{1,4}\s*)?([^\n]+)$ -> $1 $2 $3
-  const lines = text.split("\n");
-  const mergedLines: string[] = [];
+        {/* 2-Column Responsive Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {diagram.branches.map((branch, idx) => {
+            const isFirst = idx === 0;
+            const accentBg = isFirst
+              ? "border-blue-500/30 hover:border-blue-500/50"
+              : "border-indigo-500/30 hover:border-indigo-500/50";
+            const badgeBg = isFirst ? "bg-blue-600" : "bg-indigo-600";
+            const termColor = isFirst ? "text-blue-300" : "text-indigo-300";
+            const bulletColor = isFirst ? "bg-blue-400" : "bg-indigo-400";
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const headingMatch = line.match(/^(#{1,4})\s*(\d+[\.\-\)]?)\s*$/);
+            return (
+              <div
+                key={`branch-${idx}`}
+                className={`rounded-2xl bg-slate-950/70 border ${accentBg} p-5 sm:p-6 flex flex-col justify-between space-y-4 shadow-md transition-all`}
+              >
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold text-white ${badgeBg} shadow-sm`}
+                    >
+                      {renderInlineContent(branch.title, isLessonMode, isAr)}
+                    </span>
+                    {branch.germanTerm && (
+                      <span
+                        className={`px-3 py-1 rounded-xl text-xs font-mono font-bold bg-slate-800 ${termColor} border border-slate-700/80`}
+                      >
+                        <bdi dir="ltr">{branch.germanTerm}</bdi>
+                      </span>
+                    )}
+                  </div>
 
-    if (headingMatch) {
-      const hashes = headingMatch[1];
-      const numPart = headingMatch[2];
+                  <ul className="space-y-2.5 text-sm sm:text-base text-slate-300 pt-2">
+                    {branch.points.map((pt, pIdx) => (
+                      <li
+                        key={`pt-${pIdx}`}
+                        className="flex items-start gap-2.5"
+                      >
+                        <span
+                          className={`w-2 h-2 rounded-full ${bulletColor} mt-2 shrink-0`}
+                        />
+                        <span className="leading-relaxed">
+                          {renderInlineContent(pt, isLessonMode, isAr)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            );
+          })}
+        </div>
 
-      // Look ahead for the next non-empty line
-      let nextIdx = i + 1;
-      while (nextIdx < lines.length && lines[nextIdx].trim() === "") {
-        nextIdx++;
-      }
+        {/* Down Arrow Connector */}
+        <div
+          className="flex flex-col items-center justify-center -my-2 select-none"
+          aria-hidden="true"
+        >
+          <div className="w-0.5 h-6 bg-gradient-to-b from-indigo-500 to-emerald-500" />
+          <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 flex items-center justify-center text-sm font-black shadow-sm">
+            ↓
+          </div>
+        </div>
 
-      if (nextIdx < lines.length) {
-        const nextLine = lines[nextIdx].trim();
-        // Check if next line is a title or title text (not another number heading, divider, list, quote)
-        if (
-          nextLine &&
-          !nextLine.startsWith("---") &&
-          !nextLine.startsWith("***") &&
-          !nextLine.startsWith("___") &&
-          !nextLine.startsWith("- ") &&
-          !nextLine.startsWith("* ") &&
-          !nextLine.startsWith("> ") &&
-          !/^(#{1,4})\s*(\d+[\.\-\)]?)\s*$/.test(nextLine)
-        ) {
-          const titleMatch = nextLine.match(/^(?:#{1,4}\s*)?([^\n]+)$/);
-          if (titleMatch && titleMatch[1].trim()) {
-            const headingTitle = titleMatch[1].trim();
-            mergedLines.push(`${hashes} ${numPart} ${headingTitle}`);
-            i = nextIdx; // Skip past the merged line
-            continue;
-          }
-        }
-      }
-    }
-
-    mergedLines.push(line);
+        {/* Bottom Outcome Card */}
+        {diagram.outcome && (
+          <div className="bg-gradient-to-br from-emerald-950/60 to-slate-900 border border-emerald-500/40 rounded-2xl p-5 sm:p-6 text-center shadow-lg space-y-2">
+            <div className="inline-flex items-center justify-center gap-2 text-base sm:text-lg font-black text-emerald-300">
+              <span className="text-xl">🏆</span>
+              <span>
+                {renderInlineContent(diagram.outcome.title, isLessonMode, isAr)}
+              </span>
+            </div>
+            {diagram.outcome.subtitle && (
+              <div>
+                <span className="inline-block px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-semibold tracking-wide">
+                  <bdi dir="ltr">{diagram.outcome.subtitle}</bdi>
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
   }
 
-  // 3. Merge short inline code that was isolated on its own line / paragraph and breaks a continuous Arabic sentence
-  const finalLines: string[] = [];
-  for (let i = 0; i < mergedLines.length; i++) {
-    const curr = mergedLines[i];
-    const trimmed = curr.trim();
+  if (diagram.type === "timeline") {
+    return (
+      <div
+        className="my-10 p-6 sm:p-8 rounded-3xl bg-slate-900/95 border border-slate-800 shadow-2xl space-y-6"
+        dir={isAr ? "rtl" : "ltr"}
+      >
+        {diagram.title && (
+          <div className="flex items-center gap-2 text-base sm:text-lg font-extrabold text-blue-400 border-b border-slate-800/80 pb-3">
+            <span>🎯</span>
+            <span>{renderInlineContent(diagram.title, isLessonMode, isAr)}</span>
+          </div>
+        )}
 
-    // Check if current line is solely an inline code block like `45,300 يورو`
-    const isIsolatedInlineCode = /^`[^`\n]{1,80}`$/.test(trimmed);
+        {diagram.root && (
+          <div className="bg-blue-950/40 border border-blue-500/40 rounded-2xl p-4 sm:p-5 text-center shadow-md">
+            <span className="text-sm sm:text-base font-bold text-white">
+              {renderInlineContent(diagram.root, isLessonMode, isAr)}
+            </span>
+          </div>
+        )}
 
-    if (isIsolatedInlineCode && finalLines.length > 0) {
-      // Find previous non-empty line
-      let prevIdx = finalLines.length - 1;
-      while (prevIdx >= 0 && finalLines[prevIdx].trim() === "") {
-        prevIdx--;
-      }
+        <div className="space-y-4 pt-2">
+          {diagram.steps.map((st, sIdx) => {
+            const isFirst = sIdx === 0;
+            const badgeBg = isFirst
+              ? "bg-emerald-500/20 text-emerald-300 border-emerald-400/30"
+              : "bg-blue-500/20 text-blue-300 border-blue-400/30";
 
-      // Find next non-empty line
-      let nextIdx = i + 1;
-      while (nextIdx < mergedLines.length && mergedLines[nextIdx].trim() === "") {
-        nextIdx++;
-      }
+            return (
+              <div
+                key={`step-${sIdx}`}
+                className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-slate-950/70 border border-slate-800 hover:border-slate-700 transition-all"
+              >
+                <div className="flex items-center gap-3 text-sm sm:text-base font-semibold text-slate-200">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0" />
+                  <span>
+                    {renderInlineContent(st.condition, isLessonMode, isAr)}
+                  </span>
+                </div>
 
-      const prevLine = prevIdx >= 0 ? finalLines[prevIdx].trim() : "";
-      const nextLine = nextIdx < mergedLines.length ? mergedLines[nextIdx].trim() : "";
-
-      const isHeadingOrSpecial = (l: string) =>
-        /^#{1,6}\s/.test(l) ||
-        /^[-*]\s/.test(l) ||
-        /^\d+[\.\)]\s/.test(l) ||
-        l.startsWith(">") ||
-        l.startsWith("|") ||
-        l.startsWith("---");
-
-      // If previous line is regular text and not heading/list/special
-      if (prevLine && !isHeadingOrSpecial(prevLine)) {
-        // If next line is also regular continuation text
-        if (nextLine && !isHeadingOrSpecial(nextLine)) {
-          finalLines[prevIdx] = `${prevLine} ${trimmed} ${nextLine}`;
-          finalLines.length = prevIdx + 1;
-          i = nextIdx; // advance past nextLine
-          continue;
-        } else {
-          finalLines[prevIdx] = `${prevLine} ${trimmed}`;
-          finalLines.length = prevIdx + 1;
-          continue;
-        }
-      }
-    }
-
-    finalLines.push(curr);
+                {st.duration && (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span
+                      className="text-slate-500 select-none hidden sm:inline"
+                      aria-hidden="true"
+                    >
+                      {isAr ? "←" : "→"}
+                    </span>
+                    <span
+                      className="text-slate-500 select-none sm:hidden"
+                      aria-hidden="true"
+                    >
+                      ↓
+                    </span>
+                    <span
+                      className={`px-3 py-1 rounded-xl text-xs sm:text-sm font-bold border ${badgeBg}`}
+                    >
+                      {renderInlineContent(st.duration, isLessonMode, isAr)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
   }
 
-  return finalLines.join("\n");
+  // Generic fallback
+  return (
+    <div
+      className="my-8 p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      {diagram.nodes.map((node, nIdx) => (
+        <div
+          key={`node-${nIdx}`}
+          className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-sm sm:text-base text-slate-200"
+        >
+          <span className="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 font-bold text-xs flex items-center justify-center shrink-0">
+            {nIdx + 1}
+          </span>
+          <span>{renderInlineContent(node.title, isLessonMode, isAr)}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 /**
@@ -1770,12 +2014,15 @@ export default function LessonContentRenderer({
   };
 
   return (
-    <div className="prose-container space-y-6 text-start" dir="auto">
+    <div className="prose-container space-y-6 text-start" dir={isAr ? "rtl" : "ltr"}>
       <ReactMarkdown
         components={{
           h1: ({ children }) => (
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white mt-12 mb-6 leading-tight border-b border-slate-200 dark:border-slate-800 pb-4 text-start" dir="auto">
-              {children}
+            <h1
+              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white mt-12 mb-6 leading-tight border-b border-slate-200 dark:border-slate-800 pb-4 text-start"
+              dir={isAr ? "rtl" : "ltr"}
+            >
+              {renderInlineContent(children, isLessonMode, isAr)}
             </h1>
           ),
           h2: ({ children }) => {
@@ -1793,7 +2040,7 @@ export default function LessonContentRenderer({
               return (
                 <div
                   className="mt-14 mb-6 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-blue-900/30 via-slate-900/70 to-emerald-900/30 border border-blue-500/30 dark:border-blue-800/60 shadow-lg text-start"
-                  dir="auto"
+                  dir={isAr ? "rtl" : "ltr"}
                 >
                   <div className="flex items-center gap-3.5 mb-2">
                     <span className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-emerald-600 text-white flex items-center justify-center text-2xl shrink-0 shadow-md select-none">
@@ -1804,7 +2051,7 @@ export default function LessonContentRenderer({
                         {isAr ? "أدوات التوظيف الذكية في ألمانيا" : "Smart Career Tools"}
                       </span>
                       <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white mt-1 leading-snug">
-                        {children}
+                        {renderInlineContent(children, isLessonMode, isAr)}
                       </h2>
                     </div>
                   </div>
@@ -1837,14 +2084,14 @@ export default function LessonContentRenderer({
             else if (headingText.includes("حلول")) badgeIcon = "🎯";
 
             return (
-              <div className="mt-12 mb-6 pt-4" dir="auto">
+              <div className="mt-12 mb-6 pt-4" dir={isAr ? "rtl" : "ltr"}>
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug flex items-center gap-3 text-start">
                   {isLessonSection && (
                     <span className="w-9 h-9 rounded-xl bg-blue-600/15 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 border border-blue-300/40 dark:border-blue-800/50 flex items-center justify-center text-lg shrink-0">
                       {badgeIcon}
                     </span>
                   )}
-                  <span>{children}</span>
+                  <span>{renderInlineContent(children, isLessonMode, isAr)}</span>
                 </h2>
                 <div className="mt-2 h-0.5 w-full bg-gradient-to-r from-blue-500/40 via-slate-200 dark:via-slate-800 to-transparent" />
               </div>
@@ -1865,14 +2112,14 @@ export default function LessonContentRenderer({
               return (
                 <div
                   className="mt-10 mb-5 p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-blue-900/30 via-slate-900/70 to-emerald-900/30 border border-blue-500/30 dark:border-blue-800/60 shadow-md text-start"
-                  dir="auto"
+                  dir={isAr ? "rtl" : "ltr"}
                 >
                   <div className="flex items-center gap-3">
                     <span className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-emerald-600 text-white flex items-center justify-center text-xl shrink-0 shadow-sm select-none">
                       🚀
                     </span>
                     <h3 className="text-xl sm:text-2xl font-extrabold text-white leading-snug">
-                      {children}
+                      {renderInlineContent(children, isLessonMode, isAr)}
                     </h3>
                   </div>
                 </div>
@@ -1882,16 +2129,19 @@ export default function LessonContentRenderer({
             return (
               <h3
                 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mt-8 mb-4 leading-snug flex items-baseline gap-2.5 text-start"
-                dir="auto"
+                dir={isAr ? "rtl" : "ltr"}
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0" />
-                <span>{children}</span>
+                <span>{renderInlineContent(children, isLessonMode, isAr)}</span>
               </h3>
             );
           },
           h4: ({ children }) => (
-            <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mt-6 mb-3 text-start" dir="auto">
-              {children}
+            <h4
+              className="text-lg font-semibold text-slate-900 dark:text-slate-100 mt-6 mb-3 text-start"
+              dir={isAr ? "rtl" : "ltr"}
+            >
+              {renderInlineContent(children, isLessonMode, isAr)}
             </h4>
           ),
           p: ({ children }) => {
@@ -1925,35 +2175,10 @@ export default function LessonContentRenderer({
               }
             }
 
-            // 2. Check for Markdown Table (if rendered inside paragraph)
-            const markdownTable = parseMarkdownTable(trimmed);
-            if (markdownTable) {
-              return (
-                <div className="my-8 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl">
-                  <table className="w-full text-right border-collapse text-xs sm:text-sm text-slate-200" dir="rtl">
-                    <thead className="bg-slate-950/90 text-blue-400 font-bold border-b border-slate-800">
-                      <tr>
-                        {markdownTable.headers.map((h, hIdx) => (
-                          <th key={`th-${hIdx}`} className="p-3.5 sm:p-4 text-right font-bold border-b border-slate-800/60 text-blue-400">
-                            {renderInlineContent(h, isLessonMode)}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="bg-transparent">
-                      {markdownTable.rows.map((row, rIdx) => (
-                        <tr key={`tr-${rIdx}`} className="hover:bg-slate-800/40 transition-colors">
-                          {row.map((cell, cIdx) => (
-                            <td key={`td-${rIdx}-${cIdx}`} className="p-3.5 sm:p-4 text-right border-b border-slate-800/60 text-slate-200 leading-relaxed">
-                              {renderInlineContent(cell, isLessonMode)}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              );
+            // 2. Check for ASCII or Markdown Table (if rendered inside paragraph)
+            const parsedTable = parseAsciiOrMarkdownTable(trimmed);
+            if (parsedTable) {
+              return renderHtmlTable(parsedTable, isAr, isLessonMode);
             }
 
             // 3. Alert Box (both modes, with editorial titles & prefix stripping)
@@ -1969,14 +2194,14 @@ export default function LessonContentRenderer({
               return (
                 <div
                   className={`my-6 p-5 sm:p-6 rounded-2xl sm:rounded-3xl shadow-xs border ${borderClasses} space-y-2 text-right`}
-                  dir="rtl"
+                  dir={isAr ? "rtl" : "ltr"}
                 >
-                  <div className="flex items-center gap-2.5 font-bold text-base sm:text-lg text-right">
+                  <div className="flex items-center gap-2.5 font-bold text-base sm:text-lg text-right" dir={isAr ? "rtl" : "ltr"}>
                     <span className="text-xl select-none">{alert.icon}</span>
-                    <span>{alert.title}</span>
+                    <span>{renderInlineContent(alert.title, isLessonMode, isAr)}</span>
                   </div>
-                  <div className="text-sm sm:text-base leading-relaxed text-slate-700 dark:text-slate-200 text-right">
-                    {renderInlineContent(alert.content, isLessonMode)}
+                  <div className="text-sm sm:text-base leading-relaxed text-slate-700 dark:text-slate-200 text-right" dir={isAr ? "rtl" : "ltr"}>
+                    {renderInlineContent(alert.content, isLessonMode, isAr)}
                   </div>
                 </div>
               );
@@ -2141,19 +2366,19 @@ export default function LessonContentRenderer({
             return (
               <p
                 className="text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed sm:leading-loose mb-6 font-normal text-start"
-                dir="auto"
+                dir={isAr ? "rtl" : "ltr"}
               >
-                {renderInlineContent(children, isLessonMode)}
+                {renderInlineContent(children, isLessonMode, isAr)}
               </p>
             );
           },
           ul: ({ children }) => (
-            <ul className="space-y-3 my-6 list-none p-0">
+            <ul className="space-y-3 my-6 list-none p-0" dir={isAr ? "rtl" : "ltr"}>
               {children}
             </ul>
           ),
           ol: ({ children }) => (
-            <ol className="space-y-3 my-6 list-none p-0">
+            <ol className="space-y-3 my-6 list-none p-0" dir={isAr ? "rtl" : "ltr"}>
               {children}
             </ol>
           ),
@@ -2175,7 +2400,7 @@ export default function LessonContentRenderer({
                 }
 
                 return (
-                  <li className="list-none my-3">
+                  <li className="list-none my-3" dir={isAr ? "rtl" : "ltr"}>
                     <EnterpriseCtaCard
                       {...meta}
                       href={toolLink.href}
@@ -2192,12 +2417,12 @@ export default function LessonContentRenderer({
               return (
                 <li
                   className="text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed my-2 text-start list-none"
-                  dir="auto"
+                  dir={isAr ? "rtl" : "ltr"}
                 >
                   <div className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-blue-500 mt-2.5 shrink-0" />
                     <div className="flex-1 select-text">
-                      {renderInlineContent(children, isLessonMode)}
+                      {renderInlineContent(children, isLessonMode, isAr)}
                     </div>
                   </div>
                 </li>
@@ -2208,13 +2433,13 @@ export default function LessonContentRenderer({
             if (isLessonMode) {
               const grammar = parseGrammarRule(clean);
               if (grammar) {
-                return <li className="list-none my-4">{renderGrammarCard(grammar)}</li>;
+                return <li className="list-none my-4" dir={isAr ? "rtl" : "ltr"}>{renderGrammarCard(grammar)}</li>;
               }
 
               const dialogueTurns = parseDialogues(clean);
               if (dialogueTurns && dialogueTurns.length > 0) {
                 return (
-                  <li className="list-none my-3">
+                  <li className="list-none my-3" dir={isAr ? "rtl" : "ltr"}>
                     {dialogueTurns.map((turn, idx) => (
                       <DialogueCard key={`li-dialogue-${idx}`} {...turn} />
                     ))}
@@ -2225,7 +2450,7 @@ export default function LessonContentRenderer({
               const parsed = parseBulletItem(clean);
               if (parsed.type === "vocab") {
                 return (
-                  <li className="list-none my-3">
+                  <li className="list-none my-3" dir={isAr ? "rtl" : "ltr"}>
                     <VocabularyCard {...parsed.data} />
                   </li>
                 );
@@ -2243,7 +2468,7 @@ export default function LessonContentRenderer({
 
               if (isPureGermanOrExercise) {
                 return (
-                  <li className="list-none my-2.5">
+                  <li className="list-none my-2.5" dir="ltr">
                     <div
                       dir="ltr"
                       className="flex items-center gap-3.5 p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/85 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:border-blue-400 dark:hover:border-blue-800/70 transition-all text-left"
@@ -2265,12 +2490,12 @@ export default function LessonContentRenderer({
             return (
               <li
                 className="text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed sm:leading-loose my-2 text-start list-none"
-                dir="auto"
+                dir={isAr ? "rtl" : "ltr"}
               >
                 <div className="flex items-start gap-3">
                   <span className="w-2 h-2 rounded-full bg-blue-500 mt-3 shrink-0" />
                   <div className="flex-1 select-text">
-                    {renderInlineContent(children, isLessonMode)}
+                    {renderInlineContent(children, isLessonMode, isAr)}
                   </div>
                 </div>
               </li>
@@ -2279,9 +2504,9 @@ export default function LessonContentRenderer({
           blockquote: ({ children }) => (
             <blockquote
               className="border-s-4 rounded-e-2xl text-start border-blue-500 bg-blue-50/60 dark:bg-blue-950/30 text-slate-700 dark:text-slate-300 p-6 my-8 shadow-2xs text-base sm:text-lg leading-relaxed"
-              dir="auto"
+              dir={isAr ? "rtl" : "ltr"}
             >
-              {children}
+              {renderInlineContent(children, isLessonMode, isAr)}
             </blockquote>
           ),
           a: ({ href, children }) => {
@@ -2297,7 +2522,7 @@ export default function LessonContentRenderer({
             if (isInternal) {
               return (
                 <Link href={resolvedHref} className={linkClass}>
-                  <span>{children}</span>
+                  <span>{renderInlineContent(children, isLessonMode, isAr)}</span>
                   <span className="text-xs opacity-75 select-none">↗</span>
                 </Link>
               );
@@ -2310,22 +2535,19 @@ export default function LessonContentRenderer({
                 rel="noopener noreferrer"
                 className={linkClass}
               >
-                <span>{children}</span>
+                <span>{renderInlineContent(children, isLessonMode, isAr)}</span>
                 <span className="text-xs opacity-75 select-none">↗</span>
               </a>
             );
           },
           code: ({ children, className, ...props }: React.ComponentPropsWithoutRef<"code"> & { isPre?: boolean }) => {
-            const codeText = getNodeText(children);
-            const isArabic = /[\u0600-\u06FF]/.test(codeText);
-            const isBlock = Boolean(props.isPre || className?.includes("language-") || codeText.includes("\n"));
+            const isBlock = Boolean(props.isPre || className?.includes("language-"));
 
             if (isBlock) {
               return (
                 <code
-                  dir={isArabic ? "rtl" : "ltr"}
-                  className={`text-slate-200 select-text ${isArabic ? "font-sans text-right" : "font-mono text-left"}`}
-                  style={isArabic ? { fontFamily: "'Amiri', 'Cairo', var(--font-cairo), sans-serif" } : undefined}
+                  dir="ltr"
+                  className="text-slate-200 select-text font-mono text-left before:content-none after:content-none"
                 >
                   {children}
                 </code>
@@ -2334,11 +2556,8 @@ export default function LessonContentRenderer({
 
             return (
               <code
-                className={`px-2 py-0.5 mx-1 rounded-md bg-blue-500/10 dark:bg-blue-400/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 text-sm sm:text-base font-semibold inline align-baseline select-text ${
-                  isArabic ? "font-sans" : "font-mono"
-                }`}
-                dir={isArabic ? "rtl" : "ltr"}
-                style={isArabic ? { fontFamily: "'Amiri', 'Cairo', var(--font-cairo), sans-serif" } : undefined}
+                className="px-2 py-0.5 mx-1 rounded-md bg-blue-500/10 dark:bg-blue-400/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 text-sm sm:text-base font-semibold inline align-baseline select-text font-mono before:content-none after:content-none"
+                dir="ltr"
               >
                 {children}
               </code>
@@ -2347,42 +2566,48 @@ export default function LessonContentRenderer({
           pre: ({ children }) => {
             const text = getNodeText(children).trim();
 
+            // 1. Check if the block is an ASCII / Markdown table
+            const parsedTable = parseAsciiOrMarkdownTable(text);
+            if (parsedTable) {
+              return renderHtmlTable(parsedTable, isAr, isLessonMode);
+            }
+
+            // 2. Check if the block is an ASCII flowchart or diagram
+            const parsedDiagram = parseAsciiDiagram(text);
+            if (parsedDiagram) {
+              return renderDiagramUI(parsedDiagram, isAr, isLessonMode);
+            }
+
+            // 3. Short single-line code block (< 80 chars, no newline)
             if (!text.includes("\n") && text.length < 80) {
               return (
                 <span
-                  dir="auto"
-                  className="px-2.5 py-0.5 mx-1 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-300 border border-blue-500/30 font-bold text-sm sm:text-base inline-block align-baseline"
+                  dir="ltr"
+                  className="px-2.5 py-0.5 mx-1 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-300 border border-blue-500/30 font-bold text-sm sm:text-base inline-block align-baseline font-mono before:content-none after:content-none"
                 >
                   {text}
                 </span>
               );
             }
 
-            const hasArabic = /[\u0600-\u06FF]/.test(text);
-
+            // 4. Fallback: Always strict font-mono and dir="ltr" text-left
             return (
               <pre
-                dir={hasArabic ? "rtl" : "ltr"}
-                className={`my-8 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/90 p-4 text-xs sm:text-sm text-slate-200 shadow-xl ${
-                  hasArabic ? "text-right font-sans" : "text-left font-mono"
-                }`}
-                style={hasArabic ? { fontFamily: "'Amiri', 'Cairo', var(--font-cairo), sans-serif" } : undefined}
+                dir="ltr"
+                className="my-8 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/90 p-4 text-xs sm:text-sm text-slate-200 shadow-xl font-mono text-left"
               >
-                {React.Children.map(children, (child) => {
-                  if (React.isValidElement(child)) {
-                    return React.cloneElement(
-                      child as React.ReactElement<{ isPre?: boolean; hasArabic?: boolean }>,
-                      { isPre: true, hasArabic }
-                    );
-                  }
-                  return child;
-                })}
+                <code className="font-mono text-slate-200 before:content-none after:content-none">{text}</code>
               </pre>
             );
           },
           table: ({ children }) => (
             <div className="my-8 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl">
-              <table className="w-full text-right border-collapse text-xs sm:text-sm text-slate-200" dir="rtl">
+              <table
+                className={`w-full border-collapse text-xs sm:text-sm text-slate-200 ${
+                  isAr ? "text-right" : "text-left"
+                }`}
+                dir={isAr ? "rtl" : "ltr"}
+              >
                 {children}
               </table>
             </div>
@@ -2403,13 +2628,23 @@ export default function LessonContentRenderer({
             </tr>
           ),
           th: ({ children }) => (
-            <th className="p-3.5 sm:p-4 text-right font-bold border-b border-slate-800/60 text-blue-400">
-              {children}
+            <th
+              className={`p-3.5 sm:p-4 font-bold border-b border-slate-800/60 text-blue-400 ${
+                isAr ? "text-right" : "text-left"
+              }`}
+              dir={isAr ? "rtl" : "ltr"}
+            >
+              {renderInlineContent(children, isLessonMode, isAr)}
             </th>
           ),
           td: ({ children }) => (
-            <td className="p-3.5 sm:p-4 text-right border-b border-slate-800/60 text-slate-200 leading-relaxed">
-              {children}
+            <td
+              className={`p-3.5 sm:p-4 border-b border-slate-800/60 text-slate-200 leading-relaxed ${
+                isAr ? "text-right" : "text-left"
+              }`}
+              dir={isAr ? "rtl" : "ltr"}
+            >
+              {renderInlineContent(children, isLessonMode, isAr)}
             </td>
           ),
           hr: () => <hr className="my-12 border-slate-200 dark:border-slate-800" />,

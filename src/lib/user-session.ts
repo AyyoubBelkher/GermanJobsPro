@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { prisma } from "@/lib/prisma";
+import { prisma, withDbRetry } from "@/lib/prisma";
 
 const SCRYPT_PREFIX = "scrypt:16:64:16384:8:1";
 const SALT_SIZE = 16;
@@ -135,22 +135,27 @@ export async function verifyUserSession(token?: string | null): Promise<{
   const tokenHash = crypto.createHash("sha256").update(token.trim()).digest("hex");
 
   try {
-    const sessionRecord = await prisma.userSession.findUnique({
-      where: { tokenHash },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            plan: true,
-            planExpiresAt: true,
-            aiCredits: true,
-            customerId: true,
+    const sessionRecord = await withDbRetry(
+      () =>
+        prisma.userSession.findUnique({
+          where: { tokenHash },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                plan: true,
+                planExpiresAt: true,
+                aiCredits: true,
+                customerId: true,
+              },
+            },
           },
-        },
-      },
-    });
+        }),
+      2,
+      500
+    );
 
     if (!sessionRecord) {
       return null;
@@ -172,7 +177,8 @@ export async function verifyUserSession(token?: string | null): Promise<{
       },
       user: sessionRecord.user,
     };
-  } catch {
+  } catch (err) {
+    console.warn("[verifyUserSession DB Error]:", err instanceof Error ? err.message : err);
     return null;
   }
 }

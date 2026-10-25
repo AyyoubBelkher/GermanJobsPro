@@ -2,6 +2,10 @@ import React from "react";
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import { DeckblattPage } from "./deckblatt-template";
 import { registerAmiriFont } from "./font-amiri";
+import { extractCityFromAddress } from "@/lib/location";
+import { formatDate, formatDateRange, formatFullDate } from "@/lib/cv-date-utils";
+
+export { formatDate, formatDateRange, formatFullDate };
 
 // Ensure Amiri font and non-breaking Arabic hyphenation are registered
 registerAmiriFont();
@@ -76,12 +80,12 @@ export interface CvPdfData {
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 24,
-    paddingBottom: 22,
-    paddingHorizontal: 28,
+    paddingTop: 20,
+    paddingBottom: 20,
+    paddingHorizontal: 26,
     fontFamily: "Helvetica",
     color: "#0f172a",
-    fontSize: 9,
+    fontSize: 9.5,
     lineHeight: 1.35,
     backgroundColor: "#ffffff",
     textAlign: "left",
@@ -99,8 +103,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     borderBottomWidth: 1.5,
     borderBottomColor: "#2563eb",
-    paddingBottom: 8,
-    marginBottom: 8,
+    paddingBottom: 6,
+    marginBottom: 6,
   },
   headerInfo: {
     flex: 1,
@@ -115,19 +119,19 @@ const styles = StyleSheet.create({
     paddingLeft: 14,
   },
   mainTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontFamily: "Helvetica-Bold",
     color: "#0f172a",
     letterSpacing: 0.5,
-    marginBottom: 3,
+    marginBottom: 2,
     lineHeight: 1.2,
     textAlign: "left",
   },
   targetTitle: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontFamily: "Helvetica",
     color: "#2563eb",
-    marginBottom: 5,
+    marginBottom: 4,
     lineHeight: 1.2,
     textAlign: "left",
   },
@@ -135,11 +139,11 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 4,
+    gap: 3,
     textAlign: "left",
   },
   personalItem: {
-    fontSize: 8.5,
+    fontSize: 9,
     color: "#475569",
     width: "48%",
     textAlign: "left",
@@ -150,8 +154,8 @@ const styles = StyleSheet.create({
     color: "#334155",
   },
   photoContainer: {
-    width: 72,
-    height: 90,
+    width: 68,
+    height: 85,
     borderRadius: 4,
     overflow: "hidden",
     borderWidth: 1,
@@ -164,29 +168,29 @@ const styles = StyleSheet.create({
     objectFit: "cover",
   },
   section: {
-    marginBottom: 6,
+    marginBottom: 5,
     textAlign: "left",
   },
   sectionTitle: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontFamily: "Helvetica-Bold",
     color: "#1e3a8a",
     borderBottomWidth: 1,
     borderBottomColor: "#e2e8f0",
     paddingBottom: 2,
-    marginBottom: 4,
-    marginTop: 8,
+    marginBottom: 3,
+    marginTop: 6,
     textTransform: "uppercase",
     letterSpacing: 0.8,
     textAlign: "left",
   },
   summaryText: {
-    fontSize: 8.5,
+    fontSize: 9,
     color: "#334155",
-    lineHeight: 1.4,
+    lineHeight: 1.35,
     backgroundColor: "#f8fafc",
-    padding: 6,
-    marginBottom: 6,
+    padding: 5,
+    marginBottom: 4,
     borderRadius: 3,
     borderLeftWidth: 2,
     borderLeftColor: "#3b82f6",
@@ -201,12 +205,12 @@ const styles = StyleSheet.create({
   entryRow: {
     display: "flex",
     flexDirection: "row",
-    marginBottom: 6,
+    marginBottom: 4.5,
     alignItems: "flex-start",
   },
   dateCol: {
-    width: 110,
-    fontSize: 8.5,
+    width: 105,
+    fontSize: 9,
     color: "#64748b",
     fontFamily: "Helvetica-Bold",
     paddingRight: 8,
@@ -223,41 +227,41 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   entryTitle: {
-    fontSize: 9.5,
+    fontSize: 10,
     fontFamily: "Helvetica-Bold",
     color: "#0f172a",
     textAlign: "left",
     lineHeight: 1.25,
   },
   entrySub: {
-    fontSize: 8.5,
+    fontSize: 9,
     color: "#2563eb",
-    marginBottom: 2,
+    marginBottom: 1.5,
     textAlign: "left",
     lineHeight: 1.2,
   },
   entryDesc: {
-    fontSize: 8.5,
+    fontSize: 9,
     color: "#475569",
     lineHeight: 1.35,
     textAlign: "left",
-    marginBottom: 2.5,
+    marginBottom: 2,
   },
   skillsContainer: {
     display: "flex",
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 4,
+    gap: 3.5,
     textAlign: "left",
   },
   skillBadge: {
-    fontSize: 8,
+    fontSize: 8.5,
     backgroundColor: "#f1f5f9",
     color: "#1e293b",
-    paddingVertical: 2.5,
-    paddingHorizontal: 6,
+    paddingVertical: 2,
+    paddingHorizontal: 5.5,
     borderRadius: 3,
-    borderWidth: 1,
+    borderWidth: 0.8,
     borderColor: "#e2e8f0",
     textAlign: "left",
   },
@@ -265,43 +269,43 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 8,
     textAlign: "left",
   },
   languageItem: {
-    fontSize: 8.5,
+    fontSize: 9,
     color: "#334155",
     textAlign: "left",
     lineHeight: 1.3,
   },
   projectItem: {
-    marginBottom: 6,
+    marginBottom: 4.5,
     textAlign: "left",
   },
   signatureSection: {
-    marginTop: 14,
-    borderTopWidth: 1,
+    marginTop: 8,
+    borderTopWidth: 0.8,
     borderTopColor: "#e2e8f0",
-    paddingTop: 6,
+    paddingTop: 4,
     display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-end",
   },
   signatureLine: {
-    fontSize: 8,
+    fontSize: 8.5,
     color: "#64748b",
     fontStyle: "italic",
     textAlign: "left",
   },
   signatureName: {
-    fontSize: 8.5,
+    fontSize: 9.5,
     fontFamily: "Helvetica-Bold",
     color: "#0f172a",
     textAlign: "right",
   },
   signatureNameArabic: {
-    fontSize: 8.5,
+    fontSize: 9.5,
     fontFamily: "Amiri",
     fontWeight: "bold",
     color: "#0f172a",
@@ -309,30 +313,41 @@ const styles = StyleSheet.create({
   },
 });
 
-function formatDate(dateVal: Date | string | null | undefined, isCurrent?: boolean, isArabic = false): string {
-  if (isCurrent) return isArabic ? "حتى الآن" : "heute";
-  if (!dateVal) return "";
-  const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return String(dateVal);
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = d.getFullYear();
-  return `${month}/${year}`;
+
+
+interface SkillGroup {
+  category: string;
+  skills: CvPdfData["skills"];
 }
 
-function formatFullDate(dateVal: Date | string | null | undefined): string {
-  if (!dateVal) return "";
-  const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return String(dateVal);
-  const day = String(d.getDate()).padStart(2, "0");
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = d.getFullYear();
-  return `${day}.${month}.${year}`;
-}
+function groupSkillsByCategory(
+  skills: CvPdfData["skills"],
+  isArabic: boolean
+): SkillGroup[] {
+  const groups: SkillGroup[] = [];
+  const map = new Map<string, CvPdfData["skills"]>();
 
-function getCityLocation(address?: string | null): string {
-  if (!address) return "Deutschland";
-  const parts = address.split(",");
-  return parts[0].trim();
+  for (const skill of skills) {
+    const isLicense = /führerschein|fahrerlaubnis|driving\s*licen|permis\s*de\s*conduire|رخصة/i.test(skill.name);
+    let cat = skill.category && skill.category.trim()
+      ? skill.category.trim()
+      : isLicense
+      ? (isArabic ? "التنقل ورخص القيادة" : "Mobilität & Führerschein")
+      : (isArabic ? "المهارات والقدرات" : "Kenntnisse");
+
+    if (isLicense && !skill.category) {
+      cat = isArabic ? "التنقل ورخص القيادة" : "Mobilität & Führerschein";
+    }
+
+    if (!map.has(cat)) {
+      const list: CvPdfData["skills"] = [];
+      map.set(cat, list);
+      groups.push({ category: cat, skills: list });
+    }
+    map.get(cat)!.push(skill);
+  }
+
+  return groups;
 }
 
 export function CvDocument({
@@ -344,7 +359,7 @@ export function CvDocument({
 }) {
   const p = cv.personalInfo;
   const fullName = p?.fullName || "Bewerber";
-  const city = getCityLocation(p?.address);
+  const city = extractCityFromAddress(p?.address);
 
   // Check if CV language is Arabic or contains Arabic characters
   const isArabic =
@@ -352,6 +367,8 @@ export function CvDocument({
     /[\u0600-\u06FF]/.test(
       fullName + (p?.summary || "") + (p?.targetJobTitle || "") + (p?.address || "")
     );
+
+  const groupedSkills = groupSkillsByCategory(cv.skills || [], isArabic);
 
   const todayFormatted = new Date().toLocaleDateString(isArabic ? "ar-EG" : "de-DE", {
     day: "2-digit",
@@ -475,8 +492,7 @@ export function CvDocument({
                 wrap={false}
               >
                 <Text style={[styles.dateCol, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlDateCol : undefined]}>
-                  {formatDate(exp.startDate, false, isArabic)} –{" "}
-                  {formatDate(exp.endDate, exp.isCurrent, isArabic)}
+                  {formatDateRange(exp.startDate, exp.endDate, exp.isCurrent, isArabic)}
                 </Text>
                 <View style={[styles.contentCol, isArabic ? styles.rtlText : undefined]}>
                   <Text style={[styles.entryTitle, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlText : undefined]}>
@@ -510,8 +526,7 @@ export function CvDocument({
                 wrap={false}
               >
                 <Text style={[styles.dateCol, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlDateCol : undefined]}>
-                  {formatDate(edu.startDate, false, isArabic)} –{" "}
-                  {formatDate(edu.endDate, edu.isCurrent, isArabic)}
+                  {formatDateRange(edu.startDate, edu.endDate, edu.isCurrent, isArabic)}
                 </Text>
                 <View style={[styles.contentCol, isArabic ? styles.rtlText : undefined]}>
                   <Text style={[styles.entryTitle, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlText : undefined]}>
@@ -536,41 +551,57 @@ export function CvDocument({
 
         {/* Skills */}
         {cv.skills && cv.skills.length > 0 && (
-          <View style={styles.section} wrap={false}>
+          <View style={styles.section}>
             <Text style={[styles.sectionTitle, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlText : undefined]}>
               {isArabic ? "المهارات والقدرات" : "Kenntnisse & Qualifikationen"}
             </Text>
-            <View style={[styles.skillsContainer, isArabic ? styles.rtlRow : undefined]}>
-              {cv.skills.map((skill, idx) => (
-                <Text key={idx} style={styles.skillBadge}>
-                  {skill.name}
-                  {skill.level ? ` (${skill.level})` : ""}
+            {groupedSkills.map((group, gIdx) => (
+              <View key={gIdx} style={[styles.entryRow, isArabic ? styles.rtlRow : undefined]} wrap={false}>
+                <Text style={[styles.dateCol, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlDateCol : undefined]}>
+                  {group.category}
                 </Text>
-              ))}
-            </View>
+                <View style={[styles.contentCol, styles.skillsContainer, isArabic ? styles.rtlRow : undefined]}>
+                  {group.skills.map((skill, sIdx) => {
+                    const isLicense = /führerschein|fahrerlaubnis|driving\s*licen|permis\s*de\s*conduire|رخصة/i.test(skill.name);
+                    const showLevel = !isLicense && skill.level && skill.level.trim().length > 0;
+                    return (
+                      <Text key={sIdx} style={styles.skillBadge}>
+                        {skill.name}
+                        {showLevel ? ` (${skill.level!.trim()})` : ""}
+                      </Text>
+                    );
+                  })}
+                </View>
+              </View>
+            ))}
           </View>
         )}
 
         {/* Languages (CEFR) */}
         {cv.languages && cv.languages.length > 0 && (
-          <View style={styles.section} wrap={false}>
+          <View style={styles.section}>
             <Text style={[styles.sectionTitle, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlText : undefined]}>
               {isArabic ? "اللغات" : "Sprachkenntnisse"}
             </Text>
-            <View style={[styles.languagesContainer, isArabic ? styles.rtlRow : undefined]}>
-              {cv.languages.map((lang, idx) => (
-                <Text key={idx} style={styles.languageItem}>
-                  <Text style={[styles.personalLabel, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>{lang.language}: </Text>
-                  {lang.proficiency}
-                </Text>
-              ))}
+            <View style={[styles.entryRow, isArabic ? styles.rtlRow : undefined]} wrap={false}>
+              <Text style={[styles.dateCol, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlDateCol : undefined]}>
+                {isArabic ? "اللغات" : "Sprachen"}
+              </Text>
+              <View style={[styles.contentCol, styles.languagesContainer, isArabic ? styles.rtlRow : undefined]}>
+                {cv.languages.map((lang, idx) => (
+                  <Text key={idx} style={styles.languageItem}>
+                    <Text style={[styles.personalLabel, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined]}>{lang.language}: </Text>
+                    {lang.proficiency}
+                  </Text>
+                ))}
+              </View>
             </View>
           </View>
         )}
 
         {/* Certifications */}
         {cv.certifications && cv.certifications.length > 0 && (
-          <View style={styles.section} wrap={false}>
+          <View style={styles.section}>
             <Text style={[styles.sectionTitle, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlText : undefined]}>
               {isArabic ? "الشهادات والدورات" : "Zertifikate & Weiterbildung"}
             </Text>
@@ -602,7 +633,7 @@ export function CvDocument({
 
         {/* Projects */}
         {cv.projects && cv.projects.length > 0 && (
-          <View style={styles.section} wrap={false}>
+          <View style={styles.section}>
             <Text style={[styles.sectionTitle, isArabic ? { fontFamily: "Amiri", fontWeight: "bold" } : undefined, isArabic ? styles.rtlText : undefined]}>
               {isArabic ? "المشاريع" : "Projekte"}
             </Text>

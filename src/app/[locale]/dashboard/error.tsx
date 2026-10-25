@@ -2,6 +2,7 @@
 
 import React, { useEffect } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 
 export default function DashboardError({
   error,
@@ -10,6 +11,9 @@ export default function DashboardError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const params = useParams();
+  const locale = (params?.locale as string) || "ar";
+
   useEffect(() => {
     console.error("[Dashboard Root Error]:", error);
   }, [error]);
@@ -31,7 +35,7 @@ export default function DashboardError({
           إعادة المحاولة / Erneut versuchen
         </button>
         <Link
-          href="/"
+          href={`/${locale}`}
           className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs sm:text-sm transition-all"
         >
           الصفحة الرئيسية / Startseite

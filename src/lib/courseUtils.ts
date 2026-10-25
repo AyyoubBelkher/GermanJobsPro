@@ -1,3 +1,5 @@
+import React from "react";
+
 /**
  * Course and Lesson utilities for German A1 and educational modules.
  */
@@ -493,9 +495,7 @@ export function hasStaticLessonImage(lessonNum: number): boolean {
   if (typeof window === "undefined") {
     try {
       // Dynamic eval require to prevent client bundlers from bundling 'fs' / 'path'
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const fs = eval("require")("fs");
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const path = eval("require")("path");
       const filePath = path.resolve(
         process.cwd(),
@@ -562,4 +562,562 @@ export function resolveLessonImage(
   // Fall back cleanly to null (e.g. Lesson 18) so CSS cover renders
   return null;
 }
+
+/**
+ * Maps raw category values ("Jobs", "Karriere", "General", "عام", "German A1")
+ * to localized labels across languages (ar, de, fr, en).
+ */
+export function localizeCategoryLabel(
+  category: string | null | undefined,
+  locale: string = "ar"
+): string {
+  if (!category || typeof category !== "string") {
+    if (locale === "ar") return "فرص العمل والتأشيرة";
+    if (locale === "de") return "Jobs & Visum";
+    if (locale === "fr") return "Emplois & Visa";
+    return "Jobs & Visa";
+  }
+
+  const trimmed = category.trim();
+  const lower = trimmed.toLowerCase();
+
+  // 1. German A1 Course
+  if (
+    lower === "german a1" ||
+    lower === "deutsch a1" ||
+    lower.includes("a1") ||
+    lower.includes("كورس")
+  ) {
+    if (locale === "ar") return "كورس الألمانية A1";
+    if (locale === "de") return "Deutsch A1 Kurs";
+    if (locale === "fr") return "Cours d'allemand A1";
+    return "German A1 Course";
+  }
+
+  // 2. Jobs / Careers / Visas
+  if (
+    lower === "jobs" ||
+    lower === "karriere" ||
+    lower === "job" ||
+    lower.includes("jobs") ||
+    lower.includes("karriere") ||
+    lower.includes("وظائف") ||
+    lower.includes("فرص")
+  ) {
+    if (locale === "ar") return "فرص العمل والتأشيرة";
+    if (locale === "de") return "Jobs & Visum";
+    if (locale === "fr") return "Emplois & Visa";
+    return "Jobs & Visa";
+  }
+
+  // 3. General / Life in Germany
+  if (
+    lower === "general" ||
+    lower === "عام" ||
+    lower.includes("leben") ||
+    lower.includes("ratgeber") ||
+    lower.includes("معيشة")
+  ) {
+    if (locale === "ar") return "دليل المعيشة والاستقرار";
+    if (locale === "de") return "Ratgeber & Leben";
+    if (locale === "fr") return "Guides & Vie";
+    return "Guides & Life";
+  }
+
+  // Return original trimmed category if it is already localized or custom
+  return trimmed;
+}
+
+/**
+ * BiDi-safe inline formatter that processes string nodes in Arabic mode:
+ * 1. Normalizes nested / unbalanced parentheses such as (ZAB (Zentralstelle...) -> (ZAB - Zentralstelle...)
+ * 2. Wraps parenthetical segments containing Latin/German characters inside <bdi dir="ltr">...</bdi>
+ *    followed by an explicit Right-to-Left Mark (\u200F) when followed by punctuation (:, ؟, ،, ., ;)
+ * 3. Wraps standalone technical/status tokens like H+, H-, H+/- inside <bdi dir="ltr">...</bdi>\u200F
+ */
+export function formatBidiInlineText(
+  text: string | null | undefined,
+  isAr: boolean = true
+): React.ReactNode {
+  if (!text || typeof text !== "string") return text ?? "";
+  if (!isAr) return text;
+
+  // 1. Fix nested / unbalanced parentheses:
+  // e.g. "(ZAB (Zentralstelle für ausländisches Bildungswesen" -> "(ZAB - Zentralstelle für ausländisches Bildungswesen)"
+  const normalized = text.replace(
+    /\(([A-Za-z0-9\s]+?)\s*\(([A-Za-zäöüÄÖÜß0-9\s\-/]+?)(?:\)+|(\s*)(?=[\u0600-\u06FF]|$))/g,
+    (_m, p1, p2, space) => `(${p1.trim()} - ${p2.trim()})${space || ""}`
+  );
+
+  // 2. Tokenize parenthetical Latin/German segments and standalone status tokens
+  // Group 1 & 2: Parenthetical segment and trailing punctuation
+  // Group 3 & 4: Standalone H+, H-, H+/- and trailing punctuation
+  const tokenRegex =
+    /(\([A-Za-zäöüÄÖÜß0-9][^()]*\))([:؟،.;])?|(?<=^|[\s،,.:;!؟])(H\+\/-|H\+|H\-)([:؟،.;])?(?=[\s،,.:;!؟]|$)/g;
+
+  if (!tokenRegex.test(normalized)) {
+    return normalized;
+  }
+  tokenRegex.lastIndex = 0;
+
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = tokenRegex.exec(normalized)) !== null) {
+    const matchStart = match.index;
+    const matchEnd = tokenRegex.lastIndex;
+
+    if (matchStart > lastIndex) {
+      parts.push(normalized.substring(lastIndex, matchStart));
+    }
+
+    const parenSegment = match[1];
+    const parenPunct = match[2];
+    const statusToken = match[3];
+    const statusPunct = match[4];
+
+    if (parenSegment) {
+      const isShort = parenSegment.length <= 38;
+      const bdiEl = React.createElement(
+        "bdi",
+        {
+          key: `bdi-p-${matchStart}`,
+          dir: "ltr",
+          className: isShort ? "inline-block whitespace-nowrap" : "inline",
+        },
+        parenSegment
+      );
+
+      if (parenPunct) {
+        parts.push(
+          React.createElement(
+            React.Fragment,
+            { key: `frag-p-${matchStart}` },
+            bdiEl,
+            "\u200F" + parenPunct
+          )
+        );
+      } else {
+        parts.push(bdiEl);
+      }
+    } else if (statusToken) {
+      const bdiEl = React.createElement(
+        "bdi",
+        {
+          key: `bdi-s-${matchStart}`,
+          dir: "ltr",
+          className: "inline-block whitespace-nowrap font-mono font-bold",
+        },
+        statusToken
+      );
+
+      parts.push(
+        React.createElement(
+          React.Fragment,
+          { key: `frag-s-${matchStart}` },
+          bdiEl,
+          statusPunct ? "\u200F" + statusPunct : "\u200F"
+        )
+      );
+    }
+
+    lastIndex = matchEnd;
+  }
+
+  if (lastIndex < normalized.length) {
+    parts.push(normalized.substring(lastIndex));
+  }
+
+  return parts;
+}
+
+/**
+ * Normalizes markdown formatting for both articles and lessons:
+ * 1. Fixes nested / unbalanced parentheses like (ZAB (Zentralstelle... -> (ZAB - Zentralstelle...
+ * 2. Merges broken numbered subheadings on two lines (e.g. "### 1." followed by "### Title" or "Title").
+ * 3. Converts short single-line triple-backtick blocks (numbers, amounts, terms <= 80 chars) to inline code.
+ * 4. Merges isolated inline code with previous/next line if they split a continuous sentence.
+ */
+export function normalizeMarkdownFormatting(raw: string): string {
+  if (!raw || typeof raw !== "string") return "";
+
+  let text = raw;
+
+  // 1. Fix unbalanced / nested parentheses
+  text = text.replace(
+    /\(([A-Za-z0-9\s]+?)\s*\(([A-Za-zäöüÄÖÜß0-9\s\-/]+?)(?:\)+|(\s*)(?=[\u0600-\u06FF]|$))/g,
+    (_m, p1, p2, space) => `(${p1.trim()} - ${p2.trim()})${space || ""}`
+  );
+
+  // 2. Convert single-line short triple backtick blocks (<= 80 chars, no \n) to inline code
+  // Handles ```45,300 يورو``` or ```text 45,300 يورو``` or ```41,041.80 يورو```
+  text = text.replace(/```(?:[a-zA-Z]{2,10}\s+)?([^\r\n`]{1,80})```/g, (_m, code) => {
+    return `\`${code.trim()}\``;
+  });
+
+  // Handles 3-line blocks containing only a single short line between ```
+  // ```
+  // 45,300 يورو
+  // ```
+  text = text.replace(/^[ \t]*```[a-zA-Z0-9_-]*\r?\n([^\r\n`]{1,80})\r?\n[ \t]*```[ \t]*$/gm, (_m, code) => {
+    return `\`${code.trim()}\``;
+  });
+
+  // 3. Merge split numbered headings on two lines:
+  // e.g. "### 1." followed directly or with empty lines by "### Title" or "Title"
+  // ^(#{1,4})\s*(\d+[\.\-\)]?)\s*$ followed by ^(?:#{1,4}\s*)?([^\n]+)$ -> $1 $2 $3
+  const lines = text.split("\n");
+  const mergedLines: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const headingMatch = line.match(/^(#{1,4})\s*(\d+[\.\-\)]?)\s*$/);
+
+    if (headingMatch) {
+      const hashes = headingMatch[1];
+      const numPart = headingMatch[2];
+
+      // Look ahead for the next non-empty line
+      let nextIdx = i + 1;
+      while (nextIdx < lines.length && lines[nextIdx].trim() === "") {
+        nextIdx++;
+      }
+
+      if (nextIdx < lines.length) {
+        const nextLine = lines[nextIdx].trim();
+        // Check if next line is a title or title text (not another number heading, divider, list, quote)
+        if (
+          nextLine &&
+          !nextLine.startsWith("---") &&
+          !nextLine.startsWith("***") &&
+          !nextLine.startsWith("___") &&
+          !nextLine.startsWith("- ") &&
+          !nextLine.startsWith("* ") &&
+          !nextLine.startsWith("> ") &&
+          !/^(#{1,4})\s*(\d+[\.\-\)]?)\s*$/.test(nextLine)
+        ) {
+          const titleMatch = nextLine.match(/^(?:#{1,4}\s*)?([^\n]+)$/);
+          if (titleMatch && titleMatch[1].trim()) {
+            const headingTitle = titleMatch[1].trim();
+            mergedLines.push(`${hashes} ${numPart} ${headingTitle}`);
+            i = nextIdx; // Skip past the merged line
+            continue;
+          }
+        }
+      }
+    }
+
+    mergedLines.push(line);
+  }
+
+  // 4. Merge short inline code that was isolated on its own line / paragraph and breaks a continuous Arabic sentence
+  const finalLines: string[] = [];
+  for (let i = 0; i < mergedLines.length; i++) {
+    const curr = mergedLines[i];
+    const trimmed = curr.trim();
+
+    // Check if current line is solely an inline code block like `45,300 يورو`
+    const isIsolatedInlineCode = /^`[^`\n]{1,80}`$/.test(trimmed);
+
+    if (isIsolatedInlineCode && finalLines.length > 0) {
+      // Find previous non-empty line
+      let prevIdx = finalLines.length - 1;
+      while (prevIdx >= 0 && finalLines[prevIdx].trim() === "") {
+        prevIdx--;
+      }
+
+      // Find next non-empty line
+      let nextIdx = i + 1;
+      while (nextIdx < mergedLines.length && mergedLines[nextIdx].trim() === "") {
+        nextIdx++;
+      }
+
+      const prevLine = prevIdx >= 0 ? finalLines[prevIdx].trim() : "";
+      const nextLine = nextIdx < mergedLines.length ? mergedLines[nextIdx].trim() : "";
+
+      const isHeadingOrSpecial = (l: string) =>
+        /^#{1,6}\s/.test(l) ||
+        /^[-*]\s/.test(l) ||
+        /^\d+[\.\)]\s/.test(l) ||
+        l.startsWith(">") ||
+        l.startsWith("|") ||
+        l.startsWith("---");
+
+      // If previous line is regular text and not heading/list/special
+      if (prevLine && !isHeadingOrSpecial(prevLine)) {
+        // If next line is also regular continuation text
+        if (nextLine && !isHeadingOrSpecial(nextLine)) {
+          finalLines[prevIdx] = `${prevLine} ${trimmed} ${nextLine}`;
+          finalLines.length = prevIdx + 1;
+          i = nextIdx; // advance past nextLine
+          continue;
+        } else {
+          finalLines[prevIdx] = `${prevLine} ${trimmed}`;
+          finalLines.length = prevIdx + 1;
+          continue;
+        }
+      }
+    }
+
+    finalLines.push(curr);
+  }
+
+  return finalLines.join("\n");
+}
+
+export interface ParsedTable {
+  headers: string[];
+  rows: string[][];
+}
+
+/**
+ * Parses ASCII / Grid tables and standard Markdown pipe tables inside <pre> or <p> blocks.
+ * Detects ASCII border lines like +---+---+ or | ... | ... | and extracts clean headers & rows.
+ */
+export function parseAsciiOrMarkdownTable(rawText: string): ParsedTable | null {
+  if (!rawText || typeof rawText !== "string") return null;
+  const lines = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (lines.length < 2) return null;
+
+  const hasAsciiBorders = lines.some((l) => /^\+[-=+]+\+$/.test(l));
+  const hasPipeLines = lines.filter((l) => l.startsWith("|") && l.endsWith("|")).length >= 2;
+
+  if (!hasAsciiBorders && !hasPipeLines) return null;
+
+  // Filter out pure separator lines like +-------+-------+ or |-------|-------|
+  const contentLines = lines.filter(
+    (l) => !/^\+[-=+]+\+$/.test(l) && !/^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$/.test(l)
+  );
+
+  if (contentLines.length === 0) return null;
+
+  const rawRows: string[][] = [];
+
+  for (const line of contentLines) {
+    if (!line.includes("|")) continue;
+    // Strip outer borders
+    let stripped = line;
+    if (stripped.startsWith("|")) stripped = stripped.substring(1);
+    if (stripped.endsWith("|")) stripped = stripped.substring(0, stripped.length - 1);
+
+    let cells: string[];
+    if (stripped.includes("|")) {
+      cells = stripped.split("|").map((c) => c.trim());
+    } else {
+      // Line has no internal pipe. Check if it contains 2 columns separated by 2+ spaces or \t
+      const parts = stripped.split(/\s{2,}|\t+/).map((c) => c.trim()).filter(Boolean);
+      if (parts.length >= 2) {
+        cells = parts;
+      } else {
+        cells = [stripped.trim()];
+      }
+    }
+    rawRows.push(cells);
+  }
+
+  if (rawRows.length < 2) return null;
+
+  const headers = rawRows[0];
+  const rows = rawRows.slice(1);
+  return { headers, rows };
+}
+
+export type ParsedBranchingDiagram = {
+  type: "branching";
+  root: { title: string; subtitle?: string };
+  branches: Array<{
+    title: string;
+    germanTerm?: string;
+    points: string[];
+  }>;
+  outcome?: { title: string; subtitle?: string };
+};
+
+export type ParsedTimelineDiagram = {
+  type: "timeline";
+  title?: string;
+  root?: string;
+  steps: Array<{
+    condition: string;
+    duration?: string;
+  }>;
+};
+
+export type ParsedGenericDiagram = {
+  type: "generic";
+  nodes: Array<{
+    title: string;
+    details?: string[];
+  }>;
+};
+
+export type ParsedDiagram =
+  | ParsedBranchingDiagram
+  | ParsedTimelineDiagram
+  | ParsedGenericDiagram;
+
+/**
+ * Parses ASCII / Box-Drawing Flowcharts & Timeline Diagrams inside <pre> blocks.
+ * Detects Unicode box-drawing characters, ASCII flowchart arrows, and bracketed nodes.
+ */
+export function parseAsciiDiagram(rawText: string): ParsedDiagram | null {
+  if (!rawText || typeof rawText !== "string") return null;
+
+  const hasBoxChars = /[┌┐└┘─│┬┴├┤┼▼▲►◄]/.test(rawText);
+  const hasArrows = /\+--->|--->|──►|===>/.test(rawText);
+  const hasConnectedBrackets =
+    /\[[^\]]+\]/.test(rawText) &&
+    (rawText.includes("|") || rawText.includes("│") || rawText.includes("▼") || rawText.includes("->"));
+
+  if (!hasBoxChars && !hasArrows && !hasConnectedBrackets) {
+    return null;
+  }
+
+  // A. Branching Comparison / Pathway (e.g. Nursing recognition Anerkennung)
+  if (
+    rawText.includes("دورة التعديل") ||
+    rawText.includes("Anpassungslehrgang") ||
+    rawText.includes("امتحان المعرفة") ||
+    rawText.includes("Kenntnisprüfung") ||
+    (rawText.includes("┌") && rawText.includes("┴") && rawText.includes("┐") && rawText.includes("└") && rawText.includes("┬") && rawText.includes("┘"))
+  ) {
+    // Extract root
+    const rootMatch = rawText.match(/\[\s*([^\]]+?)\s*\]/);
+    let rootTitle = "التقديم على معادلة الشهادة";
+    let rootSubtitle: string | undefined = "Defizitbescheid";
+
+    if (rootMatch) {
+      const full = rootMatch[1].trim();
+      const latinMatch = full.match(/[A-Za-zÄÖÜäöüß]+/);
+      if (latinMatch && latinMatch.index && latinMatch.index > 0) {
+        rootTitle = full.substring(0, latinMatch.index).trim();
+        rootSubtitle = full.substring(latinMatch.index).trim();
+      } else {
+        rootTitle = full;
+        rootSubtitle = undefined;
+      }
+    }
+
+    // Branch 1: Anpassungslehrgang
+    // Strictly pair Arabic pathway with its German term and bullet points
+    const branch1 = {
+      title: "المسار الأول: دورة التعديل",
+      germanTerm: "Anpassungslehrgang",
+      points: ["تدريب عملي + نظري", "المدة: 6 إلى 18 شهراً"],
+    };
+
+    // Branch 2: Kenntnisprüfung
+    const branch2 = {
+      title: "المسار الثاني: امتحان المعرفة",
+      germanTerm: "Kenntnisprüfung",
+      points: ["اختبار عملي + شفوي", "التجهيز: تحضير مكثف"],
+    };
+
+    // Outcome
+    let outcomeTitle = "الحصول على الترخيص النهائي";
+    const outcomeSubtitle = "Berufserlaubnis / Urkunde";
+    const allBrackets = [...rawText.matchAll(/\[\s*([^\]]+?)\s*\]/g)];
+    if (allBrackets.length >= 2) {
+      const last = allBrackets[allBrackets.length - 1][1].trim();
+      if (last !== rootMatch?.[1].trim() && !last.includes("المسار")) {
+        outcomeTitle = last;
+      }
+    }
+
+    return {
+      type: "branching",
+      root: { title: rootTitle, subtitle: rootSubtitle },
+      branches: [branch1, branch2],
+      outcome: { title: outcomeTitle, subtitle: outcomeSubtitle },
+    };
+  }
+
+  // B. Linear Step / Timeline Flowchart (e.g. Blue Card Niederlassungserlaubnis)
+  if (
+    hasArrows ||
+    rawText.includes("Niederlassungserlaubnis") ||
+    rawText.includes("الإقامة الدائمة")
+  ) {
+    const lines = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
+    let title: string | undefined;
+    let root: string | undefined;
+    const steps: Array<{ condition: string; duration?: string }> = [];
+
+    for (const line of lines) {
+      if (
+        line.startsWith("مسار") ||
+        line.includes("Niederlassungserlaubnis") ||
+        (line.includes("(") && line.includes(")") && !line.includes("+--->") && !line.includes("--->"))
+      ) {
+        if (!title && !line.startsWith("[")) {
+          title = line.replace(/^-+|-+$/g, "").trim();
+          continue;
+        }
+      }
+
+      if (line.startsWith("[") && line.endsWith("]")) {
+        root = line.replace(/[\[\]]/g, "").trim();
+        continue;
+      }
+
+      // Step arrow line: +---> condition -------> duration
+      const arrowMatch = line.match(/\+?--->\s*(.+?)\s*---+>\s*(.+)/);
+      if (arrowMatch) {
+        steps.push({
+          condition: arrowMatch[1].trim(),
+          duration: arrowMatch[2].trim(),
+        });
+        continue;
+      }
+
+      // Simple step arrow: [Step A] ---> [Step B]
+      if (line.includes("--->") || line.includes("──►") || line.includes("===>")) {
+        const parts = line
+          .split(/--->|──►|===>/)
+          .map((p) => p.replace(/[\[\]]/g, "").trim())
+          .filter(Boolean);
+        if (parts.length >= 2 && steps.length === 0) {
+          for (const p of parts) {
+            steps.push({ condition: p });
+          }
+        }
+      }
+    }
+
+    if (steps.length > 0) {
+      return {
+        type: "timeline",
+        title: title || "مسار الحصول على الإقامة الدائمة",
+        root: root || "الحصول على البطاقة الزرقاء",
+        steps,
+      };
+    }
+  }
+
+  // C. Generic Diagram Fallback:
+  // Extract all clean non-empty text lines without raw box-drawing characters
+  const lines = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
+  const nodes: Array<{ title: string; details?: string[] }> = [];
+
+  for (const line of lines) {
+    const clean = line
+      .replace(/[┌┐└┘─│┬┴├┤┼▼▲►◄|]/g, "")
+      .replace(/\+--->|--->/g, "")
+      .replace(/^[•\-\*]\s*/, "")
+      .trim();
+
+    if (clean.length >= 3 && !clean.match(/^[-=_+]+$/)) {
+      nodes.push({ title: clean });
+    }
+  }
+
+  if (nodes.length > 0) {
+    return { type: "generic", nodes };
+  }
+
+  return null;
+}
+
+
 

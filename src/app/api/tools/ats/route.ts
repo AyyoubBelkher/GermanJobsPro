@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { GoogleGenAI } from "@google/genai";
 import { extractText } from "unpdf";
+import { isNonWeaknessStatement } from "@/lib/ats-signals";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { verifyUserSession } from "@/lib/user-session";
 import { deductAiCreditAtomic, refundAiCredit } from "@/lib/monetization";
@@ -185,12 +186,37 @@ Return JSON:
         ? Math.min(100, Math.max(0, Math.round(parsed.score)))
         : 70;
 
+    const rawImprovements = Array.isArray(parsed.improvements) ? parsed.improvements : [];
+    const rawRewrites = Array.isArray(parsed.rewriteSuggestions) ? parsed.rewriteSuggestions : [];
+    const rawKeywords = Array.isArray(parsed.missingKeywords) ? parsed.missingKeywords : [];
+
+    const isHighScoring = safeScore >= 80;
+    const hasJobDesc = Boolean(jobDesc && jobDesc.trim().length > 0);
+
+    const filteredImprovements = isHighScoring
+      ? []
+      : rawImprovements
+          .map((s: unknown) => String(s || "").trim())
+          .filter((s: string) => s.length > 0 && !isNonWeaknessStatement(s));
+
+    const filteredRewrites = isHighScoring
+      ? []
+      : rawRewrites
+          .map((s: unknown) => String(s || "").trim())
+          .filter((s: string) => s.length > 0 && !isNonWeaknessStatement(s));
+
+    const filteredKeywords = isHighScoring || !hasJobDesc
+      ? []
+      : rawKeywords
+          .map((s: unknown) => String(s || "").trim())
+          .filter((s: string) => s.length > 0);
+
     const result = {
       score: safeScore,
       summary: String(parsed.summary || ""),
-      missingKeywords: Array.isArray(parsed.missingKeywords) ? parsed.missingKeywords : [],
-      improvements: Array.isArray(parsed.improvements) ? parsed.improvements : [],
-      rewriteSuggestions: Array.isArray(parsed.rewriteSuggestions) ? parsed.rewriteSuggestions : [],
+      missingKeywords: filteredKeywords,
+      improvements: filteredImprovements,
+      rewriteSuggestions: filteredRewrites,
       germanTips: Array.isArray(parsed.germanTips) ? parsed.germanTips : [],
     };
 

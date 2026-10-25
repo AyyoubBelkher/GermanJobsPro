@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Metadata } from "next";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
-import { prisma } from "@/lib/prisma";
+import { prisma, withDbRetry } from "@/lib/prisma";
 import { getUserSession } from "@/lib/user-session";
 import LandingFaqAccordion from "@/components/landing/LandingFaqAccordion";
 import { getLandingContent } from "@/lib/i18n/landing-content";
@@ -108,65 +108,67 @@ export default async function LandingPage({
   }> = [];
 
   try {
-    const [jobs, posts, a1Posts] = await Promise.all([
-      prisma.job.findMany({
-        where: { status: "ACTIVE" },
-        orderBy: { publishedAt: "desc" },
-        select: {
-          id: true,
-          title: true,
-          company: true,
-          city: true,
-          category: true,
-          jobType: true,
-          languageReq: true,
-          salary: true,
-          applyUrl: true,
-          publishedAt: true,
-        },
-        take: 3,
-      }),
-      prisma.post.findMany({
-        where: {
-          published: true,
-          NOT: {
+    const [jobs, posts, a1Posts] = await withDbRetry(() =>
+      Promise.all([
+        prisma.job.findMany({
+          where: { status: "ACTIVE" },
+          orderBy: { publishedAt: "desc" },
+          select: {
+            id: true,
+            title: true,
+            company: true,
+            city: true,
+            category: true,
+            jobType: true,
+            languageReq: true,
+            salary: true,
+            applyUrl: true,
+            publishedAt: true,
+          },
+          take: 3,
+        }),
+        prisma.post.findMany({
+          where: {
+            published: true,
+            NOT: {
+              OR: [
+                { category: { equals: "German A1", mode: "insensitive" } },
+                { category: { equals: "Deutsch A1", mode: "insensitive" } },
+                { category: { contains: "A1", mode: "insensitive" } },
+              ],
+            },
+          },
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            slug: true,
+            title: true,
+            markdown_content: true,
+            category: true,
+            createdAt: true,
+          },
+          take: 3,
+        }),
+        prisma.post.findMany({
+          where: {
+            published: true,
             OR: [
               { category: { equals: "German A1", mode: "insensitive" } },
               { category: { equals: "Deutsch A1", mode: "insensitive" } },
               { category: { contains: "A1", mode: "insensitive" } },
             ],
           },
-        },
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          markdown_content: true,
-          category: true,
-          createdAt: true,
-        },
-        take: 3,
-      }),
-      prisma.post.findMany({
-        where: {
-          published: true,
-          OR: [
-            { category: { equals: "German A1", mode: "insensitive" } },
-            { category: { equals: "Deutsch A1", mode: "insensitive" } },
-            { category: { contains: "A1", mode: "insensitive" } },
-          ],
-        },
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          markdown_content: true,
-          category: true,
-          createdAt: true,
-        },
-      }),
-    ]);
+          select: {
+            id: true,
+            slug: true,
+            title: true,
+            markdown_content: true,
+            category: true,
+            createdAt: true,
+          },
+        }),
+      ])
+    );
     latestJobs = jobs;
     latestPosts = posts;
 

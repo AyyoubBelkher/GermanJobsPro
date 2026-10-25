@@ -5,7 +5,7 @@ import { redirect, notFound } from "next/navigation";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
 import { verifyUserSession } from "@/lib/user-session";
-import { prisma } from "@/lib/prisma";
+import { prisma, withDbRetry } from "@/lib/prisma";
 import CoverLetterEditorClient, { CoverLetterData } from "@/components/cover-letter/CoverLetterEditorClient";
 
 interface PageParams {
@@ -26,15 +26,17 @@ export default async function CoverLetterEditorPage({ params }: PageParams) {
     redirect(`/${locale}/auth/login`);
   }
 
-  const coverLetter = await prisma.coverLetter.findFirst({
-    where: {
-      id,
-      userId: authResult.user.id,
-    },
-    include: {
-      cv: { select: { id: true, title: true } },
-    },
-  });
+  const coverLetter = await withDbRetry(() =>
+    prisma.coverLetter.findFirst({
+      where: {
+        id,
+        userId: authResult.user.id,
+      },
+      include: {
+        cv: { select: { id: true, title: true } },
+      },
+    })
+  );
 
   if (!coverLetter) {
     notFound();

@@ -266,7 +266,8 @@ export default function AtsAnalyzerClient({
     }
   };
 
-  const getScoreColor = (score: number) => {
+  const getScoreColor = (score: number | null) => {
+    if (score === null) return "text-slate-400 border-slate-700/50 bg-slate-800/30";
     if (score >= 80) return "text-emerald-400 border-emerald-500/30 bg-emerald-500/10";
     if (score >= 60) return "text-amber-400 border-amber-500/30 bg-amber-500/10";
     return "text-rose-400 border-rose-500/30 bg-rose-500/10";
@@ -551,7 +552,14 @@ export default function AtsAnalyzerClient({
 
       {/* Analysis Results Display */}
       {analysis && (() => {
-        const isCvAccepted = analysis.overallScore >= 80;
+        const hasPassingScores =
+          analysis.overallScore >= 80 &&
+          analysis.din5008Score >= 80 &&
+          (analysis.keywordMatchScore === null || analysis.keywordMatchScore >= 75);
+
+        const isValidated = analysis.validationStatus?.isValidated === true;
+        const isCvAccepted = isValidated && hasPassingScores && analysis.weaknesses.length === 0;
+        const isGoodWithMinorNotes = isValidated && hasPassingScores && analysis.weaknesses.length > 0;
         return (
           <div className="space-y-8 animate-fadeIn">
             {/* Inline CV Text Editor & Instant Re-scan Panel */}
@@ -674,9 +682,15 @@ export default function AtsAnalyzerClient({
                 <span className="text-xs font-bold uppercase tracking-wider">
                   {isAr ? "مطابقة الكلمات المفتاحية" : "Keyword Match"}
                 </span>
-                <div className="text-4xl sm:text-5xl font-black">{analysis.keywordMatchScore}%</div>
+                <div className="text-4xl sm:text-5xl font-black">
+                  {analysis.keywordMatchScore !== null ? `${analysis.keywordMatchScore}%` : "—"}
+                </div>
                 <span className="text-xs font-semibold">
-                  {jobDescription.trim() ? (isAr ? "بناءً على إعلان الوظيفة" : "Based on Job Posting") : (isAr ? "بناءً على معايير المجال" : "Industry Standard Match")}
+                  {analysis.keywordMatchScore !== null
+                    ? jobDescription.trim()
+                      ? isAr ? "بناءً على إعلان الوظيفة" : "Based on Job Posting"
+                      : isAr ? "بناءً على معايير المجال" : "Industry Standard Match"
+                    : isAr ? "يتطلب إدخال وصف وظيفي" : isDe ? "Erfordert Stellenbeschreibung" : "Requires Job Description"}
                 </span>
               </div>
             </div>
@@ -731,6 +745,76 @@ export default function AtsAnalyzerClient({
                     <span>{isAr ? "لا تتطلب أي إصلاحات إجبارية" : isDe ? "Keine Nachbesserung nötig" : "No remediation needed"}</span>
                   </span>
                 </div>
+              </div>
+            ) : isGoodWithMinorNotes ? (
+              <div className="rounded-3xl border border-blue-500/40 bg-blue-950/20 p-6 sm:p-8 shadow-2xl space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 text-blue-400">
+                    <span className="text-3xl">💡</span>
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-black text-white">
+                        {isAr
+                          ? "✅ سيرتك الذاتية قوية ومؤهلة للتقديم (مع ملاحظات تحسينية طفيفة)"
+                          : isDe
+                          ? "✅ Ihr Lebenslauf ist stark und bewerbungsbereit (mit kleinen Optimierungshinweisen)"
+                          : "✅ Your CV is Strong & Ready to Apply (with minor optional polish notes)"}
+                      </h3>
+                      <p className="text-xs text-blue-300 font-semibold mt-0.5">
+                        {isAr
+                          ? "تجاوزت الحد الأدنى للقبول (80%+) بنجاح"
+                          : isDe
+                          ? "Mindestwert (80%+) erfolgreich übertroffen"
+                          : "Successfully exceeds the 80%+ threshold"}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-3.5 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs font-bold">
+                    {isAr
+                      ? "تجاوزت الحد الأدنى للقبول (80%+) بنجاح"
+                      : isDe
+                      ? "Mindestwert (80%+) erfolgreich übertroffen"
+                      : "Successfully exceeds the 80%+ threshold"}
+                  </span>
+                </div>
+
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed text-justify">
+                  {isAr
+                    ? "سيرتك الذاتية تحقق معايير القبول في أنظمة الفرز الألمانية (ATS) وتنسيق DIN 5008 بنسبة ممتازة (80%+). يمكنك التقديم بها مباشرة، أو مراجعة الملاحظات الطفيفة الاختيارية أدناه لرفع جودتها أكثر."
+                    : isDe
+                    ? "Ihr Lebenslauf erfüllt die deutschen ATS- und DIN 5008-Standards mit einem sehr guten Ergebnis (80%+). Sie können sich direkt bewerben oder die optionalen Hinweise unten prüfen."
+                    : "Your CV meets German ATS and DIN 5008 standards with a strong passing score (80%+). You can apply directly as-is, or review the optional minor notes below."}
+                </p>
+
+                {selectedCvId && inputMode === "saved" && (
+                  <div className="pt-1">
+                    <Link
+                      href={`/${locale}/dashboard/cv/${selectedCvId}`}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition-all shadow-md"
+                    >
+                      <span>✏️</span>
+                      <span>{isAr ? "معاينة أو تحسين السيرة في المحرر" : isDe ? "Im CV-Editor ansehen" : "View or Polish in Builder"}</span>
+                    </Link>
+                  </div>
+                )}
+
+                {(inputMode === "upload" || inputMode === "paste") && cvText.trim().length > 0 && (
+                  <div className="pt-2 flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={openTextEditor}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 hover:text-white font-bold text-xs sm:text-sm transition-all cursor-pointer"
+                    >
+                      <span>✏️</span>
+                      <span>
+                        {isAr
+                          ? "✏️ تعديل يدوي اختياري لنص السيرة"
+                          : isDe
+                          ? "✏️ Text optional manuell verfeinern"
+                          : "✏️ Optional Manual Polish"}
+                      </span>
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="rounded-3xl border border-amber-500/40 bg-amber-950/20 p-6 sm:p-8 shadow-2xl space-y-4">
@@ -872,7 +956,7 @@ export default function AtsAnalyzerClient({
                   <span>⚠️</span>
                   <span>{isAr ? "النقاط السلبية والفجوات (Red Flags)" : isDe ? "Schwächen & Lücken" : "Weaknesses & Red Flags"}</span>
                 </h3>
-                {(inputMode === "upload" || inputMode === "paste") && cvText.trim().length > 0 && (
+                {analysis.weaknesses.length > 0 && (inputMode === "upload" || inputMode === "paste") && cvText.trim().length > 0 && (
                   <button
                     type="button"
                     onClick={openTextEditor}
@@ -1015,41 +1099,45 @@ export default function AtsAnalyzerClient({
               <span>🎯</span>
               <span>{isAr ? "خطة العمل لتحسين السيرة (Action Plan)" : isDe ? "Handlungsempfehlungen" : "Action Plan"}</span>
             </h3>
-            <div className="space-y-3">
-              {analysis.actionPlan.map((step, idx) => (
-                <div
-                  key={idx}
-                  className="p-4 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-start gap-3"
-                >
-                  <div className="w-6 h-6 rounded-lg bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
-                    {idx + 1}
-                  </div>
-                  <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
-                    {step}
-                  </p>
-                </div>
-              ))}
-            </div>
 
-            {selectedCvId && inputMode === "saved" && (
+            {analysis.actionPlan.length === 0 ? (
+              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs sm:text-sm font-medium flex items-center gap-2.5">
+                <span>✅</span>
+                <span>
+                  {isAr
+                    ? "سيرتك الذاتية مستوفية لجميع المتطلبات الأساسية ولا تتطلب أي خطوات تصحيحية إضافية."
+                    : isDe
+                    ? "Ihr Lebenslauf erfüllt alle Kernanforderungen und erfordert keine weiteren Korrekturschritte."
+                    : "Your CV meets all core requirements and requires no further corrective steps."}
+                </span>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {analysis.actionPlan.map((step, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-start gap-3"
+                  >
+                    <div className="w-6 h-6 rounded-lg bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
+                      {idx + 1}
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
+                      {step}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!hasPassingScores && selectedCvId && inputMode === "saved" && (
               <div className="pt-4 flex justify-end">
                 <Link
                   href={`/${locale}/dashboard/cv/${selectedCvId}`}
-                  className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-md ${
-                    isCvAccepted
-                      ? "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
-                      : "bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/20"
-                  }`}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-md bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/20"
                 >
                   <span>✏️</span>
                   <span>
-                    {isCvAccepted
-                      ? isAr
-                        ? "معاينة السيرة الذاتية في المحرر"
-                        : isDe
-                        ? "Lebenslauf im Editor anzeigen"
-                        : "View CV in Builder"
-                      : isAr
+                    {isAr
                       ? "تعديل وإصلاح هذه السيرة الذاتية الآن"
                       : isDe
                       ? "Diesen Lebenslauf bearbeiten & optimieren"
@@ -1059,7 +1147,7 @@ export default function AtsAnalyzerClient({
               </div>
             )}
 
-            {!isCvAccepted && (inputMode === "upload" || inputMode === "paste") && cvText.trim().length > 0 && (
+            {!hasPassingScores && (inputMode === "upload" || inputMode === "paste") && cvText.trim().length > 0 && (
               <div className="pt-4 flex flex-wrap items-center justify-end gap-3">
                 <button
                   type="button"

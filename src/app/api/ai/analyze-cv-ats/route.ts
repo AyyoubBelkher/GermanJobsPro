@@ -4,9 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { verifyUserSession } from "@/lib/user-session";
 import { analyzeCvAtsSchema } from "@/lib/validations/ai";
 import { analyzeCvAtsAI } from "@/lib/gemini";
-import { consumeAiCredit, refundAiCredit, deductAiCreditAtomic } from "@/lib/monetization";
+import { EmploymentEntry } from "@/lib/ats-signals";
+import { refundAiCredit, deductAiCreditAtomic } from "@/lib/monetization";
 import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 import { logAiUsage } from "@/lib/ai-telemetry";
+import { formatDateRange } from "@/lib/cv-date-utils";
 
 function formatGermanDate(dateVal: Date | string | null | undefined): string {
   if (!dateVal) return "";
@@ -20,6 +22,11 @@ function formatGermanDate(dateVal: Date | string | null | undefined): string {
 
 function formatGermanMonthYear(dateVal: Date | string | null | undefined): string {
   if (!dateVal) return "";
+  if (typeof dateVal === "string") {
+    const s = dateVal.trim();
+    if (/^\d{4}$/.test(s)) return s;
+    if (/^(?:heute|present|aktuell|laufend|current)$/i.test(s)) return "heute";
+  }
   const d = new Date(dateVal);
   if (isNaN(d.getTime())) return String(dateVal);
   const month = String(d.getUTCMonth() + 1).padStart(2, "0");
@@ -66,6 +73,9 @@ export async function POST(request: NextRequest) {
     const { cvText, cvId, jobDescription, language } = parseResult.data;
 
     let finalCvText = cvText || "";
+    let structuredEntries: EmploymentEntry[] = [];
+    let structuredProfile: { personalInfo?: { email?: string | null; phone?: string | null } | null } | null = null;
+    let textExtractionSuccess = false;
 
     // If cvId is provided, fetch full CV and structure into formatted text
     if (cvId) {
@@ -92,6 +102,34 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      structuredEntries = [
+        ...userCv.experiences.map((exp) => ({
+          company: exp.company,
+          position: exp.position,
+          startDate: formatGermanMonthYear(exp.startDate),
+          endDate: exp.isCurrent ? "heute" : exp.endDate ? formatGermanMonthYear(exp.endDate) : null,
+          isCurrent: exp.isCurrent,
+        })),
+        ...userCv.educations.map((edu) => ({
+          company: edu.institution,
+          position: edu.degree,
+          startDate: formatGermanMonthYear(edu.startDate),
+          endDate: edu.isCurrent ? "heute" : edu.endDate ? formatGermanMonthYear(edu.endDate) : null,
+          isCurrent: edu.isCurrent,
+        })),
+      ];
+
+      structuredProfile = userCv.personalInfo
+        ? {
+            personalInfo: {
+              email: userCv.personalInfo.email,
+              phone: userCv.personalInfo.phone,
+            },
+          }
+        : null;
+
+      textExtractionSuccess = true;
+
       const lines: string[] = [];
       lines.push(`=== LEBENSLAUF: ${userCv.title} ===`);
       if (userCv.personalInfo) {
@@ -103,17 +141,18 @@ export async function POST(request: NextRequest) {
         if (userCv.personalInfo.birthPlace) lines.push(`Geburtsort: ${userCv.personalInfo.birthPlace}`);
         if (userCv.personalInfo.nationality) lines.push(`Staatsangehörigkeit: ${userCv.personalInfo.nationality}`);
         if (userCv.personalInfo.targetJobTitle) lines.push(`Angestrebte Position: ${userCv.personalInfo.targetJobTitle}`);
+        if (userCv.personalInfo.linkedinUrl) lines.push(`LinkedIn: ${userCv.personalInfo.linkedinUrl}`);
+        if (userCv.personalInfo.xingUrl) lines.push(`Xing: ${userCv.personalInfo.xingUrl}`);
         if (userCv.personalInfo.summary) lines.push(`Kurzprofil: ${userCv.personalInfo.summary}`);
       }
 
       if (userCv.experiences.length > 0) {
         lines.push(`\n--- BERUFSERFAHRUNG ---`);
         userCv.experiences.forEach((exp) => {
-          const start = formatGermanMonthYear(exp.startDate);
-          const end = exp.isCurrent ? "heute" : exp.endDate ? formatGermanMonthYear(exp.endDate) : "heute";
+          const dateRange = formatDateRange(exp.startDate, exp.endDate, exp.isCurrent, false);
           const location = [exp.city, exp.country].filter(Boolean).map((s) => s!.trim()).filter(Boolean).join(", ");
           const locStr = location ? ` (${location})` : "";
-          lines.push(`* ${start} - ${end}: ${exp.position} bei ${exp.company}${locStr}`);
+          lines.push(`* ${dateRange}: ${exp.position} bei ${exp.company}${locStr}`);
           if (exp.description) lines.push(`  ${exp.description}`);
         });
       }
@@ -121,12 +160,11 @@ export async function POST(request: NextRequest) {
       if (userCv.educations.length > 0) {
         lines.push(`\n--- AUSBILDUNG & STUDIUM ---`);
         userCv.educations.forEach((edu) => {
-          const start = formatGermanMonthYear(edu.startDate);
-          const end = edu.isCurrent ? "heute" : edu.endDate ? formatGermanMonthYear(edu.endDate) : "heute";
+          const dateRange = formatDateRange(edu.startDate, edu.endDate, edu.isCurrent, false);
           const fieldStr = edu.fieldOfStudy && edu.fieldOfStudy.trim() ? ` in ${edu.fieldOfStudy.trim()}` : "";
           const location = [edu.city, edu.country].filter(Boolean).map((s) => s!.trim()).filter(Boolean).join(", ");
           const locStr = location ? ` (${location})` : "";
-          lines.push(`* ${start} - ${end}: ${edu.degree}${fieldStr} an ${edu.institution}${locStr}`);
+          lines.push(`* ${dateRange}: ${edu.degree}${fieldStr} an ${edu.institution}${locStr}`);
           if (edu.grade) lines.push(`  Abschlussnote: ${edu.grade}`);
           if (edu.description) lines.push(`  ${edu.description}`);
         });
@@ -134,7 +172,29 @@ export async function POST(request: NextRequest) {
 
       if (userCv.skills.length > 0) {
         lines.push(`\n--- KENNTNISSE & FÄHIGKEITEN ---`);
-        lines.push(userCv.skills.map((s) => `${s.name} (${s.level || "Gut"})`).join(", "));
+        const skillCategories = new Map<string, string[]>();
+        userCv.skills.forEach((s) => {
+          const cat = s.category && s.category.trim() ? s.category.trim() : "Allgemein";
+          const lvl = s.level && s.level.trim();
+          const item = lvl ? `${s.name} (${lvl})` : s.name;
+          if (!skillCategories.has(cat)) skillCategories.set(cat, []);
+          skillCategories.get(cat)!.push(item);
+        });
+
+        if (skillCategories.size > 1 || (skillCategories.size === 1 && !skillCategories.has("Allgemein"))) {
+          for (const [cat, items] of skillCategories) {
+            lines.push(`* ${cat}: ${items.join(", ")}`);
+          }
+        } else {
+          lines.push(
+            userCv.skills
+              .map((s) => {
+                const lvl = s.level && s.level.trim();
+                return lvl ? `${s.name} (${lvl})` : s.name;
+              })
+              .join(", ")
+          );
+        }
       }
 
       if (userCv.languages.length > 0) {
@@ -156,6 +216,8 @@ export async function POST(request: NextRequest) {
       }
 
       finalCvText = lines.join("\n");
+    } else {
+      textExtractionSuccess = Boolean(finalCvText && finalCvText.trim().length >= 30);
     }
 
     if (!finalCvText || finalCvText.trim().length < 30) {
@@ -189,6 +251,10 @@ export async function POST(request: NextRequest) {
         cvText: finalCvText,
         jobDescription: jobDescription || null,
         language: language || "de",
+        structuredEntries,
+        structuredProfile,
+        cvIdProvided: Boolean(cvId),
+        textExtractionSuccess,
       });
 
       return NextResponse.json(

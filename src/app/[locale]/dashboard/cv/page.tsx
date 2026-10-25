@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
 import { verifyUserSession } from "@/lib/user-session";
-import { prisma } from "@/lib/prisma";
+import { prisma, withDbRetry } from "@/lib/prisma";
 import CvListClient from "@/components/cv/CvListClient";
 
 export default async function CvListPage({
@@ -26,13 +26,15 @@ export default async function CvListPage({
     redirect(`/${locale}/auth/login`);
   }
 
-  const cvs = await prisma.cv.findMany({
-    where: { userId: authResult.user.id },
-    include: {
-      personalInfo: { select: { fullName: true, targetJobTitle: true } },
-    },
-    orderBy: { updatedAt: "desc" },
-  });
+  const cvs = await withDbRetry(() =>
+    prisma.cv.findMany({
+      where: { userId: authResult.user.id },
+      include: {
+        personalInfo: { select: { fullName: true, targetJobTitle: true } },
+      },
+      orderBy: { updatedAt: "desc" },
+    })
+  );
 
   return (
     <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between">

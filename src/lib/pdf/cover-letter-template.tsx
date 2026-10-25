@@ -3,7 +3,9 @@ import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import { extractGermanJobTitle } from "@/lib/cover-letter";
 import { containsArabic, ARABIC_REGEX } from "./font-amiri";
 
-export { extractGermanJobTitle };
+import { extractCityFromAddress } from "@/lib/location";
+
+export { extractGermanJobTitle, extractCityFromAddress };
 
 export interface CoverLetterPdfData {
   title: string;
@@ -113,41 +115,6 @@ const styles = StyleSheet.create({
   },
 });
 
-/**
- * Cleanly extracts the city name from a given address string.
- * e.g.:
- *  "Avenue Hassan II, Taounate, Morocco" => "Taounate"
- *  "Musterstraße 12, 10115 Berlin, Deutschland" => "Berlin"
- *  "Taounate, Morocco" => "Taounate"
- *  "10115 Berlin" => "Berlin"
- */
-export function extractCityFromAddress(address?: string | null): string {
-  if (!address || !address.trim()) return "Deutschland";
-
-  const raw = address.trim();
-  const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
-
-  if (parts.length === 1) {
-    return parts[0].replace(/^\d{4,5}\s+/, "").trim() || parts[0];
-  }
-
-  const isStreetPattern =
-    /\b(?:stra(?:ß|ss)e|str\.?|avenue|ave\.?|rue|road|rd\.?|boulevard|blvd\.?|weg|platz|gasse|hay|residence|appt\.?|n°|\d+)\b/i;
-
-  if (isStreetPattern.test(parts[0]) && parts.length >= 2) {
-    const candidate = parts[1].replace(/^\d{4,5}\s+/, "").trim();
-    if (candidate) return candidate;
-  }
-
-  const isCountryPattern =
-    /^(?:Deutschland|Germany|Morocco|Maroc|المغرب|ألمانيا|France|Schweiz|Österreich|Austria|Switzerland)$/i;
-
-  if (!isCountryPattern.test(parts[0])) {
-    return parts[0].replace(/^\d{4,5}\s+/, "").trim();
-  }
-
-  return parts[0];
-}
 
 /**
  * Cleans raw generated cover letter markdown/text to prevent duplicate

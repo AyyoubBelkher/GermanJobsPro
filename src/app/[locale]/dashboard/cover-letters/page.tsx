@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
 import { verifyUserSession } from "@/lib/user-session";
-import { prisma } from "@/lib/prisma";
+import { prisma, withDbRetry } from "@/lib/prisma";
 import CoverLetterListClient from "@/components/cover-letter/CoverLetterListClient";
 
 export default async function CoverLettersPage({
@@ -26,13 +26,15 @@ export default async function CoverLettersPage({
     redirect(`/${locale}/auth/login`);
   }
 
-  const coverLetters = await prisma.coverLetter.findMany({
-    where: { userId: authResult.user.id },
-    include: {
-      cv: { select: { id: true, title: true } },
-    },
-    orderBy: { updatedAt: "desc" },
-  });
+  const coverLetters = await withDbRetry(() =>
+    prisma.coverLetter.findMany({
+      where: { userId: authResult.user.id },
+      include: {
+        cv: { select: { id: true, title: true } },
+      },
+      orderBy: { updatedAt: "desc" },
+    })
+  );
 
   return (
     <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between">

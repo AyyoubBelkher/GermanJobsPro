@@ -1,9 +1,9 @@
 import "dotenv/config";
 import { prisma } from "../src/lib/prisma";
-import { normalizeMarkdownFormatting } from "../src/components/blog/LessonContentRenderer";
+import { normalizeMarkdownFormatting } from "../src/lib/courseUtils";
 
 async function main() {
-  console.log("Starting database cleanup for posts...");
+  console.log("Starting comprehensive database cleanup for posts...");
 
   // 1. Fetch all posts
   const posts = await prisma.post.findMany({
@@ -21,12 +21,17 @@ async function main() {
 
   for (const post of posts) {
     const originalContent = post.markdown_content || "";
-    const cleanedContent = normalizeMarkdownFormatting(originalContent);
+    let cleanedContent = normalizeMarkdownFormatting(originalContent);
+
+    // Normalize any nested/unbalanced parentheses in database content
+    cleanedContent = cleanedContent.replace(
+      /\(([A-Za-z0-9\s]+?)\s*\(([^()\n]+?)(?:\)+|$)/g,
+      "($1 - $2)"
+    );
 
     if (originalContent !== cleanedContent) {
       console.log(`\nFixing post: [${post.slug}] "${post.title}"`);
       
-      // Calculate changes
       const origLines = originalContent.split("\n").length;
       const cleanLines = cleanedContent.split("\n").length;
       console.log(`  Lines: ${origLines} -> ${cleanLines}`);
@@ -39,8 +44,11 @@ async function main() {
       });
 
       updatedCount++;
-    } else if (post.slug === "eu-blue-card-germany-requirements-18521") {
-      console.log(`\nTarget post [${post.slug}] already clean or formatted.`);
+    } else if (
+      post.slug === "eu-blue-card-germany-requirements-18521" ||
+      post.slug === "nursing-jobs-pflegefachkraft-germany-guide-10286"
+    ) {
+      console.log(`\nTarget post [${post.slug}] verified.`);
     }
   }
 

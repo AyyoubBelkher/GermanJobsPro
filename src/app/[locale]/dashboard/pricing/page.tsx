@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
 import { verifyUserSession } from "@/lib/user-session";
-import { prisma } from "@/lib/prisma";
+import { prisma, withDbRetry } from "@/lib/prisma";
 import PricingClient from "@/components/pricing/PricingClient";
 
 export default async function PricingPage({
@@ -26,17 +26,19 @@ export default async function PricingPage({
     redirect(`/${locale}/auth/login`);
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: authResult.user.id },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      plan: true,
-      planExpiresAt: true,
-      aiCredits: true,
-    },
-  });
+  const user = await withDbRetry(() =>
+    prisma.user.findUnique({
+      where: { id: authResult.user.id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        plan: true,
+        planExpiresAt: true,
+        aiCredits: true,
+      },
+    })
+  );
 
   if (!user) {
     redirect(`/${locale}/auth/login`);

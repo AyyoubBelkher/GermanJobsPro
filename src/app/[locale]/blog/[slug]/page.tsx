@@ -9,15 +9,18 @@ import AdminBar from "@/components/admin/AdminBar";
 import NewsletterForm from "@/components/NewsletterForm";
 import LessonContentRenderer from "@/components/blog/LessonContentRenderer";
 import CommentSection, { CommentItem } from "@/components/blog/CommentSection";
+import Navbar from "@/components/ui/Navbar";
+import Footer from "@/components/ui/Footer";
 import { verifySessionToken } from "@/lib/session";
 import {
   isCourseLesson,
-  isGermanA1Category,
   parseLessonTitle,
   calculateReadTime,
   resolveLessonImage,
   getArticlesOnlyPrismaFilter,
   getCourseLessonsPrismaFilter,
+  localizeCategoryLabel,
+  formatBidiInlineText,
 } from "@/lib/courseUtils";
 
 export const revalidate = 60;
@@ -538,7 +541,14 @@ export default async function SinglePostPage({
   };
 
   return (
-    <div dir={dir} className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 py-16 px-4 sm:px-6 lg:px-8">
+    <div
+      dir={dir}
+      className={`min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white ${
+        isAdmin ? "pb-24" : ""
+      }`}
+    >
+      <Navbar locale={locale} />
+
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }}
@@ -546,7 +556,8 @@ export default async function SinglePostPage({
       {/* Invisible Admin Controls - Rendered ONLY if admin_session cookie is active */}
       {isAdmin && <AdminBar post={post} locale={locale} />}
 
-      <article dir={dir} className={`max-w-4xl mx-auto space-y-8 ${isAr ? "text-right" : "text-left"}`}>
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 w-full flex-1">
+        <article dir={dir} className={`space-y-8 ${isAr ? "text-right" : "text-left"}`}>
         
         {/* Navigation Breadcrumb / Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 py-2 border-b border-slate-200 dark:border-slate-800/80 mb-6">
@@ -563,7 +574,7 @@ export default async function SinglePostPage({
                 </Link>
                 <span>/</span>
                 <span className="text-blue-600 dark:text-blue-400 font-bold">
-                  {currentLessonParsed?.lessonNumber ? `${ui.lessonWord} ${currentLessonParsed.lessonNumber}` : post.title}
+                  {currentLessonParsed?.lessonNumber ? `${ui.lessonWord} ${currentLessonParsed.lessonNumber}` : formatBidiInlineText(post.title, isAr)}
                 </span>
               </>
             ) : (
@@ -574,7 +585,7 @@ export default async function SinglePostPage({
                 </Link>
                 <span>/</span>
                 <span className="text-blue-600 dark:text-blue-400 font-bold line-clamp-1 max-w-[200px] sm:max-w-xs">
-                  {post.title}
+                  {formatBidiInlineText(post.title, isAr)}
                 </span>
               </>
             )}
@@ -611,7 +622,7 @@ export default async function SinglePostPage({
               </span>
             ) : (
               <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 shadow-sm">
-                {post.category || ui.careerGuide}
+                {localizeCategoryLabel(post.category, locale)}
               </span>
             )}
 
@@ -634,13 +645,16 @@ export default async function SinglePostPage({
                   dir="rtl"
                   className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-sky-300 leading-snug"
                 >
-                  {currentLessonParsed.arabicSubtitle}
+                  {formatBidiInlineText(currentLessonParsed.arabicSubtitle, isAr)}
                 </p>
               )}
             </div>
           ) : (
-            <h1 dir="auto" className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 leading-tight text-start">
-              {currentLessonParsed?.fullTitle || post.title}
+            <h1
+              dir={dir}
+              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 leading-tight text-start"
+            >
+              {formatBidiInlineText(currentLessonParsed?.fullTitle || post.title, isAr)}
             </h1>
           )}
 
@@ -749,14 +763,14 @@ export default async function SinglePostPage({
                 </svg>
               </div>
               <h2 className="text-xl sm:text-2xl font-bold tracking-tight max-w-xl">
-                {isA1 ? `${ui.a1CourseTitle} • ${ui.lessonWord} ${currentLessonParsed?.lessonNumber || ""}` : post.category}
+                {isA1 ? `${ui.a1CourseTitle} • ${ui.lessonWord} ${currentLessonParsed?.lessonNumber || ""}` : localizeCategoryLabel(post.category, locale)}
               </h2>
             </div>
           </div>
         )}
 
         {/* Enhanced Article Content Renderer (German A1 aware & general markdown) */}
-        <div dir="auto" className="prose prose-slate dark:prose-invert prose-lg max-w-none leading-relaxed text-slate-800 dark:text-slate-200 text-start">
+        <div dir={dir} className="prose prose-slate dark:prose-invert prose-lg max-w-none leading-relaxed text-slate-800 dark:text-slate-200 text-start prose-code:before:content-none prose-code:after:content-none">
           <LessonContentRenderer
             content={stripLeadingH1(post.markdown_content)}
             category={post.category}
@@ -983,7 +997,7 @@ export default async function SinglePostPage({
                             </svg>
                           </div>
                           <span className="font-bold text-xs tracking-wider text-blue-100 uppercase">
-                            {relPost.category}
+                            {localizeCategoryLabel(relPost.category, locale)}
                           </span>
                         </div>
                       )}
@@ -992,10 +1006,10 @@ export default async function SinglePostPage({
                     <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                       <div className="space-y-2">
                         <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
-                          {relIsA1 && relParsed?.lessonNumber ? `🇩🇪 ${ui.lessonWord} ${relParsed.lessonNumber}` : relPost.category}
+                          {relIsA1 && relParsed?.lessonNumber ? `🇩🇪 ${ui.lessonWord} ${relParsed.lessonNumber}` : localizeCategoryLabel(relPost.category, locale)}
                         </span>
                         <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 line-clamp-2 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                          {relTitle}
+                          {formatBidiInlineText(relTitle, isAr)}
                         </h3>
                       </div>
 
@@ -1012,7 +1026,10 @@ export default async function SinglePostPage({
             </div>
           </section>
         )}
-      </article>
+        </article>
+      </main>
+
+      <Footer locale={locale} />
     </div>
   );
 }

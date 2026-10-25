@@ -5,7 +5,7 @@ import { redirect, notFound } from "next/navigation";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
 import { verifyUserSession } from "@/lib/user-session";
-import { prisma } from "@/lib/prisma";
+import { prisma, withDbRetry } from "@/lib/prisma";
 import CvEditorClient, { FullCvData } from "@/components/cv/CvEditorClient";
 
 interface PageParams {
@@ -26,21 +26,23 @@ export default async function CvEditorPage({ params }: PageParams) {
     redirect(`/${locale}/auth/login`);
   }
 
-  const cv = await prisma.cv.findFirst({
-    where: {
-      id,
-      userId: authResult.user.id,
-    },
-    include: {
-      personalInfo: true,
-      experiences: { orderBy: { order: "asc" } },
-      educations: { orderBy: { order: "asc" } },
-      skills: { orderBy: { order: "asc" } },
-      languages: { orderBy: { order: "asc" } },
-      certifications: { orderBy: { order: "asc" } },
-      projects: { orderBy: { order: "asc" } },
-    },
-  });
+  const cv = await withDbRetry(() =>
+    prisma.cv.findFirst({
+      where: {
+        id,
+        userId: authResult.user.id,
+      },
+      include: {
+        personalInfo: true,
+        experiences: { orderBy: { order: "asc" } },
+        educations: { orderBy: { order: "asc" } },
+        skills: { orderBy: { order: "asc" } },
+        languages: { orderBy: { order: "asc" } },
+        certifications: { orderBy: { order: "asc" } },
+        projects: { orderBy: { order: "asc" } },
+      },
+    })
+  );
 
   if (!cv) {
     notFound();

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
 import { verifyUserSession } from "@/lib/user-session";
-import { prisma } from "@/lib/prisma";
+import { prisma, withDbRetry } from "@/lib/prisma";
 import AtsAnalyzerClient from "@/components/ats/AtsAnalyzerClient";
 
 export default async function AtsAnalyzerPage({
@@ -29,15 +29,17 @@ export default async function AtsAnalyzerPage({
     redirect(`/${locale}/auth/login`);
   }
 
-  const userCvs = await prisma.cv.findMany({
-    where: { userId: authResult.user.id },
-    select: {
-      id: true,
-      title: true,
-      language: true,
-    },
-    orderBy: { updatedAt: "desc" },
-  });
+  const userCvs = await withDbRetry(() =>
+    prisma.cv.findMany({
+      where: { userId: authResult.user.id },
+      select: {
+        id: true,
+        title: true,
+        language: true,
+      },
+      orderBy: { updatedAt: "desc" },
+    })
+  );
 
   return (
     <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between">

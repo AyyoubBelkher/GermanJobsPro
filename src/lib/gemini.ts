@@ -1,4 +1,13 @@
 import { GoogleGenAI } from "@google/genai";
+import {
+  EmploymentEntry,
+  ValidationStatus,
+  classifyJobDescription,
+  validateAtsTopLevelSchema,
+  computeContactProvenance,
+  filterVerifiedWeaknesses,
+  classifyActionPlanItem,
+} from "./ats-signals";
 
 /**
  * Server-Side Gemini AI Service
@@ -300,18 +309,28 @@ Target Language: ${params.language || "de"}
 export interface AtsAnalysisResult {
   overallScore: number;
   din5008Score: number;
-  keywordMatchScore: number;
+  keywordMatchScore: number | null;
   summary: string;
   strengths: string[];
   weaknesses: string[];
   missingKeywords: string[];
   actionPlan: string[];
+  validationStatus: ValidationStatus;
 }
 
 export interface AnalyzeCvAtsParams {
   cvText: string;
   jobDescription?: string | null;
   language?: string;
+  structuredEntries?: EmploymentEntry[];
+  structuredProfile?: {
+    personalInfo?: {
+      email?: string | null;
+      phone?: string | null;
+    } | null;
+  } | null;
+  cvIdProvided?: boolean;
+  textExtractionSuccess?: boolean;
 }
 
 /**
@@ -357,11 +376,6 @@ Please generate the optimized ATS bullet points.`;
   return cleanedText;
 }
 
-function safeScore(val: unknown, fallback = 70): number {
-  const num = Number(val);
-  return Number.isFinite(num) ? Math.min(100, Math.max(0, Math.round(num))) : fallback;
-}
-
 /**
  * Analyzes a CV for German ATS compatibility and DIN 5008 standards.
  */
@@ -369,6 +383,9 @@ export async function analyzeCvAtsAI(params: AnalyzeCvAtsParams): Promise<AtsAna
   const currentDate = new Date().toISOString().split("T")[0];
   const currentYear = new Date().getUTCFullYear();
   const ai = getGeminiClient();
+
+  const jdEval = classifyJobDescription(params.jobDescription);
+  const hasValidJd = jdEval.status === "valid_supplied";
 
   const systemInstruction = `You are a Senior German ATS & DIN 5008 Resume Auditor and Executive Recruiter.
 CURRENT DATE CONTEXT: Today's date is ${currentDate} (Year: ${currentYear}).
@@ -381,27 +398,31 @@ CURRENT DATE & TYPO TOLERANCE RULES:
 STRICT FAIRNESS & HONEST EVALUATION RULES:
 1. FAIR SCORING FOR GOOD CVs (overallScore >= 80):
    - If the uploaded CV is already well-structured in German (tabular DIN 5008 layout, clear reverse-chronological experience and education, complete contact details, and CEFR language proficiencies) and aligns well with the target role/industry:
-     * Give it an honest passing score (overallScore >= 80, typically 80 to 95; din5008Score >= 80; keywordMatchScore >= 80).
+     * Give it an honest passing score (overallScore >= 80, typically 80 to 95; din5008Score >= 80${hasValidJd ? "; keywordMatchScore >= 80" : ""}).
      * State CLEARLY in "summary" that the CV is accepted, fully compliant with German ATS and DIN 5008 standards, and ready for direct application with German employers without needing our auto-fix tool or remediation.
      * DO NOT invent artificial flaws, phantom red flags, or unnecessary criticisms on an already good CV.
-     * When overallScore >= 80, return weaknesses: [] and missingKeywords: [] (or at most 1–2 optional suggestions), and formulate "actionPlan" as optional next steps or application readiness tips rather than mandatory fixes.
+     * If there are no genuine, verifiable defects, you MUST return an empty array "weaknesses": [] — NEVER output a sentence saying "there are no weaknesses" inside the weaknesses array.
+     * If no corrective steps are needed, return "actionPlan": [] or at most 1–2 safe general German application best practices.
 2. DEFICIENT CVs (overallScore < 80):
    - If the CV is not in German, lacks DIN 5008 tabular formatting, or has real qualification/terminology gaps:
      * Score it realistically (overallScore < 80).
      * Explain in "summary" why it requires improvement before applying.
      * List genuine weaknesses, missing German keywords, and a concrete action plan.
+3. GROUNDING & NON-DISCRIMINATION:
+   - Ground all observations strictly in the CV and supplied job description.
+   - Do NOT mandate candidate photos, marital status, religion, children, or nationality (voluntary/non-mandatory under German AGG and DIN 5008 standards).
 
 Output requirements:
 You MUST respond with a VALID JSON object adhering EXACTLY to this schema (no extra wrapper keys, no markdown codeblocks):
 {
-  "overallScore": number (0 to 100),
-  "din5008Score": number (0 to 100),
-  "keywordMatchScore": number (0 to 100),
-  "summary": "Concise 2-3 sentence executive assessment in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"} (explicitly stating accepted and ready for direct application without needing auto-fix if overallScore >= 80)",
+  "overallScore": integer (0 to 100),
+  "din5008Score": integer (0 to 100),
+  "keywordMatchScore": ${hasValidJd ? "integer (0 to 100)" : "null"},
+  "summary": "Concise 2-3 sentence executive assessment in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"}",
   "strengths": ["Array of specific positive points in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"}"],
-  "weaknesses": ["Array of specific red flags or gaps in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"} (empty array if score >= 80 and no genuine flaws)"],
-  "missingKeywords": ["Array of technical/professional German keywords missing from the CV (empty array if score >= 80 or none missing)"],
-  "actionPlan": ["Array of prioritized concrete action steps in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"}"]
+  "weaknesses": ["Array of specific red flags or gaps in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"} (MUST be an empty array [] if no real weaknesses exist — NEVER include 'no weaknesses found' statements)"],
+  "missingKeywords": [${hasValidJd ? "\"Array of technical/professional German keywords missing from the CV\"" : ""}],
+  "actionPlan": ["Array of prioritized concrete action steps in ${params.language === "ar" ? "Arabic" : params.language === "en" ? "English" : "German"} (empty array [] if score >= 80 and no changes needed)"]
 }
 
 Security & Delimiters:
@@ -412,8 +433,14 @@ Security & Delimiters:
   let userPrompt = `Target Language for feedback: ${params.language || "de"}\n\n`;
   userPrompt += `<<<CV_TEXT>>>\n${params.cvText}\n<<<CV_TEXT>>>\n\n`;
 
-  if (params.jobDescription && params.jobDescription.trim().length > 0) {
-    userPrompt += `<<<JOB_DESCRIPTION>>>\n${params.jobDescription.trim()}\n<<<JOB_DESCRIPTION>>>\n\n`;
+  if (params.cvIdProvided) {
+    userPrompt += `Source Note: This CV is sourced from a structured German DIN 5008 resume builder with guaranteed 2-column tabular layout, section partitioning, and professional DIN 5008 PDF typography. Evaluate factual contents, chronological integrity, and terminology without penalizing plain-text serialization.\n\n`;
+  }
+
+  if (hasValidJd && jdEval.text) {
+    userPrompt += `<<<JOB_DESCRIPTION>>>\n${jdEval.text}\n<<<JOB_DESCRIPTION>>>\n\n`;
+  } else {
+    userPrompt += `Note: No valid target job description was provided. You must set "keywordMatchScore": null and "missingKeywords": [].\n\n`;
   }
 
   userPrompt += "Please perform the ATS & DIN 5008 audit and return the JSON analysis.";
@@ -429,21 +456,87 @@ Security & Delimiters:
 
   const cleanedText = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/, "").trim();
 
+  let parsed: unknown;
   try {
-    const parsed = JSON.parse(cleanedText);
-    return {
-      overallScore: safeScore(parsed.overallScore),
-      din5008Score: safeScore(parsed.din5008Score),
-      keywordMatchScore: safeScore(parsed.keywordMatchScore),
-      summary: String(parsed.summary || "Analyse abgeschlossen."),
-      strengths: Array.isArray(parsed.strengths) ? parsed.strengths.map(String) : [],
-      weaknesses: Array.isArray(parsed.weaknesses) ? parsed.weaknesses.map(String) : [],
-      missingKeywords: Array.isArray(parsed.missingKeywords) ? parsed.missingKeywords.map(String) : [],
-      actionPlan: Array.isArray(parsed.actionPlan) ? parsed.actionPlan.map(String) : [],
-    };
+    parsed = JSON.parse(cleanedText);
   } catch {
     throw new Error("Failed to parse ATS analysis JSON from AI.");
   }
+
+  // Strict Top-Level Schema Validation
+  const validated = validateAtsTopLevelSchema(parsed, hasValidJd);
+
+  // Contact Provenance Evaluation
+  const provenance = computeContactProvenance({
+    cvText: params.cvText,
+    textExtractionSuccess: params.textExtractionSuccess ?? (params.cvText.trim().length >= 30),
+    structuredProfile: params.structuredProfile,
+    cvIdProvided: params.cvIdProvided,
+  });
+
+  // Deterministic Weakness Filtering
+  const filteredWeaknesses = filterVerifiedWeaknesses(
+    validated.weaknesses,
+    params.structuredEntries || [],
+    provenance,
+    {
+      cvIdProvided: params.cvIdProvided,
+      hasExperiences: (params.structuredEntries || []).length > 0,
+      hasEducations: true,
+      hasSkills: true,
+    }
+  );
+
+  // High-scoring and clean honesty contract
+  const hasPassingScores =
+    validated.overallScore >= 80 &&
+    validated.din5008Score >= 80 &&
+    (validated.keywordMatchScore === null || validated.keywordMatchScore >= 75);
+
+  const isHighScoringAndClean = hasPassingScores && filteredWeaknesses.length === 0;
+
+  // Deterministic Action Plan Classification
+  const filteredActionPlan = isHighScoringAndClean
+    ? []
+    : validated.actionPlan
+        .map((item) =>
+          classifyActionPlanItem(item, {
+            jobDescriptionStatus: jdEval.status,
+            provenance,
+          })
+        )
+        .filter((res) => res.isValid)
+        .map((res) => res.rawText);
+
+  let finalMissingKeywords = validated.missingKeywords;
+  if (isHighScoringAndClean && !hasValidJd) {
+    finalMissingKeywords = [];
+  }
+
+  const validationStatus: ValidationStatus = {
+    isValidated: true,
+    deterministicChecksRun: {
+      schemaValidated: true,
+      dateInversionsChecked: true,
+      contactProvenanceChecked: true,
+      actionPlanClassified: true,
+      jobDescriptionEvaluated: true,
+    },
+    provenance,
+    jobDescriptionStatus: jdEval.status,
+  };
+
+  return {
+    overallScore: validated.overallScore,
+    din5008Score: validated.din5008Score,
+    keywordMatchScore: validated.keywordMatchScore,
+    summary: validated.summary,
+    strengths: validated.strengths,
+    weaknesses: filteredWeaknesses,
+    missingKeywords: finalMissingKeywords,
+    actionPlan: filteredActionPlan,
+    validationStatus,
+  };
 }
 
 export type InterviewStep =
@@ -708,10 +801,20 @@ Your mission is to parse the candidate's raw CV text (which may be in English, A
 ZERO-FABRICATION & FACTUAL INTEGRITY (Strikte Wahrheitspflicht):
 - STRICTLY FORBID inventing placeholder data, artificial names, or hallucinating facts.
 - NEVER invent companies, institutions, dates, degrees, or hard skills/certifications that are not in the candidate's raw CV text.
+- NEVER invent or guess skill proficiency levels (such as "Experte", "Fortgeschritten", "Grundkenntnisse") if they are not explicitly stated in the source CV. If a skill level is not stated in the source, return "" (empty string).
+- NEVER attach proficiency levels ("Grundkenntnisse", "Fortgeschritten", "Experte") to driving licences ("Führerschein"), certifications, or soft skills.
+- NEVER automatically upgrade a candidate's stated language level (e.g., do not turn an explicit B2 into C1 or Verhandlungssicher, and do not overwrite an explicit candidate-provided level without basis).
 - NEVER output fake fallback names ("Max Mustermann"), fake phone numbers ("+49 151..."), fake German addresses ("Musterstraße 1, Berlin"), or fake countries ("Deutschland") if not present in the raw CV text.
 - Preserve the candidate's REAL city and country exactly as they appear in the source CV (e.g. "Taounate, Marokko", "Fès, Marokko", "Casablanca, Marokko", "Tunis, Tunesien", "Kairo, Ägypten"). If a city or country is in Morocco or elsewhere, KEEP IT ACCURATELY. DO NOT change it to Germany / Deutschland.
 - If a contact or personal field (such as address, phone, birth date, links) is missing in the source CV, return "" (empty string). NEVER invent fake German contact details.
-- Keep the candidate's exact dates; only normalize their format to "YYYY-MM-DD" or "YYYY-MM-01". Do not alter the actual months/years.
+- Keep the candidate's exact dates and original date precision. If the source CV only provides a year (e.g. "2022" or "2020 - 2023"), preserve it as a 4-digit year "YYYY". NEVER invent an arbitrary month (such as "01" or "12") if only a year was provided. If month and year are specified, normalize to "YYYY-MM" (or "YYYY-MM-DD" if day is provided). Do not alter actual months or years.
+- Multi-Column PDF Date-to-Entry Disassociation Reconciliation:
+  * In 2-column or minimalist PDF resumes, date bullets (e.g. "Juni 2021", "24.05.2025", "23.01.2026 - 23.02.2026", "01.02.2025 - 03.03.2025", "03.04.2025 - 05.04.2025") can appear separated from their corresponding text blocks in the raw text stream.
+  * Cross-reference dates between sections: If internships or professional experiences in "BERUFSERFAHRUNG" repeat explicit dates (e.g. "23.01.2026 - 23.02.2026" for AN-NAHDA and "01.02.2025 - 03.03.2025" for Stiftung für Sozialhilfe), match the remaining standalone date(s) (such as "Juni 2021" / "06/2021") in "SCHUL-UND BERUFSBILDUNG" / "AUSBILDUNG" to the degree or school entry ("Abitur - Geisteswissenschaften - Gymnasium AIN AICHA - Taounate", "Bachelor", etc.).
+  * NEVER leave educations[].startDate empty or unassigned when a graduation or completion date (such as "Juni 2021" or "2021") is present in the CV text.
+  * If a degree or school qualification only states a single completion/graduation date (e.g. "Juni 2021" for Abitur), set BOTH startDate: "2021-06" and endDate: "2021-06" (or startDate: "2021-06" and endDate: null with isCurrent: false).
+  * NEVER assign a 2025 or 2026 internship/training date to an Abitur or school degree that was completed years earlier (e.g. in 2021).
+  * NEVER mark a completed degree or diploma as isCurrent: true.
 
 DIN 5008 REMEDIATION & PRIOR ATS AUDIT INTEGRATION:
 - When a target job description or prior ATS analysis report is provided:
@@ -729,12 +832,13 @@ Strict Transformation Rules:
    - Use German action nouns and nominal phrasing (Substantivstil standard in German CVs, e.g. "Konzeption und Entwicklung von...", "Optimierung der Systemarchitektur", "Führung eines interdisziplinären Teams", "Kundenbetreuung und Bedarfsanalyse").
    - Format bullet points cleanly starting with "• ".
 2. Dates:
-   - Keep the candidate's exact dates; only normalize their format to "YYYY-MM-01" or "YYYY-MM-DD".
+   - Keep the candidate's exact dates and original date precision. If year-only in CV (e.g. "2022"), output "YYYY" (e.g. "2022") without inventing months. If month and year are specified, normalize to "YYYY-MM" (or "YYYY-MM-DD" if day is given).
    - If currently employed or ongoing, set isCurrent: true and endDate: null.
+   - For single-date qualifications or degrees (e.g. Abitur "Juni 2021"), set BOTH startDate: "2021-06" and endDate: "2021-06" (or startDate: "2021-06" and endDate: null with isCurrent: false). Never leave educations[].startDate empty and NEVER assign an internship date to a school/academic degree.
 3. German Education Equivalencies:
    - Map academic degrees to their standard German equivalents (e.g. "Bachelor of Science (B.Sc.)", "Master of Science (M.Sc.)", "Staatlich geprüfter Techniker", "Abitur / Allgemeine Hochschulreife", "Berufsausbildung").
 4. Languages:
-   - Standardize language proficiencies to official German CEFR designations (e.g. "Muttersprache (C2)", "Verhandlungssicher (C1)", "Fließend in Wort und Schrift (B2)", "Gute Kenntnisse (B1)", "Grundkenntnisse (A2/A1)").
+   - Standardize language proficiencies to official German CEFR designations while faithfully preserving the candidate's stated level (e.g. "Muttersprache (C2)", "Verhandlungssicher (C1)", "Fließend in Wort und Schrift (B2)", "Gute Kenntnisse (B1)", "Grundkenntnisse (A2/A1)"). NEVER fabricate or artificially inflate candidate proficiency.
 5. Personal Details & Contact:
    - Extract real legal full name, email, phone with international prefix, city/address, nationality, and birth date/place if present. If not in CV, use empty string "".
    - Target Job Title: Use ${params.targetJobTitle ? `"${params.targetJobTitle}"` : "the most relevant professional German target title extracted from CV or job description (e.g. 'Softwareentwickler (m/w/d)', 'Pflegefachkraft (m/w/d)', 'Projektmanager (m/w/d)')"}.
@@ -764,8 +868,8 @@ You MUST return a VALID JSON object adhering EXACTLY to this schema (no markdown
       "position": "German translated position title",
       "city": "Real city from CV or empty string",
       "country": "Real country from CV (e.g. 'Marokko', 'Tunesien', 'Deutschland') or empty string - DO NOT default to Deutschland if located abroad",
-      "startDate": "Candidate start date normalized to YYYY-MM-01 or YYYY-MM-DD",
-      "endDate": "Candidate end date normalized to YYYY-MM-01 or null if current",
+      "startDate": "Candidate start date preserving original precision ('YYYY' if year-only, 'YYYY-MM' if month-year, or 'YYYY-MM-DD')",
+      "endDate": "Candidate end date ('YYYY', 'YYYY-MM', 'YYYY-MM-DD', or null if current)",
       "isCurrent": boolean,
       "description": "• German bullet 1 in Substantivstil\n• German bullet 2\n• German bullet 3"
     }
@@ -777,8 +881,8 @@ You MUST return a VALID JSON object adhering EXACTLY to this schema (no markdown
       "fieldOfStudy": "Field of Study in German (e.g., Informatik)",
       "city": "Real city from CV or empty string",
       "country": "Real country from CV or empty string",
-      "startDate": "YYYY-MM-01",
-      "endDate": "YYYY-MM-01 or null",
+      "startDate": "Candidate start date preserving precision ('YYYY', 'YYYY-MM', or 'YYYY-MM-DD')",
+      "endDate": "Candidate end date ('YYYY', 'YYYY-MM', or null)",
       "isCurrent": boolean,
       "grade": "Grade / Note or empty string",
       "description": "Short details or empty string"
@@ -787,14 +891,14 @@ You MUST return a VALID JSON object adhering EXACTLY to this schema (no markdown
   "skills": [
     {
       "name": "Skill / Tool Name from CV",
-      "category": "Fachkenntnisse | IT & Software | Methoden & Tools | Soft Skills",
-      "level": "Experte | Fortgeschritten | Grundkenntnisse"
+      "category": "Fachkenntnisse | IT & Software | Methoden & Tools | Soft Skills | Mobilität",
+      "level": "Explicit level from CV (e.g. Experte | Fortgeschritten | Grundkenntnisse) or empty string \"\" if unrated or if driving licence"
     }
   ],
   "languages": [
     {
       "language": "Deutsch / Arabisch / Englisch / Französisch",
-      "proficiency": "Fließend (B2) / Muttersprache / etc."
+      "proficiency": "Candidate stated level preserved accurately (e.g. 'B2', 'Fließend (B2)', 'Muttersprache') - DO NOT upgrade"
     }
   ],
   "certifications": [

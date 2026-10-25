@@ -397,7 +397,7 @@ export default function ATSTool({ onApplyFixToBuilder }: ATSToolProps) {
           {/* Missing Keywords & Recommendations Breakdown */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Missing Keywords */}
-            {result.missingKeywords && result.missingKeywords.length > 0 && (
+            {!isCvAccepted && result.missingKeywords && result.missingKeywords.length > 0 && (
               <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
                 <div className="flex items-center gap-2 text-rose-400">
                   <span>⚠️</span>
@@ -418,7 +418,7 @@ export default function ATSTool({ onApplyFixToBuilder }: ATSToolProps) {
             )}
 
             {/* Improvements */}
-            {result.improvements && result.improvements.length > 0 && (
+            {!isCvAccepted && result.improvements && result.improvements.length > 0 && (
               <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
                 <div className="flex items-center gap-2 text-amber-400">
                   <span>💡</span>

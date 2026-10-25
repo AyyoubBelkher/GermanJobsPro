@@ -4,10 +4,11 @@ import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   isCourseLesson,
-  isGermanA1Category,
   parseLessonTitle,
   calculateReadTime,
   resolveLessonImage,
+  localizeCategoryLabel,
+  formatBidiInlineText,
 } from "@/lib/courseUtils";
 
 export interface PostCardProps {
@@ -216,7 +217,7 @@ export default function PostCard({
                 </span>
               ) : (
                 <span className="absolute top-4 start-4 text-xs font-semibold px-3 py-1 rounded-full bg-slate-900/80 text-white backdrop-blur-sm border border-slate-700/50 z-10">
-                  {category}
+                  {localizeCategoryLabel(category, locale)}
                 </span>
               )}
             </>
@@ -267,13 +268,13 @@ export default function PostCard({
                     dir="rtl"
                     className="text-sm font-bold text-blue-600 dark:text-sky-300 leading-snug line-clamp-2"
                   >
-                    {arabicSubtitle}
+                    {formatBidiInlineText(arabicSubtitle, isArabicLocale)}
                   </p>
                 ) : null}
               </div>
             ) : (
               <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 line-clamp-2 text-start">
-                {title}
+                {formatBidiInlineText(title, isArabicLocale)}
               </h3>
             )}
 

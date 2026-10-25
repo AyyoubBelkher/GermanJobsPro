@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
 import { verifyUserSession } from "@/lib/user-session";
-import { prisma } from "@/lib/prisma";
+import { prisma, withDbRetry } from "@/lib/prisma";
 
 export default async function DashboardPage({
   params,
@@ -33,19 +33,21 @@ export default async function DashboardPage({
   const displayName = user.name || user.email.split("@")[0];
 
   // Fetch real user CVs and Cover Letters
-  const [cvs, coverLetters] = await Promise.all([
-    prisma.cv.findMany({
-      where: { userId: user.id },
-      include: {
-        personalInfo: { select: { fullName: true, targetJobTitle: true } },
-      },
-      orderBy: { updatedAt: "desc" },
-    }),
-    prisma.coverLetter.findMany({
-      where: { userId: user.id },
-      orderBy: { updatedAt: "desc" },
-    }),
-  ]);
+  const [cvs, coverLetters] = await withDbRetry(() =>
+    Promise.all([
+      prisma.cv.findMany({
+        where: { userId: user.id },
+        include: {
+          personalInfo: { select: { fullName: true, targetJobTitle: true } },
+        },
+        orderBy: { updatedAt: "desc" },
+      }),
+      prisma.coverLetter.findMany({
+        where: { userId: user.id },
+        orderBy: { updatedAt: "desc" },
+      }),
+    ])
+  );
 
   return (
     <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between">
