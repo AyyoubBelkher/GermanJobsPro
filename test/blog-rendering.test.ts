@@ -222,6 +222,47 @@ function hello() {
       assert.ok(hasStatusBdi);
     });
 
+    it("applies inline break-words for multi-word or long parentheticals and whitespace-nowrap only for short single tokens", () => {
+      const input = "مستوى (B2) مطلوب للحصول على (Blaue Karte EU) مع تصنيف H+ ومصطلح (Zentralstelle für ausländisches Bildungswesen)";
+      const result = formatBidiInlineText(input, true);
+      const children = React.Children.toArray(result);
+
+      const bdis: any[] = [];
+      children.forEach((c: any) => {
+        if (!c) return;
+        if (c.type === "bdi") {
+          bdis.push(c);
+        } else if (c.props?.children) {
+          const innerChildren = Array.isArray(c.props.children)
+            ? c.props.children
+            : [c.props.children];
+          innerChildren.forEach((child: any) => {
+            if (child?.type === "bdi") {
+              bdis.push(child);
+            }
+          });
+        }
+      });
+
+      const b2El = bdis.find((el) => el.props.children === "(B2)");
+      assert.ok(b2El, "Found (B2) bdi element");
+      assert.equal(b2El.props.className, "inline-block whitespace-nowrap");
+
+      const blaueKarteEl = bdis.find((el) => el.props.children === "(Blaue Karte EU)");
+      assert.ok(blaueKarteEl, "Found (Blaue Karte EU) bdi element");
+      assert.equal(blaueKarteEl.props.className, "inline break-words");
+
+      const longGermanEl = bdis.find((el) =>
+        typeof el.props.children === "string" && el.props.children.includes("Zentralstelle")
+      );
+      assert.ok(longGermanEl, "Found long German term bdi element");
+      assert.equal(longGermanEl.props.className, "inline break-words");
+
+      const statusEl = bdis.find((el) => el.props.children === "H+");
+      assert.ok(statusEl, "Found H+ status token element");
+      assert.equal(statusEl.props.className, "inline-block whitespace-nowrap font-mono font-bold");
+    });
+
     it("leaves text unchanged when isAr is false", () => {
       const input = "Requirements for (Blaue Karte EU): German job market.";
       const result = formatBidiInlineText(input, false);

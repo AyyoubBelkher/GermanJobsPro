@@ -543,7 +543,7 @@ export default async function SinglePostPage({
   return (
     <div
       dir={dir}
-      className={`min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white ${
+      className={`min-h-screen overflow-x-hidden bg-slate-950 text-slate-100 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white ${
         isAdmin ? "pb-24" : ""
       }`}
     >
@@ -556,12 +556,12 @@ export default async function SinglePostPage({
       {/* Invisible Admin Controls - Rendered ONLY if admin_session cookie is active */}
       {isAdmin && <AdminBar post={post} locale={locale} />}
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 w-full flex-1">
-        <article dir={dir} className={`space-y-8 ${isAr ? "text-right" : "text-left"}`}>
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 w-full flex-1 min-w-0">
+        <article dir={dir} className={`space-y-8 min-w-0 ${isAr ? "text-right" : "text-left"}`}>
         
         {/* Navigation Breadcrumb / Header */}
-        <div className="flex flex-wrap items-center justify-between gap-4 py-2 border-b border-slate-200 dark:border-slate-800/80 mb-6">
-          <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
+        <div className="flex flex-wrap items-center justify-between gap-4 py-2 border-b border-slate-200 dark:border-slate-800/80 mb-6 min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 min-w-0">
             <Link href={`/${locale}/blog`} className="hover:text-blue-500 transition-colors">
               {ui.blogRoot}
             </Link>
@@ -584,7 +584,7 @@ export default async function SinglePostPage({
                   <span>{ui.careerGuide}</span>
                 </Link>
                 <span>/</span>
-                <span className="text-blue-600 dark:text-blue-400 font-bold line-clamp-1 max-w-[200px] sm:max-w-xs">
+                <span className="text-blue-600 dark:text-blue-400 font-bold line-clamp-1 max-w-[160px] sm:max-w-xs truncate">
                   {formatBidiInlineText(post.title, isAr)}
                 </span>
               </>
@@ -636,14 +636,14 @@ export default async function SinglePostPage({
             <div className="space-y-2 text-start">
               <h1
                 dir="ltr"
-                className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 dark:text-slate-100 leading-tight font-sans"
+                className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-100 leading-snug sm:leading-tight font-sans break-words"
               >
                 {currentLessonParsed.germanTitle}
               </h1>
               {currentLessonParsed.arabicSubtitle && (
                 <p
                   dir="rtl"
-                  className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-sky-300 leading-snug"
+                  className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-sky-300 leading-snug break-words"
                 >
                   {formatBidiInlineText(currentLessonParsed.arabicSubtitle, isAr)}
                 </p>
@@ -652,7 +652,7 @@ export default async function SinglePostPage({
           ) : (
             <h1
               dir={dir}
-              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 leading-tight text-start"
+              className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-100 leading-snug sm:leading-tight text-start break-words"
             >
               {formatBidiInlineText(currentLessonParsed?.fullTitle || post.title, isAr)}
             </h1>
@@ -712,7 +712,7 @@ export default async function SinglePostPage({
           </div>
         ) : isA1 ? (
           /* Dynamic Branded CSS Cover for German A1 Lessons without Image */
-          <div className="aspect-video w-full relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950/70 to-slate-900 border border-blue-500/30 shadow-2xl flex flex-col items-center justify-center p-8 text-center select-none">
+          <div className="min-h-[190px] sm:aspect-video w-full relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950/70 to-slate-900 border border-blue-500/30 shadow-2xl flex flex-col items-center justify-center p-5 sm:p-8 text-center select-none">
             {/* Subtle Tech Blueprint Grid Overlay */}
             <div
               aria-hidden="true"
@@ -744,8 +744,8 @@ export default async function SinglePostPage({
             )}
           </div>
         ) : (
-          <div className="aspect-video w-full relative rounded-3xl overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-md">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-8 text-center text-white">
+          <div className="min-h-[190px] sm:aspect-video w-full relative rounded-3xl overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-md">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-5 sm:p-8 text-center text-white">
               <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:30px_30px]" />
               <div className="p-4 rounded-3xl bg-white/10 backdrop-blur-md mb-4 border border-white/20">
                 <svg
@@ -770,7 +770,7 @@ export default async function SinglePostPage({
         )}
 
         {/* Enhanced Article Content Renderer (German A1 aware & general markdown) */}
-        <div dir={dir} className="prose prose-slate dark:prose-invert prose-lg max-w-none leading-relaxed text-slate-800 dark:text-slate-200 text-start prose-code:before:content-none prose-code:after:content-none">
+        <div dir={dir} className="prose prose-invert prose-base sm:prose-lg max-w-none leading-relaxed text-slate-200 text-start prose-code:before:content-none prose-code:after:content-none">
           <LessonContentRenderer
             content={stripLeadingH1(post.markdown_content)}
             category={post.category}

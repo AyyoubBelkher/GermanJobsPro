@@ -49,9 +49,9 @@ export default async function LocaleLayout({
     <html
       lang={currentMeta.lang || "ar"}
       dir={currentMeta.dir || "rtl"}
-      className={`${geistSans.variable} ${geistMono.variable} ${cairo.variable} h-full antialiased`}
+      className={`dark ${geistSans.variable} ${geistMono.variable} ${cairo.variable} h-full antialiased`}
     >
-      <body className={`${fontClass} min-h-full flex flex-col font-sans`}>
+      <body className={`${fontClass} bg-slate-950 text-slate-100 min-h-full flex flex-col font-sans`}>
         {children}
         <GoogleAnalytics gaId="G-K8HLLFTTDF" />
       </body>

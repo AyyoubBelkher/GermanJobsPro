@@ -378,9 +378,9 @@ function EnterpriseCtaCard({
       </div>
 
       {/* CTA Action Button */}
-      <div className="flex items-center justify-end shrink-0 z-10 pt-2 sm:pt-0">
+      <div className="flex items-center justify-end shrink-0 z-10 pt-2 sm:pt-0 w-full sm:w-auto">
         <span
-          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-xs sm:text-sm shadow-md transition-all duration-300 group-hover:shadow-lg group-hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer ${buttonBgClass}`}
+          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-xs sm:text-sm shadow-md transition-all duration-300 group-hover:shadow-lg group-hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer w-full sm:w-auto ${buttonBgClass}`}
         >
           <span>{isAr ? "تجربة الأداة الآن" : "Launch Tool"}</span>
           <span className="text-sm transition-transform duration-300 group-hover:-translate-x-1 rtl:group-hover:-translate-x-1 ltr:group-hover:translate-x-1">
@@ -498,7 +498,7 @@ function renderInlineContent(
         <code
           key={`code-${matchStart}`}
           dir="ltr"
-          className="px-2 py-0.5 mx-1 rounded-md bg-blue-500/10 dark:bg-blue-400/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 text-sm sm:text-base font-semibold inline align-baseline select-text font-mono before:content-none after:content-none"
+          className="px-2 py-0.5 mx-1 rounded-md bg-blue-500/10 dark:bg-blue-400/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 text-sm sm:text-base font-semibold inline align-baseline select-text font-mono before:content-none after:content-none break-words whitespace-normal"
         >
           {codeText}
         </code>
@@ -532,12 +532,12 @@ function renderInlineContent(
         parts.push(cleanPhonetic);
       }
     } else if (parenSegment) {
-      const isShort = parenSegment.length <= 38;
+      const isShort = parenSegment.length <= 14 && !/\s/.test(parenSegment);
       const bdiEl = (
         <bdi
           key={`bdi-p-${matchStart}`}
           dir="ltr"
-          className={isShort ? "inline-block whitespace-nowrap" : "inline"}
+          className={isShort ? "inline-block whitespace-nowrap" : "inline break-words"}
         >
           {parenSegment}
         </bdi>
@@ -871,7 +871,7 @@ export function DialogueCard({
           {cleanTranslation && (
             <span
               dir="rtl"
-              className="text-slate-700 dark:text-slate-200 text-sm sm:text-base font-normal leading-relaxed text-right flex-1 min-w-[200px] select-text"
+              className="text-slate-700 dark:text-slate-200 text-sm sm:text-base font-normal leading-relaxed text-right min-w-0 basis-full sm:basis-auto sm:flex-1 select-text"
             >
               {cleanTranslation}
             </span>
@@ -1467,7 +1467,7 @@ export function VocabularyCard({
           {cleanTranslation && (
             <span
               dir="rtl"
-              className="text-slate-700 dark:text-slate-200 text-sm sm:text-base font-normal leading-relaxed text-right flex-1 min-w-[200px]"
+              className="text-slate-700 dark:text-slate-200 text-sm sm:text-base font-normal leading-relaxed text-right min-w-0 basis-full sm:basis-auto sm:flex-1"
             >
               {cleanTranslation}
             </span>
@@ -1621,9 +1621,11 @@ function renderHtmlTable(
   );
 
   return (
-    <div className="my-8 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl">
+    <div className="my-8 -mx-1 sm:mx-0 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl">
       <table
-        className={`w-full border-collapse text-xs sm:text-sm text-slate-200 ${
+        className={`${
+          maxCols >= 3 ? "min-w-[480px] sm:min-w-full" : "w-full"
+        } border-collapse text-xs sm:text-sm text-slate-200 ${
           isAr ? "text-right" : "text-left"
         }`}
         dir={isAr ? "rtl" : "ltr"}
@@ -1637,7 +1639,7 @@ function renderHtmlTable(
                 <th
                   key={`th-${hIdx}`}
                   colSpan={colSpan}
-                  className={`p-3.5 sm:p-4 font-bold border-b border-slate-800/60 text-blue-400 ${
+                  className={`p-2.5 sm:p-4 font-bold border-b border-slate-800/60 text-blue-400 ${
                     colSpan > 1
                       ? "text-center"
                       : isAr
@@ -1660,7 +1662,7 @@ function renderHtmlTable(
               {row.map((cell, cIdx) => (
                 <td
                   key={`td-${rIdx}-${cIdx}`}
-                  className={`p-3.5 sm:p-4 border-b border-slate-800/60 text-slate-200 leading-relaxed ${
+                  className={`p-2.5 sm:p-4 border-b border-slate-800/60 text-slate-200 leading-relaxed ${
                     isAr ? "text-right" : "text-left"
                   }`}
                 >
@@ -1686,11 +1688,11 @@ function renderDiagramUI(
   if (diagram.type === "branching") {
     return (
       <div
-        className="my-10 p-6 sm:p-8 rounded-3xl bg-slate-900/95 border border-slate-800 shadow-2xl space-y-6"
+        className="my-10 p-4 sm:p-8 rounded-3xl bg-slate-900/95 border border-slate-800 shadow-2xl space-y-6"
         dir={isAr ? "rtl" : "ltr"}
       >
         {/* Top Root Card */}
-        <div className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 sm:p-6 text-center shadow-lg space-y-2">
+        <div className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 sm:p-6 text-center shadow-lg space-y-2">
           <div className="text-base sm:text-lg font-black text-white">
             {renderInlineContent(diagram.root.title, isLessonMode, isAr)}
           </div>
@@ -1728,10 +1730,10 @@ function renderDiagramUI(
             return (
               <div
                 key={`branch-${idx}`}
-                className={`rounded-2xl bg-slate-950/70 border ${accentBg} p-5 sm:p-6 flex flex-col justify-between space-y-4 shadow-md transition-all`}
+                className={`rounded-2xl bg-slate-950/70 border ${accentBg} p-4 sm:p-6 flex flex-col justify-between space-y-4 shadow-md transition-all`}
               >
                 <div className="space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-bold text-white ${badgeBg} shadow-sm`}
                     >
@@ -1780,7 +1782,7 @@ function renderDiagramUI(
 
         {/* Bottom Outcome Card */}
         {diagram.outcome && (
-          <div className="bg-gradient-to-br from-emerald-950/60 to-slate-900 border border-emerald-500/40 rounded-2xl p-5 sm:p-6 text-center shadow-lg space-y-2">
+          <div className="bg-gradient-to-br from-emerald-950/60 to-slate-900 border border-emerald-500/40 rounded-2xl p-4 sm:p-6 text-center shadow-lg space-y-2">
             <div className="inline-flex items-center justify-center gap-2 text-base sm:text-lg font-black text-emerald-300">
               <span className="text-xl">🏆</span>
               <span>
@@ -1803,7 +1805,7 @@ function renderDiagramUI(
   if (diagram.type === "timeline") {
     return (
       <div
-        className="my-10 p-6 sm:p-8 rounded-3xl bg-slate-900/95 border border-slate-800 shadow-2xl space-y-6"
+        className="my-10 p-4 sm:p-8 rounded-3xl bg-slate-900/95 border border-slate-800 shadow-2xl space-y-6"
         dir={isAr ? "rtl" : "ltr"}
       >
         {diagram.title && (
@@ -1831,7 +1833,7 @@ function renderDiagramUI(
             return (
               <div
                 key={`step-${sIdx}`}
-                className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-slate-950/70 border border-slate-800 hover:border-slate-700 transition-all"
+                className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 sm:p-5 rounded-2xl bg-slate-950/70 border border-slate-800 hover:border-slate-700 transition-all"
               >
                 <div className="flex items-center gap-3 text-sm sm:text-base font-semibold text-slate-200">
                   <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0" />
@@ -1872,7 +1874,7 @@ function renderDiagramUI(
   // Generic fallback
   return (
     <div
-      className="my-8 p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3"
+      className="my-8 p-4 sm:p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3"
       dir={isAr ? "rtl" : "ltr"}
     >
       {diagram.nodes.map((node, nIdx) => (
@@ -2085,13 +2087,13 @@ export default function LessonContentRenderer({
 
             return (
               <div className="mt-12 mb-6 pt-4" dir={isAr ? "rtl" : "ltr"}>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug flex items-center gap-3 text-start">
+                <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug flex items-center gap-3 text-start">
                   {isLessonSection && (
                     <span className="w-9 h-9 rounded-xl bg-blue-600/15 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 border border-blue-300/40 dark:border-blue-800/50 flex items-center justify-center text-lg shrink-0">
                       {badgeIcon}
                     </span>
                   )}
-                  <span>{renderInlineContent(children, isLessonMode, isAr)}</span>
+                  <span className="min-w-0 flex-1 break-words">{renderInlineContent(children, isLessonMode, isAr)}</span>
                 </h2>
                 <div className="mt-2 h-0.5 w-full bg-gradient-to-r from-blue-500/40 via-slate-200 dark:via-slate-800 to-transparent" />
               </div>
@@ -2118,7 +2120,7 @@ export default function LessonContentRenderer({
                     <span className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-emerald-600 text-white flex items-center justify-center text-xl shrink-0 shadow-sm select-none">
                       🚀
                     </span>
-                    <h3 className="text-xl sm:text-2xl font-extrabold text-white leading-snug">
+                    <h3 className="text-lg sm:text-2xl font-extrabold text-white leading-snug min-w-0 flex-1 break-words">
                       {renderInlineContent(children, isLessonMode, isAr)}
                     </h3>
                   </div>
@@ -2128,11 +2130,11 @@ export default function LessonContentRenderer({
 
             return (
               <h3
-                className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mt-8 mb-4 leading-snug flex items-baseline gap-2.5 text-start"
+                className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mt-8 mb-4 leading-snug flex items-baseline gap-2.5 text-start"
                 dir={isAr ? "rtl" : "ltr"}
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0" />
-                <span>{renderInlineContent(children, isLessonMode, isAr)}</span>
+                <span className="min-w-0 flex-1 break-words">{renderInlineContent(children, isLessonMode, isAr)}</span>
               </h3>
             );
           },
@@ -2365,7 +2367,7 @@ export default function LessonContentRenderer({
 
             return (
               <p
-                className="text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed sm:leading-loose mb-6 font-normal text-start"
+                className="text-base sm:text-lg text-slate-200 leading-relaxed sm:leading-loose mb-6 font-normal text-start break-words"
                 dir={isAr ? "rtl" : "ltr"}
               >
                 {renderInlineContent(children, isLessonMode, isAr)}
@@ -2416,12 +2418,12 @@ export default function LessonContentRenderer({
               // Generic list item containing non-tool links
               return (
                 <li
-                  className="text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed my-2 text-start list-none"
+                  className="text-base sm:text-lg text-slate-200 leading-relaxed sm:leading-loose my-2 text-start list-none break-words"
                   dir={isAr ? "rtl" : "ltr"}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 min-w-0">
                     <span className="w-2 h-2 rounded-full bg-blue-500 mt-2.5 shrink-0" />
-                    <div className="flex-1 select-text">
+                    <div className="flex-1 min-w-0 select-text">
                       {renderInlineContent(children, isLessonMode, isAr)}
                     </div>
                   </div>
@@ -2489,12 +2491,12 @@ export default function LessonContentRenderer({
             // Clean Editorial Bullet Item
             return (
               <li
-                className="text-base sm:text-lg lg:text-xl text-slate-700 dark:text-slate-300 leading-relaxed sm:leading-loose my-2 text-start list-none"
+                className="text-base sm:text-lg text-slate-200 leading-relaxed sm:leading-loose my-2 text-start list-none break-words"
                 dir={isAr ? "rtl" : "ltr"}
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 min-w-0">
                   <span className="w-2 h-2 rounded-full bg-blue-500 mt-3 shrink-0" />
-                  <div className="flex-1 select-text">
+                  <div className="flex-1 min-w-0 select-text">
                     {renderInlineContent(children, isLessonMode, isAr)}
                   </div>
                 </div>
@@ -2556,7 +2558,7 @@ export default function LessonContentRenderer({
 
             return (
               <code
-                className="px-2 py-0.5 mx-1 rounded-md bg-blue-500/10 dark:bg-blue-400/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 text-sm sm:text-base font-semibold inline align-baseline select-text font-mono before:content-none after:content-none"
+                className="px-2 py-0.5 mx-1 rounded-md bg-blue-500/10 dark:bg-blue-400/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 text-sm sm:text-base font-semibold inline align-baseline select-text font-mono before:content-none after:content-none break-words whitespace-normal"
                 dir="ltr"
               >
                 {children}
@@ -2583,7 +2585,7 @@ export default function LessonContentRenderer({
               return (
                 <span
                   dir="ltr"
-                  className="px-2.5 py-0.5 mx-1 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-300 border border-blue-500/30 font-bold text-sm sm:text-base inline-block align-baseline font-mono before:content-none after:content-none"
+                  className="px-2.5 py-0.5 mx-1 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-300 border border-blue-500/30 font-bold text-sm sm:text-base inline-block align-baseline font-mono before:content-none after:content-none break-words whitespace-normal"
                 >
                   {text}
                 </span>
@@ -2601,9 +2603,9 @@ export default function LessonContentRenderer({
             );
           },
           table: ({ children }) => (
-            <div className="my-8 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl">
+            <div className="my-8 -mx-1 sm:mx-0 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl">
               <table
-                className={`w-full border-collapse text-xs sm:text-sm text-slate-200 ${
+                className={`w-full min-w-[480px] sm:min-w-full border-collapse text-xs sm:text-sm text-slate-200 ${
                   isAr ? "text-right" : "text-left"
                 }`}
                 dir={isAr ? "rtl" : "ltr"}
@@ -2629,7 +2631,7 @@ export default function LessonContentRenderer({
           ),
           th: ({ children }) => (
             <th
-              className={`p-3.5 sm:p-4 font-bold border-b border-slate-800/60 text-blue-400 ${
+              className={`p-2.5 sm:p-4 font-bold border-b border-slate-800/60 text-blue-400 ${
                 isAr ? "text-right" : "text-left"
               }`}
               dir={isAr ? "rtl" : "ltr"}
@@ -2639,7 +2641,7 @@ export default function LessonContentRenderer({
           ),
           td: ({ children }) => (
             <td
-              className={`p-3.5 sm:p-4 border-b border-slate-800/60 text-slate-200 leading-relaxed ${
+              className={`p-2.5 sm:p-4 border-b border-slate-800/60 text-slate-200 leading-relaxed ${
                 isAr ? "text-right" : "text-left"
               }`}
               dir={isAr ? "rtl" : "ltr"}

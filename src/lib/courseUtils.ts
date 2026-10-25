@@ -678,13 +678,13 @@ export function formatBidiInlineText(
     const statusPunct = match[4];
 
     if (parenSegment) {
-      const isShort = parenSegment.length <= 38;
+      const isShort = parenSegment.length <= 14 && !/\s/.test(parenSegment);
       const bdiEl = React.createElement(
         "bdi",
         {
           key: `bdi-p-${matchStart}`,
           dir: "ltr",
-          className: isShort ? "inline-block whitespace-nowrap" : "inline",
+          className: isShort ? "inline-block whitespace-nowrap" : "inline break-words",
         },
         parenSegment
       );
