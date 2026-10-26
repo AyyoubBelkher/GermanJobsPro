@@ -26,7 +26,7 @@ export default async function DossierPage({
     redirect(`/${locale}/auth/login`);
   }
 
-  const [userCvs, userCoverLetters] = await withDbRetry(() =>
+  const [userCvsRaw, userCoverLetters] = await withDbRetry(() =>
     Promise.all([
       prisma.cv.findMany({
         where: { userId: authResult.user.id },
@@ -34,6 +34,7 @@ export default async function DossierPage({
           id: true,
           title: true,
           language: true,
+          personalInfo: true,
         },
         orderBy: { updatedAt: "desc" },
       }),
@@ -49,6 +50,20 @@ export default async function DossierPage({
       }),
     ])
   );
+
+  const userCvs = userCvsRaw.map((cv) => ({
+    id: cv.id,
+    title: cv.title,
+    language: cv.language,
+    fullName: cv.personalInfo?.fullName || authResult.user.name || "Bewerber",
+    targetJobTitle: cv.personalInfo?.targetJobTitle || null,
+    email: cv.personalInfo?.email || authResult.user.email || "",
+    phone: cv.personalInfo?.phone || null,
+    address: cv.personalInfo?.address || null,
+    linkedinUrl: cv.personalInfo?.linkedinUrl || null,
+    linkedin: cv.personalInfo?.linkedinUrl || null,
+    photoUrl: cv.personalInfo?.photoUrl || null,
+  }));
 
   return (
     <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between">

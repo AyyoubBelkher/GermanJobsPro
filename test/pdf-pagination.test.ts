@@ -1,9 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import React from "react";
-import ReactPDF from "@react-pdf/renderer";
+import ReactPDF, { renderToBuffer } from "@react-pdf/renderer";
 import { getDocumentProxy } from "unpdf";
 import { CvDocument, CvPdfData, formatDate, formatDateRange } from "../src/lib/pdf/cv-template.js";
+import { DeckblattDocument, DeckblattData } from "../src/lib/pdf/deckblatt-template.js";
+import { compileBewerbungsmappe } from "../src/lib/pdf/dossier-compiler.js";
 import { extractCityFromAddress } from "../src/lib/location.js";
 
 async function countPages(doc: React.ReactElement<any>): Promise<number> {
@@ -331,5 +333,119 @@ test("PDF Pagination & Visual Integrity Suite", async (t) => {
 
     const pages = await countPages(React.createElement(CvDocument, { cv: oussamaCv }));
     assert.strictEqual(pages, 1, `Oussama CV must render cleanly on 1 page, got ${pages}`);
+  });
+
+  await t.test("P6: DeckblattDocument renders strictly to 1 page both with and without photo", async () => {
+    const sampleDeckblattWithPhoto: DeckblattData = {
+      fullName: "Max Mustermann",
+      email: "max.mustermann@example.de",
+      phone: "+49 170 1234567",
+      address: "Musterstraße 1, 10115 Berlin",
+      targetJobTitle: "Senior Frontend-Entwickler",
+      companyName: "TechCorp GmbH",
+      photoBase64:
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      linkedinUrl: "https://linkedin.com/in/maxmustermann",
+      attachments: [
+        "Anschreiben",
+        "Lebenslauf",
+        "Arbeitszeugnis TechCorp",
+        "Bachelor-Urkunde Informatik",
+      ],
+    };
+
+    const sampleDeckblattNoPhoto: DeckblattData = {
+      fullName: "Erika Musterfrau",
+      email: "erika.musterfrau@example.de",
+      phone: "+49 171 9876543",
+      address: "Hauptstraße 42, 80331 München",
+      targetJobTitle: "Projektleiterin Marketing",
+      companyName: "Medienwerk AG",
+      photoBase64: undefined,
+      photoUrl: null,
+      photoBuffer: null,
+      attachments: [
+        "Anschreiben",
+        "Lebenslauf (Tabellarisch)",
+        "Referenzen & Zeugnisse",
+      ],
+    };
+
+    // 1. Render with photo using @react-pdf/renderer renderToBuffer
+    const bufferWithPhoto = await renderToBuffer(
+      React.createElement(DeckblattDocument, { data: sampleDeckblattWithPhoto }) as any
+    );
+    assert.ok(bufferWithPhoto.byteLength > 0, "Buffer with photo must not be empty");
+    const proxyWithPhoto = await getDocumentProxy(new Uint8Array(bufferWithPhoto));
+    assert.strictEqual(
+      proxyWithPhoto.numPages,
+      1,
+      `Deckblatt with photo must render to exactly 1 page, got ${proxyWithPhoto.numPages}`
+    );
+
+    // 2. Render without photo using @react-pdf/renderer renderToBuffer (initials monogram crest)
+    const bufferNoPhoto = await renderToBuffer(
+      React.createElement(DeckblattDocument, { data: sampleDeckblattNoPhoto }) as any
+    );
+    assert.ok(bufferNoPhoto.byteLength > 0, "Buffer without photo must not be empty");
+    const proxyNoPhoto = await getDocumentProxy(new Uint8Array(bufferNoPhoto));
+    assert.strictEqual(
+      proxyNoPhoto.numPages,
+      1,
+      `Deckblatt without photo must render to exactly 1 page, got ${proxyNoPhoto.numPages}`
+    );
+  });
+
+  await t.test("P7: compileBewerbungsmappe integrates customJobTitle, customCompanyName, and includePhoto toggle", async () => {
+    const dummyPngBytes = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      "base64"
+    );
+
+    const miniCv: CvPdfData = {
+      title: "Lebenslauf",
+      language: "de",
+      personalInfo: {
+        fullName: "Klaus Schmidt",
+        email: "klaus@example.de",
+        phone: "+49 30 11223344",
+        address: "Alexanderplatz 1, 10178 Berlin",
+        targetJobTitle: "Systemadministrator",
+        summary: "Erfahrener Administrator",
+      },
+      experiences: [],
+      educations: [],
+      skills: [],
+      languages: [],
+    };
+
+    // 1. Compile with includePhoto = false -> clears photo on Deckblatt
+    const dossierNoPhotoBytes = await compileBewerbungsmappe({
+      cvData: miniCv,
+      includeDeckblatt: true,
+      customJobTitle: "DevOps Engineer",
+      customCompanyName: "CloudTech Berlin GmbH",
+      includePhoto: false,
+      photoBuffer: dummyPngBytes, // supplied but should be stripped by includePhoto: false
+    });
+
+    assert.ok(dossierNoPhotoBytes.byteLength > 0, "Dossier PDF bytes must not be empty");
+    const proxyNoPhoto = await getDocumentProxy(dossierNoPhotoBytes);
+    // At least Deckblatt (1) + CV (1) = 2 pages
+    assert.ok(proxyNoPhoto.numPages >= 2, `Dossier should have at least 2 pages, got ${proxyNoPhoto.numPages}`);
+
+    // 2. Compile with includePhoto = true -> attaches photoBuffer
+    const dossierWithPhotoBytes = await compileBewerbungsmappe({
+      cvData: miniCv,
+      includeDeckblatt: true,
+      customJobTitle: "Site Reliability Engineer",
+      customCompanyName: "Platform Solutions AG",
+      includePhoto: true,
+      photoBuffer: dummyPngBytes,
+    });
+
+    assert.ok(dossierWithPhotoBytes.byteLength > 0, "Dossier PDF with photo must not be empty");
+    const proxyWithPhoto = await getDocumentProxy(dossierWithPhotoBytes);
+    assert.ok(proxyWithPhoto.numPages >= 2, `Dossier with photo should have at least 2 pages, got ${proxyWithPhoto.numPages}`);
   });
 });

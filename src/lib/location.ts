@@ -159,3 +159,19 @@ export function extractCityFromAddress(
 
   return fallback;
 }
+
+/**
+ * Extracts candidate initials for executive monogram badges and crests.
+ * Examples:
+ * - "Dr. Max Mustermann" -> "MM"
+ * - "Anas El Amrani" -> "AA"
+ * - "John" -> "JO"
+ */
+export function getInitials(name?: string | null): string {
+  if (!name || typeof name !== "string") return "B";
+  const cleaned = name.replace(/^(Dr\.|Prof\.|Herr|Frau|Mr\.|Ms\.|Mrs\.)\s+/i, "").trim();
+  const parts = cleaned.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "B";
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}

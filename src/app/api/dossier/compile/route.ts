@@ -77,11 +77,14 @@ export async function POST(request: NextRequest) {
 
     const coverLetterId = formData.get("coverLetterId") as string | null;
     const includeDeckblatt = formData.get("includeDeckblatt") === "true";
+    const customJobTitle = ((formData.get("customJobTitle") as string | null) || "").trim();
+    const customCompanyName = ((formData.get("customCompanyName") as string | null) || "").trim();
+    const includePhoto = formData.get("includePhoto") !== "false";
 
     // Extract applicant photo if provided for Deckblatt
     const photoFileEntry = formData.get("photoFile") || formData.get("photo");
     let photoBuffer: Buffer | null = null;
-    if (photoFileEntry && photoFileEntry instanceof Blob && photoFileEntry.size > 0) {
+    if (includePhoto && photoFileEntry && photoFileEntry instanceof Blob && photoFileEntry.size > 0) {
       const isImage =
         photoFileEntry.type.startsWith("image/") ||
         /\.(jpe?g|png|webp|jpg)$/i.test(photoFileEntry instanceof File ? photoFileEntry.name : "");
@@ -195,9 +198,9 @@ export async function POST(request: NextRequest) {
         fullName: authResult.user.name || "Bewerber",
         email: authResult.user.email,
         phone: null,
-        address: "Deutschland",
-        targetJobTitle: null,
-        companyName: null,
+        address: null,
+        targetJobTitle: customJobTitle || null,
+        companyName: customCompanyName || null,
         attachments: [],
       };
 
@@ -215,7 +218,9 @@ export async function POST(request: NextRequest) {
             if (extracted.email) deckblattMetadata.email = extracted.email;
             if (extracted.phone) deckblattMetadata.phone = extracted.phone;
             if (extracted.address) deckblattMetadata.address = extracted.address;
-            if (extracted.targetJobTitle) deckblattMetadata.targetJobTitle = extracted.targetJobTitle;
+            if (!customJobTitle && extracted.targetJobTitle) {
+              deckblattMetadata.targetJobTitle = extracted.targetJobTitle;
+            }
           }
         }
       } catch (extractErr: unknown) {
@@ -233,8 +238,10 @@ export async function POST(request: NextRequest) {
         });
 
         if (coverLetter) {
-          deckblattMetadata.companyName = coverLetter.companyName;
-          if (coverLetter.jobTitle) {
+          if (!customCompanyName && coverLetter.companyName) {
+            deckblattMetadata.companyName = coverLetter.companyName;
+          }
+          if (!customJobTitle && coverLetter.jobTitle) {
             deckblattMetadata.targetJobTitle = extractGermanJobTitle(coverLetter.jobTitle);
           }
 
@@ -256,13 +263,27 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      deckblattMetadata.targetJobTitle =
+        customJobTitle || deckblattMetadata.targetJobTitle || null;
+      deckblattMetadata.companyName =
+        customCompanyName || deckblattMetadata.companyName || null;
+
+      if (!includePhoto) {
+        deckblattMetadata.photoUrl = null;
+        deckblattMetadata.photoBuffer = null;
+        deckblattMetadata.photoBase64 = null;
+      }
+
       compiledPdfBytes = await compileApplicationDossier({
         cvPdfBuffer: cvFileBuffer,
         coverLetterData,
         includeDeckblatt,
         deckblattMetadata,
-        photoBuffer,
+        photoBuffer: includePhoto ? photoBuffer : null,
         attachmentBuffers,
+        customJobTitle,
+        customCompanyName,
+        includePhoto,
       });
     } else {
       // 3. Handle Saved Database CV
@@ -320,7 +341,7 @@ export async function POST(request: NextRequest) {
                   fullName: authResult.user.name || "Bewerber",
                   email: authResult.user.email,
                   phone: null,
-                  address: "Deutschland",
+                  address: null,
                 },
           };
         }
@@ -338,12 +359,46 @@ export async function POST(request: NextRequest) {
         projects: cv.projects,
       };
 
+      const resolvedJobTitle =
+        customJobTitle ||
+        (coverLetterData?.jobTitle ? extractGermanJobTitle(coverLetterData.jobTitle) : undefined) ||
+        cv.personalInfo?.targetJobTitle ||
+        null;
+
+      const resolvedCompanyName =
+        customCompanyName ||
+        coverLetterData?.companyName ||
+        null;
+
+      const deckblattMetadata: DeckblattData = {
+        fullName: cv.personalInfo?.fullName || authResult.user.name || "Bewerber",
+        email: cv.personalInfo?.email || authResult.user.email,
+        phone: cv.personalInfo?.phone || null,
+        address: cv.personalInfo?.address || null,
+        photoUrl: includePhoto ? (photoBuffer ? null : cv.personalInfo?.photoUrl || null) : null,
+        targetJobTitle: resolvedJobTitle,
+        companyName: resolvedCompanyName,
+        linkedinUrl: cv.personalInfo?.linkedinUrl || null,
+        xingUrl: cv.personalInfo?.xingUrl || null,
+        attachments: [],
+      };
+
+      if (!includePhoto) {
+        deckblattMetadata.photoUrl = null;
+        deckblattMetadata.photoBuffer = null;
+        deckblattMetadata.photoBase64 = null;
+      }
+
       compiledPdfBytes = await compileApplicationDossier({
         cvData,
         coverLetterData,
         includeDeckblatt,
-        photoBuffer,
+        deckblattMetadata,
+        photoBuffer: includePhoto ? photoBuffer : null,
         attachmentBuffers,
+        customJobTitle,
+        customCompanyName,
+        includePhoto,
       });
     }
 

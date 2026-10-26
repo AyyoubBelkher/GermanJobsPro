@@ -18,6 +18,9 @@ export interface CompileDossierParams {
   deckblattMetadata?: DeckblattData | null;
   photoBuffer?: Uint8Array | Buffer | null;
   attachmentBuffers?: DossierAttachment[];
+  customJobTitle?: string | null;
+  customCompanyName?: string | null;
+  includePhoto?: boolean;
 }
 
 /**
@@ -48,6 +51,9 @@ export async function compileBewerbungsmappe({
   deckblattMetadata,
   photoBuffer,
   attachmentBuffers = [],
+  customJobTitle,
+  customCompanyName,
+  includePhoto = true,
 }: CompileDossierParams): Promise<Uint8Array> {
   const masterPdf = await PDFDocument.create();
 
@@ -61,23 +67,45 @@ export async function compileBewerbungsmappe({
       defaultAnlagenList.push("Arbeitszeugnisse & Nachweise");
     }
 
-    const deckblattData: DeckblattData = deckblattMetadata || {
-      fullName: cvData?.personalInfo?.fullName || "Bewerber",
-      email: cvData?.personalInfo?.email || "",
-      phone: cvData?.personalInfo?.phone,
-      address: cvData?.personalInfo?.address,
-      photoUrl: cvData?.personalInfo?.photoUrl,
-      targetJobTitle:
-        (coverLetterData?.jobTitle ? extractGermanJobTitle(coverLetterData.jobTitle) : undefined) ||
-        cvData?.personalInfo?.targetJobTitle,
-      companyName: coverLetterData?.companyName,
-      linkedinUrl: cvData?.personalInfo?.linkedinUrl,
-      xingUrl: cvData?.personalInfo?.xingUrl,
-      attachments: defaultAnlagenList,
-    };
+    const resolvedJobTitle =
+      (customJobTitle && customJobTitle.trim() ? customJobTitle.trim() : undefined) ||
+      deckblattMetadata?.targetJobTitle ||
+      (coverLetterData?.jobTitle ? extractGermanJobTitle(coverLetterData.jobTitle) : undefined) ||
+      cvData?.personalInfo?.targetJobTitle ||
+      undefined;
 
-    if (photoBuffer) {
+    const resolvedCompanyName =
+      (customCompanyName && customCompanyName.trim() ? customCompanyName.trim() : undefined) ||
+      deckblattMetadata?.companyName ||
+      coverLetterData?.companyName ||
+      undefined;
+
+    const deckblattData: DeckblattData = deckblattMetadata
+      ? { ...deckblattMetadata }
+      : {
+          fullName: cvData?.personalInfo?.fullName || "Bewerber",
+          email: cvData?.personalInfo?.email || "",
+          phone: cvData?.personalInfo?.phone,
+          address: cvData?.personalInfo?.address,
+          photoUrl: cvData?.personalInfo?.photoUrl,
+          targetJobTitle: resolvedJobTitle,
+          companyName: resolvedCompanyName,
+          linkedinUrl: cvData?.personalInfo?.linkedinUrl,
+          xingUrl: cvData?.personalInfo?.xingUrl,
+          attachments: defaultAnlagenList,
+        };
+
+    deckblattData.targetJobTitle = resolvedJobTitle;
+    deckblattData.companyName = resolvedCompanyName;
+
+    if (photoBuffer && includePhoto !== false) {
       deckblattData.photoBuffer = toUint8Array(photoBuffer);
+    }
+
+    if (includePhoto === false) {
+      deckblattData.photoBuffer = null;
+      deckblattData.photoUrl = null;
+      deckblattData.photoBase64 = null;
     }
 
     if (!deckblattData.attachments || deckblattData.attachments.length === 0) {
