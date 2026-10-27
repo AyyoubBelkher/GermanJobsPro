@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { verifyUserSession } from "@/lib/user-session";
+import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 
 /**
  * POST /api/promo/redeem
  * Redeems a promotional or trial code for the authenticated user.
  */
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = checkRateLimit(request, AUTH_RATE_LIMITS.VERIFY_CODE);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("user_session")?.value;

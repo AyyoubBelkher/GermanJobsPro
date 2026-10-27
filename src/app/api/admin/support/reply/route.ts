@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resend } from "@/lib/email";
+import { resend, escapeHtml } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-auth";
 
@@ -9,7 +9,10 @@ function getReplyEmailHtml(params: {
   replyMessage: string;
   ticketId: string;
 }): string {
-  const { recipientName, originalSubject, replyMessage, ticketId } = params;
+  const recipientName = escapeHtml(params.recipientName);
+  const originalSubject = escapeHtml(params.originalSubject);
+  const replyMessage = escapeHtml(params.replyMessage);
+  const ticketId = escapeHtml(params.ticketId);
 
   return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
+import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
 
 export default function LoginPage({
   params: paramsPromise,
@@ -46,6 +47,37 @@ export default function LoginPage({
       isMounted = false;
     };
   }, [locale, router]);
+
+  // Check for OAuth error query param
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const oauthErr = params.get("error");
+      if (oauthErr) {
+        if (oauthErr === "access_denied") {
+          setErrorMessage(
+            isAr
+              ? "تم إلغاء عملية تسجيل الدخول باستخدام Google."
+              : isDe
+              ? "Google-Anmeldung wurde abgebrochen."
+              : locale === "fr"
+              ? "Connexion Google annulée."
+              : "Google sign-in was cancelled."
+          );
+        } else {
+          setErrorMessage(
+            isAr
+              ? "حدث خطأ أثناء تسجيل الدخول باستخدام Google. يرجى المحاولة مرة أخرى."
+              : isDe
+              ? "Fehler bei der Google-Anmeldung. Bitte erneut versuchen."
+              : locale === "fr"
+              ? "Une erreur est survenue lors de la connexion Google. Veuillez réessayer."
+              : "An error occurred during Google sign-in. Please try again."
+          );
+        }
+      }
+    }
+  }, [locale, isAr, isDe]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,6 +175,8 @@ export default function LoginPage({
               )}
             </div>
           )}
+
+          <GoogleAuthButton locale={locale} />
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

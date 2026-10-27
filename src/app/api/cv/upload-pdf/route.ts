@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifyUserSession } from "@/lib/user-session";
 import { extractText } from "unpdf";
+import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -10,6 +11,9 @@ const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
  * Extracts and normalizes text from an uploaded PDF file for ATS Analysis using unpdf.
  */
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = checkRateLimit(request, AUTH_RATE_LIMITS.AI_API);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("user_session")?.value;

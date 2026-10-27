@@ -78,6 +78,18 @@ export const AUTH_RATE_LIMITS = {
     windowMs: 15 * 60 * 1000, // 15 minutes (max 5 subscriptions per IP per 15 min)
     message: "تم تجاوز الحد المسموح للاشتراك في النشرة البريدية. يرجى المحاولة لاحقاً / Too many newsletter subscription attempts. Please try again later.",
   },
+  VERIFY_CODE: {
+    action: "auth:verify-code",
+    limit: 5,
+    windowMs: 15 * 60 * 1000, // 15 minutes (5 req / 15 min)
+    message: "تم تجاوز الحد المسموح من المحاولات. يرجى المحاولة بعد 15 دقيقة / Too many verification attempts. Please try again later.",
+  },
+  PASSWORD_RESET: {
+    action: "auth:reset-password",
+    limit: 5,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    message: "تم تجاوز الحد المسموح لإعادة تعيين كلمة المرور. يرجى المحاولة لاحقاً / Too many password reset attempts. Please try again later.",
+  },
 } as const;
 
 /**
@@ -202,7 +214,7 @@ if (process.env.NODE_ENV !== "production") {
  * Returns a 429 NextResponse if rate limit is exceeded, or null if allowed.
  */
 export function checkRateLimit(
-  request: NextRequest,
+  request: NextRequest | Request,
   config: RateLimitConfig
 ): NextResponse | null {
   const ip = getClientIp(request);

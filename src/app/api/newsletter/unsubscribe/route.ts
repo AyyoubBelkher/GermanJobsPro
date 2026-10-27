@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyUnsubscribeToken } from "@/lib/session";
+import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function GET(req: NextRequest) {
   try {
@@ -43,10 +44,15 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const rateLimitResponse = checkRateLimit(req, AUTH_RATE_LIMITS.PASSWORD_RESET);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await req.json().catch(() => ({}));
-    const emailRaw = body.email;
-    const token = body.token;
+    const emailRaw = body?.email;
+    const token = typeof body?.token === "string" ? body.token.trim() : "";
 
     if (!emailRaw || typeof emailRaw !== "string") {
       return NextResponse.json(
@@ -55,37 +61,34 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const email = emailRaw.trim().toLowerCase();
-
-    if (!token || typeof token !== "string" || token.trim() === "") {
+    const normalizedEmail = emailRaw.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!normalizedEmail || !emailRegex.test(normalizedEmail)) {
       return NextResponse.json(
-        { success: false, error: "رمز إلغاء الاشتراك غير صالِح" },
-        { status: 403 }
+        { success: false, error: "يرجى إدخال بريد إلكتروني صالح." },
+        { status: 400 }
       );
     }
 
-    const isValid = await verifyUnsubscribeToken(email, token.trim());
-    if (!isValid) {
-      return NextResponse.json(
-        { success: false, error: "رمز إلغاء الاشتراك غير صالِح" },
-        { status: 403 }
-      );
+    if (token) {
+      const isValid = await verifyUnsubscribeToken(normalizedEmail, token);
+      if (!isValid) {
+        return NextResponse.json(
+          { success: false, error: "رمز إلغاء الاشتراك غير صالِح" },
+          { status: 403 }
+        );
+      }
     }
 
     const existing = await prisma.subscriber.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
-    if (!existing) {
-      return NextResponse.json(
-        { success: false, error: "هذا البريد الإلكتروني غير مسجل في النشرة البريدية." },
-        { status: 404 }
-      );
+    if (existing) {
+      await prisma.subscriber.delete({
+        where: { email: normalizedEmail },
+      });
     }
-
-    await prisma.subscriber.delete({
-      where: { email },
-    });
 
     return NextResponse.json(
       { success: true, message: "تم إلغاء اشتراكك بنجاح ✅" },

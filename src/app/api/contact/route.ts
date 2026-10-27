@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resend } from "@/lib/email";
+import { resend, escapeHtml } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 
@@ -88,18 +88,18 @@ export async function POST(request: NextRequest) {
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0b0f19; color: #ffffff; border: 1px solid #1e293b; border-radius: 16px; padding: 24px;">
               <h2 style="color: #60a5fa; margin-top: 0;">New Contact Form Message</h2>
               <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                <tr><td style="padding: 6px 0; color: #94a3b8; width: 100px;">Name:</td><td style="color: #ffffff; font-weight: bold;">${trimmedName}</td></tr>
-                <tr><td style="padding: 6px 0; color: #94a3b8;">Email:</td><td><a href="mailto:${trimmedEmail}" style="color: #38bdf8;">${trimmedEmail}</a></td></tr>
-                <tr><td style="padding: 6px 0; color: #94a3b8;">Category:</td><td style="color: #ffffff;">${trimmedCategory}</td></tr>
-                <tr><td style="padding: 6px 0; color: #94a3b8;">Subject:</td><td style="color: #ffffff;">${trimmedSubject}</td></tr>
-                <tr><td style="padding: 6px 0; color: #94a3b8;">Ticket ID:</td><td style="color: #cbd5e1; font-family: monospace;">${ticket.id}</td></tr>
+                <tr><td style="padding: 6px 0; color: #94a3b8; width: 100px;">Name:</td><td style="color: #ffffff; font-weight: bold;">${escapeHtml(trimmedName)}</td></tr>
+                <tr><td style="padding: 6px 0; color: #94a3b8;">Email:</td><td><a href="mailto:${escapeHtml(trimmedEmail)}" style="color: #38bdf8;">${escapeHtml(trimmedEmail)}</a></td></tr>
+                <tr><td style="padding: 6px 0; color: #94a3b8;">Category:</td><td style="color: #ffffff;">${escapeHtml(trimmedCategory)}</td></tr>
+                <tr><td style="padding: 6px 0; color: #94a3b8;">Subject:</td><td style="color: #ffffff;">${escapeHtml(trimmedSubject)}</td></tr>
+                <tr><td style="padding: 6px 0; color: #94a3b8;">Ticket ID:</td><td style="color: #cbd5e1; font-family: monospace;">${escapeHtml(ticket.id)}</td></tr>
               </table>
               <div style="background-color: #020617; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
                 <h4 style="margin: 0 0 8px 0; font-size: 12px; text-transform: uppercase; color: #94a3b8;">Message:</h4>
-                <p style="margin: 0; color: #e2e8f0; white-space: pre-wrap; line-height: 1.6;">${trimmedMessage}</p>
+                <p style="margin: 0; color: #e2e8f0; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(trimmedMessage)}</p>
               </div>
               <div style="text-align: center;">
-                <a href="mailto:${trimmedEmail}?subject=Re: ${encodeURIComponent(trimmedSubject)}" style="display: inline-block; padding: 10px 24px; background: #2563eb; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 8px;">
+                <a href="mailto:${encodeURIComponent(trimmedEmail)}?subject=Re: ${encodeURIComponent(trimmedSubject)}" style="display: inline-block; padding: 10px 24px; background: #2563eb; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 8px;">
                   Reply Directly to User ✉️
                 </a>
               </div>

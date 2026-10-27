@@ -14,6 +14,8 @@ import { CoverLetterPdfData, extractGermanJobTitle } from "@/lib/pdf/cover-lette
 import { DeckblattData } from "@/lib/pdf/deckblatt-template";
 import { extractApplicantInfoAI } from "@/lib/gemini";
 import { extractText } from "unpdf";
+import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
+import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
 
 const MAX_TOTAL_SIZE = 15 * 1024 * 1024; // 15MB
 
@@ -23,6 +25,9 @@ const MAX_TOTAL_SIZE = 15 * 1024 * 1024; // 15MB
  * Supports both saved database CVs and direct uploaded CV PDFs.
  */
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = checkRateLimit(request, AUTH_RATE_LIMITS.AI_API);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("user_session")?.value;
@@ -209,7 +214,40 @@ export async function POST(request: NextRequest) {
         const rawText = Array.isArray(text) ? text.join("\n") : String(text || "");
         const cleanedText = rawText.trim();
         if (cleanedText.length >= 25) {
-          const extracted = await extractApplicantInfoAI(cleanedText).catch(() => null);
+          let creditConsumed = false;
+          if (!isPro) {
+            const creditRes = await consumeAiCredit(authResult.user.id);
+            if (!creditRes.success || !creditRes.allowed) {
+              return NextResponse.json(
+                {
+                  success: false,
+                  error: "INSUFFICIENT_CREDITS",
+                  requiresPro: true,
+                  outOfCredits: true,
+                  message: "رصيد الذكاء الاصطناعي غير كافٍ لاستخراج بيانات السيرة الذاتية.",
+                },
+                { status: 402 }
+              );
+            }
+            creditConsumed = true;
+          }
+
+          let extracted = null;
+          try {
+            extracted = await extractApplicantInfoAI(cleanedText);
+          } catch (aiErr) {
+            console.error("[Dossier AI Extraction Error]:", aiErr);
+            if (creditConsumed) {
+              await refundAiCredit(authResult.user.id).catch(() => {});
+              creditConsumed = false;
+            }
+          }
+
+          if (!extracted && creditConsumed) {
+            await refundAiCredit(authResult.user.id).catch(() => {});
+            creditConsumed = false;
+          }
+
           if (extracted) {
             if (extracted.fullName) {
               deckblattMetadata.fullName = extracted.fullName;

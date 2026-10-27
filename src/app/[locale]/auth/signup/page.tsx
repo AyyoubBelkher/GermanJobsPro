@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
+import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
 
 export default function SignupPage({
   params: paramsPromise,
@@ -39,6 +40,37 @@ export default function SignupPage({
       isMounted = false;
     };
   }, [locale, router]);
+
+  // Check for OAuth error query param
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const oauthErr = params.get("error");
+      if (oauthErr) {
+        if (oauthErr === "access_denied") {
+          setErrorMessage(
+            isAr
+              ? "تم إلغاء عملية التسجيل باستخدام Google."
+              : isDe
+              ? "Google-Registrierung wurde abgebrochen."
+              : locale === "fr"
+              ? "Inscription Google annulée."
+              : "Google sign-up was cancelled."
+          );
+        } else {
+          setErrorMessage(
+            isAr
+              ? "حدث خطأ أثناء التسجيل باستخدام Google. يرجى المحاولة مرة أخرى."
+              : isDe
+              ? "Fehler bei der Google-Registrierung. Bitte erneut versuchen."
+              : locale === "fr"
+              ? "Une erreur est survenue lors de l'inscription Google. Veuillez réessayer."
+              : "An error occurred during Google sign-up. Please try again."
+          );
+        }
+      }
+    }
+  }, [locale, isAr, isDe]);
 
   // Step state: "signup" | "verify"
   const [step, setStep] = useState<"signup" | "verify">("signup");
@@ -374,6 +406,8 @@ export default function SignupPage({
                   {errorMessage}
                 </div>
               )}
+
+              <GoogleAuthButton locale={locale} />
 
               <form onSubmit={handleSignupSubmit} className="space-y-4">
                 <div>

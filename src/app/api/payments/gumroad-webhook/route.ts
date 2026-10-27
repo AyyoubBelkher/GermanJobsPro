@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { timingSafeCompare } from "@/lib/session";
+
+function timingSafeEqualStr(a: string, b: string): boolean {
+  const bufA = Buffer.from(a, "utf8");
+  const bufB = Buffer.from(b, "utf8");
+  if (bufA.length !== bufB.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
+}
 
 export interface GumroadPingPayload {
   email: string;
@@ -37,9 +47,14 @@ export interface GumroadPingPayload {
 export async function POST(request: NextRequest) {
   try {
     const webhookSecret = process.env.GUMROAD_WEBHOOK_SECRET?.trim();
+    if (!webhookSecret && process.env.NODE_ENV === "production") {
+      console.error("[Gumroad Webhook] CRITICAL: GUMROAD_WEBHOOK_SECRET is not configured in production");
+      return NextResponse.json({ success: false, error: "Service Unavailable" }, { status: 503 });
+    }
+
     if (webhookSecret) {
-      const secretParam = new URL(request.url).searchParams.get("secret");
-      if (!secretParam || !timingSafeCompare(secretParam, webhookSecret)) {
+      const providedSecret = new URL(request.url).searchParams.get("secret");
+      if (!providedSecret || !timingSafeEqualStr(providedSecret, webhookSecret)) {
         console.warn("[Gumroad Webhook] Secret mismatch or missing");
         return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
       }

@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       where: { email: normalizedEmail },
     });
 
-    if (!user) {
+    if (!user || !user.passwordHash) {
       // Generic timing mitigation delay
       await new Promise((r) => setTimeout(r, 500));
       return NextResponse.json(

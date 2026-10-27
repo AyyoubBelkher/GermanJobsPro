@@ -6,6 +6,7 @@ import { extractText } from "unpdf";
 import { magicImportCvAI } from "@/lib/gemini";
 import { consumeAiCredit, refundAiCredit, deductAiCreditAtomic } from "@/lib/monetization";
 import { logAiUsage } from "@/lib/ai-telemetry";
+import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 import {
   parseDateSafe,
   parseNullableDate,
@@ -20,6 +21,9 @@ const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
  * and atomically persists the full CV structure into SQLite database.
  */
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = checkRateLimit(request, AUTH_RATE_LIMITS.AI_API);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("user_session")?.value;

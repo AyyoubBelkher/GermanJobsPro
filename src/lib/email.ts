@@ -2,6 +2,20 @@ import { Resend } from "resend";
 
 export const resend = new Resend(process.env.RESEND_API_KEY || "re_placeholder");
 
+/**
+ * Escapes special characters for safe inclusion in HTML templates.
+ * Escapes &, <, >, ", and '.
+ */
+export function escapeHtml(str: string): string {
+  if (!str || typeof str !== "string") return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 interface SendEmailParams {
   to: string;
   subject: string;
@@ -415,6 +429,13 @@ export function getSupportTicketEmailHtml(ticket: {
   };
 
   const catLabel = categoryLabels[ticket.category] || ticket.category;
+  const safeName = escapeHtml(ticket.name);
+  const safeEmail = escapeHtml(ticket.email);
+  const safeCatLabel = escapeHtml(catLabel);
+  const safeSubject = escapeHtml(ticket.subject);
+  const safeId = escapeHtml(ticket.id);
+  const safeMessage = escapeHtml(ticket.message);
+
   const emailSubject = `[Support Ticket #${ticket.id.slice(-6)}] ${ticket.subject}`;
 
   const text = `New Support Ticket from ${ticket.name} (${ticket.email})
@@ -430,7 +451,7 @@ ${ticket.message}`;
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${emailSubject}</title>
+  <title>${escapeHtml(emailSubject)}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #020617; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #f8fafc;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #020617; padding: 40px 16px;">
@@ -454,27 +475,27 @@ ${ticket.message}`;
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
                 <tr>
                   <td style="font-size: 13px; color: #94a3b8; padding-bottom: 8px;">From:</td>
-                  <td style="font-size: 14px; font-weight: 700; color: #ffffff; padding-bottom: 8px;">${ticket.name} (<a href="mailto:${ticket.email}" style="color: #38bdf8; text-decoration: none;">${ticket.email}</a>)</td>
+                  <td style="font-size: 14px; font-weight: 700; color: #ffffff; padding-bottom: 8px;">${safeName} (<a href="mailto:${safeEmail}" style="color: #38bdf8; text-decoration: none;">${safeEmail}</a>)</td>
                 </tr>
                 <tr>
                   <td style="font-size: 13px; color: #94a3b8; padding-bottom: 8px;">Category:</td>
-                  <td style="font-size: 13px; font-weight: 600; color: #fbbf24; padding-bottom: 8px;">${catLabel}</td>
+                  <td style="font-size: 13px; font-weight: 600; color: #fbbf24; padding-bottom: 8px;">${safeCatLabel}</td>
                 </tr>
                 <tr>
                   <td style="font-size: 13px; color: #94a3b8; padding-bottom: 8px;">Subject:</td>
-                  <td style="font-size: 14px; font-weight: 700; color: #f8fafc; padding-bottom: 8px;">${ticket.subject}</td>
+                  <td style="font-size: 14px; font-weight: 700; color: #f8fafc; padding-bottom: 8px;">${safeSubject}</td>
                 </tr>
                 <tr>
                   <td style="font-size: 13px; color: #94a3b8;">Ticket ID:</td>
-                  <td style="font-size: 12px; font-family: monospace; color: #cbd5e1;">${ticket.id}</td>
+                  <td style="font-size: 12px; font-family: monospace; color: #cbd5e1;">${safeId}</td>
                 </tr>
               </table>
               <div style="background-color: #020617; border: 1px solid #334155; border-radius: 12px; padding: 20px;">
                 <h4 style="margin: 0 0 10px 0; font-size: 12px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Message:</h4>
-                <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #e2e8f0; white-space: pre-wrap;">${ticket.message}</p>
+                <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #e2e8f0; white-space: pre-wrap;">${safeMessage}</p>
               </div>
               <div style="margin-top: 24px; text-align: center;">
-                <a href="mailto:${ticket.email}?subject=Re: ${encodeURIComponent(ticket.subject)}" style="display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #2563eb, #4f46e5); color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; border-radius: 10px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);">
+                <a href="mailto:${encodeURIComponent(ticket.email)}?subject=Re: ${encodeURIComponent(ticket.subject)}" style="display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #2563eb, #4f46e5); color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; border-radius: 10px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);">
                   Reply Directly to User ✉️
                 </a>
               </div>
@@ -488,6 +509,78 @@ ${ticket.message}`;
 </html>`;
 
   return { subject: emailSubject, html, text };
+}
+
+/**
+ * Generates the Welcome Email HTML template for newly registered users.
+ */
+export function getWelcomeEmailHtml(user: {
+  name?: string | null;
+  email: string;
+  locale?: string;
+}): { subject: string; html: string; text: string } {
+  const isAr = user.locale === "ar";
+  const isDe = user.locale === "de";
+  const safeName = escapeHtml(user.name || "");
+  const safeEmail = escapeHtml(user.email);
+
+  const subject = isAr
+    ? "مرحباً بك في GermanJobsPro! 🇩🇪"
+    : isDe
+    ? "Willkommen bei GermanJobsPro! 🇩🇪"
+    : "Welcome to GermanJobsPro! 🇩🇪";
+
+  const greeting = safeName
+    ? isAr
+      ? `مرحباً ${safeName}،`
+      : isDe
+      ? `Hallo ${safeName},`
+      : `Hello ${safeName},`
+    : isAr
+    ? "مرحباً بك،"
+    : isDe
+    ? "Hallo,"
+    : "Hello,";
+
+  const welcomeText = isAr
+    ? "يسعدنا انضمامك إلى منصة GermanJobsPro لتجهيز ملف الترشيح المهني وفق معايير DIN 5008."
+    : isDe
+    ? "Wir freuen uns, Sie bei GermanJobsPro begrüßen zu dürfen."
+    : "Welcome to GermanJobsPro! Your account is ready.";
+
+  const text = `${greeting}\n\n${welcomeText}\n\nEmail: ${user.email}\n\nGermanJobsPro - https://germanjobspro.com`;
+
+  const html = `<!DOCTYPE html>
+<html lang="${user.locale || "ar"}" dir="${isAr ? "rtl" : "ltr"}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(subject)}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #020617; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f8fafc;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #020617; padding: 30px 15px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 560px; background-color: #0f172a; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden;">
+          <tr>
+            <td style="height: 4px; background: linear-gradient(90deg, #111827 0%, #DC2626 50%, #FBBF24 100%);"></td>
+          </tr>
+          <tr>
+            <td style="padding: 35px 35px 25px 35px; text-align: center;">
+              <h1 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 800; color: #ffffff;">${escapeHtml(subject)}</h1>
+              <p style="margin: 0; font-size: 15px; color: #cbd5e1; line-height: 1.6;">${greeting}</p>
+              <p style="margin: 15px 0 0 0; font-size: 14px; color: #94a3b8; line-height: 1.6;">${welcomeText}</p>
+              <p style="margin: 10px 0 0 0; font-size: 13px; color: #64748b;">${safeEmail}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  return { subject, html, text };
 }
 
 /**

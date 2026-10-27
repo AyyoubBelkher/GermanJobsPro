@@ -6,6 +6,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { verifyAuth } from "@/lib/auth";
 import { deductCreditInTx } from "@/lib/monetization";
+import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 import {
   parseDateSafe,
   parseNullableDate,
@@ -141,6 +142,9 @@ const remediatedCvSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const rateLimitResponse = checkRateLimit(req, AUTH_RATE_LIMITS.AI_API);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const authResult = await verifyAuth(req);
     if (!authResult.success || !authResult.user) {
