@@ -1,13 +1,11 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Metadata } from "next";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
-import { prisma, withDbRetry } from "@/lib/prisma";
 import { getUserSession } from "@/lib/user-session";
-import LandingFaqAccordion from "@/components/landing/LandingFaqAccordion";
 import { getLandingContent } from "@/lib/i18n/landing-content";
-import { extractLessonNumber, extractCleanExcerpt, parseLessonTitle } from "@/lib/courseUtils";
 
 export const revalidate = 60;
 
@@ -32,31 +30,27 @@ export async function generateMetadata({
         "x-default": "https://www.germanjobspro.com/de",
       },
     },
-    keywords: [
-      "Lebenslauf DIN 5008",
-      "سيرة ذاتية ألمانية",
-      "فحص ATS ألمانيا",
-      "وظائف في ألمانيا",
-      "عقود أوسبيلدونغ",
-      "Anschreiben الذكاء الاصطناعي",
-      "Bewerbungsmappe",
-      "Chancenkarte CV",
-      "German CV Maker",
-      "Tabellarischer Lebenslauf",
-      "German ATS Resume Checker",
-      "German Cover Letter Generator",
-      "Ausbildung Deutschland",
-      "Jobs in Germany",
-      "Apprendre Allemand A1",
-      "CV Allemand DIN 5008",
-    ],
     openGraph: {
       title: t.meta.title,
       description: t.meta.description,
       url: `https://www.germanjobspro.com/${locale}`,
       siteName: "GermanJobsPro",
-      locale: locale === "ar" ? "ar_AR" : locale === "de" ? "de_DE" : locale === "fr" ? "fr_FR" : "en_US",
+      locale: locale === "ar" ? "ar_AR" : locale === "de" ? "de_DE" : "en_US",
       type: "website",
+      images: [
+        {
+          url: "/images/hero-berlin-monument.jpeg",
+          width: 1200,
+          height: 630,
+          alt: "GermanJobsPro Berlin Monument",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t.meta.title,
+      description: t.meta.description,
+      images: ["/images/hero-berlin-monument.jpeg"],
     },
   };
 }
@@ -71,1052 +65,532 @@ export default async function LandingPage({
   const isAr = locale === "ar";
   const dir = isAr ? "rtl" : "ltr";
 
-  // Check user authentication on server
   const authResult = await getUserSession();
   const user = authResult ? authResult.user : null;
 
-  // Fetch top 3 latest jobs, top 3 blog posts, and top 3 sequenced German A1 lessons in parallel
-  let latestJobs: Array<{
-    id: string;
-    title: string;
-    company: string;
-    city: string | null;
-    category: string;
-    jobType: string | null;
-    languageReq: string | null;
-    salary: string | null;
-    applyUrl: string;
-    publishedAt: Date;
-  }> = [];
-
-  let latestPosts: Array<{
-    id: string;
-    slug: string;
-    title: string;
-    markdown_content: string;
-    category: string;
-    createdAt: Date;
-  }> = [];
-
-  let germanA1Posts: Array<{
-    id: string;
-    slug: string;
-    title: string;
-    markdown_content: string;
-    category: string;
-    createdAt: Date;
-  }> = [];
-
-  try {
-    const [jobs, posts, a1Posts] = await withDbRetry(() =>
-      Promise.all([
-        prisma.job.findMany({
-          where: { status: "ACTIVE" },
-          orderBy: { publishedAt: "desc" },
-          select: {
-            id: true,
-            title: true,
-            company: true,
-            city: true,
-            category: true,
-            jobType: true,
-            languageReq: true,
-            salary: true,
-            applyUrl: true,
-            publishedAt: true,
-          },
-          take: 3,
-        }),
-        prisma.post.findMany({
-          where: {
-            published: true,
-            NOT: {
-              OR: [
-                { category: { equals: "German A1", mode: "insensitive" } },
-                { category: { equals: "Deutsch A1", mode: "insensitive" } },
-                { category: { contains: "A1", mode: "insensitive" } },
-              ],
-            },
-          },
-          orderBy: { createdAt: "desc" },
-          select: {
-            id: true,
-            slug: true,
-            title: true,
-            markdown_content: true,
-            category: true,
-            createdAt: true,
-          },
-          take: 3,
-        }),
-        prisma.post.findMany({
-          where: {
-            published: true,
-            OR: [
-              { category: { equals: "German A1", mode: "insensitive" } },
-              { category: { equals: "Deutsch A1", mode: "insensitive" } },
-              { category: { contains: "A1", mode: "insensitive" } },
-            ],
-          },
-          select: {
-            id: true,
-            slug: true,
-            title: true,
-            markdown_content: true,
-            category: true,
-            createdAt: true,
-          },
-        }),
-      ])
-    );
-    latestJobs = jobs;
-    latestPosts = posts;
-
-    // Sort German A1 lessons logically from the beginning (Lessons 1, 2, 3...)
-    a1Posts.sort((a, b) => {
-      const numA = extractLessonNumber(a.title, a.slug, a.markdown_content);
-      const numB = extractLessonNumber(b.title, b.slug, b.markdown_content);
-      if (numA !== numB) {
-        return numA - numB;
-      }
-      return a.createdAt.getTime() - b.createdAt.getTime();
-    });
-    germanA1Posts = a1Posts.slice(0, 3);
-  } catch (error) {
-    console.warn("[LandingPage] Database query failed during prerendering:", error instanceof Error ? error.message : error);
-  }
-
-  const knowledgeGraphLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Organization",
-        "@id": "https://www.germanjobspro.com/#organization",
-        "name": "GermanJobsPro",
-        "url": "https://www.germanjobspro.com",
-        "logo": "https://www.germanjobspro.com/icon.svg",
-        "sameAs": [
-          "https://twitter.com/GermanJobsPro",
-          "https://www.linkedin.com/company/germanjobspro"
-        ],
-        "contactPoint": {
-          "@type": "ContactPoint",
-          "contactType": "customer support",
-          "email": "support@germanjobspro.com",
-          "availableLanguage": ["Arabic", "German", "English", "French"]
-        }
-      },
-      {
-        "@type": "WebSite",
-        "@id": "https://www.germanjobspro.com/#website",
-        "url": "https://www.germanjobspro.com",
-        "name": "GermanJobsPro",
-        "description": t.meta.description,
-        "publisher": { "@id": "https://www.germanjobspro.com/#organization" },
-        "inLanguage": ["ar", "de", "en", "fr"],
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": `https://www.germanjobspro.com/${locale}/jobs?search={search_term_string}`,
-          "query-input": "required name=search_term_string"
-        }
-      },
-      {
-        "@type": "SoftwareApplication",
-        "@id": "https://www.germanjobspro.com/#software",
-        "name": "GermanJobsPro DIN 5008 CV Builder & German ATS Suite",
-        "url": `https://www.germanjobspro.com/${locale}`,
-        "applicationCategory": "BusinessApplication",
-        "operatingSystem": "Web",
-        "featureList": [
-          "DIN 5008 Tabellarischer Lebenslauf Builder",
-          "1-Click PDF to DIN 5008 Converter",
-          "German ATS Resume Checker",
-          "AI Anschreiben Cover Letter Generator",
-          "3-in-1 Bewerbungsmappe Dossier Studio",
-          "Verified German Job Board",
-          "Free German A1 Course with Audio"
-        ],
-        "offers": [
-          {
-            "@type": "Offer",
-            "name": "Starter",
-            "price": "0",
-            "priceCurrency": "USD",
-            "description": "Free Starter Plan for German CV and A1 Course"
-          },
-          {
-            "@type": "Offer",
-            "name": "Quick Sprint",
-            "price": "9.99",
-            "priceCurrency": "USD",
-            "description": "30-day active application pass with German ATS audit and AI credits"
-          },
-          {
-            "@type": "Offer",
-            "name": "PRO Job Pass",
-            "price": "19.99",
-            "priceCurrency": "USD",
-            "description": "90-day comprehensive German job hunting suite: 1-Click PDF to DIN 5008, Dossier Studio, ATS audit"
-          }
-        ]
-      },
-      {
-        "@type": "FAQPage",
-        "@id": `https://www.germanjobspro.com/${locale}/#faq`,
-        "mainEntity": t.faq.items.map((item) => ({
-          "@type": "Question",
-          "name": item.question,
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": item.answer
-          }
-        }))
-      },
-      {
-        "@type": "Course",
-        "@id": `https://www.germanjobspro.com/${locale}/#course-a1`,
-        "name": isAr ? "مسار تعلم اللغة الألمانية للمبتدئين A1" : "Free German A1 Career Academy",
-        "description": isAr
-          ? "مسار تفاعلي مجاني لتعلم اللغة الألمانية من الصفر للمستوى A1 مع النطق الصوتي الأصلي والكتابة الصوتية بالعربية."
-          : "Free interactive German A1 course with native audio pronunciation for job seekers in Germany.",
-        "provider": { "@id": "https://www.germanjobspro.com/#organization" },
-        "url": `https://www.germanjobspro.com/${locale}/blog?category=German+A1`,
-        "isAccessibleForFree": true,
-        "inLanguage": ["de", "ar", "en"]
-      }
-    ]
-  };
-
   return (
-    <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(knowledgeGraphLd) }}
-      />
+    <div dir={dir} className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between selection:bg-amber-400 selection:text-slate-950 overflow-x-hidden">
       <Navbar locale={locale} initialUser={user} />
 
-      <main className="flex-1 w-full space-y-24 sm:space-y-32 pb-24 overflow-hidden">
+      <main className="flex-1 w-full overflow-x-hidden">
         
         {/* ========================================================= */}
-        {/* 1. HERO SECTION */}
+        {/* 1. HERO SECTION: FULL-BLEED BRANDENBURG GATE MONUMENT     */}
         {/* ========================================================= */}
-        <section className="relative pt-12 sm:pt-20 lg:pt-24 pb-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
-          {/* Subtle Glow Accents */}
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 sm:w-[650px] h-96 sm:h-[650px] bg-gradient-to-tr from-blue-600/20 via-blue-500/10 to-slate-800/10 rounded-full blur-3xl pointer-events-none -z-10" />
-          
-          <div className="space-y-8 max-w-4xl mx-auto">
-            {/* Prominent Hero Badge */}
-            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-slate-900/90 border border-slate-800 text-xs sm:text-sm font-semibold text-slate-300 shadow-xl backdrop-blur-md hover:border-blue-500/40 transition-colors">
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-              </span>
-              <span>{t.hero.badge}</span>
+        <section className="relative bg-[#061838] text-white overflow-hidden min-h-[500px] lg:min-h-[560px] flex items-center pt-10 pb-28 px-4 sm:px-6 lg:px-8">
+          {/* Ambient Glows */}
+          <div className="absolute top-0 start-1/4 w-96 sm:w-[650px] h-96 sm:h-[650px] bg-blue-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
+          <div className="absolute bottom-10 end-10 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
+
+          {/* Full-Bleed Brandenburg Gate Monument Artwork */}
+          <div className="absolute inset-0 pointer-events-none select-none z-0">
+            <Image
+              src="/images/hero-berlin-monument.jpeg"
+              alt="Brandenburg Gate Berlin"
+              fill
+              unoptimized={true}
+              priority={true}
+              className="object-cover object-right-top w-full h-full"
+            />
+            {/* Mobile-only dark navy overlay so RTL Arabic text is 100% readable on phones */}
+            <div className="absolute inset-0 bg-[#061838]/80 backdrop-blur-[1px] lg:hidden pointer-events-none" />
+            {/* Desktop-only ultra-smooth left blend so there is zero vertical seam line */}
+            <div
+              className="hidden lg:block absolute inset-y-0 left-0 w-[60%] pointer-events-none z-[1]"
+              style={{
+                background:
+                  "linear-gradient(to right, #061838 0%, #061838 34%, rgba(6, 24, 56, 0.92) 52%, rgba(6, 24, 56, 0.45) 75%, transparent 100%)",
+              }}
+            />
+          </div>
+
+          {/* Hero Content Container (Text sits on visual LEFT over #061838) */}
+          <div className="max-w-7xl mx-auto w-full relative z-10" dir="ltr">
+            <div className="w-full lg:w-[52%] space-y-6 sm:space-y-8 text-right pb-4" dir="rtl">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.25]">
+                {isAr ? (
+                  <>
+                    <span>حضر مستقبلك المهني</span>
+                    <br />
+                    <span className="text-[#FACC15] font-black">في ألمانيا</span>{" "}
+                    <span className="relative inline-block">
+                      من مكان
+                      <svg
+                        className="absolute -bottom-2 inset-x-0 w-full h-3 sm:h-3.5 text-[#FACC15] pointer-events-none"
+                        viewBox="0 0 160 14"
+                        fill="none"
+                        preserveAspectRatio="none"
+                        aria-hidden="true"
+                      >
+                        <path d="M2 10.5C40 3.5 120 3.5 158 10.5" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+                      </svg>
+                    </span>{" "}
+                    <span>واحد!</span>
+                  </>
+                ) : (
+                  <>
+                    {t.hero.headline.prefix}
+                    <span className="relative inline-block text-[#FACC15] font-black px-1">
+                      {t.hero.headline.highlight}
+                      <svg className="absolute -bottom-2.5 inset-x-0 w-full h-3.5 text-amber-400 pointer-events-none" viewBox="0 0 200 14" fill="none" preserveAspectRatio="none" aria-hidden="true">
+                        <path d="M2 10.5C50 3.5 150 3.5 198 10.5" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+                      </svg>
+                    </span>
+                    {t.hero.headline.suffix}
+                  </>
+                )}
+              </h1>
+
+              <p className="text-base sm:text-lg text-slate-200 max-w-xl leading-relaxed font-normal drop-shadow-[0_2px_8px_rgba(6,24,56,0.9)]">
+                {isAr
+                  ? "أنشئ سيرتك الذاتية الألمانية، حسن ملف ترشحك باستخدام الذكاء الاصطناعي، تعلم الألمانية باللغة العربية، واكتشف فرص العمل والتدريب المهني."
+                  : t.hero.subheadline}
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2">
+                <Link
+                  href={user ? `/${locale}/dashboard` : `/${locale}/auth/signup`}
+                  className="bg-[#FACC15] hover:bg-amber-300 text-[#0A2552] font-black px-8 py-4 rounded-full flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 text-base transition-all hover:scale-[1.02] active:scale-95 text-center"
+                >
+                  <span>
+                    {user
+                      ? (isAr ? "لوحة التحكم ←" : "Go to Dashboard →")
+                      : (isAr ? "ابدأ مجانا ←" : t.hero.primaryCta.replace(/🚀\s*/g, ""))}
+                  </span>
+                </Link>
+
+                <a
+                  href="#tools-hub"
+                  className="border-2 border-white/60 hover:bg-white/10 text-white font-bold rounded-full px-7 py-4 text-base backdrop-blur-md transition-all inline-flex items-center justify-center gap-2.5 text-center"
+                >
+                  <span className="w-6 h-6 rounded-full bg-white text-[#0A2552] flex items-center justify-center text-xs font-black shrink-0">
+                    ▶
+                  </span>
+                  <span>{isAr ? "اكتشف الأدوات" : t.hero.secondaryCta}</span>
+                </a>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-amber-300/95 pt-1 drop-shadow-[0_2px_8px_rgba(6,24,56,0.9)]">
+                <span className="text-base">🛡️</span>
+                <span>{isAr ? "ابدأ مجانا – جرب الأدوات قبل الاشتراك" : (t.hero.trustMicro || "Start Free – Test Tools Before Subscribing")}</span>
+              </div>
             </div>
+          </div>
 
-            {/* Main Headline */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.2]">
-              {t.hero.headline.prefix}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-blue-200">
-                {t.hero.headline.highlight}
-              </span>
-              {t.hero.headline.suffix}
-            </h1>
-
-            {/* Subheadline highlighting core modules */}
-            <p className="text-base sm:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed font-normal">
-              {t.hero.subheadline}
-            </p>
-
-            {/* Dual CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
-              <Link
-                href={`/${locale}/dashboard/cv/new`}
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-base shadow-xl shadow-blue-600/30 hover:scale-[1.02] active:scale-98 transition-all flex items-center justify-center gap-2.5 border border-blue-400/30"
-              >
-                <span>🚀</span>
-                <span>{t.hero.primaryCta}</span>
-              </Link>
-
-              <Link
-                href={`/${locale}/blog?category=German+A1`}
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white font-bold text-base border border-slate-800 hover:border-slate-700 transition-all flex items-center justify-center gap-2"
-              >
-                <span>📚</span>
-                <span>{t.hero.secondaryCta}</span>
-              </Link>
-            </div>
-
-            {/* Trust Bar with 3 Compact Badges */}
-            <div className="pt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl mx-auto border-t border-slate-900/90">
-              {t.hero.trustBadges.map((badgeText, idx) => (
-                <div key={idx} className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-slate-900/50 border border-slate-800/80 text-xs sm:text-sm font-semibold text-slate-300">
-                  <span className="text-emerald-400 text-base">✓</span>
-                  <span>{badgeText}</span>
-                </div>
-              ))}
-            </div>
+          {/* German Flag Wave Ribbon */}
+          <div className="absolute bottom-0 inset-x-0 w-full overflow-hidden leading-none pointer-events-none z-10" aria-hidden="true">
+            <svg className="relative block w-full h-8 sm:h-12 text-slate-50" viewBox="0 0 1200 120" preserveAspectRatio="none">
+              <path d="M0,0 C150,90 350,-40 500,40 C650,120 900,10 1200,50 L1200,120 L0,120 Z" fill="#000000" opacity="0.95" />
+              <path d="M0,20 C180,95 380,-20 520,50 C660,120 920,30 1200,65 L1200,120 L0,120 Z" fill="#DD0000" opacity="0.95" />
+              <path d="M0,45 C200,105 400,-5 540,65 C680,125 940,45 1200,80 L1200,120 L0,120 Z" fill="#FFCC00" />
+              <path d="M0,75 C220,115 420,15 560,78 C700,135 960,65 1200,95 L1200,120 L0,120 Z" fill="#f8fafc" />
+            </svg>
           </div>
         </section>
 
-
         {/* ========================================================= */}
-        {/* 2. THE 4 PRODUCT PILLARS (RESPONSIVE GRID 1/2/4) */}
+        {/* 2. THE 6-CARD ACTION HUB (#tools-hub)                     */}
         {/* ========================================================= */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider">
-              <span>⚡</span>
-              <span>{t.pillars.badge}</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white">
-              {t.pillars.title}
-            </h2>
-            <p className="text-slate-400 text-sm sm:text-base">
-              {t.pillars.subtitle}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Pillar 1: DIN 5008 CV Builder */}
+        <section id="tools-hub" className="-mt-12 sm:-mt-16 relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5 sm:gap-4" dir="ltr">
+            
+            {/* Card 1 (Leftmost): German Jobs */}
             <Link
-              href={`/${locale}/dashboard/cv/new`}
-              className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6 cursor-pointer"
+              href={`/${locale}/jobs`}
+              className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-4 flex flex-col items-center text-center group cursor-pointer"
             >
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                  📄
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
-                    {t.pillars.pillar1.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                    {t.pillars.pillar1.desc}
-                  </p>
-                </div>
+              <div className="w-12 h-12 mb-3 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <svg className="w-11 h-11 text-[#0D47A1]" viewBox="0 0 48 48" fill="none">
+                  <path d="M18 16V11C18 9.89543 18.8954 9 20 9H28C29.1046 9 30 9.89543 30 11V16" stroke="#94A3B8" strokeWidth="3" strokeLinecap="round" />
+                  <rect x="7" y="15" width="34" height="23" rx="3.5" fill="#0D47A1" />
+                  <line x1="7" y1="25" x2="41" y2="25" stroke="#1E3A8A" strokeWidth="1.5" />
+                  <rect x="22" y="22" width="4" height="6" rx="1" fill="#E2E8F0" stroke="#94A3B8" strokeWidth="1" />
+                </svg>
               </div>
-
-              <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
-                <span className="text-[11px] font-mono text-emerald-400 font-bold">{t.pillars.pillar1.tag}</span>
-                <span className="text-xs font-bold text-blue-400 group-hover:text-blue-300 transition-colors">
-                  {t.pillars.pillar1.cta}
-                </span>
-              </div>
+              <h3 className="font-black text-slate-900 text-sm sm:text-base group-hover:text-blue-900 transition-colors">
+                German Jobs
+              </h3>
+              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir="rtl">{t.toolsHub.card6.subtitle}</p>
+              <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
+                ➔
+              </span>
             </Link>
 
-            {/* Pillar 2: Bewerbungsmappe Studio */}
-            <Link
-              href={`/${locale}/dashboard/dossier`}
-              className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6 cursor-pointer"
-            >
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                  📑
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
-                    {t.pillars.pillar2.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                    {t.pillars.pillar2.desc}
-                  </p>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
-                <span className="text-[11px] font-mono text-blue-400 font-bold">{t.pillars.pillar2.tag}</span>
-                <span className="text-xs font-bold text-blue-400 group-hover:text-blue-300 transition-colors">
-                  {t.pillars.pillar2.cta}
-                </span>
-              </div>
-            </Link>
-
-            {/* Pillar 3: AI Cover Letter & Smart ATS Checker */}
-            <Link
-              href={`/${locale}/dashboard/cover-letters/new`}
-              className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6 cursor-pointer"
-            >
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                  🎯
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
-                    {t.pillars.pillar3.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                    {t.pillars.pillar3.desc}
-                  </p>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
-                <span className="text-[11px] font-mono text-emerald-400 font-bold">{t.pillars.pillar3.tag}</span>
-                <span className="text-xs font-bold text-blue-400 group-hover:text-blue-300 transition-colors">
-                  {t.pillars.pillar3.cta}
-                </span>
-              </div>
-            </Link>
-
-            {/* Pillar 4: German A1 Career Academy */}
+            {/* Card 2: German A1 Academy */}
             <Link
               href={`/${locale}/blog?category=German+A1`}
-              className="relative group rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 p-7 transition-all shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between space-y-6 cursor-pointer"
+              className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-4 flex flex-col items-center text-center group cursor-pointer"
             >
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                  🇩🇪
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
-                    {t.pillars.pillar4.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                    {t.pillars.pillar4.desc}
-                  </p>
-                </div>
+              <div className="w-12 h-12 mb-3 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <svg className="w-11 h-11 text-[#0D47A1]" viewBox="0 0 48 48" fill="none">
+                  <line x1="8" y1="38" x2="40" y2="38" stroke="#0D47A1" strokeWidth="2.5" strokeLinecap="round" />
+                  <rect x="12" y="27" width="6" height="11" rx="1.5" fill="#0D47A1" />
+                  <rect x="21" y="20" width="6" height="18" rx="1.5" fill="#0D47A1" />
+                  <rect x="30" y="13" width="6" height="25" rx="1.5" fill="#0D47A1" />
+                  <path d="M10 28L21 17L28 22L37 10" stroke="#FACC15" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M31 10H38V17" stroke="#FACC15" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </div>
-
-              <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
-                <span className="text-[11px] font-mono text-blue-400 font-bold">{t.pillars.pillar4.tag}</span>
-                <span className="text-xs font-bold text-blue-400 group-hover:text-blue-300 transition-colors">
-                  {t.pillars.pillar4.cta}
-                </span>
-              </div>
+              <h3 className="font-black text-slate-900 text-sm sm:text-base group-hover:text-blue-900 transition-colors">
+                German A1 Academy
+              </h3>
+              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir="rtl">{t.toolsHub.card5.subtitle}</p>
+              <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
+                ➔
+              </span>
             </Link>
-          </div>
-        </section>
 
-
-        {/* ========================================================= */}
-        {/* 3. VISUAL COMPARISON CARD (BEFORE VS AFTER) */}
-        {/* ========================================================= */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-6 sm:p-12 space-y-10 shadow-2xl">
-            <div className="text-center space-y-3 max-w-2xl mx-auto">
-              <h2 className="text-2xl sm:text-4xl font-black text-white">
-                {t.comparison.title}
-              </h2>
-              <p className="text-slate-400 text-xs sm:text-sm">
-                {t.comparison.subtitle}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Before / Rejected */}
-              <div className="rounded-2xl bg-rose-950/20 border border-rose-500/30 p-6 space-y-5">
-                <div className="flex items-center justify-between">
-                  <span className="px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 font-bold text-xs">
-                    ❌ {t.comparison.negativeBadge}
-                  </span>
-                  <span className="text-rose-400 font-mono text-xs font-bold">{t.comparison.negativeRate}</span>
-                </div>
-                <ul className="space-y-3 text-xs sm:text-sm text-slate-300">
-                  {t.comparison.negativePoints.map((point, idx) => (
-                    <li key={idx} className="flex items-start gap-2.5">
-                      <span className="text-rose-400 font-bold mt-0.5">✕</span>
-                      <span>{point}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* After / Accepted */}
-              <div className="rounded-2xl bg-emerald-950/20 border border-emerald-500/30 p-6 space-y-5 shadow-lg shadow-emerald-500/5">
-                <div className="flex items-center justify-between">
-                  <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-xs">
-                    ✅ {t.comparison.positiveBadge}
-                  </span>
-                  <span className="text-emerald-400 font-mono text-xs font-bold">{t.comparison.positiveRate}</span>
-                </div>
-                <ul className="space-y-3 text-xs sm:text-sm text-slate-200">
-                  {t.comparison.positivePoints.map((point, idx) => (
-                    <li key={idx} className="flex items-start gap-2.5">
-                      <span className="text-emerald-400 font-bold mt-0.5">✓</span>
-                      <span>{point}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-
-
-        {/* ========================================================= */}
-        {/* 4. FRICTIONLESS FREE VALUE & FEATURE SHOWCASE */}
-        {/* ========================================================= */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider">
-              <span>✨</span>
-              <span>{t.freeValue.badge}</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white">
-              {t.freeValue.title}
-            </h2>
-            <p className="text-slate-400 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
-              {t.freeValue.subtitle}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch pt-2">
-            {/* Value Card 1: Free Starter Access (DIN 5008 CV) */}
-            <div className="bg-slate-900/60 border border-slate-800 hover:border-slate-700/80 rounded-3xl p-7 space-y-6 flex flex-col justify-between transition-all group shadow-xl">
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                      📄
-                    </span>
-                    <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-bold">
-                      {t.freeValue.card1.badge}
-                    </span>
-                  </div>
-                  <h3 className="text-2xl font-black text-white group-hover:text-blue-400 transition-colors pt-2">
-                    {t.freeValue.card1.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                    {t.freeValue.card1.desc}
-                  </p>
-                </div>
-
-                <ul className="space-y-3.5 text-xs text-slate-300 pt-5 border-t border-slate-800">
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-emerald-400 font-bold text-sm">✓</span>
-                    <span>{t.freeValue.card1.f1}</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-emerald-400 font-bold text-sm">✓</span>
-                    <span>{t.freeValue.card1.f2}</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-emerald-400 font-bold text-sm">✓</span>
-                    <span>{t.freeValue.card1.f3}</span>
-                  </li>
-                </ul>
-              </div>
-
-              <Link
-                href={`/${locale}/dashboard/cv/new`}
-                className="w-full py-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm text-center border border-slate-700/80 hover:border-blue-500/50 transition-all block shadow-md hover:shadow-blue-500/10"
-              >
-                {t.freeValue.card1.cta}
-              </Link>
-            </div>
-
-            {/* Value Card 2: Free German A1 Academy (Featured Value) */}
-            <div className="relative bg-gradient-to-b from-slate-900 via-blue-950/30 to-slate-950 border-2 border-blue-500/60 hover:border-blue-500 rounded-3xl p-7 space-y-6 flex flex-col justify-between transition-all group shadow-2xl shadow-blue-500/10">
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-400/30 text-blue-300 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                      🎧
-                    </span>
-                    <span className="px-3.5 py-1 rounded-full bg-blue-600 text-white text-[11px] font-black shadow-lg shadow-blue-600/30 border border-blue-400/40">
-                      {t.freeValue.card2.badge}
-                    </span>
-                  </div>
-                  <h3 className="text-2xl font-black text-white group-hover:text-blue-300 transition-colors pt-2">
-                    {t.freeValue.card2.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                    {t.freeValue.card2.desc}
-                  </p>
-                </div>
-
-                <ul className="space-y-3.5 text-xs text-slate-200 pt-5 border-t border-slate-800">
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-blue-400 font-bold text-sm">✓</span>
-                    <span className="font-semibold text-white">{t.freeValue.card2.f1}</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-blue-400 font-bold text-sm">✓</span>
-                    <span className="font-semibold text-white">{t.freeValue.card2.f2}</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-blue-400 font-bold text-sm">✓</span>
-                    <span>{t.freeValue.card2.f3}</span>
-                  </li>
-                </ul>
-              </div>
-
-              <Link
-                href={`/${locale}/blog?category=German+A1`}
-                className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs sm:text-sm text-center border border-blue-400/30 transition-all block shadow-xl shadow-blue-600/25 hover:scale-[1.01]"
-              >
-                {t.freeValue.card2.cta}
-              </Link>
-            </div>
-
-            {/* Value Card 3: Free AI Welcome Trial */}
-            <div className="bg-slate-900/60 border border-slate-800 hover:border-slate-700/80 rounded-3xl p-7 space-y-6 flex flex-col justify-between transition-all group shadow-xl">
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                      🎯
-                    </span>
-                    <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] font-bold">
-                      {t.freeValue.card3.badge}
-                    </span>
-                  </div>
-                  <h3 className="text-2xl font-black text-white group-hover:text-amber-300 transition-colors pt-2">
-                    {t.freeValue.card3.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                    {t.freeValue.card3.desc}
-                  </p>
-                </div>
-
-                <ul className="space-y-3.5 text-xs text-slate-300 pt-5 border-t border-slate-800">
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-amber-400 font-bold text-sm">✓</span>
-                    <span>{t.freeValue.card3.f1}</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-amber-400 font-bold text-sm">✓</span>
-                    <span>{t.freeValue.card3.f2}</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-amber-400 font-bold text-sm">✓</span>
-                    <span>{t.freeValue.card3.f3}</span>
-                  </li>
-                </ul>
-              </div>
-
-              <Link
-                href={`/${locale}/dashboard/ats-analyzer`}
-                className="w-full py-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm text-center border border-slate-700/80 hover:border-amber-500/50 transition-all block shadow-md hover:shadow-amber-500/10"
-              >
-                {t.freeValue.card3.cta}
-              </Link>
-            </div>
-          </div>
-
-          {/* Subtle Trust-Building Pricing Link at Bottom */}
-          <div className="text-center pt-2">
+            {/* Card 3: AI Cover Letter */}
             <Link
-              href={`/${locale}/pricing`}
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-400 hover:text-blue-400 transition-colors"
+              href={`/${locale}/dashboard/cover-letters/new`}
+              className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-4 flex flex-col items-center text-center group cursor-pointer"
             >
-              <span>{t.freeValue.pricingLinkText}</span>
+              <div className="w-12 h-12 mb-3 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <svg className="w-11 h-11 text-[#0D47A1]" viewBox="0 0 48 48" fill="none">
+                  <rect x="7" y="12" width="34" height="24" rx="3.5" fill="#0D47A1" />
+                  <path d="M7 14L24 26L41 14" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M7 34L17 23M41 34L31 23" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
+                </svg>
+              </div>
+              <h3 className="font-black text-slate-900 text-sm sm:text-base group-hover:text-blue-900 transition-colors">
+                AI Cover Letter
+              </h3>
+              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir="rtl">{t.toolsHub.card4.subtitle}</p>
+              <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
+                ➔
+              </span>
+            </Link>
+
+            {/* Card 4: Dossier Studio */}
+            <Link
+              href={`/${locale}/dashboard/dossier`}
+              className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-4 flex flex-col items-center text-center group cursor-pointer"
+            >
+              <div className="w-12 h-12 mb-3 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <svg className="w-11 h-11 text-[#0D47A1]" viewBox="0 0 48 48" fill="none">
+                  <path d="M8 12C8 10.3431 9.34315 9 11 9H20L24 14H37C38.6569 14 40 15.3431 40 17V36C40 37.6569 38.6569 39 37 39H11C9.34315 39 8 37.6569 8 36V12Z" fill="#0D47A1" />
+                  <path d="M8 19C8 17.3431 9.34315 16 11 16H37C38.6569 16 40 17.3431 40 19V36C40 37.6569 38.6569 39 37 39H11C9.34315 39 8 37.6569 8 36V19Z" fill="#1565C0" />
+                </svg>
+              </div>
+              <h3 className="font-black text-slate-900 text-sm sm:text-base group-hover:text-blue-900 transition-colors">
+                Dossier Studio
+              </h3>
+              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir="rtl">{t.toolsHub.card3.subtitle}</p>
+              <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
+                ➔
+              </span>
+            </Link>
+
+            {/* Card 5: ATS CV Analyzer */}
+            <Link
+              href={`/${locale}/dashboard/ats-analyzer`}
+              className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-4 flex flex-col items-center text-center group cursor-pointer"
+            >
+              <div className="w-12 h-12 mb-3 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <svg className="w-11 h-11 text-[#0D47A1]" viewBox="0 0 48 48" fill="none">
+                  <line x1="8" y1="38" x2="40" y2="38" stroke="#0D47A1" strokeWidth="2.5" strokeLinecap="round" />
+                  <rect x="11" y="24" width="6" height="14" rx="1.5" fill="#0D47A1" />
+                  <rect x="21" y="15" width="6" height="23" rx="1.5" fill="#0D47A1" />
+                  <rect x="31" y="20" width="6" height="18" rx="1.5" fill="#0D47A1" />
+                  <circle cx="23" cy="19" r="10" stroke="#0D47A1" strokeWidth="3" fill="none" />
+                  <line x1="30.5" y1="26.5" x2="39" y2="35" stroke="#0D47A1" strokeWidth="3.5" strokeLinecap="round" />
+                </svg>
+              </div>
+              <h3 className="font-black text-slate-900 text-sm sm:text-base group-hover:text-blue-900 transition-colors">
+                ATS CV Analyzer
+              </h3>
+              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir="rtl">{t.toolsHub.card2.subtitle}</p>
+              <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
+                ➔
+              </span>
+            </Link>
+
+            {/* Card 6 (Rightmost): AI CV Builder */}
+            <Link
+              href={`/${locale}/dashboard/cv/new`}
+              className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-4 flex flex-col items-center text-center group cursor-pointer"
+            >
+              <div className="w-12 h-12 mb-3 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <svg className="w-11 h-11 text-[#0D47A1]" viewBox="0 0 48 48" fill="none">
+                  <path d="M12 6C10.8954 6 10 6.89543 10 8V40C10 41.1046 10.8954 42 12 42H36C37.1046 42 38 41.1046 38 40V16L28 6H12Z" stroke="#0D47A1" strokeWidth="2.5" fill="white" />
+                  <path d="M28 6V16H38" stroke="#0D47A1" strokeWidth="2.5" fill="#EBF2FA" />
+                  <text x="14" y="24" fill="#0D47A1" fontSize="10.5" fontWeight="900" fontFamily="sans-serif">CV</text>
+                  <line x1="14" y1="29" x2="26" y2="29" stroke="#0D47A1" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="14" y1="34" x2="22" y2="34" stroke="#0D47A1" strokeWidth="2" strokeLinecap="round" />
+                  <g transform="translate(25, 27)">
+                    <circle cx="8" cy="8" r="7.5" fill="white" stroke="#0D47A1" strokeWidth="1.5" />
+                    <clipPath id="de-flag-clip-card-cv"><circle cx="8" cy="8" r="6.75" /></clipPath>
+                    <g clipPath="url(#de-flag-clip-card-cv)">
+                      <rect x="0" y="0" width="16" height="5.33" fill="#000000" />
+                      <rect x="0" y="5.33" width="16" height="5.34" fill="#DD0000" />
+                      <rect x="0" y="10.67" width="16" height="5.33" fill="#FFCC00" />
+                    </g>
+                  </g>
+                </svg>
+              </div>
+              <h3 className="font-black text-slate-900 text-sm sm:text-base group-hover:text-blue-900 transition-colors">
+                AI CV Builder
+              </h3>
+              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir="rtl">{t.toolsHub.card1.subtitle}</p>
+              <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
+                ➔
+              </span>
             </Link>
           </div>
         </section>
 
-
         {/* ========================================================= */}
-        {/* 5. 3-STEP "HOW IT WORKS" WALKTHROUGH */}
+        {/* 3. "HOW IT WORKS" & BOTTOM BERLIN SKYLINE SILHOUETTE      */}
         {/* ========================================================= */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider">
-              {t.howItWorks.badge}
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-black text-white">
-              {t.howItWorks.title}
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            {/* Step 1 */}
-            <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-8 space-y-4 relative">
-              <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 font-black text-lg flex items-center justify-center">
-                {t.howItWorks.step1.number}
-              </div>
-              <h3 className="text-xl font-bold text-white">
-                {t.howItWorks.step1.title}
-              </h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                {t.howItWorks.step1.desc}
-              </p>
-            </div>
-
-            {/* Step 2 */}
-            <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-8 space-y-4 relative">
-              <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 font-black text-lg flex items-center justify-center">
-                {t.howItWorks.step2.number}
-              </div>
-              <h3 className="text-xl font-bold text-white">
-                {t.howItWorks.step2.title}
-              </h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                {t.howItWorks.step2.desc}
-              </p>
-            </div>
-
-            {/* Step 3 */}
-            <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-8 space-y-4 relative">
-              <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 font-black text-lg flex items-center justify-center">
-                {t.howItWorks.step3.number}
-              </div>
-              <h3 className="text-xl font-bold text-white">
-                {t.howItWorks.step3.title}
-              </h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                {t.howItWorks.step3.desc}
-              </p>
-            </div>
-          </div>
-        </section>
-
-
-        {/* ========================================================= */}
-        {/* 6. GERMAN A1 LEARNING SHOWCASE SECTION */}
-        {/* ========================================================= */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          {/* Main Showcase Hero Card */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-blue-950/70 to-slate-900 border border-blue-500/30 p-8 sm:p-12 shadow-2xl backdrop-blur-xl">
-            <div className="absolute top-0 end-0 -me-16 -mt-16 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-            
-            <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
-              <div className="space-y-4 max-w-2xl">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 text-xs font-black uppercase tracking-wider">
-                  <span>🇩🇪</span>
-                  <span>{t.a1Track.badge}</span>
-                </div>
-                
-                <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
-                  {t.a1Track.title}
-                </h2>
-                
-                <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-                  {t.a1Track.subtitle}
-                </p>
-              </div>
-
-              <div className="shrink-0 flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
-                <Link
-                  href={`/${locale}/blog?category=German+A1`}
-                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black text-sm sm:text-base shadow-xl shadow-blue-600/30 hover:scale-[1.02] active:scale-98 transition-all flex items-center justify-center gap-2 border border-blue-400/30"
-                >
-                  <span>🚀</span>
-                  <span>{t.a1Track.primaryBtn}</span>
-                </Link>
-                <Link
-                  href={`/${locale}/blog?category=German+A1`}
-                  className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white font-bold text-sm border border-slate-700 transition-all flex items-center justify-center gap-2"
-                >
-                  <span>📚</span>
-                  <span>{t.a1Track.secondaryBtn}</span>
-                </Link>
-              </div>
-            </div>
-
-            {/* 3 Key Value Points Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-10 mt-10 border-t border-slate-800/80">
-              <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-600/15 border border-blue-500/30 text-blue-400 flex items-center justify-center font-bold text-lg">
-                  📖
-                </div>
-                <h3 className="text-base font-bold text-white">
-                  {t.a1Track.card1.title}
-                </h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  {t.a1Track.card1.desc}
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-600/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-bold text-lg">
-                  💼
-                </div>
-                <h3 className="text-base font-bold text-white">
-                  {t.a1Track.card2.title}
-                </h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  {t.a1Track.card2.desc}
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-600/15 border border-blue-500/30 text-blue-400 flex items-center justify-center font-bold text-lg">
-                  ⚡
-                </div>
-                <h3 className="text-base font-bold text-white">
-                  {t.a1Track.card3.title}
-                </h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  {t.a1Track.card3.desc}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Featured German A1 Posts Grid */}
-          {germanA1Posts.length > 0 && (
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-                <div className="space-y-1">
-                  <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
-                    {t.a1Lessons.badge}
-                  </span>
-                  <h3 className="text-xl sm:text-2xl font-extrabold text-white">
-                    {t.a1Lessons.title}
-                  </h3>
-                </div>
-                <Link
-                  href={`/${locale}/blog?category=German+A1`}
-                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors"
-                >
-                  <span>{t.a1Lessons.viewAll}</span>
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {germanA1Posts.map((post, idx) => {
-                  const parsedNum = extractLessonNumber(post.title, post.slug, post.markdown_content);
-                  const displayNum = parsedNum !== 9999 ? parsedNum : idx + 1;
-                  const fullTitle = parseLessonTitle(post.title, post.markdown_content).fullTitle;
-                  return (
-                    <Link
-                      key={post.id}
-                      href={`/${locale}/blog/${post.slug}`}
-                      className="rounded-3xl bg-slate-900/80 border border-slate-800 hover:border-blue-500/50 p-6 flex flex-col justify-between space-y-4 transition-all shadow-xl hover:shadow-blue-500/5 group"
-                    >
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="px-2.5 py-1 rounded-lg bg-blue-500/15 text-blue-300 border border-blue-500/30 text-xs font-bold inline-flex items-center gap-1">
-                            <span>🇩🇪</span>
-                            <span>{post.category}</span>
-                          </span>
-                          <span className="text-[11px] font-mono text-slate-500">
-                            {t.a1Lessons.lessonPrefix} #{displayNum}
-                          </span>
-                        </div>
-
-                        <h4 className="text-base sm:text-lg font-bold text-white group-hover:text-blue-400 transition-colors line-clamp-2">
-                          {fullTitle}
-                        </h4>
-
-                        <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">
-                          {extractCleanExcerpt(post.markdown_content, fullTitle, 150)}
-                        </p>
-                      </div>
-
-                      <div className="pt-3 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
-                        <span className="flex items-center gap-1 text-slate-400">
-                          <span>⏱️</span>
-                          <span>{t.a1Lessons.readTime}</span>
-                        </span>
-                        <span className="text-blue-400 font-bold group-hover:underline flex items-center gap-1">
-                          <span>{t.a1Lessons.startLesson}</span>
-                          <span className={isAr ? "rotate-180" : ""}>→</span>
-                        </span>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </section>
-
-
-        {/* ========================================================= */}
-        {/* 7. LATEST JOBS & CAREER GUIDES */}
-        {/* ========================================================= */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          {/* Latest Jobs */}
-          <div className="space-y-8">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-              <div className="space-y-2">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase">
-                  <span>💼</span>
-                  <span>{t.jobs.badge}</span>
-                </div>
-                <h2 className="text-2xl sm:text-4xl font-black text-white">
-                  {t.jobs.title}
-                </h2>
-              </div>
-              <Link
-                href={`/${locale}/jobs`}
-                className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors"
-              >
-                <span>{t.jobs.viewAll}</span>
-                <span className={isAr ? "rotate-180" : ""}>→</span>
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {latestJobs.map((job) => (
-                <div
-                  key={job.id}
-                  className="rounded-3xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 p-6 flex flex-col justify-between space-y-6 transition-all shadow-xl group"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-bold">
-                        {job.category}
-                      </span>
-                      <span className="text-xs text-slate-500 font-mono">
-                        {job.jobType || "Full-time"}
-                      </span>
-                    </div>
-                    <div>
-                      <Link href={`/${locale}/jobs/${job.id}`}>
-                        <h3 dir="auto" className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors truncate text-start">
-                          {job.title}
-                        </h3>
-                      </Link>
-                      <p dir="auto" className="text-xs text-slate-400 font-medium text-start">
-                        {job.company} • {job.city || "Deutschland"}
-                      </p>
-                    </div>
-                    {job.salary && (
-                      <p className="text-xs text-emerald-400 font-semibold font-mono">
-                        💶 {job.salary}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
-                    <span className="text-xs text-slate-500">
-                      {t.jobs.languageLabel} {job.languageReq || "B1/B2"}
+        <section className="mt-16 sm:mt-24 pt-12 pb-0 bg-slate-50 relative overflow-hidden">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            {/* Centered section title with golden curved SVG underline under "تجد وظيفة" */}
+            <div className="inline-block relative">
+              <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-[#082046] tracking-tight">
+                {isAr ? (
+                  <>
+                    <span>تعلم الألمانية، </span>
+                    <span className="relative inline-block">
+                      تجد وظيفة
+                      <svg
+                        className="absolute -bottom-2.5 inset-x-0 w-full h-3 sm:h-4 text-[#FACC15] pointer-events-none"
+                        viewBox="0 0 160 14"
+                        fill="none"
+                        preserveAspectRatio="none"
+                        aria-hidden="true"
+                      >
+                        <path d="M2 10.5C40 3.5 120 3.5 158 10.5" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+                      </svg>
                     </span>
-                    <Link
-                      href={`/${locale}/jobs/${job.id}`}
-                      className="px-4 py-2 rounded-xl bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/20 text-xs font-bold transition-all"
-                    >
-                      {t.jobs.apply}
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Latest Articles */}
-          {latestPosts.length > 0 && (
-            <div className="space-y-8 pt-6 border-t border-slate-900">
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-                <div className="space-y-2">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase">
-                    <span>📚</span>
-                    <span>{t.articles.badge}</span>
-                  </div>
-                  <h2 className="text-2xl sm:text-4xl font-black text-white">
-                    {t.articles.title}
-                  </h2>
-                </div>
-                <Link
-                  href={`/${locale}/blog`}
-                  className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors"
-                >
-                  <span>{t.articles.viewAll}</span>
-                  <span className={isAr ? "rotate-180" : ""}>→</span>
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {latestPosts.map((post) => (
-                  <Link
-                    key={post.id}
-                    href={`/${locale}/blog/${post.slug}`}
-                    className="rounded-3xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 p-6 flex flex-col justify-between space-y-4 transition-all shadow-xl group"
-                  >
-                    <div className="space-y-2.5">
-                      <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-bold inline-block">
-                        {post.category}
-                      </span>
-                      <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-blue-400 transition-colors line-clamp-2">
-                        {post.title}
-                      </h3>
-                      <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">
-                        {extractCleanExcerpt(post.markdown_content, post.title, 150)}
-                      </p>
-                    </div>
-
-                    <div className="pt-3 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
-                      <span>{new Date(post.createdAt).toLocaleDateString(locale)}</span>
-                      <span className="text-blue-400 font-bold group-hover:underline flex items-center gap-1">
-                        <span>{t.articles.readMore}</span>
-                        <span className={isAr ? "rotate-180" : ""}>→</span>
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-        </section>
-
-
-        {/* ========================================================= */}
-        {/* 8. LEGAL CLARITY & TRANSPARENCY DISCLAIMER BOX */}
-        {/* ========================================================= */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-3xl bg-slate-900/60 border border-slate-800 p-6 sm:p-8 space-y-3 backdrop-blur-md">
-            <div className="flex items-center gap-2.5 text-blue-400 font-bold text-sm sm:text-base">
-              <span>⚖️</span>
-              <span>{t.legal.title}</span>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              {t.legal.text}
-            </p>
-          </div>
-        </section>
-
-
-        {/* ========================================================= */}
-        {/* 9. FAQ ACCORDION SECTION */}
-        {/* ========================================================= */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider">
-              {t.faq.badge}
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-black text-white">
-              {t.faq.title}
-            </h2>
-          </div>
-
-          <LandingFaqAccordion items={t.faq.items} />
-        </section>
-
-
-        {/* ========================================================= */}
-        {/* 10. FINAL HIGH-CONVERSION CTA BANNER */}
-        {/* ========================================================= */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-blue-500/40 p-8 sm:p-16 text-center space-y-8 shadow-2xl shadow-blue-950/50">
-            {/* Background Glow */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 via-transparent to-emerald-600/10 pointer-events-none" />
-            
-            <div className="relative z-10 space-y-4 max-w-2xl mx-auto">
-              <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
-                {t.finalCta.title}
+                    <span>، وتحقق أهدافك</span>
+                  </>
+                ) : (
+                  t.howItWorks?.title || "Learn German, Find a Job, Achieve Your Goals"
+                )}
               </h2>
-              <p className="text-slate-200 text-sm sm:text-base leading-relaxed">
-                {t.finalCta.subtitle}
-              </p>
             </div>
 
-            <div className="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href={`/${locale}/dashboard/cv/new`}
-                className="w-full sm:w-auto px-10 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black text-base shadow-xl shadow-blue-600/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 border border-blue-400/30"
-              >
-                <span>🚀</span>
-                <span>{t.finalCta.primaryBtn}</span>
-              </Link>
+            {/* Subtitle below heading */}
+            <p className="text-slate-600 text-base sm:text-lg mt-3 font-medium max-w-2xl mx-auto">
+              {isAr
+                ? "3 خطوات بسيطة تفصلك عن سوق العمل الألماني بمعايير احترافية"
+                : (t.howItWorks?.mockupSubtitle || "3 simple steps separating you from the German job market with professional standards")}
+            </p>
 
+            {/* 3-Column Card Grid with Desktop Connecting Line */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 max-w-5xl mx-auto mt-14 pt-4 relative" dir={dir}>
+              {/* Desktop connecting line behind the cards */}
+              <div
+                className="hidden md:block absolute top-1/2 left-12 right-12 h-0.5 bg-gradient-to-r from-amber-400/40 via-blue-200 to-amber-400/40 -translate-y-1/2 z-0"
+                aria-hidden="true"
+              />
+
+              {/* Step 1 (Right card in RTL) */}
+              <div className="bg-white rounded-2xl p-7 shadow-[0_12px_35px_rgba(8,32,70,0.07)] border border-slate-200/80 hover:border-amber-400 hover:-translate-y-1.5 transition-all duration-300 relative z-10 flex flex-col items-center text-center">
+                {/* Top floating Gold Number Badge */}
+                <div className="w-10 h-10 rounded-full bg-[#FACC15] text-[#082046] font-extrabold text-base flex items-center justify-center shadow-md -mt-12 mb-4 border-4 border-white">
+                  1
+                </div>
+                {/* Icon Halo */}
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#EBF3FF] to-[#DBEAFE] flex items-center justify-center mb-5 shadow-inner">
+                  <svg className="w-10 h-10 text-[#082046]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-extrabold text-[#082046] mb-2">
+                  {isAr ? "أنشئ حسابك مجانا" : (t.howItWorks?.step1?.title || "Create Account Free")}
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {isAr
+                    ? "سجل في ثوان واستفد من لوحة تحكم ذكية لتتبع مسارك المهني واللغوي."
+                    : (t.howItWorks?.step1?.desc || "Sign up in seconds and leverage an intelligent dashboard to track your career and language journey.")}
+                </p>
+              </div>
+
+              {/* Step 2 (Center card) */}
+              <div className="bg-white rounded-2xl p-7 shadow-[0_12px_35px_rgba(8,32,70,0.07)] border border-slate-200/80 hover:border-amber-400 hover:-translate-y-1.5 transition-all duration-300 relative z-10 flex flex-col items-center text-center">
+                {/* Top floating Gold Number Badge */}
+                <div className="w-10 h-10 rounded-full bg-[#FACC15] text-[#082046] font-extrabold text-base flex items-center justify-center shadow-md -mt-12 mb-4 border-4 border-white">
+                  2
+                </div>
+                {/* Icon Halo */}
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#EBF3FF] to-[#DBEAFE] flex items-center justify-center mb-5 shadow-inner">
+                  <svg className="w-10 h-10 text-[#082046]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect width="18" height="12" x="3" y="4" rx="2" />
+                    <line x1="2" x2="22" y1="20" y2="20" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-extrabold text-[#082046] mb-2">
+                  {isAr ? "حضر سيرتك الذاتية وتعلم الألمانية" : (t.howItWorks?.step2?.title || "Build CV & Learn German")}
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {isAr
+                    ? "صمم سيرة ذاتية مطابقة لمعيار DIN 5008 الألماني وتدرب على أساسيات اللغة A1."
+                    : (t.howItWorks?.step2?.desc || "Create a CV matching the German DIN 5008 standard and practice A1 language fundamentals.")}
+                </p>
+              </div>
+
+              {/* Step 3 (Left card in RTL) */}
+              <div className="bg-white rounded-2xl p-7 shadow-[0_12px_35px_rgba(8,32,70,0.07)] border border-slate-200/80 hover:border-amber-400 hover:-translate-y-1.5 transition-all duration-300 relative z-10 flex flex-col items-center text-center">
+                {/* Top floating Gold Number Badge */}
+                <div className="w-10 h-10 rounded-full bg-[#FACC15] text-[#082046] font-extrabold text-base flex items-center justify-center shadow-md -mt-12 mb-4 border-4 border-white">
+                  3
+                </div>
+                {/* Icon Halo */}
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#EBF3FF] to-[#DBEAFE] flex items-center justify-center mb-5 shadow-inner">
+                  <svg className="w-10 h-10 text-[#082046]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+                    <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+                    <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
+                    <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-extrabold text-[#082046] mb-2">
+                  {isAr ? "حسن ملف ترشحك واكتشف الفرص" : (t.howItWorks?.step3?.title || "Optimize Dossier & Get Jobs")}
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {isAr
+                    ? "افحص توافق ملفك مع أنظمة ATS، ولد خطاب الدافع، وتقدم لأحدث الوظائف."
+                    : (t.howItWorks?.step3?.desc || "Check your profile against ATS systems, generate cover letters, and apply to the latest jobs.")}
+                </p>
+              </div>
+            </div>
+
+            {/* Clean Breathing Room for the Golden Pill CTA Button */}
+            <div className="mt-12 mb-10 flex justify-center relative z-20">
               <Link
-                href={`/${locale}/jobs`}
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-white font-bold text-base border border-slate-700 transition-all flex items-center justify-center gap-2"
+                href={user ? `/${locale}/dashboard` : `/${locale}/auth/signup`}
+                className="px-10 py-4 rounded-full bg-[#FACC15] hover:bg-[#FDE047] text-[#082046] font-extrabold text-lg shadow-[0_12px_30px_rgba(250,204,21,0.4)] hover:scale-[1.02] transition-all flex items-center gap-3.5 group cursor-pointer"
               >
-                <span>💼</span>
-                <span>{t.finalCta.secondaryBtn}</span>
+                <span>{isAr ? "ابدأ رحلتك نحو ألمانيا الآن" : (t.howItWorks?.ctaButton || "Start Your Journey to Germany Now")}</span>
+                <span className="w-8 h-8 rounded-full bg-[#082046] text-white flex items-center justify-center font-black text-sm shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                  {isAr ? "←" : "→"}
+                </span>
               </Link>
             </div>
+          </div>
+
+          {/* Architectural Berlin Silhouette & Bottom German Flag Ribbon */}
+          <div className="w-full pointer-events-none select-none relative z-10 leading-none overflow-hidden -mb-0.5">
+            {/* Sleek, Multi-Layered Architectural Berlin Silhouette */}
+            <svg
+              className="w-full h-24 sm:h-36 md:h-44 block"
+              viewBox="0 0 1440 200"
+              preserveAspectRatio="xMidYMax slice"
+              aria-hidden="true"
+            >
+              {/* Layer 1: Background Architectural Silhouette (#1E3A6D) */}
+              <g fill="#1E3A6D" opacity="0.88">
+                {/* Modern Towers Left */}
+                <polygon points="60,200 60,85 110,50 145,50 145,200" />
+                <polygon points="155,200 155,90 180,90 180,68 215,68 215,90 235,90 235,200" />
+
+                {/* Fernsehturm TV Tower (Berlin Tower) */}
+                <path d="M 319 8 L 321 8 L 321 52 L 319 52 Z" />
+                <line x1="315" y1="26" x2="325" y2="26" stroke="#1E3A6D" strokeWidth="2" />
+                <line x1="314" y1="38" x2="326" y2="38" stroke="#1E3A6D" strokeWidth="2" />
+                <polygon points="318,52 322,52 326,62 314,62" />
+                <circle cx="320" cy="76" r="16" />
+                <ellipse cx="320" cy="76" rx="22" ry="2.5" />
+                <polygon points="314,90 326,90 324,108 316,108" />
+                <polygon points="316,108 324,108 328,200 312,200" />
+
+                {/* Mid-skyline Buildings */}
+                <polygon points="350,200 350,110 395,110 395,95 435,95 435,200" />
+                <polygon points="650,200 650,115 690,115 690,100 735,100 735,200" />
+
+                {/* Reichstag Building & Glass Dome */}
+                <rect x="750" y="105" width="160" height="95" />
+                <polygon points="800,105 860,105 830,88" />
+                <path d="M 802 88 C 802 52, 858 52, 858 88 Z" />
+                <rect x="826" y="44" width="8" height="10" />
+                <line x1="830" y1="44" x2="830" y2="34" stroke="#1E3A6D" strokeWidth="2" />
+
+                {/* Cathedral & Church Spires */}
+                <path d="M 970 200 L 970 100 Q 1010 60 1050 100 L 1050 200 Z" />
+                <line x1="1010" y1="62" x2="1010" y2="48" stroke="#1E3A6D" strokeWidth="2.5" />
+                <polygon points="1065,200 1065,85 1095,55 1115,85 1115,200" />
+
+                {/* Modern Alexanderplatz Towers Right */}
+                <polygon points="1135,200 1135,70 1180,70 1180,90 1205,90 1205,200" />
+                <polygon points="1230,200 1230,55 1275,38 1305,55 1305,200" />
+                <polygon points="1330,200 1330,80 1380,80 1380,105 1440,105 1440,200" />
+              </g>
+
+              {/* Layer 2: Foreground Architectural Details & Brandenburg Gate (#0F2952) */}
+              <g fill="#0F2952">
+                {/* Left Rooftops & Facades */}
+                <rect x="0" y="130" width="55" height="70" />
+                <polygon points="50,200 50,140 80,115 110,140 110,200" />
+                <rect x="105" y="125" width="48" height="75" />
+                <polygon points="150,200 150,135 175,135 175,120 205,120 205,140 225,140 225,200" />
+                <polygon points="230,200 230,130 265,130 265,115 295,115 295,200" />
+
+                {/* Townhouses left of Brandenburg Gate */}
+                <polygon points="330,200 330,135 365,135 365,120 405,120 405,200" />
+                <polygon points="410,200 410,140 445,140 445,125 470,125 470,200" />
+
+                {/* Brandenburg Gate (Brandenburger Tor) */}
+                {/* Quadriga Chariot & Horses atop Gate */}
+                <rect x="548" y="93" width="24" height="12" rx="2" />
+                {/* Victory Goddess */}
+                <path d="M 553 93 L 553 74" stroke="#0F2952" strokeWidth="3" strokeLinecap="round" />
+                <path d="M 553 82 Q 543 72 546 86 Z" />
+                <line x1="553" y1="74" x2="548" y2="65" stroke="#0F2952" strokeWidth="1.5" />
+                {/* 4 Horses silhouette */}
+                <path d="M 560 105 L 565 92 L 570 88 L 575 90 L 573 95 L 580 93 L 585 105 Z" />
+
+                {/* Attic Frieze & Entablature */}
+                <rect x="475" y="105" width="170" height="9" rx="1" />
+                <rect x="480" y="114" width="160" height="15" rx="1" />
+                {/* 6 Monumental Columns */}
+                <rect x="485" y="129" width="12" height="71" />
+                <rect x="512" y="129" width="12" height="71" />
+                <rect x="539" y="129" width="12" height="71" />
+                <rect x="566" y="129" width="12" height="71" />
+                <rect x="593" y="129" width="12" height="71" />
+                <rect x="620" y="129" width="12" height="71" />
+
+                {/* Right of Brandenburg Gate: Colonnade & Museums */}
+                <polygon points="645,200 645,135 680,135 680,122 715,122 715,138 745,138 745,200" />
+                {/* Museum Colonnade */}
+                <rect x="860" y="138" width="100" height="7" />
+                <rect x="865" y="145" width="6" height="55" />
+                <rect x="883" y="145" width="6" height="55" />
+                <rect x="901" y="145" width="6" height="55" />
+                <rect x="919" y="145" width="6" height="55" />
+                <rect x="937" y="145" width="6" height="55" />
+                <rect x="954" y="145" width="6" height="55" />
+
+                {/* Modern Berlin Townhouses & Facades */}
+                <polygon points="970,200 970,145 1000,125 1030,145 1030,200" />
+                <rect x="1035" y="130" width="50" height="70" />
+                <polygon points="1090,200 1090,120 1120,100 1150,120 1150,200" />
+                <rect x="1158" y="120" width="55" height="80" />
+                <polygon points="1220,200 1220,110 1250,90 1280,110 1280,200" />
+                <rect x="1290" y="128" width="68" height="72" />
+                <rect x="1365" y="140" width="75" height="60" />
+              </g>
+            </svg>
+
+            {/* German Flag Wave Ribbon Anchored Directly to the Bottom of Section 3 */}
+            <svg
+              className="relative block w-full h-8 sm:h-12 md:h-14 -mt-1"
+              viewBox="0 0 1200 100"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <path d="M0,0 C150,70 350,-30 500,30 C650,90 900,10 1200,40 L1200,100 L0,100 Z" fill="#000000" />
+              <path d="M0,18 C180,75 380,-15 520,38 C660,92 920,25 1200,52 L1200,100 L0,100 Z" fill="#DD0000" />
+              <path d="M0,38 C200,85 400,-2 540,50 C680,98 940,38 1200,66 L1200,100 L0,100 Z" fill="#FFCC00" />
+            </svg>
           </div>
         </section>
 
       </main>
 
-      <Footer locale={locale} />
+      <Footer locale={locale} className="mt-0 border-t-0" />
     </div>
   );
 }

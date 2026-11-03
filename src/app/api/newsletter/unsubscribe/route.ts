@@ -70,14 +70,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (token) {
-      const isValid = await verifyUnsubscribeToken(normalizedEmail, token);
-      if (!isValid) {
-        return NextResponse.json(
-          { success: false, error: "رمز إلغاء الاشتراك غير صالِح" },
-          { status: 403 }
-        );
-      }
+    if (!token || !(await verifyUnsubscribeToken(normalizedEmail, token))) {
+      return NextResponse.json(
+        { success: false, error: "رمز إلغاء الاشتراك غير صالِح أو مفقود / Invalid or missing unsubscribe token" },
+        { status: 403 }
+      );
     }
 
     const existing = await prisma.subscriber.findUnique({

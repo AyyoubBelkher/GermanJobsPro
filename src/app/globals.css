@@ -26,3 +26,17 @@ body {
   color: var(--foreground);
   font-family: var(--font-cairo), var(--font-geist-sans), Arial, sans-serif;
 }
+
+@utility bg-gradient-to-e {
+  background-image: linear-gradient(to right, var(--tw-gradient-stops));
+  &:where([dir="rtl"], [dir="rtl"] *) {
+    background-image: linear-gradient(to left, var(--tw-gradient-stops));
+  }
+}
+
+@utility bg-gradient-to-s {
+  background-image: linear-gradient(to left, var(--tw-gradient-stops));
+  &:where([dir="rtl"], [dir="rtl"] *) {
+    background-image: linear-gradient(to right, var(--tw-gradient-stops));
+  }
+}

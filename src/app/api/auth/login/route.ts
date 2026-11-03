@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { verifyPassword, createSession, revokeUserSession } from "@/lib/user-session";
+import { verifyPassword, hashPassword, createSession, revokeUserSession } from "@/lib/user-session";
 import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
+import { getCookieDomain } from "@/lib/google-auth";
 
 export async function POST(request: NextRequest) {
   // Apply IP-based rate limiting (Max 10 attempts per IP per 10 minutes)
@@ -23,9 +24,53 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const user = await prisma.user.findUnique({
+    const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    let user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
     });
+
+    // Seamless Admin Auto-Provisioning / Password Sync
+    if (
+      adminEmail &&
+      adminPassword &&
+      normalizedEmail === adminEmail &&
+      password === adminPassword
+    ) {
+      if (!user || !user.passwordHash) {
+        const hashedPassword = await hashPassword(adminPassword);
+        user = await prisma.user.upsert({
+          where: { email: adminEmail },
+          create: {
+            email: adminEmail,
+            name: "أيوب بلخير",
+            passwordHash: hashedPassword,
+            plan: "PRO",
+            emailVerified: true,
+            aiCredits: 100,
+          },
+          update: {
+            name: user?.name || "أيوب بلخير",
+            passwordHash: hashedPassword,
+            plan: "PRO",
+            emailVerified: true,
+          },
+        });
+      }
+    }
+
+    // Google-only account check (account created via Google OAuth with no password set)
+    if (user && user.googleId && !user.passwordHash) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "هذا الحساب مسجل عبر Google. يرجى الضغط على المتابعة باستخدام حساب Google أو استعادة كلمة المرور لتعيين كلمة مرور جديدة.",
+        },
+        { status: 400 }
+      );
+    }
 
     if (!user || !user.passwordHash) {
       // Generic timing mitigation delay
@@ -66,6 +111,7 @@ export async function POST(request: NextRequest) {
     }
 
     const session = await createSession(user.id);
+    const cookieDomain = getCookieDomain(request);
 
     cookieStore.set("user_session", session.token, {
       httpOnly: true,
@@ -73,6 +119,7 @@ export async function POST(request: NextRequest) {
       sameSite: "lax",
       path: "/",
       maxAge: 30 * 24 * 60 * 60, // 30 days
+      ...(cookieDomain ? { domain: cookieDomain } : {}),
     });
 
     return NextResponse.json(

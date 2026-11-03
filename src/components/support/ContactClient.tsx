@@ -297,7 +297,7 @@ export default function ContactClient({ initialUser, locale }: ContactClientProp
                 {loading ? (
                   <span>{isAr ? "جاري إرسال التذكرة..." : isDe ? "Wird gesendet..." : "Submitting Ticket..."}</span>
                 ) : (
-                  <span>{isAr ? "إرسال التذكرة والاستفسار ✨" : isDe ? "Nachricht absenden ✨" : "Send Support Ticket ✨"}</span>
+                  <span>{isAr ? "إرسال التذكرة والاستفسار" : isDe ? "Nachricht absenden" : "Send Support Ticket"}</span>
                 )}
               </button>
             </div>

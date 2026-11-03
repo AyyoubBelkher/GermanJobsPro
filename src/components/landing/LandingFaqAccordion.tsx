@@ -27,8 +27,8 @@ export default function LandingFaqAccordion({ items }: LandingFaqAccordionProps)
             key={idx}
             className={`rounded-2xl border transition-all duration-300 overflow-hidden ${
               isOpen
-                ? "bg-slate-900/90 border-blue-500/40 shadow-xl shadow-blue-500/5"
-                : "bg-slate-900/50 border-slate-800/80 hover:border-slate-700/80"
+                ? "bg-white border-blue-500 shadow-md shadow-blue-500/5"
+                : "bg-white border-slate-200 hover:border-slate-300 shadow-2xs"
             }`}
           >
             <button
@@ -37,12 +37,12 @@ export default function LandingFaqAccordion({ items }: LandingFaqAccordionProps)
               className="w-full py-4 px-6 text-start flex items-center justify-between gap-4 cursor-pointer focus:outline-none"
               aria-expanded={isOpen}
             >
-              <span className="font-bold text-white text-base sm:text-lg">
+              <span className="font-bold text-slate-900 text-base sm:text-lg">
                 {item.question}
               </span>
               <span
-                className={`p-2 rounded-xl bg-slate-800/80 text-blue-400 shrink-0 transition-transform duration-300 ${
-                  isOpen ? "rotate-180 bg-blue-600/20 text-blue-300" : ""
+                className={`p-2 rounded-xl bg-slate-100 text-slate-600 shrink-0 transition-transform duration-300 ${
+                  isOpen ? "rotate-180 bg-blue-50 text-blue-600" : ""
                 }`}
               >
                 <svg
@@ -58,7 +58,7 @@ export default function LandingFaqAccordion({ items }: LandingFaqAccordionProps)
             </button>
 
             {isOpen && (
-              <div className="px-6 pb-5 pt-1 text-sm text-slate-300/90 leading-relaxed border-t border-slate-800/50">
+              <div className="px-6 pb-5 pt-1 text-sm text-slate-600 leading-relaxed border-t border-slate-100">
                 {item.answer}
               </div>
             )}

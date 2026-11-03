@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { revokeUserSession } from "@/lib/user-session";
+import { getCookieDomain } from "@/lib/google-auth";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("user_session")?.value;
@@ -11,6 +12,8 @@ export async function POST() {
       await revokeUserSession(token);
     }
 
+    const cookieDomain = getCookieDomain(request);
+
     cookieStore.set("user_session", "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -18,6 +21,7 @@ export async function POST() {
       path: "/",
       maxAge: 0,
       expires: new Date(0),
+      ...(cookieDomain ? { domain: cookieDomain } : {}),
     });
 
     return NextResponse.json(

@@ -447,7 +447,6 @@ export default function JobBoardClient({
                     )}&jobDescription=${encodeURIComponent(job.requirements || job.descriptionRaw || "")}`}
                     className="py-2 px-3 rounded-xl bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/20 font-bold text-xs text-center transition-all flex items-center justify-center gap-1"
                   >
-                    <span>✨</span>
                     <span>{dict.jobs.generateAnschreiben}</span>
                   </Link>
 

@@ -150,7 +150,7 @@ export default function NewsletterForm({ locale: propLocale }: { locale?: string
                       <span>جاري الاشتراك...</span>
                     </>
                   ) : (
-                    <span>اشترك الآن ✨</span>
+                    <span>اشترك الآن</span>
                   )}
                 </button>
               </div>
@@ -199,7 +199,7 @@ export default function NewsletterForm({ locale: propLocale }: { locale?: string
 
               {/* Footer Trust Badges */}
               <p className="text-[11px] text-slate-400 pt-1 text-center font-medium">
-                ✨ مجاني 100% &nbsp;•&nbsp; 🔒 حماية لخصوصيتك &nbsp;•&nbsp; ⚡ يمكنك{" "}
+                مجاني 100% &nbsp;•&nbsp; 🔒 حماية لخصوصيتك &nbsp;•&nbsp; ⚡ يمكنك{" "}
                 <Link
                   href={`/${locale}/unsubscribe`}
                   className="underline hover:text-slate-200 transition-colors"

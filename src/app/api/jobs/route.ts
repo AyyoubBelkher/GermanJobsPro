@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, withDbRetry } from "@/lib/prisma";
 import { getCityVariants } from "@/lib/cityAliases";
 import { handleJobIngestion } from "@/lib/jobIngestion";
 
@@ -93,15 +93,17 @@ export async function GET(request: NextRequest) {
 
     const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
 
-    const [total, jobs] = await Promise.all([
-      prisma.job.count({ where }),
-      prisma.job.findMany({
-        where,
-        orderBy: { publishedAt: "desc" },
-        skip,
-        take: limit,
-      }),
-    ]);
+    const [total, jobs] = await withDbRetry(() =>
+      Promise.all([
+        prisma.job.count({ where }),
+        prisma.job.findMany({
+          where,
+          orderBy: { publishedAt: "desc" },
+          skip,
+          take: limit,
+        }),
+      ])
+    );
 
     const totalPages = Math.ceil(total / limit) || 1;
 

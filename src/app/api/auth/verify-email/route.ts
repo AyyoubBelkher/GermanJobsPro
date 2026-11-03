@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { hashSha256, createSession } from "@/lib/user-session";
 import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
+import { getCookieDomain } from "@/lib/google-auth";
 
 export async function POST(request: NextRequest) {
   const rateLimitResponse = checkRateLimit(request, AUTH_RATE_LIMITS.VERIFY_CODE);
@@ -41,6 +42,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const cookieDomain = getCookieDomain(request);
+
     // If user is already verified
     if (user.emailVerified) {
       const session = await createSession(user.id);
@@ -51,6 +54,7 @@ export async function POST(request: NextRequest) {
         sameSite: "lax",
         path: "/",
         maxAge: 30 * 24 * 60 * 60, // 30 days
+        ...(cookieDomain ? { domain: cookieDomain } : {}),
       });
 
       return NextResponse.json(
@@ -138,6 +142,7 @@ export async function POST(request: NextRequest) {
       sameSite: "lax",
       path: "/",
       maxAge: 30 * 24 * 60 * 60, // 30 days
+      ...(cookieDomain ? { domain: cookieDomain } : {}),
     });
 
     return NextResponse.json(

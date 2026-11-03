@@ -7,7 +7,7 @@ import Footer from "@/components/ui/Footer";
 import { prisma } from "@/lib/prisma";
 import { getUserSession } from "@/lib/user-session";
 import JobDetailClient from "@/components/jobs/JobDetailClient";
-import { JobDetailData, extractCleanHrEmail } from "@/lib/jobUtils";
+import { JobDetailData, extractCleanHrEmail, splitBilingualTitle } from "@/lib/jobUtils";
 import { stripHtml } from "@/lib/cover-letter";
 
 export const revalidate = 60;
@@ -380,52 +380,63 @@ export default async function JobDetailPage({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {safeSimilarJobs.map((relJob) => (
-                <Link
-                  key={relJob.id}
-                  href={`/${locale}/jobs/${relJob.id}`}
-                  className="group bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-3xl p-5 space-y-4 shadow-xl transition-all flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
-                        {relJob.category}
-                      </span>
-                      {relJob.salary && (
-                        <span className="px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[11px] font-medium">
-                          💰 {relJob.salary}
+              {safeSimilarJobs.map((relJob) => {
+                const { primaryTitle, latinSubtitle } = splitBilingualTitle(relJob.title);
+                return (
+                  <Link
+                    key={relJob.id}
+                    href={`/${locale}/jobs/${relJob.id}`}
+                    className="group bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-3xl p-5 space-y-4 shadow-xl transition-all flex flex-col justify-between"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
+                          {relJob.category}
                         </span>
-                      )}
+                        {relJob.salary && (
+                          <span className="px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[11px] font-medium">
+                            💰 {relJob.salary}
+                          </span>
+                        )}
+                      </div>
+
+                      <div>
+                        <h3
+                          className="font-extrabold text-white text-base leading-snug group-hover:text-blue-400 transition-colors line-clamp-2 text-start"
+                          dir="auto"
+                        >
+                          <span>{primaryTitle}</span>
+                          {latinSubtitle && (
+                            <span
+                              dir="ltr"
+                              className="block mt-1 font-normal text-xs text-slate-400 dir-ltr text-left [direction:ltr] [unicode-bidi:isolate]"
+                            >
+                              {latinSubtitle}
+                            </span>
+                          )}
+                        </h3>
+                        <p className="text-xs text-slate-400 mt-1" dir="auto">
+                          🏢 {relJob.company}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap text-xs pt-1">
+                        <span className="px-2 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 font-medium">
+                          📍 {relJob.city || (isAr ? "ألمانيا" : isDe ? "Deutschland" : "Germany")}
+                        </span>
+                        <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium">
+                          🇩🇪 {relJob.languageReq || "B1/B2"}
+                        </span>
+                      </div>
                     </div>
 
-                    <div>
-                      <h3
-                        className="font-extrabold text-white text-base leading-snug group-hover:text-blue-400 transition-colors line-clamp-2"
-                        dir="auto"
-                      >
-                        {relJob.title}
-                      </h3>
-                      <p className="text-xs text-slate-400 mt-1" dir="auto">
-                        🏢 {relJob.company}
-                      </p>
+                    <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-bold text-blue-400 group-hover:text-blue-300">
+                      <span>{isAr ? "عرض التفاصيل والتقديم" : isDe ? "Details ansehen" : "View Details"}</span>
+                      <span className={dir === "rtl" ? "rotate-180" : ""}>→</span>
                     </div>
-
-                    <div className="flex items-center gap-2 flex-wrap text-xs pt-1">
-                      <span className="px-2 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 font-medium">
-                        📍 {relJob.city || (isAr ? "ألمانيا" : isDe ? "Deutschland" : "Germany")}
-                      </span>
-                      <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium">
-                        🇩🇪 {relJob.languageReq || "B1/B2"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-bold text-blue-400 group-hover:text-blue-300">
-                    <span>{isAr ? "عرض التفاصيل والتقديم" : isDe ? "Details ansehen" : "View Details"}</span>
-                    <span className={dir === "rtl" ? "rotate-180" : ""}>→</span>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           </section>
         )}

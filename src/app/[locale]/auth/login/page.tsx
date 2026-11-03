@@ -79,13 +79,16 @@ export default function LoginPage({
     }
   }, [locale, isAr, isDe]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMessage("");
     setUnverifiedEmail("");
 
-    const trimmedEmail = email.trim().toLowerCase();
-    if (!trimmedEmail || !password) {
+    const formData = new FormData(e.currentTarget);
+    const rawEmail = (email || String(formData.get("email") || "")).trim().toLowerCase();
+    const rawPassword = password || String(formData.get("password") || "");
+
+    if (!rawEmail || !rawPassword) {
       setErrorMessage(
         isAr
           ? "يرجى كتابة البريد الإلكتروني وكلمة المرور."
@@ -102,14 +105,15 @@ export default function LoginPage({
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trimmedEmail, password }),
+        credentials: "include",
+        body: JSON.stringify({ email: rawEmail, password: rawPassword }),
       });
 
       const data = await res.json();
 
       if (!res.ok || !data.success) {
         if (data.requiresVerification) {
-          setUnverifiedEmail(trimmedEmail);
+          setUnverifiedEmail(rawEmail);
         }
         setErrorMessage(
           data.error ||
@@ -185,6 +189,9 @@ export default function LoginPage({
               </label>
               <input
                 type="email"
+                name="email"
+                id="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
@@ -208,6 +215,9 @@ export default function LoginPage({
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
+                  name="password"
+                  id="password"
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -255,7 +265,7 @@ export default function LoginPage({
               {loading ? (
                 <span>{isAr ? "جاري تسجيل الدخول..." : isDe ? "Wird angemeldet..." : "Signing In..."}</span>
               ) : (
-                <span>{isAr ? "تسجيل الدخول ✨" : isDe ? "Anmelden ✨" : "Sign In ✨"}</span>
+                <span>{isAr ? "تسجيل الدخول" : isDe ? "Anmelden" : "Sign In"}</span>
               )}
             </button>
           </form>

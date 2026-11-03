@@ -356,7 +356,7 @@ export const CV_GUIDANCE_DICTIONARY: Record<TooltipKey, { ar: TooltipContent; de
       title: "المهام والإنجازات (Bullet Points)",
       description: "نقاط محددة تبدأ بأسماء أفعال ألمانية (Substantivstil) وإنجازات رقمية قابلة للقياس.",
       example: "• Entwicklung von Microservices mit Node.js\n• Steigerung der Systemperformance um 30%\n• Fachliche Führung eines Teams von 4 Entwicklern",
-      tip: "في ألمانيا يفضل أسلوب (Substantivstil) مثل: Konzeption von..., Leitung der..., Optimierung von... استخدم زر 'تحسين بالذكاء الاصطناعي ✨' لصياغتها فورياً.",
+      tip: "في ألمانيا يفضل أسلوب (Substantivstil) مثل: Konzeption von..., Leitung der..., Optimierung von... استخدم زر 'تحسين بالذكاء الاصطناعي' لصياغتها فورياً.",
     },
     de: {
       title: "Aufgaben & Erfolge (Substantivstil)",
@@ -368,7 +368,7 @@ export const CV_GUIDANCE_DICTIONARY: Record<TooltipKey, { ar: TooltipContent; de
       title: "Tasks & Key Achievements",
       description: "Impactful bullet points starting with strong action words and quantified metrics.",
       example: "• Development of RESTful microservices using Node.js\n• Improved system uptime to 99.9%\n• Mentored 3 junior software engineers",
-      tip: "German CVs prefer action-noun style (Entwicklung von..., Optimierung der...). Use our AI Optimizer ✨.",
+      tip: "German CVs prefer action-noun style (Entwicklung von..., Optimierung der...). Use our AI Optimizer.",
     },
   },
 

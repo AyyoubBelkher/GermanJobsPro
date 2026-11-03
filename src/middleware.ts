@@ -42,6 +42,17 @@ function resolvePreferredLocale(request: NextRequest): Locale {
   return DEFAULT_LOCALE;
 }
 
+function getExternalUrl(request: NextRequest, targetPath: string): URL {
+  const host =
+    request.headers.get("x-forwarded-host") ||
+    request.headers.get("host") ||
+    request.nextUrl.host;
+  const proto =
+    request.headers.get("x-forwarded-proto") ||
+    (host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
+  return new URL(targetPath, `${proto}://${host}`);
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
@@ -63,7 +74,7 @@ export async function middleware(request: NextRequest) {
   if (!potentialLocale || !isValidLocale(potentialLocale)) {
     const resolvedLocale = resolvePreferredLocale(request);
     const targetPath = `/${resolvedLocale}${pathname === "/" ? "" : pathname}${search}`;
-    const redirectRes = NextResponse.redirect(new URL(targetPath, request.url), 307);
+    const redirectRes = NextResponse.redirect(getExternalUrl(request, targetPath), 307);
     redirectRes.cookies.set("preferred_locale", resolvedLocale, {
       path: "/",
       maxAge: 60 * 60 * 24 * 365,
@@ -81,7 +92,7 @@ export async function middleware(request: NextRequest) {
     if (subPath !== "/login") {
       const adminSession = request.cookies.get("admin_session")?.value;
       if (!(await verifySessionToken(adminSession))) {
-        const loginUrl = new URL(`/${locale}/admin/login`, request.url);
+        const loginUrl = getExternalUrl(request, `/${locale}/admin/login`);
         const res = NextResponse.redirect(loginUrl);
         res.cookies.set("preferred_locale", locale, {
           path: "/",
@@ -98,7 +109,7 @@ export async function middleware(request: NextRequest) {
   if (localizedDashboardMatch) {
     const userSession = request.cookies.get("user_session")?.value;
     if (!userSession || userSession.trim() === "") {
-      const loginUrl = new URL(`/${locale}/auth/login`, request.url);
+      const loginUrl = getExternalUrl(request, `/${locale}/auth/login`);
       const res = NextResponse.redirect(loginUrl);
       res.cookies.set("preferred_locale", locale, {
         path: "/",

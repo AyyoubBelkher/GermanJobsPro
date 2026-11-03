@@ -537,7 +537,7 @@ export default function SignupPage({
                   {loading ? (
                     <span>{isAr ? "جاري المعالجة..." : isDe ? "Wird verarbeitet..." : "Processing..."}</span>
                   ) : (
-                    <span>{isAr ? "إنشاء الحساب ومتابعة التحقق ✨" : isDe ? "Konto erstellen & fortfahren ✨" : "Create Account & Verify ✨"}</span>
+                    <span>{isAr ? "إنشاء الحساب ومتابعة التحقق" : isDe ? "Konto erstellen & fortfahren" : "Create Account & Verify"}</span>
                   )}
                 </button>
               </form>

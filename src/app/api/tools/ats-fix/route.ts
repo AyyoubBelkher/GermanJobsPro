@@ -334,6 +334,7 @@ RETURN ONLY A VALID JSON OBJECT MATCHING THIS SCHEMA:
       parsed = JSON.parse(cleaned);
     } catch (parseErr) {
       console.error("[ats-fix] JSON Parse error from Gemini output:", parseErr);
+      await refundAiCredit(authResult.user.id);
       return NextResponse.json(
         { success: false, error: "Failed to parse AI optimization response. Please try again." },
         { status: 500 }

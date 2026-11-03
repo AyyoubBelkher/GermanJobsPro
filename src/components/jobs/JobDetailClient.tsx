@@ -577,13 +577,12 @@ export default function JobDetailClient({
               href={coverLetterUrl}
               className="w-full min-h-[44px] py-2.5 px-3.5 rounded-xl bg-blue-600/15 hover:bg-blue-600/25 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>✨</span>
               <span>
                 {isAr
-                  ? "تجهيز خطاب الدافع (Anschreiben) لهذه الوظيفة ✨"
+                  ? "تجهيز خطاب الدافع (Anschreiben) لهذه الوظيفة"
                   : isDe
-                  ? "Anschreiben für diese Stelle vorbereiten ✨"
-                  : "Prepare Tailored Cover Letter ✨"}
+                  ? "Anschreiben für diese Stelle vorbereiten"
+                  : "Prepare Tailored Cover Letter"}
               </span>
             </Link>
 
@@ -650,13 +649,12 @@ export default function JobDetailClient({
               href={coverLetterUrl}
               className="w-full min-h-[46px] py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-100 hover:text-white border border-slate-700 font-bold text-xs sm:text-sm text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
             >
-              <span>✨</span>
               <span>
                 {isAr
-                  ? "تجهيز خطاب الدافع (Anschreiben) لهذه الوظيفة ✨"
+                  ? "تجهيز خطاب الدافع (Anschreiben) لهذه الوظيفة"
                   : isDe
-                  ? "Anschreiben für diese Stelle vorbereiten ✨"
-                  : "Prepare Tailored Cover Letter (Anschreiben) ✨"}
+                  ? "Anschreiben für diese Stelle vorbereiten"
+                  : "Prepare Tailored Cover Letter (Anschreiben)"}
               </span>
             </Link>
 
@@ -715,8 +713,7 @@ export default function JobDetailClient({
               href={coverLetterUrl}
               className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-extrabold text-sm text-center shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>✨</span>
-              <span>{isAr ? "تجهيز خطاب الدافع (Anschreiben) لهذه الوظيفة ✨" : "Prepare Tailored Cover Letter ✨"}</span>
+              <span>{isAr ? "تجهيز خطاب الدافع (Anschreiben) لهذه الوظيفة" : "Prepare Tailored Cover Letter"}</span>
             </Link>
           </div>
         )}
@@ -764,7 +761,6 @@ export default function JobDetailClient({
       >
         <div className="flex items-center justify-between text-white font-bold text-xs group-hover:text-blue-400 transition-colors">
           <div className="flex items-center gap-2">
-            <span className="text-base">✨</span>
             <span>{isAr ? "توليد خطاب الدافع (Anschreiben)" : "DIN 5008 Cover Letter Studio"}</span>
           </div>
           <span className={dir === "rtl" ? "rotate-180" : ""}>→</span>
@@ -1407,7 +1403,6 @@ export default function JobDetailClient({
                   href={coverLetterUrl}
                   className="px-4 py-2.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
                 >
-                  <span>✨</span>
                   <span>{isAr ? "صياغة خطاب الدافع للوظيفة" : "Draft Tailored Cover Letter"}</span>
                 </Link>
               </div>

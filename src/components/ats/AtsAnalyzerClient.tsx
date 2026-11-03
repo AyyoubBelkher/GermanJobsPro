@@ -893,10 +893,10 @@ export default function AtsAnalyzerClient({
                       ) : (
                         <span>
                           {isAr
-                            ? "✨ إصلاح وتنسيق السيرة الذاتية تلقائياً (DIN 5008)"
+                            ? "إصلاح وتنسيق السيرة الذاتية تلقائياً (DIN 5008)"
                             : isDe
-                            ? "✨ Lebenslauf automatisch nach DIN 5008 optimieren"
-                            : "✨ Auto-Optimize CV to DIN 5008 Standard"}
+                            ? "Lebenslauf automatisch nach DIN 5008 optimieren"
+                            : "Auto-Optimize CV to DIN 5008 Standard"}
                         </span>
                       )}
                     </button>
@@ -1186,10 +1186,10 @@ export default function AtsAnalyzerClient({
                   ) : (
                     <span>
                       {isAr
-                        ? "✨ إصلاح وتنسيق السيرة الذاتية تلقائياً (DIN 5008)"
+                        ? "إصلاح وتنسيق السيرة الذاتية تلقائياً (DIN 5008)"
                         : isDe
-                        ? "✨ Lebenslauf automatisch nach DIN 5008 optimieren"
-                        : "✨ Auto-Optimize CV to DIN 5008 Standard"}
+                        ? "Lebenslauf automatisch nach DIN 5008 optimieren"
+                        : "Auto-Optimize CV to DIN 5008 Standard"}
                     </span>
                   )}
                 </button>

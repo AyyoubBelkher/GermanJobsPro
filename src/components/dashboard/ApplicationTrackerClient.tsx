@@ -529,7 +529,6 @@ export default function ApplicationTrackerClient({
             onClick={() => setIsAddModalOpen(true)}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-extrabold text-sm shadow-lg shadow-blue-600/25 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
           >
-            <span>✨</span>
             <span>{t.addApplication}</span>
           </button>
         </div>

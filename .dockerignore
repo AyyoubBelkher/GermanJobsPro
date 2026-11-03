@@ -1,0 +1,13 @@
+node_modules
+.next
+.git
+.gitignore
+.env
+.env.*
+*.log
+repomix-output.xml
+generate_clean_roadmap.py
+import-live-production-data.ts
+migrate-neon.ts
+test
+README.md

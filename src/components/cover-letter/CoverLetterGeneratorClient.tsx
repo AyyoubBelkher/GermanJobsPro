@@ -168,7 +168,7 @@ export default function CoverLetterGeneratorClient({
       {/* Top Header */}
       <div className="space-y-2">
         <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-          {isAr ? "✨ استوديو توليد خطابات التغطية (DIN 5008 Anschreiben)" : isDe ? "✨ Anschreiben-Generator (DIN 5008)" : "✨ AI Cover Letter Generator (DIN 5008)"}
+          {isAr ? "استوديو توليد خطابات التغطية (DIN 5008 Anschreiben)" : isDe ? "Anschreiben-Generator (DIN 5008)" : "AI Cover Letter Generator (DIN 5008)"}
         </h2>
         <p className="text-sm text-slate-400 max-w-2xl">
           {isAr
@@ -525,7 +525,7 @@ export default function CoverLetterGeneratorClient({
             ) : (
               <div className="text-center py-20 px-4 rounded-2xl bg-slate-950/60 border border-dashed border-slate-800 space-y-3">
                 <div className="w-12 h-12 rounded-xl bg-blue-950 text-blue-400 flex items-center justify-center mx-auto text-xl">
-                  ✨
+                  ✉️
                 </div>
                 <p className="text-sm font-semibold text-slate-300">
                   {isAr ? "املأ بيانات الوظيفة واضغط توليد" : "Fill in job details and click generate"}

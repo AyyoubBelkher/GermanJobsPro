@@ -122,6 +122,7 @@ export async function verifyUserSession(token?: string | null): Promise<{
     id: string;
     email: string;
     name: string | null;
+    avatarUrl: string | null;
     plan: string;
     planExpiresAt: Date | null;
     aiCredits: number;
@@ -145,6 +146,7 @@ export async function verifyUserSession(token?: string | null): Promise<{
                 id: true,
                 email: true,
                 name: true,
+                avatarUrl: true,
                 plan: true,
                 planExpiresAt: true,
                 aiCredits: true,

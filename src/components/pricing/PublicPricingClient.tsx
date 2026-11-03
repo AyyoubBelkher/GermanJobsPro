@@ -601,7 +601,7 @@ export default function PublicPricingClient({
             disabled={isRedeeming || !promoCode.trim()}
             className="w-full sm:w-auto px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-md shadow-blue-600/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
           >
-            {isRedeeming ? (isAr ? "جاري التحقق..." : "Verifying...") : isAr ? "تفعيل الكود ✨" : "Apply Code ✨"}
+            {isRedeeming ? (isAr ? "جاري التحقق..." : "Verifying...") : isAr ? "تفعيل الكود" : "Apply Code"}
           </button>
         </form>
       </div>

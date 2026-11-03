@@ -379,7 +379,7 @@ export function extractCleanExcerpt(
     text = text
       .replace(/^[\s\uFEFF]*(?:تاريخ\s*(?:الدرس|النشر)|التاريخ)\s*:\s*[^\r\n]*(\r?\n)*/gmiu, "")
       .replace(
-        /^[\s\uFEFF]*(?:المستوى\s*:\s*(?:CEFR\s*)?[A-C][12](?:\.\d)?(?:\s*-\s*[A-C][12](?:\.\d)?)?|[^\r\n]*CEFR\s*[A-C][12](?:\.\d)?)[^\r\n]*(\r?\n)*/gmiu,
+        /^[\s\uFEFF]*(?:#+\s*)?(?:المستوى|Level)\s*:\s*(?:CEFR\s*)?[A-C][12](?:\.\d)?(?:\s*-\s*[A-C][12](?:\.\d)?)?[^\r\n]*(\r?\n)*/gmiu,
         ""
       )
       .replace(/^[\s\uFEFF]*العنوان\s*:\s*[^\r\n]+(\r?\n)*/gmiu, "")
@@ -414,7 +414,12 @@ export function extractCleanExcerpt(
   // 2. Neatly parenthesize bracketed phonetic transcriptions so they don't mash into adjacent words
   text = text.replace(/\[([\u0600-\u06FF\s:!؟،.\-_…]+)\]/gu, " ($1) ");
 
-  // 3. Replace newlines between short vocabulary lines with " • " before collapsing whitespace
+  // 3. Ensure table pipes and adjacent vocab items have proper boundaries
+  text = text.replace(/\|/g, " ");
+  text = text.replace(/([a-zA-ZäöüÄÖÜß])\(/gu, "$1 (");
+  text = text.replace(/\)([\u0600-\u06FFa-zA-ZäöüÄÖÜß])/gu, ") $1");
+
+  // 4. Replace newlines between short vocabulary lines with " • " before collapsing whitespace
   const rawLines = text.split(/\r?\n/);
   const formattedChunks: string[] = [];
   let prevWasShort = false;
@@ -429,7 +434,8 @@ export function extractCleanExcerpt(
     const isVocabOrList =
       (hasLatin && hasArabic) ||
       /^(\d+\.|\*|-|•)\s*/.test(trimmed) ||
-      /[:\-–—]/.test(cleanLine);
+      /[:\-–—]/.test(cleanLine) ||
+      cleanLine.length < 35;
     const isShortVocab = cleanLine.length <= 100 && isVocabOrList;
 
     if (formattedChunks.length > 0) {
@@ -445,6 +451,9 @@ export function extractCleanExcerpt(
   }
 
   text = formattedChunks.join("");
+
+  // Separate any remaining consecutive Arabic-translation and capitalized Latin-word pairs
+  text = text.replace(/([\u0600-\u06FF])\s+([A-ZÄÖÜ][a-zäöüß]+)/gu, "$1 • $2");
 
   // 4. Strips markdown formatting symbols ([#*`>_~\[\]]) and collapses extra whitespace
   text = text

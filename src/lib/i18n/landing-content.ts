@@ -15,7 +15,16 @@ export interface LandingContent {
     subheadline: string;
     primaryCta: string;
     secondaryCta: string;
+    trustMicro?: string;
     trustBadges: [string, string, string];
+  };
+  toolsHub: {
+    card1: { title: string; subtitle: string; href: string };
+    card2: { title: string; subtitle: string; href: string };
+    card3: { title: string; subtitle: string; href: string };
+    card4: { title: string; subtitle: string; href: string };
+    card5: { title: string; subtitle: string; href: string };
+    card6: { title: string; subtitle: string; href: string };
   };
   pillars: {
     badge: string;
@@ -139,6 +148,7 @@ export interface LandingContent {
   howItWorks: {
     badge: string;
     title: string;
+    ctaButton?: string;
     step1: {
       number: string;
       title: string;
@@ -154,6 +164,8 @@ export interface LandingContent {
       title: string;
       desc: string;
     };
+    mockupTitle?: string;
+    mockupSubtitle?: string;
   };
   a1Track: {
     badge: string;
@@ -224,18 +236,27 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
     hero: {
       badge: "🇩🇪 La plateforme complète pour travailler et s'installer en Allemagne",
       headline: {
-        prefix: "Préparez votre dossier de candidature allemand ",
-        highlight: "(DIN 5008)",
-        suffix: " & franchissez les filtres ATS",
+        prefix: "Préparez votre carrière ",
+        highlight: "en Allemagne",
+        suffix: " sur une seule plateforme !",
       },
-      subheadline: "Créez votre CV DIN 5008 certifié, générez des lettres de motivation sur mesure (Anschreiben), assemblez votre Bewerbungsmappe complète, vérifiez la conformité ATS et apprenez l'allemand A1.",
-      primaryCta: "Créer votre CV allemand gratuit 🇩🇪",
-      secondaryCta: "Parcours Allemand A1 📚",
+      subheadline: "Créez votre CV DIN 5008 certifié, optimisez votre candidature par IA, apprenez l'allemand facilement et découvrez les meilleures offres d'emploi et de formation.",
+      primaryCta: "Commencer gratuitement",
+      secondaryCta: "▶️ Découvrir les outils",
+      trustMicro: "🛡️ Démarrez 100% gratuit – Testez les outils avant tout engagement",
       trustBadges: [
         "Norme officielle DIN 5008",
         "Conforme RGPD 100%",
         "Paiement unique, sans abonnement caché",
       ],
+    },
+    toolsHub: {
+      card1: { title: "AI CV Builder", subtitle: "Créer un CV professionnel", href: "/dashboard/cv/new" },
+      card2: { title: "ATS CV Analyzer", subtitle: "Analyser et optimiser votre CV", href: "/dashboard/ats-analyzer" },
+      card3: { title: "Dossier Studio", subtitle: "Dossier de candidature complet", href: "/dashboard/dossier" },
+      card4: { title: "AI Cover Letter", subtitle: "Rédiger une lettre percutante", href: "/dashboard/cover-letters/new" },
+      card5: { title: "German A1 Academy", subtitle: "Apprendre l'allemand facilement", href: "/blog?category=German+A1" },
+      card6: { title: "German Jobs", subtitle: "Explorer les emplois en Allemagne", href: "/jobs" },
     },
     pillars: {
       badge: "4 piliers essentiels pour l'Allemagne",
@@ -287,7 +308,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       ],
     },
     freeValue: {
-      badge: "✨ Valeur Gratuite Immédiate — Zéro Risque",
+      badge: "Valeur Gratuite Immédiate — Zéro Risque",
       title: "Commencez 100% Gratuitement : Tout pour Réussir en Allemagne",
       subtitle: "Sans carte bancaire et sans abonnement caché. Créez votre CV DIN 5008, apprenez l'allemand A1 en audio et testez le scanner ATS dès maintenant.",
       card1: {
@@ -321,22 +342,25 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
     },
     howItWorks: {
       badge: "Comment ça marche",
-      title: "3 étapes simples vers votre dossier de candidature allemand",
+      title: "Apprenez l'allemand, trouvez un emploi, réussissez vos projets",
+      ctaButton: "Commencez votre voyage vers l'Allemagne",
       step1: {
-        number: "01",
-        title: "1. Conversion instantanée (Import PDF en 1 clic)",
-        desc: "Téléversez votre CV PDF actuel ou commencez à zéro. Le système analyse et adapte instantanément vos données selon les normes DIN 5008.",
+        number: "1",
+        title: "Créez votre compte gratuit",
+        desc: "Inscription en quelques secondes avec crédits d'accueil offerts pour tester les outils d'IA.",
       },
       step2: {
-        number: "02",
-        title: "2. Optimisation IA & style allemand (Substantivstil)",
-        desc: "Indiquez le poste ciblé pour formuler vos expériences en Substantivstil et générer l'Anschreiben correspondant.",
+        number: "2",
+        title: "Préparez votre CV et apprenez l'allemand",
+        desc: "Créez votre CV DIN 5008 certifié et suivez les cours A1 avec prononciation audio native.",
       },
       step3: {
-        number: "03",
-        title: "3. Téléchargement & Candidature directe",
-        desc: "Téléchargez votre dossier PDF officiel DIN 5008 et postulez directement auprès des entreprises en toute confiance.",
+        number: "3",
+        title: "Optimisez votre dossier et postulez",
+        desc: "Validez la conformité ATS et postulez directement auprès des entreprises allemandes.",
       },
+      mockupTitle: "GermanJobsPro Mobile",
+      mockupSubtitle: "Outils complets pour réussir en Allemagne — Commencez dès aujourd'hui",
     },
     a1Track: {
       badge: "Parcours Allemand A1 Débutant",
@@ -419,28 +443,37 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
   ar: {
     meta: {
       title: "GermanJobsPro 🇩🇪 | المنظومة المتكاملة للعمل والاستقرار في ألمانيا (DIN 5008)",
-      description: "جهّز ملف ترشيحك الألماني المعتمد (DIN 5008)، أنشئ خطابات دافع Anschreiben بالذكاء الاصطناعي، وافحص توافق ATS وتعلّم الألمانية للمبتدئين A1.",
+      description: "جهز ملف ترشيحك الألماني المعتمد (DIN 5008)، أنشئ خطابات دافع Anschreiben بالذكاء الاصطناعي، وافحص توافق ATS وتعلم الألمانية للمبتدئين A1.",
     },
     hero: {
       badge: "🇩🇪 المنظومة المتكاملة للعمل والاستقرار في ألمانيا",
       headline: {
-        prefix: "جهّز ملف ترشيحك الألماني المعتمد ",
-        highlight: "(DIN 5008)",
-        suffix: " واجتز فلاتر التوظيف باحترافية",
+        prefix: "حضر مستقبلك المهني ",
+        highlight: "في ألمانيا",
+        suffix: " من مكان واحد!",
       },
-      subheadline: "أنشئ سيرتك الذاتية وفق معيار DIN 5008، ولّد خطابات دافع (Anschreiben) بالذكاء الاصطناعي، اجمع ملف الترشيح المتكامل (Bewerbungsmappe)، وافحص توافق الـ ATS مع مسار تعلم الألمانية A1.",
-      primaryCta: "أنشئ سيرتك الذاتية مجاناً 🇩🇪",
-      secondaryCta: "مسار تعلم الألمانية A1 📚",
+      subheadline: "أنشئ سيرتك الذاتية الألمانية، حسن ملف ترشحك باستخدام الذكاء الاصطناعي، تعلم الألمانية باللغة العربية، واكتشف فرص العمل والتدريب المهني.",
+      primaryCta: "ابدأ مجانا",
+      secondaryCta: "▶️ اكتشف الأدوات",
+      trustMicro: "🛡️ ابدأ مجانا – جرب الأدوات قبل الاشتراك",
       trustBadges: [
         "معايير DIN 5008 الرسمية",
         "أمان وخصوصية GDPR 100%",
         "دفع لمرة واحدة دون اشتراك دوري خفي",
       ],
     },
+    toolsHub: {
+      card1: { title: "AI CV Builder", subtitle: "أنشئ سيرة ذاتية احترافية", href: "/dashboard/cv/new" },
+      card2: { title: "ATS CV Analyzer", subtitle: "حلل سيرتك الذاتية وحسنها", href: "/dashboard/ats-analyzer" },
+      card3: { title: "Dossier Studio", subtitle: "جهز ملف ترشيحك بالكامل", href: "/dashboard/dossier" },
+      card4: { title: "AI Cover Letter", subtitle: "اكتب رسالة تقديم مقنعة", href: "/dashboard/cover-letters/new" },
+      card5: { title: "German A1 Academy", subtitle: "تعلم الألمانية بسهولة", href: "/blog?category=German+A1" },
+      card6: { title: "German Jobs", subtitle: "اكتشف فرص العمل في ألمانيا", href: "/jobs" },
+    },
     pillars: {
       badge: "منظومة التوظيف الألمانية المتكاملة",
       title: "4 ركائز متكاملة تقودك نحو عقد عملك في ألمانيا",
-      subtitle: "أدوات تقنية متخصصة مصممة خصيصاً لاجتياز فلاتر ATS وجذب اهتمام مسؤولي التوظيف الألمان.",
+      subtitle: "أدوات تقنية متخصصة مصممة خصيصا لاجتياز فلاتر ATS وجذب اهتمام مسؤولي التوظيف الألمان.",
       pillar1: {
         title: "محرر السير الذاتية DIN 5008",
         desc: "تنسيق ألماني قياسي (Tabellarischer Lebenslauf) مع مستويات اللغات الأوروبية CEFR، وإدراج الصورة وتصدير فوري لملف PDF عالي الجودة.",
@@ -455,7 +488,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       },
       pillar3: {
         title: "خطاب الدافع وفاحص الـ ATS الذكي",
-        desc: "ولّد خطابات دافع (Anschreiben) مخصصة لكل وظيفة بالذكاء الاصطناعي وافحص نسبة توافق سيرتك الذاتية مع فلاتر الشركات الألمانية.",
+        desc: "ولد خطابات دافع (Anschreiben) مخصصة لكل وظيفة بالذكاء الاصطناعي وافحص نسبة توافق سيرتك الذاتية مع فلاتر الشركات الألمانية.",
         tag: "✓ KI-Anschreiben & ATS Audit",
         cta: "فحص وتوليد ←",
       },
@@ -467,7 +500,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       },
     },
     comparison: {
-      title: "لماذا تُرفض 80% من طلبات التوظيف الأجنبية؟",
+      title: "لماذا ترفض 80% من طلبات التوظيف الأجنبية؟",
       subtitle: "مقارنة حقيقية توضح الفارق بين السيرة الذاتية التقليدية وملف الترشيح المعتمد بمعيار DIN 5008.",
       negativeBadge: "سيرة عادية / مرفوضة",
       negativeRate: "تنسيق عشوائي معرض للرفض",
@@ -487,26 +520,26 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       ],
     },
     freeValue: {
-      badge: "✨ قيمة مجانية فورية بدون أي مخاطرة",
-      title: "ابدأ مجاناً 100% اليوم: كل ما تحتاجه للانطلاق في ألمانيا",
-      subtitle: "بدون بطاقة بنكية وبدون اشتراكات مخفية. صمم سيرتك الألمانية، تعلم الألمانية A1 بالصوت، وجرّب فحص الـ ATS فوراً.",
+      badge: "قيمة مجانية فورية بدون أي مخاطرة",
+      title: "ابدأ مجانا 100% اليوم: كل ما تحتاجه للانطلاق في ألمانيا",
+      subtitle: "بدون بطاقة بنكية وبدون اشتراكات مخفية. صمم سيرتك الألمانية، تعلم الألمانية A1 بالصوت، وجرب فحص الـ ATS فورا.",
       card1: {
-        badge: "مجاني دائماً 100%",
+        badge: "مجاني دائما 100%",
         title: "منشئ السيرة الذاتية DIN 5008",
         desc: "أنشئ سيرتك الذاتية وفق المعيار الألماني الرسمي DIN 5008 بتنسيق جدول احترافي Tabellarischer Lebenslauf معترف به في كافة الشركات.",
         f1: "تنسيق متوافق مع معايير الشركات الألمانية",
-        f2: "تحميل وطباعة بتنسيق PDF قياسي مجاناً",
+        f2: "تحميل وطباعة بتنسيق PDF قياسي مجانا",
         f3: "حفظ وتعديل بياناتك في أي وقت بسهولة",
-        cta: "أنشئ سيرتك مجاناً ←",
+        cta: "أنشئ سيرتك مجانا ←",
       },
       card2: {
         badge: "أكاديمية مجانية بالكامل",
         title: "مسار دروس الألمانية A1 بالصوت",
-        desc: "أكثر من 20 درساً تفاعلياً متوافقاً مع معايير معهد غوته للمبتدئين مع نطق صوتي بشري نقي ونطق صوتي مرشد ومفردات سوق العمل.",
-        f1: "20+ درساً تفاعلياً مجانياً ومتاحاً للجميع",
+        desc: "أكثر من 20 درسا تفاعليا متوافقا مع معايير معهد غوته للمبتدئين مع نطق صوتي بشري نقي ونطق صوتي مرشد ومفردات سوق العمل.",
+        f1: "20+ درسا تفاعليا مجانيا ومتاحا للجميع",
         f2: "نطق ألماني بشري عالي النقاء لكل كلمة وجملة",
         f3: "شروحات مبسطة وقواعد نحوية وتدريبات عملية",
-        cta: "ابدأ تعلم الألمانية مجاناً ←",
+        cta: "ابدأ تعلم الألمانية مجانا ←",
       },
       card3: {
         badge: "تجربة ذكاء اصطناعي ترحيبية",
@@ -515,34 +548,37 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
         f1: "رصيد ترحيبي مجاني فور إنشاء الحساب",
         f2: "فحص توافق السيرة مع إعلانات الوظائف الألمانية",
         f3: "اقتراحات فورية لتجاوز أنظمة الفرز الآلي",
-        cta: "جرّب الفاحص مجاناً ←",
+        cta: "جرب الفاحص مجانا ←",
       },
       pricingLinkText: "هل تبحث عن باقاتنا وترخيص المحترفين؟ استعرض تفاصيل الأسعار والشفافية التامة ←",
     },
     howItWorks: {
       badge: "كيف تعمل المنصة",
-      title: "3 خطوات بسيطة للحصول على ملف ترشيح ألماني متكامل",
+      title: "تعلم الألمانية، تجد وظيفة، وتحقق أهدافك",
+      ctaButton: "ابدأ رحلتك نحو ألمانيا الآن",
       step1: {
-        number: "01",
-        title: "1. تحويل فوري (1-Click PDF)",
-        desc: "ارفع سيرتك الذاتية الحالية (PDF) بأي لغة، ليقوم النظام فوراً بتكييفها وصياغة خبراتك وفق معايير DIN 5008.",
+        number: "1",
+        title: "أنشئ حسابك مجانا",
+        desc: "سجل في ثوان مع رصيد ترحيبي مجاني لتجربة أدوات الذكاء الاصطناعي قبل الاشتراك.",
       },
       step2: {
-        number: "02",
-        title: "2. التخصيص والصياغة الألمانية",
-        desc: "حدد الوظيفة المستهدفة ليتم تحسين الصياغة إلى Substantivstil وتوليد خطاب الدافع (Anschreiben) المطابق.",
+        number: "2",
+        title: "حضر سيرتك الذاتية وتعلم الألمانية",
+        desc: "صمم سيرتك وفق معيار DIN 5008 الرسمي وتابع دروس منهاج A1 التفاعلية بالصوت.",
       },
       step3: {
-        number: "03",
-        title: "3. التنزيل والتقديم المباشر",
-        desc: "حمّل ملف PDF الرسمي المتوافق مع DIN 5008 وقدّم طلبك مباشرة للشركات الألمانية بثقة كاملة.",
+        number: "3",
+        title: "حسن ملف ترشحك واكتشف الفرص",
+        desc: "افحص توافق سيرتك مع فلاتر ATS وقدم مباشرة لأقوى الوظائف في كبرى الشركات الألمانية.",
       },
+      mockupTitle: "GermanJobsPro للهاتف",
+      mockupSubtitle: "أدوات متكاملة لمستقبلك في ألمانيا — ابدأ الآن",
     },
     a1Track: {
       badge: "مسار تعلم الألمانية للمبتدئين A1",
-      title: "تعلّم الألمانية من الصفر حتى اجتياز امتحان Goethe A1 بنجاح",
+      title: "تعلم الألمانية من الصفر حتى اجتياز امتحان Goethe A1 بنجاح",
       subtitle: "منهاج تدريبي مبسط للناطقين بالعربية، يركز على المحادثات اليومية ومفردات سوق العمل الألمانية لتمكينك من اجتياز المقابلات والاندماج المهني.",
-      primaryBtn: "ابدأ التعلم الآن مجاناً",
+      primaryBtn: "ابدأ التعلم الآن مجانا",
       secondaryBtn: "تصفح الفهرس الشامل",
       card1: {
         title: "دروس متسلسلة خطوة بخطوة",
@@ -550,10 +586,10 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       },
       card2: {
         title: "مصطلحات سوق العمل الألمانية",
-        desc: "مفردات موجهة خصيصاً للتواصل في بيئة العمل، وفهم عقود التوظيف والـ Ausbildung والمقابلات.",
+        desc: "مفردات موجهة خصيصا للتواصل في بيئة العمل، وفهم عقود التوظيف والـ Ausbildung والمقابلات.",
       },
       card3: {
-        title: "متاح مجاناً 100% للجميع",
+        title: "متاح مجانا 100% للجميع",
         desc: "وصول كامل ومفتوح لكافة الشروحات والنصوص التعليمية لمساعدتك في بناء مستقبلك في ألمانيا.",
       },
     },
@@ -580,7 +616,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
     },
     legal: {
       title: "إخلاء المسؤولية القانونية",
-      text: "منصة GermanJobsPro هي أداة برمجية رقمية لتنسيق المستندات المهنية وإعداد ملفات الترشيح وفق معايير DIN 5008 الألمانية وتوفير مصادر تعليمية للمستوى A1. المنصة ليست وكالة توظيف أو مكتب محاماة أو جهة حكومية أو تمثيلية قنصلية، ولا تضمن الحصول على وظيفة أو تأشيرة، حيث يعود القرار النهائي حصرياً للجهات المختصة وأصحاب العمل.",
+      text: "منصة GermanJobsPro هي أداة برمجية رقمية لتنسيق المستندات المهنية وإعداد ملفات الترشيح وفق معايير DIN 5008 الألمانية وتوفير مصادر تعليمية للمستوى A1. المنصة ليست وكالة توظيف أو مكتب محاماة أو جهة حكومية أو تمثيلية قنصلية، ولا تضمن الحصول على وظيفة أو تأشيرة، حيث يعود القرار النهائي حصريا للجهات المختصة وأصحاب العمل.",
     },
     faq: {
       badge: "الأسئلة الشائعة",
@@ -588,30 +624,30 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       items: [
         {
           question: "ما هو معيار DIN 5008 ولماذا تطلبه الشركات ومسؤولو التوظيف في ألمانيا؟",
-          answer: "معيار DIN 5008 هو المعيار الرسمي القياسي في ألمانيا لكتابة وتنسيق المستندات المهنية والمراسلات التجارية. يتبع هيكلاً جدولياً دقيقاً (Tabellarischer Lebenslauf) بترتيب زمني عكسي وهوامش ومسافات محددة تتيح لمسؤولي التوظيف وفلاتر ATS الألمانية فحص ملفك في أقل من 30 ثانية بدون أي تشويه في البيانات.",
+          answer: "معيار DIN 5008 هو المعيار الرسمي القياسي في ألمانيا لكتابة وتنسيق المستندات المهنية والمراسلات التجارية. يتبع هيكلا جدوليا دقيقا (Tabellarischer Lebenslauf) بترتيب زمني عكسي وهوامش ومسافات محددة تتيح لمسؤولي التوظيف وفلاتر ATS الألمانية فحص ملفك في أقل من 30 ثانية بدون أي تشويه في البيانات.",
         },
         {
           question: "كيف تعمل ميزة التحويل الفوري والتكييف الذكي (1-Click PDF to DIN 5008)؟",
-          answer: "بكل بساطة، يمكنك رفع سيرتك الذاتية الحالية (PDF) بأي لغة، ليقوم النظام فوراً بتكييفها وصياغة خبراتك بالأسلوب الاسمي الألماني (Substantivstil) واستخراج وثيقة رسمية متوافقة 100% مع معايير DIN 5008 جاهزة للتعديل والتحميل.",
+          answer: "بكل بساطة، يمكنك رفع سيرتك الذاتية الحالية (PDF) بأي لغة، ليقوم النظام فورا بتكييفها وصياغة خبراتك بالأسلوب الاسمي الألماني (Substantivstil) واستخراج وثيقة رسمية متوافقة 100% مع معايير DIN 5008 جاهزة للتعديل والتحميل.",
         },
         {
           question: "هل المستندات الناتجة متوافقة مع متطلبات تأشيرة العمل وبطاقة الفرصة (Chancenkarte)؟",
-          answer: "نعم 100%. ملفات الترشيح (Bewerbungsunterlagen) المنشأة عبر المنصة مطابقة تماماً للمتطلبات الرسمية للسفارات الألمانية ووكالة العمل الفيدرالية (Bundesagentur für Arbeit)، بما في ذلك صفحة الغلاف (Deckblatt) والبيانات الشخصية الكاملة وتوثيق المؤهلات.",
+          answer: "نعم 100%. ملفات الترشيح (Bewerbungsunterlagen) المنشأة عبر المنصة مطابقة تماما للمتطلبات الرسمية للسفارات الألمانية ووكالة العمل الفيدرالية (Bundesagentur für Arbeit)، بما في ذلك صفحة الغلاف (Deckblatt) والبيانات الشخصية الكاملة وتوثيق المؤهلات.",
         },
         {
           question: "ما الفرق بين السيرة الذاتية العادية والملف المتكامل (Bewerbungsmappe)؟",
           answer: "في سوق العمل الألماني، تزيد نسبة القبول بشكل هائل عند تقديم ملف ترشيح متكامل (Bewerbungsmappe) يضم: 1) صفحة الغلاف الفاخرة مع الصورة (Deckblatt)، 2) خطاب الدافع الموجه للوظيفة (Anschreiben)، 3) السيرة الذاتية القياسية (Lebenslauf). منصتنا تتيح لك إنشاء وتحميل هذه الحزمة بملف PDF واحد متناسق.",
         },
         {
-          question: "هل يمكنني البدء واستخدام المنصة مجاناً؟",
-          answer: "نعم! يمكنك التسجيل مجاناً وإنشاء وتعديل وتنزيل سيرتك الذاتية بتنسيق DIN 5008 وتصفح مسار الألمانية A1 واستكشاف الوظائف دون أي التزام مالي. كما تتوفر باقات مدفوعة لمرة واحدة دون أي اشتراكات متكررة خفية.",
+          question: "هل يمكنني البدء واستخدام المنصة مجانا؟",
+          answer: "نعم! يمكنك التسجيل مجانا وإنشاء وتعديل وتنزيل سيرتك الذاتية بتنسيق DIN 5008 وتصفح مسار الألمانية A1 واستكشاف الوظائف دون أي التزام مالي. كما تتوفر باقات مدفوعة لمرة واحدة دون أي اشتراكات متكررة خفية.",
         },
       ],
     },
     finalCta: {
       title: "ابدأ خطوتك الأولى نحو مستقبلك المهني في ألمانيا اليوم 🇩🇪",
       subtitle: "انضم إلى آلاف المهنيين الذين أنشأوا ملفات ترشيح ألمانية متكاملة واجتازوا فلاتر ATS بنجاح.",
-      primaryBtn: "أنشئ سيرتك الذاتية مجاناً 🇩🇪",
+      primaryBtn: "أنشئ سيرتك الذاتية مجانا 🇩🇪",
       secondaryBtn: "تصفح أحدث الوظائف الشاغرة 💼",
     },
   },
@@ -624,18 +660,27 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
     hero: {
       badge: "🇩🇪 Die Komplettplattform für Bewerbung & Karriere in Deutschland",
       headline: {
-        prefix: "Erstellen Sie Ihre DIN 5008 Bewerbung & ",
-        highlight: "bestehen Sie ATS-Filter",
-        suffix: " professionell",
+        prefix: "Bereiten Sie Ihre Karriere ",
+        highlight: "in Deutschland",
+        suffix: " an einem Ort vor!",
       },
-      subheadline: "Erstellen Sie DIN 5008 Lebensläufe, KI-Anschreiben, vollständige Bewerbungsmappen, präzise ATS-Audits und nutzen Sie den Deutsch A1 Sprachkurs für Ihren beruflichen Erfolg.",
-      primaryCta: "Kostenlosen Lebenslauf erstellen 🇩🇪",
-      secondaryCta: "Deutsch A1 Lernkurs 📚",
+      subheadline: "Erstellen Sie Ihren DIN 5008 Lebenslauf, optimieren Sie Ihre Bewerbung mit KI, lernen Sie Deutsch von Grund auf und finden Sie aktuelle Jobs & Ausbildungsplätze.",
+      primaryCta: "Kostenlos starten",
+      secondaryCta: "▶️ Tools entdecken",
+      trustMicro: "🛡️ 100% kostenlos starten – Tools vorab testen",
       trustBadges: [
         "Offizieller DIN 5008 Standard",
         "100% DSGVO / GDPR konform",
         "Einmalzahlung, Kein verstecktes Abo",
       ],
+    },
+    toolsHub: {
+      card1: { title: "AI CV Builder", subtitle: "DIN 5008 Lebenslauf erstellen", href: "/dashboard/cv/new" },
+      card2: { title: "ATS CV Analyzer", subtitle: "Lebenslauf analysieren & optimieren", href: "/dashboard/ats-analyzer" },
+      card3: { title: "Dossier Studio", subtitle: "Bewerbungsmappe zusammenstellen", href: "/dashboard/dossier" },
+      card4: { title: "AI Cover Letter", subtitle: "Überzeugendes Anschreiben verfassen", href: "/dashboard/cover-letters/new" },
+      card5: { title: "German A1 Academy", subtitle: "Deutsch A1 einfach lernen", href: "/blog?category=German+A1" },
+      card6: { title: "German Jobs", subtitle: "Stellenangebote in Deutschland", href: "/jobs" },
     },
     pillars: {
       badge: "4 Leistungsstarke Kernmodule",
@@ -687,7 +732,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       ],
     },
     freeValue: {
-      badge: "✨ 100% Kostenloser Sofortwert — Ohne Risiko",
+      badge: "100% Kostenloser Sofortwert — Ohne Risiko",
       title: "Starten Sie kostenlos: Alles für Bewerbung & Sprachstart in Deutschland",
       subtitle: "Keine Kreditkarte, keine Abofallen. DIN 5008 Lebenslauf erstellen, Deutsch A1 mit Audio lernen und ATS-Audit sofort testen.",
       card1: {
@@ -721,22 +766,25 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
     },
     howItWorks: {
       badge: "So funktioniert's",
-      title: "In 3 einfachen Schritten zum perfekten Bewerbungspaket",
+      title: "Deutsch lernen, Job finden, Ziele erreichen",
+      ctaButton: "Starten Sie Ihre Reise nach Deutschland jetzt",
       step1: {
-        number: "01",
-        title: "1. Sofort-Konvertierung (1-Klick PDF)",
-        desc: "Laden Sie Ihr bestehendes PDF hoch oder starten Sie neu. Die Daten werden sofort analysiert und an DIN 5008 angepasst.",
+        number: "1",
+        title: "Kostenlos registrieren",
+        desc: "In wenigen Sekunden anmelden und kostenloses KI-Startguthaben zum Kennenlernen sichern.",
       },
       step2: {
-        number: "02",
-        title: "2. KI-Optimierung & Substantivstil",
-        desc: "Wählen Sie Ihre Zielposition. Die KI optimiert Ihre Formulierungen im Substantivstil und erstellt das Anschreiben.",
+        number: "2",
+        title: "Lebenslauf erstellen & Deutsch lernen",
+        desc: "DIN 5008 Lebenslauf erstellen und den strukturierten Deutsch A1 Kurs mit Audio nutzen.",
       },
       step3: {
-        number: "03",
-        title: "3. Herunterladen & Bewerben",
-        desc: "Laden Sie Ihr DIN 5008 PDF-Dossier herunter und bewerben Sie sich direkt und selbstbewusst bei deutschen Unternehmen.",
+        number: "3",
+        title: "Bewerbung optimieren & Chancen ergreifen",
+        desc: "ATS-Score testen und direkt bei geprüften deutschen Arbeitgebern bewerben.",
       },
+      mockupTitle: "GermanJobsPro Mobil",
+      mockupSubtitle: "Komplette Tools für Ihre Karriere in Deutschland — Jetzt starten",
     },
     a1Track: {
       badge: "Deutsch A1 Lernpfad für Einsteiger",
@@ -824,18 +872,27 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
     hero: {
       badge: "🇩🇪 The Complete Career & Application Platform for Germany",
       headline: {
-        prefix: "Prepare Your Certified German Application ",
-        highlight: "(DIN 5008)",
-        suffix: " & Beat ATS Filters Professionally",
+        prefix: "Prepare Your Professional Career ",
+        highlight: "in Germany",
+        suffix: " All in One Place!",
       },
-      subheadline: "Build certified DIN 5008 CVs, craft tailored AI cover letters (Anschreiben), compile complete Bewerbungsmappe dossiers, run ATS audits, and master German A1.",
-      primaryCta: "Create Your Free German CV 🇩🇪",
-      secondaryCta: "German A1 Course Track 📚",
+      subheadline: "Build your DIN 5008 German CV, optimize your application with AI, master German A1, and discover verified job & training opportunities.",
+      primaryCta: "Start Free",
+      secondaryCta: "▶️ Explore Tools",
+      trustMicro: "🛡️ Start 100% Free – Test Tools Before Subscribing",
       trustBadges: [
         "Official DIN 5008 Standards",
         "100% GDPR Privacy & Security",
         "One-Time Payment, No Hidden Subscriptions",
       ],
+    },
+    toolsHub: {
+      card1: { title: "AI CV Builder", subtitle: "Create Professional CV", href: "/dashboard/cv/new" },
+      card2: { title: "ATS CV Analyzer", subtitle: "Analyze & Optimize CV", href: "/dashboard/ats-analyzer" },
+      card3: { title: "Dossier Studio", subtitle: "Compile Complete Dossier", href: "/dashboard/dossier" },
+      card4: { title: "AI Cover Letter", subtitle: "Write Tailored Cover Letter", href: "/dashboard/cover-letters/new" },
+      card5: { title: "German A1 Academy", subtitle: "Learn German A1 Easily", href: "/blog?category=German+A1" },
+      card6: { title: "German Jobs", subtitle: "Explore Jobs in Germany", href: "/jobs" },
     },
     pillars: {
       badge: "4 Core Career Modules",
@@ -887,7 +944,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       ],
     },
     freeValue: {
-      badge: "✨ Instant Free Value — Zero Risk",
+      badge: "Instant Free Value — Zero Risk",
       title: "Start 100% Free: Everything You Need to Land Jobs in Germany",
       subtitle: "No credit card required, no subscription traps. Build your DIN 5008 CV, learn German A1 with native audio, and test the ATS scanner right away.",
       card1: {
@@ -921,22 +978,25 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
     },
     howItWorks: {
       badge: "How It Works",
-      title: "3 Simple Steps to Your Complete German Application",
+      title: "Learn German, Land a Job, Achieve Your Goals",
+      ctaButton: "Start Your Journey to Germany Now",
       step1: {
-        number: "01",
-        title: "1. Instant Conversion (1-Click PDF)",
-        desc: "Upload your current PDF resume or start fresh. The system instantly extracts and adapts your background to DIN 5008.",
+        number: "1",
+        title: "Create Your Free Account",
+        desc: "Sign up in seconds and get free welcome credits to explore AI tools before subscribing.",
       },
       step2: {
-        number: "02",
-        title: "2. AI Polish & Substantivstil",
-        desc: "Choose your target role. AI polishes all experience bullets in Substantivstil and drafts the cover letter.",
+        number: "2",
+        title: "Build Your CV & Learn German",
+        desc: "Format your resume to DIN 5008 standards and follow interactive A1 audio lessons.",
       },
       step3: {
-        number: "03",
-        title: "3. Download & Apply",
-        desc: "Download your certified DIN 5008 PDF dossier and apply directly to German employers with full confidence.",
+        number: "3",
+        title: "Optimize Application & Discover Jobs",
+        desc: "Pass recruiter ATS filters and apply directly to verified German companies.",
       },
+      mockupTitle: "GermanJobsPro Mobile",
+      mockupSubtitle: "All-in-one tools for your career in Germany — Start now",
     },
     a1Track: {
       badge: "German A1 Beginner Learning Track",

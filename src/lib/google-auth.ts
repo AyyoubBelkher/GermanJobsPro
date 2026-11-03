@@ -54,29 +54,36 @@ export function getPublicOrigin(request: NextRequest): string {
 
 /**
  * Determines cookie domain for sharing cookies across germanjobspro.com and www.germanjobspro.com.
- * Checks x-forwarded-host, host, and getPublicOrigin. Returns ".germanjobspro.com" for production domain,
- * or undefined for localhost.
+ * Checks ONLY actual incoming request host headers (x-forwarded-host, host, nextUrl.hostname).
+ * Returns ".germanjobspro.com" ONLY for production domain, and immediately returns undefined
+ * for localhost, 127.0.0.1, or IP addresses (never falls back to getPublicOrigin).
  */
 export function getCookieDomain(request: NextRequest): string | undefined {
-  const candidates: (string | null | undefined)[] = [
-    request.headers.get("x-forwarded-host"),
-    request.headers.get("host"),
-  ];
+  const hostCandidate =
+    request.headers.get("x-forwarded-host") ||
+    request.headers.get("host") ||
+    request.nextUrl.hostname;
 
-  try {
-    const origin = getPublicOrigin(request);
-    const parsedUrl = new URL(origin);
-    candidates.push(parsedUrl.hostname);
-  } catch {
-    // ignore URL parsing error
+  if (!hostCandidate) {
+    return undefined;
   }
 
-  for (const candidate of candidates) {
-    if (!candidate) continue;
-    const hostname = candidate.split(":")[0].trim().toLowerCase();
-    if (hostname === "germanjobspro.com" || hostname.endsWith(".germanjobspro.com")) {
-      return ".germanjobspro.com";
-    }
+  // Strip port if present
+  const hostname = hostCandidate.split(":")[0].trim().toLowerCase();
+
+  // If local development, loopback, or raw IP address, never set domain
+  if (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)
+  ) {
+    return undefined;
+  }
+
+  // Only return ".germanjobspro.com" when the incoming request host itself is germanjobspro.com or a subdomain
+  if (hostname === "germanjobspro.com" || hostname.endsWith(".germanjobspro.com")) {
+    return ".germanjobspro.com";
   }
 
   return undefined;

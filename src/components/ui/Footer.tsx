@@ -4,9 +4,10 @@ import { getDictionary, isValidLocale, DEFAULT_LOCALE, LOCALE_METADATA, type Loc
 
 interface FooterProps {
   locale?: string;
+  className?: string;
 }
 
-export default function Footer({ locale = "ar" }: FooterProps) {
+export default function Footer({ locale = "ar", className }: FooterProps) {
   const activeLocale: Locale = isValidLocale(locale) ? locale : DEFAULT_LOCALE;
   const dict = getDictionary(activeLocale);
   const currentMeta = LOCALE_METADATA[activeLocale];
@@ -23,7 +24,7 @@ export default function Footer({ locale = "ar" }: FooterProps) {
   const refundLink = `/${activeLocale}/refund`;
 
   return (
-    <footer className="bg-slate-950 border-t border-slate-800/80 mt-20 transition-colors" dir={dir}>
+    <footer className={`bg-slate-950 ${className !== undefined ? className : "mt-20 border-t border-slate-800/80"} transition-colors`} dir={dir}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand Col */}

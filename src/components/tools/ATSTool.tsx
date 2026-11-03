@@ -352,7 +352,6 @@ export default function ATSTool({ onApplyFixToBuilder }: ATSToolProps) {
                 /* PROMINENT AI AUTO-FIX CALLOUT CARD */
                 <div className="rounded-3xl bg-gradient-to-br from-blue-950 via-slate-900 to-indigo-950 border border-blue-500/40 p-6 sm:p-8 shadow-2xl space-y-5">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">✨</span>
                     <h3 className="text-lg sm:text-xl font-black text-white">
                       إصلاح السيرة الذاتية بالذكاء الاصطناعي وفق المعايير الألمانية (DIN 5008)
                     </h3>

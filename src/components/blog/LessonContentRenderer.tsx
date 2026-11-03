@@ -202,7 +202,7 @@ export function getToolMetadata(href: string, text: string): ToolMetadata {
       isTool: true,
       title: text || "مولد خطابات التقديم (Cover Letter Builder)",
       description: "أنشئ خطاب تقديم احترافي مخصص باللغة الألمانية وفق معايير DIN 5008 المعتمدة",
-      badge: "ذكاء اصطناعي ✨",
+      badge: "ذكاء اصطناعي",
       icon: "✍️",
       gradientClass:
         "bg-gradient-to-r from-blue-500/10 via-indigo-500/5 to-cyan-500/10 dark:from-blue-950/40 dark:via-slate-900/80 dark:to-indigo-950/30",

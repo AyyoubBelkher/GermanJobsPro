@@ -170,7 +170,7 @@ export default function CvMagicImportModal({
         {/* Modal Header */}
         <div className="space-y-2 text-center">
           <div className="inline-flex p-3 rounded-2xl bg-blue-600/10 border border-blue-500/30 text-blue-400 mb-1">
-            <span className="text-2xl">✨</span>
+            <span className="text-2xl">📄</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-white">
             {isAr
@@ -201,7 +201,7 @@ export default function CvMagicImportModal({
               <div className="absolute inset-0 rounded-full border-4 border-blue-600/20 animate-pulse" />
               <div className="w-20 h-20 rounded-full border-4 border-blue-500 border-t-transparent animate-spin" />
               <div className="absolute inset-0 flex items-center justify-center text-2xl">
-                ✨
+                📄
               </div>
             </div>
 
@@ -396,7 +396,6 @@ export default function CvMagicImportModal({
                   onClick={handleStartImport}
                   className="flex-1 py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-blue-600/30 active:scale-98 cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <span>✨</span>
                   <span>
                     {isAr
                       ? "تحويل فوري (1-Click PDF)"

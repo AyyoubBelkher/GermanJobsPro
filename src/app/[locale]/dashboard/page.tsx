@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
+import UserProfileCard from "@/components/dashboard/UserProfileCard";
 import { verifyUserSession } from "@/lib/user-session";
 import { prisma, withDbRetry } from "@/lib/prisma";
 
@@ -27,10 +28,6 @@ export default async function DashboardPage({
   }
 
   const { user } = authResult;
-  const isPro =
-    (user.plan === "PRO" || user.plan === "SPRINT") &&
-    (!user.planExpiresAt || new Date(user.planExpiresAt) > new Date());
-  const displayName = user.name || user.email.split("@")[0];
 
   // Fetch real user CVs and Cover Letters
   const [cvs, coverLetters] = await withDbRetry(() =>
@@ -54,68 +51,8 @@ export default async function DashboardPage({
       <Navbar locale={locale} initialUser={user} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1 space-y-10">
-        {/* User Profile Header Card */}
-        <div className="bg-slate-900/90 border border-slate-800/80 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-4 sm:gap-5 min-w-0">
-            <div className="w-14 sm:w-16 h-14 sm:h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-blue-500 flex items-center justify-center text-white font-extrabold text-2xl shadow-lg border border-blue-400/20 shrink-0">
-              {displayName.charAt(0).toUpperCase()}
-            </div>
-            <div className="space-y-1.5 min-w-0">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-xl sm:text-2xl font-black text-white truncate">
-                  {isAr ? `مرحباً، ${displayName} 👋` : isDe ? `Willkommen, ${displayName} 👋` : `Welcome, ${displayName} 👋`}
-                </h1>
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider ${
-                    isPro
-                      ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
-                      : user.plan === "TRIAL"
-                      ? "bg-blue-500/15 text-blue-300 border border-blue-500/30"
-                      : "bg-slate-800 text-slate-300 border border-slate-700"
-                  }`}
-                >
-                  {isPro ? "⭐ PRO PASS" : user.plan === "TRIAL" ? "⏳ TRIAL" : "⚡ STARTER FREE"}
-                </span>
-              </div>
-              <div className="flex items-center gap-3 text-xs text-slate-400 font-mono flex-wrap">
-                <span className="truncate max-w-[200px] sm:max-w-none">{user.email}</span>
-                <span>•</span>
-                <span className="text-emerald-400 font-bold font-sans flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg">
-                  <span>⚡</span>
-                  <span>
-                    {isPro
-                      ? isAr
-                        ? "20 طلب ذكاء اصطناعي يومياً (متجددة)"
-                        : isDe
-                        ? "20 KI-Anfragen täglich (erneuert)"
-                        : "20 Daily AI Requests (renewed)"
-                      : `${user.aiCredits} ${isAr ? "رصيد AI متبقي" : "AI Credits Left"}`}
-                  </span>
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 shrink-0">
-            {isPro ? (
-              <Link
-                href={`/${locale}/dashboard/pricing`}
-                className="px-4 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold text-xs transition-colors flex items-center gap-1.5"
-              >
-                <span>💎</span>
-                <span>{isAr ? "إدارة خطة PRO" : isDe ? "PRO Tarif verwalten" : "Manage PRO Plan"}</span>
-              </Link>
-            ) : (
-              <Link
-                href={`/${locale}/dashboard/pricing`}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold text-xs shadow-md shadow-amber-500/20 transition-all flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] active:scale-95"
-              >
-                <span>💎</span>
-                <span>{isAr ? "ترقية إلى PRO PASS" : isDe ? "Auf PRO upgraden" : "Upgrade to PRO"}</span>
-              </Link>
-            )}
-          </div>
-        </div>
+        {/* Google-Pro Style User Profile Card */}
+        <UserProfileCard user={user} locale={locale} />
 
         {/* Quick Action Banner */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -145,10 +82,10 @@ export default async function DashboardPage({
           >
             <div className="space-y-1">
               <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider">
-                {isAr ? "مدعوم بالذكاء الاصطناعي ✨" : isDe ? "KI-Unterstützt ✨" : "AI-Powered ✨"}
+                {isAr ? "مدعوم بالذكاء الاصطناعي" : isDe ? "KI-Unterstützt" : "AI-Powered"}
               </span>
               <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-blue-300 transition-colors">
-                {isAr ? "✨ خطاب تغطية" : isDe ? "✨ Anschreiben" : "✨ AI Cover Letter"}
+                {isAr ? "خطاب تغطية" : isDe ? "Anschreiben" : "AI Cover Letter"}
               </h3>
               <p className="text-xs text-slate-400">
                 {isAr ? "خطاب مخصص للوظيفة" : isDe ? "Maßgeschneidert" : "Tailored letter"}

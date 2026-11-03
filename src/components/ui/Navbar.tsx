@@ -16,6 +16,7 @@ export interface NavbarUser {
   id: string;
   email: string;
   name?: string | null;
+  avatarUrl?: string | null;
   plan: string;
   planExpiresAt?: string | Date | null;
   aiCredits: number;
@@ -25,6 +26,8 @@ interface NavbarProps {
   locale?: string;
   initialUser?: NavbarUser | null;
 }
+
+const ORDERED_LOCALES: Locale[] = ['ar', 'de', 'en', 'fr'];
 
 function buildSwitchLocaleUrl(
   pathname: string | null,
@@ -53,7 +56,6 @@ function LanguageSwitcherDesktop({ activeLocale, isAr }: { activeLocale: Locale;
   const searchParams = useSearchParams();
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const langDropdownRef = useRef<HTMLDivElement>(null);
-  const currentLocaleMeta = LOCALE_METADATA[activeLocale];
 
   const getSwitchLocaleUrl = (targetLocale: Locale) =>
     buildSwitchLocaleUrl(pathname, searchParams?.toString(), targetLocale);
@@ -82,25 +84,44 @@ function LanguageSwitcherDesktop({ activeLocale, isAr }: { activeLocale: Locale;
       <button
         type="button"
         onClick={() => setLangDropdownOpen(!langDropdownOpen)}
-        className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 text-xs font-bold transition-all cursor-pointer focus:outline-none"
+        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0A2552] hover:bg-[#0E3572] text-white text-xs font-bold transition-all cursor-pointer focus:outline-none shadow-xs"
         aria-expanded={langDropdownOpen}
         aria-label="Language selector"
       >
-        <span className="text-base">{currentLocaleMeta.flag}</span>
-        <span className="hidden md:inline">{currentLocaleMeta.label}</span>
-        <span className="md:hidden uppercase text-[11px] font-mono">({activeLocale})</span>
-        <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <svg
+          className="w-4 h-4 text-white shrink-0"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+          <path d="M2 12h20" />
+        </svg>
+        <svg
+          className={`w-3.5 h-3.5 text-slate-200 transition-transform duration-200 ${
+            langDropdownOpen ? "rotate-180" : ""
+          }`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
           <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
         </svg>
       </button>
 
       {langDropdownOpen && (
         <div
-          className={`absolute top-full mt-2 w-52 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-1.5 z-50 space-y-1 text-xs animate-fadeIn ${
-            isAr ? "left-0 text-right" : "right-0 text-left"
-          }`}
+          dir={isAr ? "rtl" : "ltr"}
+          className="absolute top-full mt-2 w-48 rounded-2xl bg-white border border-slate-200 text-slate-800 shadow-2xl p-2 z-50 space-y-1 text-xs animate-fadeIn right-0"
         >
-          {LOCALES.map((loc) => {
+          {ORDERED_LOCALES.map((loc) => {
             const meta = LOCALE_METADATA[loc];
             const isActive = loc === activeLocale;
             return (
@@ -111,17 +132,17 @@ function LanguageSwitcherDesktop({ activeLocale, isAr }: { activeLocale: Locale;
                   setPreferredLocaleCookie(loc);
                   setLangDropdownOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition-colors ${
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
                   isActive
-                    ? "bg-blue-600/20 text-blue-400 font-bold border border-blue-500/30"
-                    : "text-slate-300 hover:text-white hover:bg-slate-800"
+                    ? "bg-blue-50 text-blue-700 font-bold border border-blue-200"
+                    : "text-slate-700 hover:text-slate-900 hover:bg-slate-50"
                 }`}
               >
                 <span className="flex items-center gap-2">
-                  <span className="text-base">{meta.flag}</span>
-                  <span>{meta.label}</span>
+                  <span className="w-3 text-blue-600 font-black text-xs shrink-0">{isActive ? "✓" : ""}</span>
+                  <span className="font-semibold text-xs">{meta.label}</span>
                 </span>
-                <span className="text-[11px] font-mono opacity-60">({loc})</span>
+                <span className="text-base leading-none">{meta.flag}</span>
               </Link>
             );
           })}
@@ -184,15 +205,15 @@ function LanguageSwitcherHeaderMobile({
       <button
         type="button"
         onClick={handleToggle}
-        className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 text-xs font-bold transition-all cursor-pointer focus:outline-none active:scale-95"
+        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#0A2552] text-white text-xs font-bold transition-all cursor-pointer focus:outline-none active:scale-95 shadow-xs"
         aria-expanded={langDropdownOpen}
         aria-label="Language selector"
       >
         <svg
-          className="w-4 h-4 text-blue-400 shrink-0"
+          className="w-4 h-4 text-white shrink-0"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.8"
+          strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
           viewBox="0 0 24 24"
@@ -202,12 +223,9 @@ function LanguageSwitcherHeaderMobile({
           <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
           <path d="M2 12h20" />
         </svg>
-        <span className="uppercase text-xs font-mono font-bold tracking-wider text-slate-200">
-          {activeLocale}
-        </span>
         <svg
-          className={`w-3 h-3 text-slate-400 transition-transform duration-200 ${
-            langDropdownOpen ? "rotate-180 text-blue-400" : ""
+          className={`w-3 h-3 text-slate-200 transition-transform duration-200 ${
+            langDropdownOpen ? "rotate-180" : ""
           }`}
           fill="none"
           stroke="currentColor"
@@ -221,11 +239,10 @@ function LanguageSwitcherHeaderMobile({
 
       {langDropdownOpen && (
         <div
-          className={`absolute top-full mt-2 w-48 rounded-2xl bg-slate-900/98 backdrop-blur-2xl border border-slate-800 shadow-2xl p-1.5 z-50 space-y-1 text-xs animate-fadeIn ${
-            isAr ? "left-0 text-right" : "right-0 text-left"
-          }`}
+          dir={isAr ? "rtl" : "ltr"}
+          className="absolute top-full mt-2 w-48 rounded-2xl bg-white border border-slate-200 text-slate-800 shadow-2xl p-2 z-50 space-y-1 text-xs animate-fadeIn right-0"
         >
-          {LOCALES.map((loc) => {
+          {ORDERED_LOCALES.map((loc) => {
             const meta = LOCALE_METADATA[loc];
             const isActive = loc === activeLocale;
             return (
@@ -236,17 +253,17 @@ function LanguageSwitcherHeaderMobile({
                   setPreferredLocaleCookie(loc);
                   setLangDropdownOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition-colors ${
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
                   isActive
-                    ? "bg-blue-600/20 text-blue-400 font-bold border border-blue-500/30"
-                    : "text-slate-300 hover:text-white hover:bg-slate-800"
+                    ? "bg-blue-50 text-blue-700 font-bold border border-blue-200"
+                    : "text-slate-700 hover:text-slate-900 hover:bg-slate-50"
                 }`}
               >
                 <span className="flex items-center gap-2">
-                  <span className="text-base leading-none">{meta.flag}</span>
+                  <span className="w-3 text-blue-600 font-black text-xs shrink-0">{isActive ? "✓" : ""}</span>
                   <span className="font-semibold text-xs">{meta.label}</span>
                 </span>
-                <span className="text-[11px] font-mono opacity-60 uppercase">({loc})</span>
+                <span className="text-base leading-none">{meta.flag}</span>
               </Link>
             );
           })}
@@ -256,14 +273,14 @@ function LanguageSwitcherHeaderMobile({
   );
 }
 
-function LanguageSwitcherHeaderMobileFallback({ activeLocale }: { activeLocale: Locale }) {
+function LanguageSwitcherHeaderMobileFallback({ activeLocale }: { activeLocale?: Locale }) {
   return (
-    <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 text-xs font-bold opacity-80">
+    <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#0A2552] text-white text-xs font-bold opacity-90">
       <svg
-        className="w-4 h-4 text-blue-400 shrink-0"
+        className="w-4 h-4 text-white shrink-0"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.8"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
         viewBox="0 0 24 24"
@@ -273,23 +290,33 @@ function LanguageSwitcherHeaderMobileFallback({ activeLocale }: { activeLocale: 
         <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
         <path d="M2 12h20" />
       </svg>
-      <span className="uppercase text-xs font-mono font-bold tracking-wider text-slate-200">
-        {activeLocale}
-      </span>
-      <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <svg className="w-3 h-3 text-slate-200" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
       </svg>
     </div>
   );
 }
 
-function LanguageSwitcherFallback({ activeLocale }: { activeLocale: Locale }) {
-  const meta = LOCALE_METADATA[activeLocale];
+function LanguageSwitcherFallback({ activeLocale }: { activeLocale?: Locale }) {
   return (
-    <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 text-xs font-bold opacity-80">
-      <span className="text-base">{meta.flag}</span>
-      <span className="hidden md:inline">{meta.label}</span>
-      <span className="md:hidden uppercase text-[11px] font-mono">({activeLocale})</span>
+    <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0A2552] text-white text-xs font-bold opacity-90">
+      <svg
+        className="w-4 h-4 text-white shrink-0"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+        <path d="M2 12h20" />
+      </svg>
+      <svg className="w-3.5 h-3.5 text-slate-200" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+      </svg>
     </div>
   );
 }
@@ -309,7 +336,7 @@ function LanguageSwitcherMobile({
 
   return (
     <div className="grid grid-cols-2 gap-2">
-      {LOCALES.map((loc) => {
+      {ORDERED_LOCALES.map((loc) => {
         const meta = LOCALE_METADATA[loc];
         const isActive = loc === activeLocale;
         return (
@@ -322,8 +349,8 @@ function LanguageSwitcherMobile({
             }}
             className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
               isActive
-                ? "bg-blue-600 text-white shadow-md shadow-blue-600/25"
-                : "bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800"
+                ? "bg-blue-600 text-white shadow-xs"
+                : "bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200"
             }`}
           >
             <span className="flex items-center gap-1.5">
@@ -425,6 +452,7 @@ function DesktopNav({
   user,
   activeLocale,
 }: DesktopNavProps) {
+  const isAr = activeLocale === "ar";
   const {
     isHome,
     isJobs,
@@ -443,63 +471,47 @@ function DesktopNav({
     activeLocale
   );
 
-  const activeClass =
-    "px-3 py-1.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400 font-bold transition-all whitespace-nowrap";
-  const inactiveClass =
-    "px-3 py-1.5 rounded-xl border border-transparent text-slate-300 hover:text-blue-400 hover:bg-slate-900/40 transition-colors whitespace-nowrap";
+  const activeLinkClass =
+    "border-b-2 border-amber-400 pb-1 text-slate-950 font-black transition-all whitespace-nowrap text-sm";
+  const inactiveLinkClass =
+    "border-b-2 border-transparent pb-1 text-slate-700 hover:text-blue-600 font-bold transition-colors whitespace-nowrap text-sm";
 
   return (
-    <nav className="hidden lg:flex items-center gap-1 xl:gap-2 text-sm font-semibold">
-      <Link href={homeLink} className={`${isHome ? activeClass : inactiveClass} whitespace-nowrap`}>
+    <nav className={`hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-semibold ${isAr ? "flex-row-reverse" : ""}`}>
+      <Link href={homeLink} dir={isAr ? "rtl" : "ltr"} className={isHome ? activeLinkClass : inactiveLinkClass}>
         {dict.nav.home}
       </Link>
-      <Link href={jobsLink} className={`${isJobs ? activeClass : inactiveClass} flex items-center gap-1.5 whitespace-nowrap`}>
-        <span>💼</span>
-        <span>{dict.nav.jobs}</span>
+      <Link href={`/${activeLocale}#tools-hub`} dir={isAr ? "rtl" : "ltr"} className={inactiveLinkClass}>
+        {isAr ? "الأدوات" : (dict.nav.tools || "Tools")}
       </Link>
-      <Link href={blogLink} className={`${isBlog ? activeClass : inactiveClass} whitespace-nowrap`}>
+      <Link href={germanA1Link} dir={isAr ? "rtl" : "ltr"} className={isGermanA1 ? activeLinkClass : inactiveLinkClass}>
+        {dict.nav.germanA1}
+      </Link>
+      <Link href={jobsLink} dir={isAr ? "rtl" : "ltr"} className={isJobs ? activeLinkClass : inactiveLinkClass}>
+        {dict.nav.jobs}
+      </Link>
+      <Link href={blogLink} dir={isAr ? "rtl" : "ltr"} className={isBlog ? activeLinkClass : inactiveLinkClass}>
         {dict.nav.blog}
-      </Link>
-      <Link
-        href={germanA1Link}
-        className={`${isGermanA1 ? activeClass : inactiveClass} flex items-center gap-1.5 whitespace-nowrap`}
-      >
-        <span>🇩🇪</span>
-        <span>{dict.nav.germanA1}</span>
       </Link>
 
       {user ? (
         <>
           <Link
             href={atsLink}
-            className={`${isAts ? activeClass : inactiveClass} flex items-center gap-1 whitespace-nowrap`}
+            dir={isAr ? "rtl" : "ltr"}
+            className={isAts ? activeLinkClass : inactiveLinkClass}
           >
-            <span>🔍</span>
-            <span>{dict.nav.atsCheck}</span>
+            {dict.nav.atsCheck}
           </Link>
           <Link
             href={dossierLink}
-            className={`${isDossier ? activeClass : inactiveClass} flex items-center gap-1 whitespace-nowrap`}
+            dir={isAr ? "rtl" : "ltr"}
+            className={isDossier ? activeLinkClass : inactiveLinkClass}
           >
-            <span>📑</span>
-            <span>{dict.nav.dossier}</span>
-          </Link>
-          <Link
-            href={dashboardLink}
-            className={`${isDashboard ? activeClass : inactiveClass} whitespace-nowrap`}
-          >
-            {dict.nav.dashboard}
+            {dict.nav.dossier}
           </Link>
         </>
-      ) : (
-        <Link
-          href={pricingLink}
-          className="px-3 py-1.5 rounded-xl border border-transparent hover:text-amber-300 text-amber-400 transition-colors flex items-center gap-1 font-bold whitespace-nowrap"
-        >
-          <span>💎</span>
-          <span>{dict.nav.pricingAndPro}</span>
-        </Link>
-      )}
+      ) : null}
     </nav>
   );
 }
@@ -509,56 +521,30 @@ function DesktopNavFallback({
   jobsLink,
   blogLink,
   germanA1Link,
-  atsLink,
-  dossierLink,
-  dashboardLink,
-  pricingLink,
   dict,
-  user,
+  activeLocale,
 }: DesktopNavProps) {
-  const inactiveClass =
-    "px-3 py-1.5 rounded-xl border border-transparent text-slate-300 hover:text-blue-400 hover:bg-slate-900/40 transition-colors whitespace-nowrap";
+  const isAr = activeLocale === "ar";
+  const inactiveLinkClass =
+    "border-b-2 border-transparent pb-1 text-slate-700 hover:text-blue-600 font-bold transition-colors whitespace-nowrap text-sm";
 
   return (
-    <nav className="hidden lg:flex items-center gap-1 xl:gap-2 text-sm font-semibold">
-      <Link href={homeLink} className={`${inactiveClass} whitespace-nowrap`}>
+    <nav className={`hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-semibold ${isAr ? "flex-row-reverse" : ""}`}>
+      <Link href={homeLink} dir={isAr ? "rtl" : "ltr"} className="border-b-2 border-amber-400 pb-1 text-slate-950 font-black transition-all whitespace-nowrap text-sm">
         {dict.nav.home}
       </Link>
-      <Link href={jobsLink} className={`${inactiveClass} flex items-center gap-1.5 whitespace-nowrap`}>
-        <span>💼</span>
-        <span>{dict.nav.jobs}</span>
+      <Link href={`/${activeLocale}#tools-hub`} dir={isAr ? "rtl" : "ltr"} className={inactiveLinkClass}>
+        {isAr ? "الأدوات" : (dict.nav.tools || "Tools")}
       </Link>
-      <Link href={blogLink} className={`${inactiveClass} whitespace-nowrap`}>
+      <Link href={germanA1Link} dir={isAr ? "rtl" : "ltr"} className={inactiveLinkClass}>
+        {dict.nav.germanA1}
+      </Link>
+      <Link href={jobsLink} dir={isAr ? "rtl" : "ltr"} className={inactiveLinkClass}>
+        {dict.nav.jobs}
+      </Link>
+      <Link href={blogLink} dir={isAr ? "rtl" : "ltr"} className={inactiveLinkClass}>
         {dict.nav.blog}
       </Link>
-      <Link href={germanA1Link} className={`${inactiveClass} flex items-center gap-1.5 whitespace-nowrap`}>
-        <span>🇩🇪</span>
-        <span>{dict.nav.germanA1}</span>
-      </Link>
-
-      {user ? (
-        <>
-          <Link href={atsLink} className={`${inactiveClass} flex items-center gap-1 whitespace-nowrap`}>
-            <span>🔍</span>
-            <span>{dict.nav.atsCheck}</span>
-          </Link>
-          <Link href={dossierLink} className={`${inactiveClass} flex items-center gap-1 whitespace-nowrap`}>
-            <span>📑</span>
-            <span>{dict.nav.dossier}</span>
-          </Link>
-          <Link href={dashboardLink} className={`${inactiveClass} whitespace-nowrap`}>
-            {dict.nav.dashboard}
-          </Link>
-        </>
-      ) : (
-        <Link
-          href={pricingLink}
-          className="px-3 py-1.5 rounded-xl border border-transparent hover:text-amber-300 text-amber-400 transition-colors flex items-center gap-1 font-bold whitespace-nowrap"
-        >
-          <span>💎</span>
-          <span>{dict.nav.pricingAndPro}</span>
-        </Link>
-      )}
     </nav>
   );
 }
@@ -579,6 +565,7 @@ function MobileNav({
   activeLocale,
   onClose,
 }: MobileNavProps) {
+  const isAr = activeLocale === "ar";
   const {
     isHome,
     isJobs,
@@ -600,14 +587,15 @@ function MobileNav({
   );
 
   const mobileActiveClass =
-    "px-3 py-2.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400 font-bold transition-all whitespace-nowrap";
+    "px-3.5 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 font-bold transition-all whitespace-nowrap";
   const mobileInactiveClass =
-    "px-3 py-2.5 rounded-xl hover:bg-slate-900 hover:text-blue-400 transition-colors text-slate-300 whitespace-nowrap";
+    "px-3.5 py-2.5 rounded-xl hover:bg-slate-100 hover:text-blue-600 transition-colors text-slate-700 font-bold whitespace-nowrap";
 
   return (
     <nav className="flex flex-col space-y-1 text-sm font-semibold">
       <Link
         href={homeLink}
+        dir={isAr ? "rtl" : "ltr"}
         onClick={onClose}
         className={isHome ? mobileActiveClass : mobileInactiveClass}
       >
@@ -615,7 +603,18 @@ function MobileNav({
       </Link>
 
       <Link
+        href={`/${activeLocale}#tools-hub`}
+        dir={isAr ? "rtl" : "ltr"}
+        onClick={onClose}
+        className={`${mobileInactiveClass} flex items-center gap-2`}
+      >
+        <span>🛠️</span>
+        <span>{activeLocale === "ar" ? "الأدوات" : (dict.nav.tools || "Tools")}</span>
+      </Link>
+
+      <Link
         href={jobsLink}
+        dir={isAr ? "rtl" : "ltr"}
         onClick={onClose}
         className={`${isJobs ? mobileActiveClass : mobileInactiveClass} flex items-center gap-2`}
       >
@@ -625,6 +624,7 @@ function MobileNav({
 
       <Link
         href={blogLink}
+        dir={isAr ? "rtl" : "ltr"}
         onClick={onClose}
         className={`${isBlog ? mobileActiveClass : mobileInactiveClass} flex items-center gap-2`}
       >
@@ -634,6 +634,7 @@ function MobileNav({
 
       <Link
         href={germanA1Link}
+        dir={isAr ? "rtl" : "ltr"}
         onClick={onClose}
         className={`${isGermanA1 ? mobileActiveClass : mobileInactiveClass} flex items-center gap-2`}
       >
@@ -645,6 +646,7 @@ function MobileNav({
         <>
           <Link
             href={dashboardLink}
+            dir={isAr ? "rtl" : "ltr"}
             onClick={onClose}
             className={`${isDashboard ? mobileActiveClass : mobileInactiveClass} flex items-center gap-2 font-bold`}
           >
@@ -654,6 +656,7 @@ function MobileNav({
 
           <Link
             href={cvLink}
+            dir={isAr ? "rtl" : "ltr"}
             onClick={onClose}
             className={`${isCv ? mobileActiveClass : mobileInactiveClass} flex items-center gap-2`}
           >
@@ -663,6 +666,7 @@ function MobileNav({
 
           <Link
             href={atsLink}
+            dir={isAr ? "rtl" : "ltr"}
             onClick={onClose}
             className={`${isAts ? mobileActiveClass : mobileInactiveClass} flex items-center gap-2`}
           >
@@ -672,37 +676,21 @@ function MobileNav({
 
           <Link
             href={dossierLink}
+            dir={isAr ? "rtl" : "ltr"}
             onClick={onClose}
             className={`${isDossier ? mobileActiveClass : mobileInactiveClass} flex items-center gap-2`}
           >
             <span>📑</span>
             <span>{dict.nav.completeDossier}</span>
           </Link>
-
-          <Link
-            href={pricingLink}
-            onClick={onClose}
-            className="px-3 py-2.5 rounded-xl hover:bg-slate-900 text-amber-400 transition-colors flex items-center gap-2 font-bold whitespace-nowrap"
-          >
-            <span>💎</span>
-            <span>{dict.nav.pricingAndPro}</span>
-          </Link>
         </>
       ) : (
         <>
           <Link
-            href={pricingLink}
-            onClick={onClose}
-            className="px-3 py-2.5 rounded-xl hover:bg-slate-900 text-amber-400 transition-colors flex items-center gap-2 font-bold whitespace-nowrap"
-          >
-            <span>💎</span>
-            <span>{dict.nav.pricingAndPro}</span>
-          </Link>
-
-          <Link
             href={loginLink}
+            dir={isAr ? "rtl" : "ltr"}
             onClick={onClose}
-            className="px-3 py-2.5 rounded-xl hover:bg-slate-900 hover:text-blue-400 transition-colors flex items-center gap-2 whitespace-nowrap"
+            className="px-3.5 py-2.5 rounded-xl hover:bg-slate-100 hover:text-blue-600 transition-colors flex items-center gap-2 text-slate-700 font-bold whitespace-nowrap"
           >
             <span>🔑</span>
             <span>{dict.nav.signIn}</span>
@@ -722,62 +710,64 @@ function MobileNavFallback({
   cvLink,
   atsLink,
   dossierLink,
-  pricingLink,
   loginLink,
   dict,
   user,
+  activeLocale,
   onClose,
 }: MobileNavProps) {
+  const isAr = activeLocale === "ar";
   const mobileInactiveClass =
-    "px-3 py-2.5 rounded-xl hover:bg-slate-900 hover:text-blue-400 transition-colors text-slate-300 whitespace-nowrap";
+    "px-3.5 py-2.5 rounded-xl hover:bg-slate-100 hover:text-blue-600 transition-colors text-slate-700 font-bold whitespace-nowrap";
 
   return (
     <nav className="flex flex-col space-y-1 text-sm font-semibold">
-      <Link href={homeLink} onClick={onClose} className={mobileInactiveClass}>
+      <Link href={homeLink} dir={isAr ? "rtl" : "ltr"} onClick={onClose} className={mobileInactiveClass}>
         {dict.nav.home}
       </Link>
-      <Link href={jobsLink} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2`}>
+      <Link
+        href={`/${activeLocale}#tools-hub`}
+        dir={isAr ? "rtl" : "ltr"}
+        onClick={onClose}
+        className={`${mobileInactiveClass} flex items-center gap-2`}
+      >
+        <span>🛠️</span>
+        <span>{isAr ? "الأدوات" : (dict.nav.tools || "Tools")}</span>
+      </Link>
+      <Link href={jobsLink} dir={isAr ? "rtl" : "ltr"} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2`}>
         <span>💼</span>
         <span>{dict.nav.jobs}</span>
       </Link>
-      <Link href={blogLink} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2`}>
+      <Link href={blogLink} dir={isAr ? "rtl" : "ltr"} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2`}>
         <span>📚</span>
         <span>{dict.nav.blog}</span>
       </Link>
-      <Link href={germanA1Link} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2`}>
+      <Link href={germanA1Link} dir={isAr ? "rtl" : "ltr"} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2`}>
         <span>🇩🇪</span>
         <span>{dict.nav.germanA1}</span>
       </Link>
       {user ? (
         <>
-          <Link href={dashboardLink} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2 font-bold`}>
+          <Link href={dashboardLink} dir={isAr ? "rtl" : "ltr"} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2 font-bold`}>
             <span>📊</span>
             <span>{dict.nav.dashboard}</span>
           </Link>
-          <Link href={cvLink} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2`}>
+          <Link href={cvLink} dir={isAr ? "rtl" : "ltr"} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2`}>
             <span>📄</span>
             <span>{dict.nav.myResumes}</span>
           </Link>
-          <Link href={atsLink} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2`}>
+          <Link href={atsLink} dir={isAr ? "rtl" : "ltr"} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2`}>
             <span>🔍</span>
             <span>{dict.nav.atsCheck}</span>
           </Link>
-          <Link href={dossierLink} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2`}>
+          <Link href={dossierLink} dir={isAr ? "rtl" : "ltr"} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2`}>
             <span>📑</span>
             <span>{dict.nav.completeDossier}</span>
-          </Link>
-          <Link href={pricingLink} onClick={onClose} className="px-3 py-2.5 rounded-xl hover:bg-slate-900 text-amber-400 transition-colors flex items-center gap-2 font-bold">
-            <span>💎</span>
-            <span>{dict.nav.pricingAndPro}</span>
           </Link>
         </>
       ) : (
         <>
-          <Link href={pricingLink} onClick={onClose} className="px-3 py-2.5 rounded-xl hover:bg-slate-900 text-amber-400 transition-colors flex items-center gap-2 font-bold">
-            <span>💎</span>
-            <span>{dict.nav.pricingAndPro}</span>
-          </Link>
-          <Link href={loginLink} onClick={onClose} className="px-3 py-2.5 rounded-xl hover:bg-slate-900 hover:text-blue-400 transition-colors flex items-center gap-2">
+          <Link href={loginLink} dir={isAr ? "rtl" : "ltr"} onClick={onClose} className="px-3.5 py-2.5 rounded-xl hover:bg-slate-100 hover:text-blue-600 transition-colors flex items-center gap-2 text-slate-700 font-bold">
             <span>🔑</span>
             <span>{dict.nav.signIn}</span>
           </Link>
@@ -803,6 +793,34 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
 
   const isAr = activeLocale === "ar";
   const dir = currentLocaleMeta.dir;
+
+  // Sync when initialUser changes
+  useEffect(() => {
+    if (initialUser) {
+      setUser(initialUser);
+    }
+  }, [initialUser]);
+
+  // Listen to profile updates from UserProfileCard
+  useEffect(() => {
+    function handleProfileUpdated(event: Event) {
+      const customEvent = event as CustomEvent<{ avatarUrl?: string | null; name?: string | null }>;
+      if (customEvent.detail) {
+        setUser((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            ...(customEvent.detail.avatarUrl !== undefined ? { avatarUrl: customEvent.detail.avatarUrl } : {}),
+            ...(customEvent.detail.name !== undefined ? { name: customEvent.detail.name } : {}),
+          };
+        });
+      }
+    }
+    window.addEventListener("user-profile-updated", handleProfileUpdated);
+    return () => {
+      window.removeEventListener("user-profile-updated", handleProfileUpdated);
+    };
+  }, []);
 
   // Check auth session state on mount
   useEffect(() => {
@@ -898,24 +916,27 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
   const signupLink = `/${activeLocale}/auth/signup`;
 
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-xl bg-slate-950/85 border-b border-slate-800/80 transition-colors">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm transition-colors">
       <div
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 sm:gap-4"
-        dir={dir}
+        dir="ltr"
       >
-        {/* Brand Logo */}
-        <Link href={homeLink} className="flex items-center gap-2.5 group shrink-0">
-          <div className="flex items-center justify-center p-1.5 rounded-xl bg-blue-500/20 border border-blue-500/30 group-hover:scale-105 transition-transform shadow-xs">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://flagcdn.com/w40/de.png"
-              alt="Germany Flag"
-              className="w-5 sm:w-6 h-3.5 sm:h-4 rounded-xs object-cover shadow-xs"
-            />
+        {/* Brand Logo: Graduation-cap & German-colors brand identity */}
+        <Link href={homeLink} className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
+          <div className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#061838] border border-amber-400/40 group-hover:border-amber-400 shadow-xs group-hover:scale-105 transition-all overflow-hidden shrink-0">
+            {/* German flag ribbon on top edge */}
+            <div className="absolute top-0 inset-x-0 h-1 flex">
+              <span className="w-1/3 bg-[#000000]" />
+              <span className="w-1/3 bg-[#DD0000]" />
+              <span className="w-1/3 bg-[#FFCC00]" />
+            </div>
+            <span className="text-lg sm:text-xl transform group-hover:rotate-6 transition-transform">🎓</span>
           </div>
-          <span className="text-lg sm:text-xl font-black tracking-tight text-slate-100 group-hover:text-blue-400 transition-colors">
-            GermanJobs<span className="text-blue-500">Pro</span>
-          </span>
+          <div className="flex flex-col">
+            <span className="text-base sm:text-lg font-black tracking-tight text-[#061838] group-hover:text-blue-700 transition-colors leading-tight">
+              GermanJobs<span className="text-amber-500">Pro</span>
+            </span>
+          </div>
         </Link>
 
         {/* Desktop Navigation Links */}
@@ -952,36 +973,29 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
         </Suspense>
 
         {/* Desktop Actions Area */}
-        <div className="hidden sm:flex items-center gap-2.5 sm:gap-3">
-          {/* Language Switcher Dropdown (Desktop) */}
-          <Suspense fallback={<LanguageSwitcherFallback activeLocale={activeLocale} />}>
-            <LanguageSwitcherDesktop activeLocale={activeLocale} isAr={isAr} />
-          </Suspense>
-
+        <div className="hidden sm:flex items-center gap-3">
           {authChecked ? (
             user ? (
               /* AUTHENTICATED STATE */
               <div className="flex items-center gap-2.5 sm:gap-3">
                 {/* Plan Badge */}
-                <Link
-                  href={pricingLink}
-                  className={`px-2.5 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1 transition-all whitespace-nowrap ${
-                    isPro
-                      ? "bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25"
-                      : "bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700"
-                  }`}
-                  title={isPro ? "PRO Active" : `AI Credits: ${user.aiCredits}`}
-                >
-                  <span>{isPro ? "💎 PRO" : `⚡ ${user.aiCredits}`}</span>
-                </Link>
+                {!isPro && (
+                  <Link
+                    href={pricingLink}
+                    className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-extrabold border transition-all bg-slate-900 border-slate-700 text-amber-400 hover:bg-slate-800 shadow-sm shrink-0"
+                    title={isAr ? "رصيد الذكاء الاصطناعي (اضغط للترقية)" : "AI Credits (Click to Upgrade)"}
+                  >
+                    <span>{`⚡ ${user.aiCredits}`}</span>
+                  </Link>
+                )}
 
-                {/* Quick CV Action */}
+                {/* Quick Dashboard Action */}
                 <Link
-                  href={newCvLink}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold shadow-lg shadow-blue-600/20 transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap"
+                  href={dashboardLink}
+                  dir={isAr ? "rtl" : "ltr"}
+                  className="inline-flex items-center gap-1.5 bg-[#FACC15] hover:bg-amber-300 text-slate-950 font-black rounded-full px-5 py-2.5 shadow-sm text-xs transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap"
                 >
-                  <span>✨</span>
-                  <span>{dict.nav.newCv}</span>
+                  <span>{isAr ? "لوحة التحكم" : dict.nav.dashboard}</span>
                 </Link>
 
                 {/* User Profile Dropdown */}
@@ -989,73 +1003,127 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                   <button
                     type="button"
                     onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                    className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 transition-all cursor-pointer focus:outline-none"
+                    className="flex items-center gap-2 p-1 rounded-full bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-800 transition-all cursor-pointer focus:outline-none shadow-2xs"
                     aria-expanded={userDropdownOpen}
                   >
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-blue-500 text-white font-bold text-xs flex items-center justify-center shadow-xs">
-                      {userInitial}
+                    <div
+                      className={`w-8 h-8 rounded-full p-[2px] flex items-center justify-center shrink-0 ${
+                        isPro
+                          ? "bg-gradient-to-tr from-blue-500 via-indigo-400 to-purple-400"
+                          : "bg-slate-300"
+                      }`}
+                    >
+                      <div className="w-full h-full rounded-full overflow-hidden bg-slate-900 flex items-center justify-center text-white font-bold text-xs">
+                        {user.avatarUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={user.avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                        ) : (
+                          <span>{userInitial}</span>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-xs font-bold max-w-[100px] truncate hidden md:inline">
-                      {displayName}
-                    </span>
-                    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-1.5 hidden md:flex">
+                      <span className="text-xs font-bold max-w-[100px] truncate">
+                        {displayName}
+                      </span>
+                      {isPro && (
+                        <span className="px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-300 text-[10px] font-bold">
+                          Pro
+                        </span>
+                      )}
+                    </div>
+                    <svg className="w-3.5 h-3.5 text-slate-500 ltr:mr-1 rtl:ml-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                     </svg>
                   </button>
 
-                  {/* Dropdown Menu */}
+                  {/* Dropdown Menu - Google Pro Style */}
                   {userDropdownOpen && (
                     <div
-                      className={`absolute top-full mt-2 w-56 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50 space-y-1 text-xs animate-fadeIn ${
-                        isAr ? "left-0 text-right" : "right-0 text-left"
-                      }`}
+                      dir={isAr ? "rtl" : "ltr"}
+                      className="absolute right-0 top-full mt-2.5 w-80 rounded-3xl bg-[#131722] border border-slate-800/90 shadow-2xl p-4 z-50 space-y-3 text-xs animate-fadeIn"
                     >
-                      <div className="px-3 py-2 border-b border-slate-800/80 mb-1">
-                        <p className="font-bold text-white truncate">{displayName}</p>
-                        <p className="text-[11px] text-slate-400 font-mono truncate">{user.email}</p>
+                      {/* Google Account Popup Top Header */}
+                      <div className="text-center py-2 px-1 border-b border-slate-800/80 pb-4">
+                        <div
+                          className={`relative w-16 h-16 rounded-full p-[2.5px] mx-auto mb-2 ${
+                            isPro
+                              ? "bg-gradient-to-tr from-blue-500 via-indigo-400 to-purple-400 shadow-[0_0_15px_rgba(59,130,246,0.35)]"
+                              : "bg-slate-700"
+                          }`}
+                        >
+                          <div className="w-full h-full rounded-full overflow-hidden bg-slate-900 flex items-center justify-center border-2 border-[#131722]">
+                            {user.avatarUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={user.avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-xl font-extrabold text-white">{userInitial}</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Pro / Starter Pill Badge */}
+                        <div className="flex justify-center mb-1.5">
+                          {isPro ? (
+                            <div className="inline-flex items-center justify-center px-3 py-0.5 rounded-full bg-[#1e2638] border border-blue-400/30 text-white font-semibold text-[11px] tracking-wide shadow-[0_2px_8px_rgba(59,130,246,0.2)]">
+                              Pro
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-medium text-[11px]">
+                              Starter
+                            </div>
+                          )}
+                        </div>
+
+                        <p className="font-bold text-white text-sm truncate">{displayName}</p>
+                        <p className="text-[11px] text-slate-400 font-sans truncate">{user.email}</p>
                       </div>
 
-                      <Link
-                        href={dashboardLink}
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors whitespace-nowrap"
-                      >
-                        <span>📊</span>
-                        <span>{dict.nav.mainDashboard}</span>
-                      </Link>
+                      <div className="space-y-1">
+                        <Link
+                          href={dashboardLink}
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-200 hover:text-white hover:bg-slate-800/80 transition-colors whitespace-nowrap"
+                        >
+                          <span>📊</span>
+                          <span>{dict.nav.mainDashboard}</span>
+                        </Link>
 
-                      <Link
-                        href={cvLink}
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors whitespace-nowrap"
-                      >
-                        <span>📄</span>
-                        <span>{dict.nav.myResumes}</span>
-                      </Link>
+                        <Link
+                          href={cvLink}
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-200 hover:text-white hover:bg-slate-800/80 transition-colors whitespace-nowrap"
+                        >
+                          <span>📄</span>
+                          <span>{dict.nav.myResumes}</span>
+                        </Link>
 
-                      <Link
-                        href={dossierLink}
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors whitespace-nowrap"
-                      >
-                        <span>📑</span>
-                        <span>{dict.nav.completeDossier}</span>
-                      </Link>
+                        <Link
+                          href={dossierLink}
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-200 hover:text-white hover:bg-slate-800/80 transition-colors whitespace-nowrap"
+                        >
+                          <span>📑</span>
+                          <span>{dict.nav.completeDossier}</span>
+                        </Link>
 
-                      <Link
-                        href={pricingLink}
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-amber-300 hover:text-amber-200 hover:bg-amber-500/10 transition-colors whitespace-nowrap"
-                      >
-                        <span>💎</span>
-                        <span>{dict.nav.upgradePro}</span>
-                      </Link>
+                        <Link
+                          href={pricingLink}
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-colors font-bold whitespace-nowrap"
+                        >
+                          <svg className="w-4 h-4 shrink-0 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-6 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Z" />
+                          </svg>
+                          <span>{isPro ? (isAr ? "إدارة خطة Pro" : "Manage Pro") : dict.nav.upgradePro}</span>
+                        </Link>
+                      </div>
 
-                      <div className="pt-1 border-t border-slate-800/80">
+                      <div className="pt-2 border-t border-slate-800/80">
                         <button
                           type="button"
                           onClick={handleLogout}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer text-start font-semibold"
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer text-start font-semibold"
                         >
                           <span>🚪</span>
                           <span>{dict.nav.signOut}</span>
@@ -1069,28 +1137,40 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
               /* GUEST STATE */
               <div className="flex items-center gap-3">
                 <Link
-                  href={loginLink}
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-900 border border-slate-800 transition-all"
-                >
-                  {dict.nav.signIn}
-                </Link>
-
-                <Link
                   href={signupLink}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold shadow-lg shadow-blue-600/20 transition-all hover:scale-[1.02] active:scale-95"
+                  className="inline-flex items-center gap-2 bg-[#FACC15] hover:bg-amber-300 text-[#0A2552] font-black rounded-full px-5 py-2.5 shadow-sm text-xs sm:text-sm transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap"
                 >
-                  <span>{dict.nav.createCv}</span>
+                  <div className="w-5 h-5 rounded-full bg-[#0A2552] text-[#FACC15] flex items-center justify-center shrink-0 shadow-2xs">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                    </svg>
+                  </div>
+                  <span>{isAr ? "إنشاء حساب" : dict.nav.createCv}</span>
                 </Link>
               </div>
             )
           ) : (
             /* Subtle Skeleton to prevent flash */
-            <div className="w-32 h-8 rounded-xl bg-slate-900/60 animate-pulse border border-slate-800" />
+            <div className="w-32 h-8 rounded-full bg-slate-100 animate-pulse border border-slate-200" />
           )}
+
+          {/* Language Switcher Dropdown (Desktop) */}
+          <Suspense fallback={<LanguageSwitcherFallback activeLocale={activeLocale} />}>
+            <LanguageSwitcherDesktop activeLocale={activeLocale} isAr={isAr} />
+          </Suspense>
         </div>
 
         {/* Mobile Header Right (Quick Language Switcher & Menu Toggle) */}
         <div className="lg:hidden flex items-center gap-2">
+          {authChecked && !user && (
+            <Link
+              href={signupLink}
+              className="sm:hidden inline-flex items-center gap-1 bg-[#FACC15] hover:bg-amber-300 text-[#0A2552] font-black rounded-full px-3 py-1.5 text-[11px] shadow-xs whitespace-nowrap"
+            >
+              <span>{isAr ? "إنشاء حساب" : dict.nav.signIn}</span>
+            </Link>
+          )}
+
           {/* Quick Language Switcher (visible on mobile viewport < sm) */}
           <div className="sm:hidden">
             <Suspense fallback={<LanguageSwitcherHeaderMobileFallback activeLocale={activeLocale} />}>
@@ -1106,7 +1186,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-xl bg-slate-900 text-slate-400 hover:text-white border border-slate-800 focus:outline-none cursor-pointer"
+            className="p-2 rounded-xl bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 focus:outline-none cursor-pointer shadow-2xs"
             aria-label="Toggle Navigation Menu"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -1124,38 +1204,54 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
       {mobileMenuOpen && (
         <div
           dir={dir}
-          className="lg:hidden bg-slate-950/95 border-b border-slate-800 px-4 py-6 space-y-4 shadow-2xl backdrop-blur-2xl animate-fadeIn max-h-[85vh] overflow-y-auto"
+          className="lg:hidden bg-white/98 border-b border-slate-200 px-4 py-6 space-y-4 shadow-xl backdrop-blur-md animate-fadeIn max-h-[85vh] overflow-y-auto"
         >
           {/* User Status in Mobile */}
           {user && (
-            <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-blue-500 text-white font-bold text-sm flex items-center justify-center shrink-0">
-                  {userInitial}
+            <div className="p-3.5 rounded-2xl bg-[#131722] border border-slate-800 flex items-center justify-between gap-3 text-white">
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className={`w-10 h-10 rounded-full p-[2px] shrink-0 ${
+                    isPro
+                      ? "bg-gradient-to-tr from-blue-500 via-indigo-400 to-purple-400"
+                      : "bg-slate-700"
+                  }`}
+                >
+                  <div className="w-full h-full rounded-full overflow-hidden bg-slate-900 flex items-center justify-center border border-[#131722]">
+                    {user.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={user.avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-sm font-bold text-white">{userInitial}</span>
+                    )}
+                  </div>
                 </div>
                 <div className="min-w-0">
-                  <p className="font-bold text-white text-xs truncate">{displayName}</p>
-                  <p className="text-[10px] text-slate-400 font-mono truncate">{user.email}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-bold text-white text-xs truncate">{displayName}</p>
+                    {isPro && (
+                      <span className="px-1.5 py-0.5 rounded-full bg-[#1e2638] border border-blue-400/30 text-white font-semibold text-[9px]">
+                        Pro
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-sans truncate">{user.email}</p>
                 </div>
               </div>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold shrink-0 ${
-                  isPro
-                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                    : "bg-slate-800 text-slate-300"
-                }`}
-              >
-                {isPro ? "💎 PRO" : `⚡ ${user.aiCredits}`}
-              </span>
+              {!isPro && (
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold shrink-0 bg-slate-800 text-slate-300 border border-slate-700">
+                  {`⚡ ${user.aiCredits}`}
+                </span>
+              )}
             </div>
           )}
 
           {/* Mobile Language Switcher Section (at TOP of drawer navigation) */}
-          <div className="space-y-2 pb-3 border-b border-slate-800/80">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
+          <div className="space-y-2 pb-3 border-b border-slate-200">
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-1">
               🌐 {activeLocale === "ar" ? "اللغة / Language" : activeLocale === "de" ? "Sprache wählen" : activeLocale === "fr" ? "Langue" : "Language"}
             </p>
-            <Suspense fallback={<div className="h-20 rounded-xl bg-slate-900/60 animate-pulse border border-slate-800" />}>
+            <Suspense fallback={<div className="h-20 rounded-xl bg-slate-100 animate-pulse border border-slate-200" />}>
               <LanguageSwitcherMobile activeLocale={activeLocale} onSelect={() => setMobileMenuOpen(false)} />
             </Suspense>
           </div>
@@ -1200,22 +1296,22 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
           </Suspense>
 
           {/* Action CTAs in Mobile */}
-          <div className="pt-3 border-t border-slate-800/80 space-y-2">
+          <div className="pt-3 border-t border-slate-200 space-y-2">
             {user ? (
               <>
                 <Link
-                  href={newCvLink}
+                  href={dashboardLink}
+                  dir={isAr ? "rtl" : "ltr"}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs text-center flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/20 transition-all"
+                  className="w-full py-3 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs text-center flex items-center justify-center gap-1.5 shadow-sm transition-all"
                 >
-                  <span>✨</span>
-                  <span>{dict.nav.newCv}</span>
+                  <span>{isAr ? "لوحة التحكم" : dict.nav.dashboard}</span>
                 </Link>
 
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-rose-500/10 text-rose-400 text-xs font-bold text-center border border-slate-800 transition-all cursor-pointer"
+                  className="w-full py-2.5 rounded-full bg-slate-50 hover:bg-rose-50 text-rose-600 text-xs font-bold text-center border border-slate-200 transition-all cursor-pointer"
                 >
                   {dict.nav.signOut}
                 </button>
@@ -1224,9 +1320,9 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
               <Link
                 href={signupLink}
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs text-center flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/20 transition-all"
+                className="w-full py-3 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs text-center flex items-center justify-center gap-1.5 shadow-sm transition-all"
               >
-                <span>{dict.nav.createCvFree}</span>
+                <span>{isAr ? "إنشاء حساب" : dict.nav.createCvFree}</span>
               </Link>
             )}
           </div>

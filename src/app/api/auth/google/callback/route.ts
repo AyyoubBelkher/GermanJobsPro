@@ -117,6 +117,7 @@ export async function GET(request: NextRequest) {
         googleId?: string;
         emailVerified: boolean;
         name?: string;
+        avatarUrl?: string;
       } = {
         emailVerified: true,
       };
@@ -127,17 +128,21 @@ export async function GET(request: NextRequest) {
       if (!user.name && displayName) {
         updateData.name = displayName;
       }
+      if (!user.avatarUrl && profile.picture) {
+        updateData.avatarUrl = profile.picture;
+      }
 
       user = await prisma.user.update({
         where: { id: user.id },
         data: updateData,
       });
     } else {
-      // User does not exist: create new User with email, name, googleId, emailVerified: true, aiCredits: 3, plan: "FREE"
+      // User does not exist: create new User with email, name, googleId, emailVerified: true, aiCredits: 3, plan: "FREE", avatarUrl
       user = await prisma.user.create({
         data: {
           email: normalizedEmail,
           name: displayName,
+          avatarUrl: profile.picture || null,
           googleId,
           emailVerified: true,
           aiCredits: 3,

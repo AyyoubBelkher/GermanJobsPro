@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       prisma.user.count(),
       prisma.user.count({
         where: {
-          plan: "PRO",
+          plan: { in: ["PRO", "SPRINT"] },
           OR: [
             { planExpiresAt: null },
             { planExpiresAt: { gt: new Date() } },

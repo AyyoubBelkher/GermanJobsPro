@@ -54,6 +54,7 @@ model User {
   passwordHash   String?
   googleId       String?       @unique
   name           String?
+  avatarUrl      String?
   plan           String        @default("FREE") // "FREE" | "TRIAL" | "PRO"
   planExpiresAt  DateTime?
   subscriptionPlan      String?       @default("free") // "free" | "pro"

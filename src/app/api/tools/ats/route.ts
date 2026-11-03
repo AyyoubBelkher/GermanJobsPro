@@ -24,6 +24,17 @@ async function extractCvText(file: Blob, fileName: string): Promise<string> {
     file.type === "application/x-pdf";
 
   if (isPdf) {
+    // Validate PDF magic bytes: %PDF-
+    if (
+      uint8Array.length < 5 ||
+      uint8Array[0] !== 0x25 ||
+      uint8Array[1] !== 0x50 ||
+      uint8Array[2] !== 0x44 ||
+      uint8Array[3] !== 0x46 ||
+      uint8Array[4] !== 0x2d
+    ) {
+      throw new Error("Invalid PDF signature. Uploaded file is not a genuine PDF document.");
+    }
     const { text } = await extractText(uint8Array);
     return Array.isArray(text) ? text.join("\n") : String(text || "");
   }
