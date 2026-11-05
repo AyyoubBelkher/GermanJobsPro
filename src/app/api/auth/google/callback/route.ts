@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
   const cookieValue = request.cookies.get("google_oauth_state")?.value;
   let savedState: string | null = null;
   let locale: Locale = DEFAULT_LOCALE;
+  let rawNext = "";
 
   if (cookieValue) {
     try {
@@ -32,6 +33,9 @@ export async function GET(request: NextRequest) {
         savedState = typeof parsed.state === "string" ? parsed.state : null;
         if (parsed.locale && isValidLocale(parsed.locale)) {
           locale = parsed.locale;
+        }
+        if (typeof parsed.next === "string") {
+          rawNext = parsed.next;
         }
       }
     } catch {
@@ -47,9 +51,11 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  const validNext = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "";
+
   // Helper to construct error redirect response and clear state cookie
   const createErrorRedirect = (errorCode: string) => {
-    const errorUrl = `${publicOrigin}/${locale}/auth/login?error=${encodeURIComponent(errorCode)}`;
+    const errorUrl = `${publicOrigin}/${locale}/auth/login?error=${encodeURIComponent(errorCode)}${validNext ? `&next=${encodeURIComponent(validNext)}` : ""}`;
     const response = NextResponse.redirect(errorUrl);
     response.cookies.set("google_oauth_state", "", {
       httpOnly: true,
@@ -178,9 +184,9 @@ export async function GET(request: NextRequest) {
     // Issue session cookie via createSession(user.id)
     const session = await createSession(user.id);
 
-    // Redirect user to /${locale}/dashboard
-    const dashboardUrl = `${publicOrigin}/${locale}/dashboard`;
-    const response = NextResponse.redirect(dashboardUrl);
+    // Redirect user to target destination or /${locale}/dashboard
+    const targetUrl = `${publicOrigin}${validNext || `/${locale}/dashboard`}`;
+    const response = NextResponse.redirect(targetUrl);
 
     // Clear google_oauth_state cookie
     response.cookies.set("google_oauth_state", "", {

@@ -42,30 +42,30 @@ export default async function PrivacyPage({
   return (
     <div
       dir={dir}
-      className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white"
+      className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white"
     >
       <Navbar locale={locale} initialUser={user} />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 w-full flex-1 space-y-12">
         {/* Breadcrumbs */}
-        <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-          <Link href={`/${locale}`} className="hover:text-blue-400 transition-colors">
+        <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+          <Link href={`/${locale}`} className="hover:text-blue-600 transition-colors">
             {isAr ? "الرئيسية" : isDe ? "Startseite" : "Home"}
           </Link>
           <span>/</span>
-          <span className="text-slate-200">
+          <span className="text-slate-800 font-semibold">
             {isAr ? "سياسة الخصوصية وحماية البيانات" : isDe ? "Datenschutzerklärung" : "Privacy Policy (GDPR)"}
           </span>
         </div>
 
         {/* Header Banner */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider">
             <span>🛡️</span>
             <span>{isAr ? "متوافق 100% مع معايير GDPR الأوروبية" : isDe ? "100% DSGVO-konform" : "100% GDPR Compliant"}</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+          <h1 className="text-3xl sm:text-5xl font-black text-[#061838] tracking-tight">
             {isAr
               ? "سياسة الخصوصية وحماية البيانات"
               : isDe
@@ -73,7 +73,7 @@ export default async function PrivacyPage({
               : "Privacy Policy & Data Protection"}
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
             {isAr
               ? "نلتزم في GermanJobsPro بأعلى المعايير الصارمة لحماية خصوصيتك بموجب اللائحة الأوروبية العامة لحماية البيانات (GDPR / DSGVO). نوضح هنا كيف نعالج ونحمي بياناتك المهنية والشخصية."
               : isDe
@@ -81,16 +81,16 @@ export default async function PrivacyPage({
               : "GermanJobsPro is fully committed to safeguarding your personal and resume data in strict compliance with the European General Data Protection Regulation (GDPR)."}
           </p>
 
-          <p className="text-xs text-slate-400 font-mono">
+          <p className="text-xs text-slate-500 font-mono">
             {isAr ? "آخر تحديث: 9 سبتمبر 2026" : isDe ? "Stand: 9. September 2026" : "Last updated: September 9, 2026"}
           </p>
         </div>
 
         {/* GDPR Core Guarantee Box */}
-        <div className="rounded-3xl bg-emerald-500/10 border-2 border-emerald-500/30 p-6 sm:p-8 space-y-4 text-emerald-200 shadow-xl backdrop-blur-xl">
+        <div className="rounded-3xl bg-emerald-50/70 border-2 border-emerald-300 p-6 sm:p-8 space-y-4 text-emerald-950 shadow-sm">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🔒</span>
-            <h2 className="text-lg sm:text-xl font-black text-emerald-300">
+            <h2 className="text-lg sm:text-xl font-black text-emerald-900">
               {isAr
                 ? "ضمان الخصوصية وحق حذف البيانات فوراً (Art. 17 GDPR)"
                 : isDe
@@ -98,7 +98,7 @@ export default async function PrivacyPage({
                 : "Privacy Guarantee & Right to Erasure / Deletion (Art. 17 GDPR)"}
             </h2>
           </div>
-          <div className="space-y-3 text-xs sm:text-sm text-slate-200 leading-relaxed">
+          <div className="space-y-3 text-xs sm:text-sm text-slate-700 leading-relaxed">
             {isAr ? (
               <>
                 <p>
@@ -106,7 +106,7 @@ export default async function PrivacyPage({
                 </p>
                 <p>
                   <strong>حذف البيانات الفوري عند الطلب (Right to Erasure):</strong> يحق لك في أي وقت حذف حسابك وكافة سيرتك الذاتية وخطابات الدافع والملفات المرفوعة بنقرة واحدة أو بمراسلتنا على{" "}
-                  <a href="mailto:support@germanjobspro.com" className="text-emerald-400 underline font-mono">
+                  <a href="mailto:support@germanjobspro.com" className="text-emerald-800 underline font-mono font-bold">
                     support@germanjobspro.com
                   </a>
                   ، ويتم شطب كافة السجلات بصورة دائمة وغير قابلة للاسترجاع.
@@ -122,7 +122,7 @@ export default async function PrivacyPage({
                 </p>
                 <p>
                   <strong>Sofortiges Recht auf Löschung (Art. 17 DSGVO):</strong> Sie können jederzeit die vollständige und unwiderrufliche Löschung Ihres Kontos sowie aller gespeicherten Lebensläufe und Anschreiben verlangen – per Klick oder per E-Mail an{" "}
-                  <a href="mailto:support@germanjobspro.com" className="text-emerald-400 underline font-mono">
+                  <a href="mailto:support@germanjobspro.com" className="text-emerald-800 underline font-mono font-bold">
                     support@germanjobspro.com
                   </a>.
                 </p>
@@ -137,7 +137,7 @@ export default async function PrivacyPage({
                 </p>
                 <p>
                   <strong>Instant Right to Erasure / Deletion (Art. 17 GDPR):</strong> You have the absolute right to request the total and permanent deletion of your account, resumes, cover letters, and uploaded PDFs at any time by emailing{" "}
-                  <a href="mailto:support@germanjobspro.com" className="text-emerald-400 underline font-mono">
+                  <a href="mailto:support@germanjobspro.com" className="text-emerald-800 underline font-mono font-bold">
                     support@germanjobspro.com
                   </a>.
                 </p>
@@ -150,12 +150,12 @@ export default async function PrivacyPage({
         </div>
 
         {/* Detailed GDPR Articles Breakdown */}
-        <div className="space-y-8 text-slate-300 text-sm leading-relaxed">
+        <div className="space-y-8 text-slate-700 text-sm leading-relaxed">
           
           {/* Section 1: Controller */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
-            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span className="text-blue-400">1.</span>
+          <section className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 space-y-3 shadow-sm">
+            <h3 className="text-base sm:text-lg font-bold text-[#061838] flex items-center gap-2">
+              <span className="text-blue-700">1.</span>
               <span>{isAr ? "الجهة المسؤولة عن معالجة البيانات (Verantwortlicher)" : isDe ? "1. Verantwortliche Stelle (Art. 4 Nr. 7 DSGVO)" : "1. Data Controller"}</span>
             </h3>
             <p>
@@ -165,11 +165,11 @@ export default async function PrivacyPage({
                 ? "Verantwortlicher im Sinne der Datenschutz-Grundverordnung (DSGVO) und anderer nationaler Datenschutzgesetze ist die Plattform GermanJobsPro. Kontakt:"
                 : "The data controller responsible for the processing of your personal data under the EU GDPR is the GermanJobsPro platform. Contact:"}
             </p>
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 font-mono text-xs space-y-1">
-              <p className="text-white font-bold">GermanJobsPro Compliance & Privacy Team</p>
-              <p className="text-slate-400">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 font-mono text-xs space-y-1">
+              <p className="text-[#061838] font-bold">GermanJobsPro Compliance & Privacy Team</p>
+              <p className="text-slate-600">
                 Official Support & DPO Email:{" "}
-                <a href="mailto:support@germanjobspro.com" className="text-blue-400 hover:underline">
+                <a href="mailto:support@germanjobspro.com" className="text-blue-700 hover:underline">
                   support@germanjobspro.com
                 </a>
               </p>
@@ -177,12 +177,12 @@ export default async function PrivacyPage({
           </section>
 
           {/* Section 2: Data Collected */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
-            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span className="text-blue-400">2.</span>
+          <section className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 space-y-3 shadow-sm">
+            <h3 className="text-base sm:text-lg font-bold text-[#061838] flex items-center gap-2">
+              <span className="text-blue-700">2.</span>
               <span>{isAr ? "البيانات التي نقوم بجمعها" : isDe ? "2. Welche Daten wir erheben" : "2. Information We Collect"}</span>
             </h3>
-            <ul className="space-y-2 list-disc list-inside text-slate-300 text-xs sm:text-sm">
+            <ul className="space-y-2 list-disc list-inside text-slate-700 text-xs sm:text-sm">
               <li>
                 <strong>{isAr ? "بيانات الحساب والهوية:" : isDe ? "Kontodaten:" : "Account Data:"}</strong>{" "}
                 {isAr
@@ -219,9 +219,9 @@ export default async function PrivacyPage({
           </section>
 
           {/* Section 3: Legal Basis */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
-            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span className="text-blue-400">3.</span>
+          <section className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 space-y-3 shadow-sm">
+            <h3 className="text-base sm:text-lg font-bold text-[#061838] flex items-center gap-2">
+              <span className="text-blue-700">3.</span>
               <span>{isAr ? "الأساس القانوني للمعالجة (المادة 6 من GDPR)" : isDe ? "3. Rechtsgrundlagen der Verarbeitung (Art. 6 DSGVO)" : "3. Legal Basis for Processing (Art. 6 GDPR)"}</span>
             </h3>
             <p>
@@ -234,9 +234,9 @@ export default async function PrivacyPage({
           </section>
 
           {/* Section 4: Resume Storage and AI Processing */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
-            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span className="text-blue-400">4.</span>
+          <section className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 space-y-3 shadow-sm">
+            <h3 className="text-base sm:text-lg font-bold text-[#061838] flex items-center gap-2">
+              <span className="text-blue-700">4.</span>
               <span>{isAr ? "تخزين ومعالجة السير الذاتية والذكاء الاصطناعي" : isDe ? "4. Speicherung & KI-Verarbeitung von Lebensläufen" : "4. Resume Storage & AI Processing"}</span>
             </h3>
             <p>
@@ -249,33 +249,33 @@ export default async function PrivacyPage({
           </section>
 
           {/* Section 5: GDPR Rights */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
-            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span className="text-blue-400">5.</span>
+          <section className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 space-y-3 shadow-sm">
+            <h3 className="text-base sm:text-lg font-bold text-[#061838] flex items-center gap-2">
+              <span className="text-blue-700">5.</span>
               <span>{isAr ? "حقوقك القانونية بموجب اللائحة العامة لحماية البيانات" : isDe ? "5. Ihre Betroffenenrechte (Art. 15-22 DSGVO)" : "5. Your Rights under GDPR"}</span>
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80">
-                <p className="font-bold text-white text-xs">{isAr ? "حق الوصول والاطلاع (Art. 15)" : isDe ? "Auskunftsrecht (Art. 15 DSGVO)" : "Right of Access (Art. 15)"}</p>
-                <p className="text-[11px] text-slate-400 mt-1">{isAr ? "معرفة كافة البيانات المخزنة عنك واستلام نسخة منها." : isDe ? "Auskunft über die zu Ihrer Person verarbeiteten Daten." : "Request a full copy of all data stored about you."}</p>
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                <p className="font-bold text-[#061838] text-xs">{isAr ? "حق الوصول والاطلاع (Art. 15)" : isDe ? "Auskunftsrecht (Art. 15 DSGVO)" : "Right of Access (Art. 15)"}</p>
+                <p className="text-[11px] text-slate-600 mt-1">{isAr ? "معرفة كافة البيانات المخزنة عنك واستلام نسخة منها." : isDe ? "Auskunft über die zu Ihrer Person verarbeiteten Daten." : "Request a full copy of all data stored about you."}</p>
               </div>
-              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80">
-                <p className="font-bold text-white text-xs">{isAr ? "حق التصحيح والتعديل (Art. 16)" : isDe ? "Berichtigungsrecht (Art. 16 DSGVO)" : "Right to Rectification (Art. 16)"}</p>
-                <p className="text-[11px] text-slate-400 mt-1">{isAr ? "تعديل وتصحيح أي بيانات غير دقيقة في حسابك فوراً." : isDe ? "Unverzügliche Korrektur unrichtiger Daten." : "Correct any inaccurate personal or resume data."}</p>
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                <p className="font-bold text-[#061838] text-xs">{isAr ? "حق التصحيح والتعديل (Art. 16)" : isDe ? "Berichtigungsrecht (Art. 16 DSGVO)" : "Right to Rectification (Art. 16)"}</p>
+                <p className="text-[11px] text-slate-600 mt-1">{isAr ? "تعديل وتصحيح أي بيانات غير دقيقة في حسابك فوراً." : isDe ? "Unverzügliche Korrektur unrichtiger Daten." : "Correct any inaccurate personal or resume data."}</p>
               </div>
-              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80">
-                <p className="font-bold text-white text-xs">{isAr ? "حق الحذف والنسيان (Art. 17)" : isDe ? "Recht auf Löschung (Art. 17 DSGVO)" : "Right to Erasure (Art. 17)"}</p>
-                <p className="text-[11px] text-slate-400 mt-1">{isAr ? "حذف حسابك وبياناتك ومستنداتك نهائياً من أنظمتنا." : isDe ? "Vollständige Löschung aller gespeicherten Profildaten." : "Demand permanent deletion of all data and CVs."}</p>
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                <p className="font-bold text-[#061838] text-xs">{isAr ? "حق الحذف والنسيان (Art. 17)" : isDe ? "Recht auf Löschung (Art. 17 DSGVO)" : "Right to Erasure (Art. 17)"}</p>
+                <p className="text-[11px] text-slate-600 mt-1">{isAr ? "حذف حسابك وبياناتك ومستنداتك نهائياً من أنظمتنا." : isDe ? "Vollständige Löschung aller gespeicherten Profildaten." : "Demand permanent deletion of all data and CVs."}</p>
               </div>
-              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80">
-                <p className="font-bold text-white text-xs">{isAr ? "حق نقل البيانات (Art. 20)" : isDe ? "Datenübertragbarkeit (Art. 20 DSGVO)" : "Right to Data Portability (Art. 20)"}</p>
-                <p className="text-[11px] text-slate-400 mt-1">{isAr ? "تصدير بيانات سيرتك الذاتية بتنسيقات قياسية مقروءة آلياً." : isDe ? "Erhalt Ihrer Daten in einem gängigen, maschinenlesbaren Format." : "Export your resume data in structured formats."}</p>
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                <p className="font-bold text-[#061838] text-xs">{isAr ? "حق نقل البيانات (Art. 20)" : isDe ? "Datenübertragbarkeit (Art. 20 DSGVO)" : "Right to Data Portability (Art. 20)"}</p>
+                <p className="text-[11px] text-slate-600 mt-1">{isAr ? "تصدير بيانات سيرتك الذاتية بتنسيقات قياسية مقروءة آلياً." : isDe ? "Erhalt Ihrer Daten in einem gängigen, maschinenlesbaren Format." : "Export your resume data in structured formats."}</p>
               </div>
             </div>
           </section>
 
           {/* Section 6: Request Deletion CTA */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-blue-950/40 border border-blue-500/20 space-y-3 text-center">
+          <section className="p-6 sm:p-8 rounded-3xl bg-[#061838] text-white space-y-3 text-center shadow-lg">
             <h3 className="text-base sm:text-lg font-bold text-white">
               {isAr ? "هل ترغب في ممارسة حقوقك أو حذف بياناتك؟" : isDe ? "Löschungsanfrage oder Datenschutz-Kontakt" : "Data Erasure Requests & Inquiries"}
             </h3>
@@ -288,7 +288,7 @@ export default async function PrivacyPage({
             </p>
             <a
               href="mailto:support@germanjobspro.com"
-              className="inline-block px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs font-bold transition-all shadow-md"
+              className="inline-block px-5 py-2.5 rounded-xl bg-[#FACC15] hover:bg-amber-300 text-[#061838] font-mono text-xs font-black transition-all shadow-md"
             >
               support@germanjobspro.com
             </a>

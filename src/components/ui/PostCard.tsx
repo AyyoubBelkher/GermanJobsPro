@@ -257,7 +257,7 @@ export default function PostCard({
                 {/* German Title */}
                 <h3
                   dir="ltr"
-                  className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 leading-snug font-sans tracking-tight line-clamp-2"
+                  className="text-lg sm:text-xl font-black text-[#061838] group-hover:text-blue-600 transition-colors duration-300 leading-snug font-sans tracking-tight line-clamp-2"
                 >
                   {germanTitle}
                 </h3>
@@ -266,14 +266,14 @@ export default function PostCard({
                 {arabicSubtitle ? (
                   <p
                     dir="rtl"
-                    className="text-sm font-bold text-blue-600 dark:text-sky-300 leading-snug line-clamp-2"
+                    className="text-sm font-bold text-blue-600 leading-snug line-clamp-2"
                   >
                     {formatBidiInlineText(arabicSubtitle, isArabicLocale)}
                   </p>
                 ) : null}
               </div>
             ) : (
-              <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 line-clamp-2 text-start">
+              <h3 className="text-xl font-bold text-[#061838] group-hover:text-blue-600 transition-colors duration-300 line-clamp-2 text-start">
                 {formatBidiInlineText(title, isArabicLocale)}
               </h3>
             )}

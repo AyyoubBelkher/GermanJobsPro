@@ -3,7 +3,12 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #020617;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+.dark {
+  --background: #040d21;
   --foreground: #f8fafc;
 }
 
@@ -14,17 +19,33 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #020617;
-    --foreground: #f8fafc;
-  }
+html {
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+}
+
+button, a, input, select, textarea {
+  touch-action: manipulation;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-cairo), var(--font-geist-sans), Arial, sans-serif;
+}
+
+@media screen and (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 @utility bg-gradient-to-e {
@@ -38,5 +59,110 @@ body {
   background-image: linear-gradient(to left, var(--tw-gradient-stops));
   &:where([dir="rtl"], [dir="rtl"] *) {
     background-image: linear-gradient(to right, var(--tw-gradient-stops));
+  }
+}
+
+/* ========================================================================= */
+/* ROYAL NAVY DARK MODE (#040D21 / #0A1936) & LIGHT HARMONIZATION RULES      */
+/* Scoped outside .cv-print-area and print media so printable CVs stay white */
+/* ========================================================================= */
+@media not print {
+  .dark body {
+    background-color: #040d21;
+    color: #f8fafc;
+  }
+
+  /* Ensure .dark .bg-slate-50 and .dark .bg-[#F8FAFC] (outside buttons/badges) use background-color #040d21 */
+  .dark .bg-slate-50:not(button):not([role="button"]):not(.badge):not(.cv-print-area):not(.cv-print-area *),
+  .dark .bg-\[\#f8fafc\]:not(button):not([role="button"]):not(.badge):not(.cv-print-area):not(.cv-print-area *),
+  .dark .bg-\[\#F8FAFC\]:not(button):not([role="button"]):not(.badge):not(.cv-print-area):not(.cv-print-area *) {
+    background-color: #040d21;
+  }
+
+  /* Ensure .dark .bg-white on cards/containers/inputs adapts cleanly to #0A1936 with readable light text #f8fafc */
+  .dark .bg-white:not(button):not([role="button"]):not([class*="w-4 h-4"]):not([class*="w-5 h-5"]):not([class*="w-6 h-6"]):not(.cv-print-area):not(.cv-print-area *),
+  .dark input.bg-white:not(.cv-print-area):not(.cv-print-area *),
+  .dark textarea.bg-white:not(.cv-print-area):not(.cv-print-area *),
+  .dark select.bg-white:not(.cv-print-area):not(.cv-print-area *),
+  .dark input.bg-slate-50:not(.cv-print-area):not(.cv-print-area *),
+  .dark textarea.bg-slate-50:not(.cv-print-area):not(.cv-print-area *),
+  .dark select.bg-slate-50:not(.cv-print-area):not(.cv-print-area *) {
+    background-color: #0A1936;
+    color: #f8fafc;
+  }
+
+  /* Ensure .dark .bg-slate-100 adapts to #0F2347 */
+  .dark .bg-slate-100:not(button):not([role="button"]):not(.cv-print-area):not(.cv-print-area *) {
+    background-color: #0F2347;
+  }
+
+  /* Ensure .dark .border-slate-200, .dark .border-slate-100, and .dark .border-slate-300 use border-color rgba(255, 255, 255, 0.12) */
+  .dark .border-slate-200:not(.cv-print-area):not(.cv-print-area *),
+  .dark .border-slate-100:not(.cv-print-area):not(.cv-print-area *),
+  .dark .border-slate-300:not(.cv-print-area):not(.cv-print-area *) {
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  /* Ensure .dark .text-slate-950, .dark .text-slate-900, .dark .text-slate-800, and .dark .text-[#061838] adapt to #f8fafc */
+  .dark .text-slate-950:not(.bg-amber-400):not(.bg-amber-500):not(.bg-\[\#FACC15\]):not(.bg-amber-400 *):not(.bg-amber-500 *):not(.bg-\[\#FACC15\] *):not(.cv-print-area):not(.cv-print-area *),
+  .dark .text-slate-900:not(.bg-amber-400):not(.bg-amber-500):not(.bg-\[\#FACC15\]):not(.bg-amber-400 *):not(.bg-amber-500 *):not(.bg-\[\#FACC15\] *):not(.cv-print-area):not(.cv-print-area *),
+  .dark .text-slate-800:not(.bg-amber-400):not(.bg-amber-500):not(.bg-\[\#FACC15\]):not(.bg-amber-400 *):not(.bg-amber-500 *):not(.bg-\[\#FACC15\] *):not(.cv-print-area):not(.cv-print-area *),
+  .dark .text-\[\#061838\]:not(.bg-amber-400):not(.bg-amber-500):not(.bg-\[\#FACC15\]):not(.bg-amber-400 *):not(.bg-amber-500 *):not(.bg-\[\#FACC15\] *):not(.cv-print-area):not(.cv-print-area *) {
+    color: #f8fafc;
+  }
+
+  /* Ensure .dark .text-slate-700 and .dark .text-slate-600 adapt to #cbd5e1 */
+  .dark .text-slate-700:not(.bg-amber-400 *):not(.bg-amber-500 *):not(.bg-\[\#FACC15\] *):not(.cv-print-area):not(.cv-print-area *),
+  .dark .text-slate-600:not(.bg-amber-400 *):not(.bg-amber-500 *):not(.bg-\[\#FACC15\] *):not(.cv-print-area):not(.cv-print-area *) {
+    color: #cbd5e1;
+  }
+
+  /* Ensure .dark .text-slate-500 adapts to #94a3b8 */
+  .dark .text-slate-500:not(.bg-amber-400 *):not(.bg-amber-500 *):not(.bg-\[\#FACC15\] *):not(.cv-print-area):not(.cv-print-area *) {
+    color: #94a3b8;
+  }
+
+  /* Explicitly keep text inside gold/amber CTA buttons (.bg-amber-400, .bg-amber-500, .bg-[#FACC15]) dark (#061838 or #020617) in both Light and Dark mode */
+  .bg-amber-400,
+  .bg-amber-500,
+  .bg-\[\#FACC15\],
+  a.bg-amber-400,
+  a.bg-amber-500,
+  a.bg-\[\#FACC15\],
+  button.bg-amber-400,
+  button.bg-amber-500,
+  button.bg-\[\#FACC15\] {
+    color: #061838;
+  }
+
+  .dark .bg-amber-400,
+  .dark .bg-amber-500,
+  .dark .bg-\[\#FACC15\],
+  .dark a.bg-amber-400,
+  .dark a.bg-amber-500,
+  .dark a.bg-\[\#FACC15\],
+  .dark button.bg-amber-400,
+  .dark button.bg-amber-500,
+  .dark button.bg-\[\#FACC15\] {
+    color: #061838 !important;
+  }
+
+  .dark .bg-amber-400 > span:not([class*="bg-"]),
+  .dark .bg-amber-500 > span:not([class*="bg-"]),
+  .dark .bg-\[\#FACC15\] > span:not([class*="bg-"]),
+  .dark a.bg-amber-400 > span:not([class*="bg-"]),
+  .dark a.bg-amber-500 > span:not([class*="bg-"]),
+  .dark a.bg-\[\#FACC15\] > span:not([class*="bg-"]),
+  .dark button.bg-amber-400 > span:not([class*="bg-"]),
+  .dark button.bg-amber-500 > span:not([class*="bg-"]),
+  .dark button.bg-\[\#FACC15\] > span:not([class*="bg-"]) {
+    color: #061838 !important;
+  }
+
+  /* Hero Hub Cards Gradient adaptation */
+  .dark .from-white:not(.cv-print-area):not(.cv-print-area *) {
+    --tw-gradient-from: #0A1936 var(--tw-gradient-from-position);
+    --tw-gradient-to: rgba(10, 25, 54, 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
   }
 }

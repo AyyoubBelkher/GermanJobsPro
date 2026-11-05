@@ -24,33 +24,36 @@ export default function Footer({ locale = "ar", className }: FooterProps) {
   const refundLink = `/${activeLocale}/refund`;
 
   return (
-    <footer className={`bg-slate-950 ${className !== undefined ? className : "mt-20 border-t border-slate-800/80"} transition-colors`} dir={dir}>
+    <footer className={`bg-[#061838] ${className !== undefined ? className : "mt-20 border-t border-white/10"} transition-colors`} dir={dir}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand Col */}
           <div className="space-y-4 sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center gap-2.5">
-              <div className="flex items-center justify-center p-1.5 rounded-xl bg-blue-500/20 border border-blue-500/20">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="https://flagcdn.com/w40/de.png"
-                  alt="Germany Flag"
-                  className="w-6 h-4 rounded-xs object-cover shadow-xs"
-                />
+            <Link href={homeLink} className="inline-flex items-center gap-2.5 sm:gap-3 group">
+              <div className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#0A2552] border border-amber-400/40 group-hover:border-amber-400 shadow-xs group-hover:scale-105 transition-all overflow-hidden shrink-0">
+                {/* German flag ribbon on top edge */}
+                <div className="absolute top-0 inset-x-0 h-1 flex">
+                  <span className="w-1/3 bg-[#000000]" />
+                  <span className="w-1/3 bg-[#DD0000]" />
+                  <span className="w-1/3 bg-[#FFCC00]" />
+                </div>
+                <span className="text-lg sm:text-xl transform group-hover:rotate-6 transition-transform">🎓</span>
               </div>
-              <span className="text-xl font-black tracking-tight text-slate-100">
-                GermanJobs<span className="text-blue-500">Pro</span>
+              <span className="text-xl font-black tracking-tight text-white">
+                GermanJobs<span className="text-[#FACC15]">Pro</span>
               </span>
-            </div>
+            </Link>
             <p className="text-sm text-slate-400 leading-relaxed">
               {dict.footer.brandDescription}
             </p>
             <div className="pt-1">
               <a
                 href="mailto:support@germanjobspro.com"
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-xs font-mono text-slate-300 hover:text-white transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0A2552] hover:bg-[#0E3572] border border-white/15 text-xs font-mono text-slate-200 hover:text-white transition-colors"
               >
-                <span className="text-blue-400">✉</span>
+                <svg className="w-3.5 h-3.5 text-[#FACC15] shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                </svg>
                 <span>support@germanjobspro.com</span>
               </a>
             </div>
@@ -63,22 +66,22 @@ export default function Footer({ locale = "ar", className }: FooterProps) {
             </h4>
             <ul className="space-y-2 text-sm font-medium text-slate-400">
               <li>
-                <Link href={homeLink} className="hover:text-blue-400 transition-colors">
+                <Link href={homeLink} className="hover:text-[#FACC15] transition-colors">
                   {dict.footer.home}
                 </Link>
               </li>
               <li>
-                <Link href={jobsLink} className="hover:text-blue-400 transition-colors">
+                <Link href={jobsLink} className="hover:text-[#FACC15] transition-colors">
                   {dict.footer.jobsInGermany}
                 </Link>
               </li>
               <li>
-                <Link href={blogLink} className="hover:text-blue-400 transition-colors">
+                <Link href={blogLink} className="hover:text-[#FACC15] transition-colors">
                   {dict.footer.careerBlog}
                 </Link>
               </li>
               <li>
-                <Link href={cvLink} className="hover:text-blue-400 transition-colors">
+                <Link href={cvLink} className="hover:text-[#FACC15] transition-colors">
                   {dict.footer.din5008Builder}
                 </Link>
               </li>
@@ -92,13 +95,13 @@ export default function Footer({ locale = "ar", className }: FooterProps) {
             </h4>
             <ul className="space-y-2 text-sm font-medium text-slate-400">
               <li>
-                <Link href={pricingLink} className="hover:text-amber-400 transition-colors flex items-center gap-1.5 text-amber-400 font-semibold">
+                <Link href={pricingLink} className="hover:text-[#FACC15] transition-colors flex items-center gap-1.5 text-[#FACC15] font-semibold">
                   <span>💎</span>
                   <span>{dict.footer.pricingAndPro}</span>
                 </Link>
               </li>
               <li>
-                <Link href={contactLink} className="hover:text-blue-400 transition-colors flex items-center gap-1.5">
+                <Link href={contactLink} className="hover:text-[#FACC15] transition-colors flex items-center gap-1.5">
                   <span>✉️</span>
                   <span>{dict.footer.contactAndHelp}</span>
                 </Link>
@@ -106,7 +109,7 @@ export default function Footer({ locale = "ar", className }: FooterProps) {
               <li>
                 <a
                   href="mailto:support@germanjobspro.com"
-                  className="hover:text-blue-400 transition-colors flex items-center gap-1.5 text-xs font-mono text-slate-400"
+                  className="hover:text-[#FACC15] transition-colors flex items-center gap-1.5 text-xs font-mono text-slate-400"
                 >
                   <span>🎧</span>
                   <span>support@germanjobspro.com</span>
@@ -122,19 +125,19 @@ export default function Footer({ locale = "ar", className }: FooterProps) {
             </h4>
             <ul className="space-y-2 text-sm font-medium text-slate-400">
               <li>
-                <Link href={termsLink} className="hover:text-blue-400 transition-colors flex items-center gap-1.5">
+                <Link href={termsLink} className="hover:text-[#FACC15] transition-colors flex items-center gap-1.5">
                   <span>⚖️</span>
                   <span>{dict.footer.termsOfService}</span>
                 </Link>
               </li>
               <li>
-                <Link href={privacyLink} className="hover:text-blue-400 transition-colors flex items-center gap-1.5">
+                <Link href={privacyLink} className="hover:text-[#FACC15] transition-colors flex items-center gap-1.5">
                   <span>🛡️</span>
                   <span>{dict.footer.privacyPolicy}</span>
                 </Link>
               </li>
               <li>
-                <Link href={refundLink} className="hover:text-blue-400 transition-colors flex items-center gap-1.5">
+                <Link href={refundLink} className="hover:text-[#FACC15] transition-colors flex items-center gap-1.5">
                   <span>🔄</span>
                   <span>{dict.footer.refundPolicy}</span>
                 </Link>
@@ -144,19 +147,19 @@ export default function Footer({ locale = "ar", className }: FooterProps) {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+        <div className="mt-12 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
           <p>© {new Date().getFullYear()} GermanJobsPro. {dict.footer.allRightsReserved}</p>
           
           <div className="flex items-center gap-4 text-xs">
-            <Link href={termsLink} className="hover:text-slate-200 transition-colors">
+            <Link href={termsLink} className="hover:text-white transition-colors">
               {dict.footer.terms}
             </Link>
             <span>•</span>
-            <Link href={privacyLink} className="hover:text-slate-200 transition-colors">
+            <Link href={privacyLink} className="hover:text-white transition-colors">
               {dict.footer.privacy}
             </Link>
             <span>•</span>
-            <Link href={refundLink} className="hover:text-slate-200 transition-colors">
+            <Link href={refundLink} className="hover:text-white transition-colors">
               {dict.footer.refunds}
             </Link>
           </div>

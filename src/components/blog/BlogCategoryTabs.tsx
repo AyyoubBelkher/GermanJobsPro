@@ -137,7 +137,7 @@ export default function BlogCategoryTabs({
       <div
         role="tablist"
         aria-label="Platform section switcher"
-        className="inline-flex p-1.5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl backdrop-blur-xl max-w-full overflow-x-auto"
+        className="inline-flex p-1.5 rounded-2xl bg-white border border-slate-200 shadow-sm max-w-full overflow-x-auto"
       >
         {mainTracks.map((track) => (
           <button
@@ -148,8 +148,8 @@ export default function BlogCategoryTabs({
             onClick={track.onClick}
             className={`px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-2.5 whitespace-nowrap cursor-pointer select-none ${
               track.isActive
-                ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30 border border-blue-400/30 scale-[1.01]"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 border border-transparent"
+                ? "bg-[#061838] text-white shadow-sm border border-[#061838] scale-[1.01]"
+                : "text-slate-600 hover:text-[#061838] hover:bg-slate-100 border border-transparent"
             }`}
           >
             <span>{track.label}</span>
@@ -158,7 +158,7 @@ export default function BlogCategoryTabs({
                 className={`text-[11px] px-2 py-0.5 rounded-full font-mono font-bold transition-colors ${
                   track.isActive
                     ? "bg-white/20 text-white border border-white/30"
-                    : "bg-slate-800 text-slate-400 border border-slate-700/60"
+                    : "bg-slate-100 text-slate-600 border border-slate-200"
                 }`}
               >
                 {track.count}
@@ -174,7 +174,7 @@ export default function BlogCategoryTabs({
           {/* Mobile Edge Fade Indicator: Start */}
           <div
             aria-hidden="true"
-            className={`pointer-events-none absolute inset-y-0 start-0 w-8 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent z-10 rounded-s-2xl transition-opacity duration-300 sm:hidden ${
+            className={`pointer-events-none absolute inset-y-0 start-0 w-8 bg-gradient-to-r from-slate-50 via-slate-50/80 to-transparent z-10 rounded-s-2xl transition-opacity duration-300 sm:hidden ${
               canScrollStart ? "opacity-100" : "opacity-0"
             }`}
           />
@@ -182,7 +182,7 @@ export default function BlogCategoryTabs({
           {/* Mobile Edge Fade Indicator: End */}
           <div
             aria-hidden="true"
-            className={`pointer-events-none absolute inset-y-0 end-0 w-8 bg-gradient-to-l from-slate-950 via-slate-950/80 to-transparent z-10 rounded-e-2xl transition-opacity duration-300 sm:hidden ${
+            className={`pointer-events-none absolute inset-y-0 end-0 w-8 bg-gradient-to-l from-slate-50 via-slate-50/80 to-transparent z-10 rounded-e-2xl transition-opacity duration-300 sm:hidden ${
               canScrollEnd ? "opacity-100" : "opacity-0"
             }`}
           />
@@ -193,7 +193,7 @@ export default function BlogCategoryTabs({
             onScroll={checkScrollability}
             role="tablist"
             aria-label="Article categories"
-            className="flex items-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl shadow-lg shadow-slate-950/40 overflow-x-auto scroll-smooth scrollbar-none max-w-full"
+            className="flex items-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-white border border-slate-200 shadow-sm overflow-x-auto scroll-smooth scrollbar-none max-w-full"
           >
             {subCategories.map((cat) => {
               const isActive =
@@ -211,8 +211,8 @@ export default function BlogCategoryTabs({
                   onClick={() => handleCategorySelect(cat.id)}
                   className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer select-none shrink-0 ${
                     isActive
-                      ? "bg-slate-800 text-blue-400 shadow-md border border-blue-500/30"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 border border-transparent"
+                      ? "bg-[#061838] text-white shadow-sm border border-[#061838]"
+                      : "text-slate-600 hover:text-[#061838] hover:bg-slate-100 border border-transparent"
                   }`}
                 >
                   <span className="text-sm leading-none">{cat.icon}</span>
@@ -221,8 +221,8 @@ export default function BlogCategoryTabs({
                     <span
                       className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold transition-colors ${
                         isActive
-                          ? "bg-blue-500/20 text-blue-300 border border-blue-400/30"
-                          : "bg-slate-800 text-slate-500 border border-slate-700/40"
+                          ? "bg-white/20 text-white border border-white/30"
+                          : "bg-slate-100 text-slate-500 border border-slate-200"
                       }`}
                     >
                       {count}

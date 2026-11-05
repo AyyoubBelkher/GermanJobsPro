@@ -77,7 +77,7 @@ export default async function LandingPage({
         {/* ========================================================= */}
         {/* 1. HERO SECTION: FULL-BLEED BRANDENBURG GATE MONUMENT     */}
         {/* ========================================================= */}
-        <section className="relative bg-[#061838] text-white overflow-hidden min-h-[500px] lg:min-h-[560px] flex items-center pt-10 pb-28 px-4 sm:px-6 lg:px-8">
+        <section className="relative bg-[#061838] text-white overflow-hidden min-h-[440px] sm:min-h-[500px] lg:min-h-[560px] flex items-center pt-7 pb-20 sm:pt-10 sm:pb-28 px-4 sm:px-6 lg:px-8">
           {/* Ambient Glows */}
           <div className="absolute top-0 start-1/4 w-96 sm:w-[650px] h-96 sm:h-[650px] bg-blue-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
           <div className="absolute bottom-10 end-10 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
@@ -150,7 +150,7 @@ export default async function LandingPage({
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2">
                 <Link
                   href={user ? `/${locale}/dashboard` : `/${locale}/auth/signup`}
-                  className="bg-[#FACC15] hover:bg-amber-300 text-[#0A2552] font-black px-8 py-4 rounded-full flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 text-base transition-all hover:scale-[1.02] active:scale-95 text-center"
+                  className="bg-[#FACC15] hover:bg-amber-300 text-[#0A2552] font-black px-8 py-4 rounded-full flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 text-base transition-all hover:scale-[1.02] active:scale-[0.98] text-center"
                 >
                   <span>
                     {user
@@ -161,7 +161,7 @@ export default async function LandingPage({
 
                 <a
                   href="#tools-hub"
-                  className="border-2 border-white/60 hover:bg-white/10 text-white font-bold rounded-full px-7 py-4 text-base backdrop-blur-md transition-all inline-flex items-center justify-center gap-2.5 text-center"
+                  className="border-2 border-white/60 hover:bg-white/10 text-white font-bold rounded-full px-7 py-4 text-base backdrop-blur-md transition-all inline-flex items-center justify-center gap-2.5 text-center active:scale-[0.98]"
                 >
                   <span className="w-6 h-6 rounded-full bg-white text-[#0A2552] flex items-center justify-center text-xs font-black shrink-0">
                     ▶
@@ -197,7 +197,7 @@ export default async function LandingPage({
             {/* Card 1 (Leftmost): German Jobs */}
             <Link
               href={`/${locale}/jobs`}
-              className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-4 flex flex-col items-center text-center group cursor-pointer"
+              className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-3.5 sm:p-4 active:scale-[0.98] flex flex-col items-center text-center group cursor-pointer"
             >
               <div className="w-12 h-12 mb-3 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <svg className="w-11 h-11 text-[#0D47A1]" viewBox="0 0 48 48" fill="none">
@@ -212,14 +212,22 @@ export default async function LandingPage({
               </h3>
               <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir="rtl">{t.toolsHub.card6.subtitle}</p>
               <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
-                ➔
+                <svg
+                  className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
               </span>
             </Link>
 
             {/* Card 2: German A1 Academy */}
             <Link
               href={`/${locale}/blog?category=German+A1`}
-              className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-4 flex flex-col items-center text-center group cursor-pointer"
+              className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-3.5 sm:p-4 active:scale-[0.98] flex flex-col items-center text-center group cursor-pointer"
             >
               <div className="w-12 h-12 mb-3 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <svg className="w-11 h-11 text-[#0D47A1]" viewBox="0 0 48 48" fill="none">
@@ -236,14 +244,22 @@ export default async function LandingPage({
               </h3>
               <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir="rtl">{t.toolsHub.card5.subtitle}</p>
               <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
-                ➔
+                <svg
+                  className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
               </span>
             </Link>
 
             {/* Card 3: AI Cover Letter */}
             <Link
               href={`/${locale}/dashboard/cover-letters/new`}
-              className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-4 flex flex-col items-center text-center group cursor-pointer"
+              className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-3.5 sm:p-4 active:scale-[0.98] flex flex-col items-center text-center group cursor-pointer"
             >
               <div className="w-12 h-12 mb-3 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <svg className="w-11 h-11 text-[#0D47A1]" viewBox="0 0 48 48" fill="none">
@@ -257,14 +273,22 @@ export default async function LandingPage({
               </h3>
               <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir="rtl">{t.toolsHub.card4.subtitle}</p>
               <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
-                ➔
+                <svg
+                  className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
               </span>
             </Link>
 
             {/* Card 4: Dossier Studio */}
             <Link
               href={`/${locale}/dashboard/dossier`}
-              className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-4 flex flex-col items-center text-center group cursor-pointer"
+              className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-3.5 sm:p-4 active:scale-[0.98] flex flex-col items-center text-center group cursor-pointer"
             >
               <div className="w-12 h-12 mb-3 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <svg className="w-11 h-11 text-[#0D47A1]" viewBox="0 0 48 48" fill="none">
@@ -277,14 +301,22 @@ export default async function LandingPage({
               </h3>
               <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir="rtl">{t.toolsHub.card3.subtitle}</p>
               <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
-                ➔
+                <svg
+                  className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
               </span>
             </Link>
 
             {/* Card 5: ATS CV Analyzer */}
             <Link
               href={`/${locale}/dashboard/ats-analyzer`}
-              className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-4 flex flex-col items-center text-center group cursor-pointer"
+              className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-3.5 sm:p-4 active:scale-[0.98] flex flex-col items-center text-center group cursor-pointer"
             >
               <div className="w-12 h-12 mb-3 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <svg className="w-11 h-11 text-[#0D47A1]" viewBox="0 0 48 48" fill="none">
@@ -301,14 +333,22 @@ export default async function LandingPage({
               </h3>
               <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir="rtl">{t.toolsHub.card2.subtitle}</p>
               <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
-                ➔
+                <svg
+                  className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
               </span>
             </Link>
 
             {/* Card 6 (Rightmost): AI CV Builder */}
             <Link
               href={`/${locale}/dashboard/cv/new`}
-              className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-4 flex flex-col items-center text-center group cursor-pointer"
+              className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-3.5 sm:p-4 active:scale-[0.98] flex flex-col items-center text-center group cursor-pointer"
             >
               <div className="w-12 h-12 mb-3 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <svg className="w-11 h-11 text-[#0D47A1]" viewBox="0 0 48 48" fill="none">
@@ -333,7 +373,15 @@ export default async function LandingPage({
               </h3>
               <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir="rtl">{t.toolsHub.card1.subtitle}</p>
               <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
-                ➔
+                <svg
+                  className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
               </span>
             </Link>
           </div>

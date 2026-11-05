@@ -76,21 +76,21 @@ export default function ForgotPasswordPage({
   };
 
   return (
-    <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between">
+    <div dir={dir} className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between">
       <Navbar locale={locale} />
 
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div className="w-full max-w-md space-y-6 bg-slate-900/90 border border-slate-800/80 p-6 sm:p-8 rounded-3xl shadow-2xl backdrop-blur-xl my-8">
+        <div className="w-full max-w-md space-y-6 bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-lg my-8 text-slate-900">
           <div className="text-center space-y-2">
-            <div className="inline-flex p-3 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 mb-2">
+            <div className="inline-flex p-3 rounded-2xl bg-blue-50 border border-blue-200 text-blue-700 mb-2">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
               </svg>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#061838]">
               {isAr ? "استعادة كلمة المرور" : isDe ? "Passwort vergessen?" : "Forgot Password?"}
             </h1>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-600">
               {isAr
                 ? "أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور الخاصة بك"
                 : isDe
@@ -101,14 +101,14 @@ export default function ForgotPasswordPage({
 
           {submitted ? (
             <div className="space-y-5 animate-fadeIn">
-              <div className="p-4 sm:p-5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-200 text-sm space-y-2">
-                <div className="flex items-center gap-2 font-bold text-emerald-300">
+              <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm space-y-2">
+                <div className="flex items-center gap-2 font-bold text-emerald-800">
                   <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                   </svg>
                   <span>{isAr ? "تم إرسال الرابط بنجاح!" : isDe ? "Link erfolgreich gesendet!" : "Reset link sent!"}</span>
                 </div>
-                <p className="text-xs text-emerald-300/90 leading-relaxed">
+                <p className="text-xs text-emerald-700 leading-relaxed">
                   {isAr
                     ? `إذا كان البريد ${email} مسجلاً لدينا، فستتلقى رابطاً لإعادة التعيين خلال دقائق. يرجى التحقق من مجلد الرسائل غير المرغوب فيها (Spam).`
                     : isDe
@@ -121,14 +121,14 @@ export default function ForgotPasswordPage({
                 <button
                   type="button"
                   onClick={() => setSubmitted(false)}
-                  className="text-xs text-slate-400 hover:text-white underline"
+                  className="text-xs text-slate-500 hover:text-slate-800 underline"
                 >
                   {isAr ? "إعادة إرسال بريد آخر" : isDe ? "Andere E-Mail eingeben" : "Try another email"}
                 </button>
 
                 <Link
                   href={`/${locale}/auth/login`}
-                  className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all text-center"
+                  className="w-full py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-sm transition-all text-center border border-slate-200"
                 >
                   {isAr ? "العودة لتسجيل الدخول" : isDe ? "Zurück zur Anmeldung" : "Back to Sign In"}
                 </Link>
@@ -137,14 +137,14 @@ export default function ForgotPasswordPage({
           ) : (
             <>
               {errorMessage && (
-                <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-sm font-medium text-center">
+                <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm font-medium text-center">
                   {errorMessage}
                 </div>
               )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     {isAr ? "البريد الإلكتروني" : isDe ? "E-Mail-Adresse" : "Email Address"}
                   </label>
                   <input
@@ -152,7 +152,7 @@ export default function ForgotPasswordPage({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@example.com"
-                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm dir-ltr transition-all"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#061838] text-sm dir-ltr transition-all"
                     required
                   />
                 </div>
@@ -160,7 +160,7 @@ export default function ForgotPasswordPage({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg hover:shadow-blue-500/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full py-3.5 rounded-xl bg-[#061838] hover:bg-[#0A2552] text-white font-bold text-sm shadow-md active:scale-95 transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <span>{isAr ? "جاري الإرسال..." : isDe ? "Wird gesendet..." : "Sending..."}</span>
@@ -170,11 +170,11 @@ export default function ForgotPasswordPage({
                 </button>
               </form>
 
-              <div className="pt-4 border-t border-slate-800 text-center text-xs text-slate-400">
+              <div className="pt-4 border-t border-slate-100 text-center text-xs text-slate-600">
                 <span>{isAr ? "تذكرت كلمة المرور؟ " : isDe ? "Passwort wieder eingefallen? " : "Remember your password? "}</span>
                 <Link
                   href={`/${locale}/auth/login`}
-                  className="font-semibold text-blue-400 hover:underline"
+                  className="font-semibold text-blue-700 hover:underline"
                 >
                   {isAr ? "سجل الدخول هنا" : isDe ? "Hier anmelden" : "Sign in here"}
                 </Link>

@@ -10,6 +10,9 @@ export async function GET(request: NextRequest) {
     const rawLocale = request.nextUrl.searchParams.get("locale") || "";
     const locale = isValidLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
 
+    const rawNext = request.nextUrl.searchParams.get("next") || "";
+    const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "";
+
     const clientId = process.env.GOOGLE_CLIENT_ID;
     if (!clientId || clientId.trim() === "") {
       console.error("[Google OAuth Error]: GOOGLE_CLIENT_ID is not configured");
@@ -35,8 +38,8 @@ export async function GET(request: NextRequest) {
 
     const response = NextResponse.redirect(googleAuthUrl.toString());
 
-    // Store state and requested locale in an HTTP-only secure cookie (google_oauth_state, maxAge 10 mins)
-    const cookiePayload = JSON.stringify({ state, locale });
+    // Store state, requested locale, and next redirect in an HTTP-only secure cookie (google_oauth_state, maxAge 10 mins)
+    const cookiePayload = JSON.stringify({ state, locale, next });
     const cookieDomain = getCookieDomain(request);
 
     response.cookies.set("google_oauth_state", cookiePayload, {

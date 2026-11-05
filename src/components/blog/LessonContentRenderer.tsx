@@ -2367,7 +2367,7 @@ export default function LessonContentRenderer({
 
             return (
               <p
-                className="text-base sm:text-lg text-slate-200 leading-relaxed sm:leading-loose mb-6 font-normal text-start break-words"
+                className="text-base sm:text-lg text-slate-700 leading-relaxed sm:leading-loose mb-6 font-normal text-start break-words"
                 dir={isAr ? "rtl" : "ltr"}
               >
                 {renderInlineContent(children, isLessonMode, isAr)}
@@ -2418,7 +2418,7 @@ export default function LessonContentRenderer({
               // Generic list item containing non-tool links
               return (
                 <li
-                  className="text-base sm:text-lg text-slate-200 leading-relaxed sm:leading-loose my-2 text-start list-none break-words"
+                  className="text-base sm:text-lg text-slate-700 leading-relaxed sm:leading-loose my-2 text-start list-none break-words"
                   dir={isAr ? "rtl" : "ltr"}
                 >
                   <div className="flex items-start gap-3 min-w-0">
@@ -2491,7 +2491,7 @@ export default function LessonContentRenderer({
             // Clean Editorial Bullet Item
             return (
               <li
-                className="text-base sm:text-lg text-slate-200 leading-relaxed sm:leading-loose my-2 text-start list-none break-words"
+                className="text-base sm:text-lg text-slate-700 leading-relaxed sm:leading-loose my-2 text-start list-none break-words"
                 dir={isAr ? "rtl" : "ltr"}
               >
                 <div className="flex items-start gap-3 min-w-0">

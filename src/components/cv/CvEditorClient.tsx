@@ -417,7 +417,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
       )}
 
       {/* Tabs Navigation */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-800 scrollbar-none">
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-800 scrollbar-none -mx-2 px-2 snap-x">
         {[
           { id: "personal", label: isAr ? "👤 المعلومات الشخصية" : isDe ? "👤 Persönliche Daten" : "👤 Personal Info" },
           { id: "experience", label: isAr ? "💼 الخبرات المهنية" : isDe ? "💼 Berufserfahrung" : "💼 Experience" },
@@ -430,7 +430,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id as typeof activeTab)}
-            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
+            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer snap-start ${
               activeTab === tab.id
                 ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
                 : "bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-slate-800"
@@ -1385,9 +1385,9 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
           </div>
 
           {/* Printable / Rendered DIN 5008 Sheet */}
-          <div dir="ltr" className="bg-white text-slate-900 p-8 sm:p-12 rounded-3xl shadow-2xl max-w-4xl mx-auto space-y-8 font-sans text-left">
+          <div dir="ltr" className="bg-white text-slate-900 p-4 sm:p-8 md:p-12 overflow-x-auto rounded-3xl shadow-2xl max-w-4xl mx-auto space-y-8 font-sans text-left">
             {/* Header: Name & Photo */}
-            <div className="flex items-start justify-between border-b-2 border-slate-900 pb-6 gap-6 text-left">
+            <div className="flex flex-col-reverse sm:flex-row items-start justify-between border-b-2 border-slate-900 pb-6 gap-4 sm:gap-6 text-left">
               <div className="space-y-1 text-left">
                 <h1 className="text-3xl font-black tracking-tight text-slate-900 uppercase text-left">
                   {cv.personalInfo?.fullName || "Vorname Nachname"}

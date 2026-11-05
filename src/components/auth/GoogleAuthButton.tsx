@@ -2,6 +2,7 @@ import React from "react";
 
 interface GoogleAuthButtonProps {
   locale: string;
+  nextPath?: string;
 }
 
 const GOOGLE_BUTTON_LABELS: Record<string, string> = {
@@ -18,15 +19,15 @@ const DIVIDER_LABELS: Record<string, string> = {
   en: "or with email",
 };
 
-export default function GoogleAuthButton({ locale }: GoogleAuthButtonProps) {
+export default function GoogleAuthButton({ locale, nextPath }: GoogleAuthButtonProps) {
   const buttonLabel = GOOGLE_BUTTON_LABELS[locale] || GOOGLE_BUTTON_LABELS.en;
   const dividerLabel = DIVIDER_LABELS[locale] || DIVIDER_LABELS.en;
 
   return (
     <div className="w-full space-y-4">
       <a
-        href={`/api/auth/google?locale=${encodeURIComponent(locale)}`}
-        className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-semibold text-sm shadow-md hover:shadow-lg active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer group"
+        href={`/api/auth/google?locale=${encodeURIComponent(locale)}${nextPath ? `&next=${encodeURIComponent(nextPath)}` : ""}`}
+        className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 font-semibold text-sm shadow-sm hover:shadow active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer group"
       >
         <svg
           className="w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110"
@@ -54,8 +55,8 @@ export default function GoogleAuthButton({ locale }: GoogleAuthButtonProps) {
       </a>
 
       <div className="relative flex items-center justify-center my-4">
-        <div className="border-t border-slate-800 w-full absolute" />
-        <span className="bg-slate-900 px-3 text-xs text-slate-400 font-medium relative z-10">
+        <div className="border-t border-slate-200 w-full absolute" />
+        <span className="bg-white px-3 text-xs text-slate-500 font-medium relative z-10">
           {dividerLabel}
         </span>
       </div>

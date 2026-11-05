@@ -42,30 +42,30 @@ export default async function TermsPage({
   return (
     <div
       dir={dir}
-      className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white"
+      className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white"
     >
       <Navbar locale={locale} initialUser={user} />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 w-full flex-1 space-y-12">
         {/* Breadcrumbs */}
-        <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-          <Link href={`/${locale}`} className="hover:text-blue-400 transition-colors">
+        <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+          <Link href={`/${locale}`} className="hover:text-blue-600 transition-colors">
             {isAr ? "الرئيسية" : isDe ? "Startseite" : "Home"}
           </Link>
           <span>/</span>
-          <span className="text-slate-200">
+          <span className="text-slate-800 font-semibold">
             {isAr ? "شروط الاستخدام والامتثال" : isDe ? "Nutzungsbedingungen" : "Terms of Service"}
           </span>
         </div>
 
         {/* Header Banner */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold uppercase tracking-wider">
             <span>⚖️</span>
             <span>{isAr ? "الوثيقة القانونية الرسمية" : isDe ? "Rechtliche Hinweise" : "Official Legal Notice"}</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+          <h1 className="text-3xl sm:text-5xl font-black text-[#061838] tracking-tight">
             {isAr
               ? "شروط الاستخدام وسياسة الخدمة"
               : isDe
@@ -73,7 +73,7 @@ export default async function TermsPage({
               : "Terms of Service & Usage Policy"}
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
             {isAr
               ? "تحكم هذه الشروط استخدامك لمنصة GermanJobsPro، ومولدات السير الذاتية DIN 5008، وأدوات الذكاء الاصطناعي لتحضير ملفات الترشيح للعمل في ألمانيا."
               : isDe
@@ -81,16 +81,16 @@ export default async function TermsPage({
               : "These terms govern your access to GermanJobsPro, our DIN 5008 resume generators, and AI career dossier tools for the German job market."}
           </p>
 
-          <p className="text-xs text-slate-400 font-mono">
+          <p className="text-xs text-slate-500 font-mono">
             {isAr ? "آخر تحديث: 9 سبتمبر 2026" : isDe ? "Stand: 9. September 2026" : "Last updated: September 9, 2026"}
           </p>
         </div>
 
         {/* CRITICAL LEGAL DISCLAIMER CALLOUT BOX */}
-        <div className="rounded-3xl bg-amber-500/10 border-2 border-amber-500/30 p-6 sm:p-8 space-y-4 text-amber-200 shadow-xl backdrop-blur-xl">
+        <div className="rounded-3xl bg-amber-50/80 border-2 border-amber-300 p-6 sm:p-8 space-y-4 text-amber-950 shadow-sm">
           <div className="flex items-center gap-3">
             <span className="text-2xl">⚠️</span>
-            <h2 className="text-lg sm:text-xl font-black text-amber-300">
+            <h2 className="text-lg sm:text-xl font-black text-amber-900">
               {isAr
                 ? "إشعار قانوني صريح وإخلاء مسؤولية توظيف وهجرة"
                 : isDe
@@ -98,7 +98,7 @@ export default async function TermsPage({
                 : "Crucial Legal Disclaimer: Software Tool Only (No Immigration/Recruitment Agency)"}
             </h2>
           </div>
-          <div className="space-y-3 text-xs sm:text-sm text-slate-200 leading-relaxed">
+          <div className="space-y-3 text-xs sm:text-sm text-slate-700 leading-relaxed">
             {isAr ? (
               <>
                 <p>
@@ -140,12 +140,12 @@ export default async function TermsPage({
         </div>
 
         {/* Detailed Terms Sections */}
-        <div className="space-y-8 text-slate-300 text-sm leading-relaxed">
+        <div className="space-y-8 text-slate-700 text-sm leading-relaxed">
           
           {/* Section 1 */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
-            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span className="text-blue-400">1.</span>
+          <section className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 space-y-3 shadow-sm">
+            <h3 className="text-base sm:text-lg font-bold text-[#061838] flex items-center gap-2">
+              <span className="text-blue-700">1.</span>
               <span>{isAr ? "قبول الشروط وهوية المشغل" : isDe ? "Geltungsbereich & Anbieterkennzeichnung" : "Acceptance of Terms & Operator Identity"}</span>
             </h3>
             <p>
@@ -158,9 +158,9 @@ export default async function TermsPage({
           </section>
 
           {/* Section 2 */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
-            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span className="text-blue-400">2.</span>
+          <section className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 space-y-3 shadow-sm">
+            <h3 className="text-base sm:text-lg font-bold text-[#061838] flex items-center gap-2">
+              <span className="text-blue-700">2.</span>
               <span>{isAr ? "حسابات المستخدمين وصحة البيانات المدخلة" : isDe ? "Nutzerkonto & Richtigkeit der Angaben" : "User Accounts & Accuracy of Information"}</span>
             </h3>
             <p>
@@ -173,9 +173,9 @@ export default async function TermsPage({
           </section>
 
           {/* Section 3 */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
-            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span className="text-blue-400">3.</span>
+          <section className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 space-y-3 shadow-sm">
+            <h3 className="text-base sm:text-lg font-bold text-[#061838] flex items-center gap-2">
+              <span className="text-blue-700">3.</span>
               <span>{isAr ? "باقات الاشتراك، التسعير، والمدفوعات" : isDe ? "Tarife, Preise & Zahlungsabwicklung" : "Pricing, Plans & Payments"}</span>
             </h3>
             <div className="space-y-2">
@@ -197,9 +197,9 @@ export default async function TermsPage({
           </section>
 
           {/* Section 4 */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
-            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span className="text-blue-400">4.</span>
+          <section className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 space-y-3 shadow-sm">
+            <h3 className="text-base sm:text-lg font-bold text-[#061838] flex items-center gap-2">
+              <span className="text-blue-700">4.</span>
               <span>{isAr ? "سياسة الاستخدام العادل وأدوات الذكاء الاصطناعي" : isDe ? "Fair-Use-Richtlinie & KI-Generierung" : "Fair Use Policy & AI Capabilities"}</span>
             </h3>
             <p>
@@ -212,9 +212,9 @@ export default async function TermsPage({
           </section>
 
           {/* Section 5 */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
-            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span className="text-blue-400">5.</span>
+          <section className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 space-y-3 shadow-sm">
+            <h3 className="text-base sm:text-lg font-bold text-[#061838] flex items-center gap-2">
+              <span className="text-blue-700">5.</span>
               <span>{isAr ? "الملكية الفكرية" : isDe ? "Urheberrecht & Geistiges Eigentum" : "Intellectual Property"}</span>
             </h3>
             <p>
@@ -227,9 +227,9 @@ export default async function TermsPage({
           </section>
 
           {/* Section 6 */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
-            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span className="text-blue-400">6.</span>
+          <section className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 space-y-3 shadow-sm">
+            <h3 className="text-base sm:text-lg font-bold text-[#061838] flex items-center gap-2">
+              <span className="text-blue-700">6.</span>
               <span>{isAr ? "حدود المسؤولية والتعديلات" : isDe ? "Haftungsbeschränkung & Änderungen" : "Limitation of Liability & Modifications"}</span>
             </h3>
             <p>
@@ -242,7 +242,7 @@ export default async function TermsPage({
           </section>
 
           {/* Section 7 */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-blue-950/40 border border-blue-500/20 space-y-3 text-center">
+          <section className="p-6 sm:p-8 rounded-3xl bg-[#061838] text-white space-y-3 text-center shadow-lg">
             <h3 className="text-base sm:text-lg font-bold text-white">
               {isAr ? "للتواصل والدعم القانوني" : isDe ? "Kontakt für rechtliche Fragen" : "Legal Contact & Inquiries"}
             </h3>
@@ -255,7 +255,7 @@ export default async function TermsPage({
             </p>
             <a
               href="mailto:support@germanjobspro.com"
-              className="inline-block px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs font-bold transition-all shadow-md"
+              className="inline-block px-5 py-2.5 rounded-xl bg-[#FACC15] hover:bg-amber-300 text-[#061838] font-mono text-xs font-black transition-all shadow-md"
             >
               support@germanjobspro.com
             </a>

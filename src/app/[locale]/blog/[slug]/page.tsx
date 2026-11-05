@@ -543,7 +543,7 @@ export default async function SinglePostPage({
   return (
     <div
       dir={dir}
-      className={`min-h-screen overflow-x-hidden bg-slate-950 text-slate-100 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white ${
+      className={`min-h-screen overflow-x-hidden bg-slate-50 text-slate-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white ${
         isAdmin ? "pb-24" : ""
       }`}
     >
@@ -560,31 +560,31 @@ export default async function SinglePostPage({
         <article dir={dir} className={`space-y-8 min-w-0 ${isAr ? "text-right" : "text-left"}`}>
         
         {/* Navigation Breadcrumb / Header */}
-        <div className="flex flex-wrap items-center justify-between gap-4 py-2 border-b border-slate-200 dark:border-slate-800/80 mb-6 min-w-0">
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 min-w-0">
-            <Link href={`/${locale}/blog`} className="hover:text-blue-500 transition-colors">
+        <div className="flex flex-wrap items-center justify-between gap-4 py-2 border-b border-slate-200 mb-6 min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold text-slate-600 min-w-0">
+            <Link href={`/${locale}/blog`} className="hover:text-blue-600 transition-colors">
               {ui.blogRoot}
             </Link>
             {isA1 ? (
               <>
                 <span>/</span>
-                <Link href={`/${locale}/blog?category=German+A1`} className="hover:text-blue-500 transition-colors flex items-center gap-1 text-slate-400">
+                <Link href={`/${locale}/blog?category=German+A1`} className="hover:text-blue-600 transition-colors flex items-center gap-1 text-slate-600">
                   <span>🇩🇪</span>
                   <span>{ui.a1Academy}</span>
                 </Link>
                 <span>/</span>
-                <span className="text-blue-600 dark:text-blue-400 font-bold">
+                <span className="text-[#061838] font-bold">
                   {currentLessonParsed?.lessonNumber ? `${ui.lessonWord} ${currentLessonParsed.lessonNumber}` : formatBidiInlineText(post.title, isAr)}
                 </span>
               </>
             ) : (
               <>
                 <span>/</span>
-                <Link href={`/${locale}/blog`} className="hover:text-blue-500 transition-colors text-slate-400">
+                <Link href={`/${locale}/blog`} className="hover:text-blue-600 transition-colors text-slate-600">
                   <span>{ui.careerGuide}</span>
                 </Link>
                 <span>/</span>
-                <span className="text-blue-600 dark:text-blue-400 font-bold line-clamp-1 max-w-[160px] sm:max-w-xs truncate">
+                <span className="text-[#061838] font-bold line-clamp-1 max-w-[160px] sm:max-w-xs truncate">
                   {formatBidiInlineText(post.title, isAr)}
                 </span>
               </>
@@ -594,7 +594,7 @@ export default async function SinglePostPage({
           {isA1 ? (
             <Link
               href={`/${locale}/blog?category=German+A1`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-500/20 transition-all hover:scale-[1.02] active:scale-95"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200 transition-all hover:scale-[1.02] active:scale-95"
             >
               <span>📚</span>
               <span>{ui.a1CourseIndex}</span>
@@ -602,7 +602,7 @@ export default async function SinglePostPage({
           ) : (
             <Link
               href={`/${locale}/blog`}
-              className="inline-flex items-center text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline transition-colors"
+              className="inline-flex items-center text-sm font-semibold text-blue-600 hover:underline transition-colors"
             >
               {ui.backToBlog}
             </Link>
@@ -621,12 +621,12 @@ export default async function SinglePostPage({
                   : `🇩🇪 Lesson ${currentLessonParsed?.lessonNumber || "•"} • A1 Academy`}
               </span>
             ) : (
-              <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 shadow-sm">
+              <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 shadow-sm">
                 {localizeCategoryLabel(post.category, locale)}
               </span>
             )}
 
-            <span className="flex items-center text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/20 px-2.5 py-1 rounded-lg">
+            <span className="flex items-center text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">
               {readTime}
             </span>
           </div>
@@ -636,14 +636,14 @@ export default async function SinglePostPage({
             <div className="space-y-2 text-start">
               <h1
                 dir="ltr"
-                className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-100 leading-snug sm:leading-tight font-sans break-words"
+                className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[#061838] leading-snug sm:leading-tight font-sans break-words"
               >
                 {currentLessonParsed.germanTitle}
               </h1>
               {currentLessonParsed.arabicSubtitle && (
                 <p
                   dir="rtl"
-                  className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-sky-300 leading-snug break-words"
+                  className="text-xl sm:text-2xl font-bold text-blue-700 leading-snug break-words"
                 >
                   {formatBidiInlineText(currentLessonParsed.arabicSubtitle, isAr)}
                 </p>
@@ -652,23 +652,23 @@ export default async function SinglePostPage({
           ) : (
             <h1
               dir={dir}
-              className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-100 leading-snug sm:leading-tight text-start break-words"
+              className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-[#061838] leading-snug sm:leading-tight text-start break-words"
             >
               {formatBidiInlineText(currentLessonParsed?.fullTitle || post.title, isAr)}
             </h1>
           )}
 
           {/* Meta Info Row */}
-          <div className="flex flex-wrap items-center justify-start gap-x-4 gap-y-2 text-sm text-slate-500 dark:text-slate-400 pt-2 border-b border-slate-200 dark:border-slate-800/80 pb-6">
+          <div className="flex flex-wrap items-center justify-start gap-x-4 gap-y-2 text-sm text-slate-600 pt-2 border-b border-slate-200 pb-6">
             <div>
               <span className="font-light">{ui.authorLabel} </span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">{author}</span>
+              <span className="font-semibold text-slate-800">{author}</span>
             </div>
             
             {isA1 ? (
               <>
                 <div className="hidden sm:inline">•</div>
-                <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-semibold text-xs sm:text-sm">
+                <div className="flex items-center gap-1.5 text-blue-700 font-semibold text-xs sm:text-sm">
                   <span>🇩🇪</span>
                   <span>{isAr ? "منهاج معتمد Goethe-Zertifikat A1" : "CEFR A1 Standard"}</span>
                 </div>
@@ -690,7 +690,7 @@ export default async function SinglePostPage({
                 <div className="hidden sm:inline">•</div>
                 <div>
                   <span className="font-light">{ui.publishedLabel} </span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">{formattedDate}</span>
+                  <span className="font-semibold text-slate-800">{formattedDate}</span>
                 </div>
               </>
             )}
@@ -699,7 +699,7 @@ export default async function SinglePostPage({
 
         {/* Hero Image or Fallback SVG / Branded A1 CSS Banner */}
         {resolvedHeroImage ? (
-          <div className="aspect-video w-full relative rounded-3xl overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-lg">
+          <div className="aspect-video w-full relative rounded-3xl overflow-hidden bg-slate-100 border border-slate-200 shadow-md">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={resolvedHeroImage}
@@ -712,7 +712,7 @@ export default async function SinglePostPage({
           </div>
         ) : isA1 ? (
           /* Dynamic Branded CSS Cover for German A1 Lessons without Image */
-          <div className="min-h-[190px] sm:aspect-video w-full relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950/70 to-slate-900 border border-blue-500/30 shadow-2xl flex flex-col items-center justify-center p-5 sm:p-8 text-center select-none">
+          <div className="min-h-[190px] sm:aspect-video w-full relative rounded-3xl overflow-hidden bg-[#061838] border border-[#0A2552] shadow-xl flex flex-col items-center justify-center p-5 sm:p-8 text-center select-none">
             {/* Subtle Tech Blueprint Grid Overlay */}
             <div
               aria-hidden="true"
@@ -744,12 +744,12 @@ export default async function SinglePostPage({
             )}
           </div>
         ) : (
-          <div className="min-h-[190px] sm:aspect-video w-full relative rounded-3xl overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-md">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-5 sm:p-8 text-center text-white">
+          <div className="min-h-[190px] sm:aspect-video w-full relative rounded-3xl overflow-hidden bg-slate-100 border border-slate-200 shadow-md">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#061838] to-[#0A2552] flex flex-col items-center justify-center p-5 sm:p-8 text-center text-white">
               <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:30px_30px]" />
               <div className="p-4 rounded-3xl bg-white/10 backdrop-blur-md mb-4 border border-white/20">
                 <svg
-                  className="w-12 h-12 text-blue-300"
+                  className="w-12 h-12 text-[#FACC15]"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.5"
@@ -770,7 +770,7 @@ export default async function SinglePostPage({
         )}
 
         {/* Enhanced Article Content Renderer (German A1 aware & general markdown) */}
-        <div dir={dir} className="prose prose-invert prose-base sm:prose-lg max-w-none leading-relaxed text-slate-200 text-start prose-code:before:content-none prose-code:after:content-none">
+        <div dir={dir} className="prose prose-base sm:prose-lg max-w-none leading-relaxed text-slate-800 text-start prose-code:before:content-none prose-code:after:content-none prose-headings:text-[#061838] prose-a:text-blue-600">
           <LessonContentRenderer
             content={stripLeadingH1(post.markdown_content)}
             category={post.category}
@@ -785,18 +785,18 @@ export default async function SinglePostPage({
         {isA1 && (
           <nav
             aria-label="A1 Course Navigation"
-            className="my-12 p-6 sm:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl backdrop-blur-md space-y-6"
+            className="my-12 p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-6"
           >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
               <div className="flex items-center gap-3">
-                <span className="w-10 h-10 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center text-xl shrink-0">
+                <span className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center text-xl shrink-0">
                   🇩🇪
                 </span>
                 <div>
-                  <h3 className="text-base font-extrabold text-white">
+                  <h3 className="text-base font-extrabold text-[#061838]">
                     {ui.a1CourseTitle}
                   </h3>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-600">
                     {isAr
                       ? `الدرس ${currentLessonParsed?.lessonNumber || 1} من إجمالي ${totalCourseLessons} درساً`
                       : `Lesson ${currentLessonParsed?.lessonNumber || 1} of ${totalCourseLessons} lessons`}
@@ -807,7 +807,7 @@ export default async function SinglePostPage({
               {/* Direct button to return to A1 Course Index */}
               <Link
                 href={`/${locale}/blog?category=German+A1`}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 hover:text-blue-300 border border-blue-500/30 text-xs sm:text-sm font-bold transition-all hover:scale-[1.02] active:scale-95 shadow-sm"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs sm:text-sm font-bold transition-all hover:scale-[1.02] active:scale-95 shadow-xs"
               >
                 <span>📚</span>
                 <span>{ui.a1CourseIndex}</span>
@@ -820,25 +820,25 @@ export default async function SinglePostPage({
               {prevLesson ? (
                 <Link
                   href={`/${locale}/blog/${encodeURIComponent(prevLesson.slug)}`}
-                  className="group flex flex-col justify-between p-5 rounded-2xl bg-slate-950/70 hover:bg-slate-800/80 border border-slate-800/90 hover:border-blue-500/40 transition-all shadow-md text-start"
+                  className="group flex flex-col justify-between p-5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 hover:border-blue-400 transition-all shadow-sm text-start"
                 >
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-400 group-hover:text-blue-400 transition-colors mb-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-500 group-hover:text-blue-600 transition-colors mb-2">
                     <span>{ui.prevLesson}</span>
-                    <span className="px-2 py-0.5 rounded-full bg-slate-800 text-[11px] font-mono text-slate-300">
+                    <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[11px] font-mono text-slate-700 border border-slate-200">
                       {ui.lessonWord} {prevLesson.lessonNumber}
                     </span>
                   </div>
-                  <p className="font-extrabold text-white group-hover:text-blue-300 text-sm sm:text-base line-clamp-1 transition-colors" dir="ltr">
+                  <p className="font-extrabold text-[#061838] group-hover:text-blue-600 text-sm sm:text-base line-clamp-1 transition-colors" dir="ltr">
                     {prevLesson.germanTitle || prevLesson.title}
                   </p>
                   {prevLesson.arabicSubtitle && (
-                    <p className="text-xs text-slate-400 mt-1 line-clamp-1" dir="rtl">
+                    <p className="text-xs text-slate-600 mt-1 line-clamp-1" dir="rtl">
                       {prevLesson.arabicSubtitle}
                     </p>
                   )}
                 </Link>
               ) : (
-                <div className="p-5 rounded-2xl bg-slate-950/40 border border-slate-900 text-slate-500 text-xs flex items-center justify-center font-bold">
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-500 text-xs flex items-center justify-center font-bold">
                   <span>{ui.firstLessonAlert}</span>
                 </div>
               )}
@@ -847,25 +847,25 @@ export default async function SinglePostPage({
               {nextLesson ? (
                 <Link
                   href={`/${locale}/blog/${encodeURIComponent(nextLesson.slug)}`}
-                  className="group flex flex-col justify-between p-5 rounded-2xl bg-slate-950/70 hover:bg-slate-800/80 border border-slate-800/90 hover:border-blue-500/40 transition-all shadow-md text-start sm:text-end"
+                  className="group flex flex-col justify-between p-5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 hover:border-blue-400 transition-all shadow-sm text-start sm:text-end"
                 >
-                  <div className="flex items-center justify-start sm:justify-end gap-2 text-xs font-bold text-slate-400 group-hover:text-blue-400 transition-colors mb-2">
-                    <span className="px-2 py-0.5 rounded-full bg-slate-800 text-[11px] font-mono text-slate-300">
+                  <div className="flex items-center justify-start sm:justify-end gap-2 text-xs font-bold text-slate-500 group-hover:text-blue-600 transition-colors mb-2">
+                    <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[11px] font-mono text-slate-700 border border-slate-200">
                       {ui.lessonWord} {nextLesson.lessonNumber}
                     </span>
                     <span>{ui.nextLesson}</span>
                   </div>
-                  <p className="font-extrabold text-white group-hover:text-blue-300 text-sm sm:text-base line-clamp-1 transition-colors" dir="ltr">
+                  <p className="font-extrabold text-[#061838] group-hover:text-blue-600 text-sm sm:text-base line-clamp-1 transition-colors" dir="ltr">
                     {nextLesson.germanTitle || nextLesson.title}
                   </p>
                   {nextLesson.arabicSubtitle && (
-                    <p className="text-xs text-slate-400 mt-1 line-clamp-1" dir="rtl">
+                    <p className="text-xs text-slate-600 mt-1 line-clamp-1" dir="rtl">
                       {nextLesson.arabicSubtitle}
                     </p>
                   )}
                 </Link>
               ) : (
-                <div className="p-5 rounded-2xl bg-slate-950/40 border border-slate-900 text-slate-500 text-xs flex items-center justify-center font-bold">
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-500 text-xs flex items-center justify-center font-bold">
                   <span>{ui.completedAllLessons}</span>
                 </div>
               )}
@@ -875,12 +875,12 @@ export default async function SinglePostPage({
 
         {/* High-Converting CTA Box (Jobs / Application) */}
         {post.source_link && (
-          <div className="my-10 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6 border border-blue-500/30">
+          <div className="my-10 p-6 sm:p-8 rounded-3xl bg-[#061838] text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6 border border-[#0A2552]">
             <div className={`space-y-2 ${isAr ? "text-right" : "text-left"}`}>
               <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight">
                 {ui.applyLinkTitle}
               </h3>
-              <p className="text-blue-100 text-sm sm:text-base">
+              <p className="text-slate-300 text-sm sm:text-base">
                 {ui.applyLinkDesc}
               </p>
             </div>
@@ -888,7 +888,7 @@ export default async function SinglePostPage({
               href={post.source_link}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-8 py-4 rounded-2xl bg-white text-blue-600 font-bold text-base hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 whitespace-nowrap"
+              className="inline-flex items-center justify-center px-8 py-4 rounded-2xl bg-[#FACC15] hover:bg-amber-300 text-[#061838] font-black text-base transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 whitespace-nowrap"
             >
               {ui.applyButton}
             </a>
@@ -909,17 +909,17 @@ export default async function SinglePostPage({
         <NewsletterForm locale={locale} />
 
         {/* Back Link / Course Index Return */}
-        <div className="pt-8 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between">
+        <div className="pt-8 border-t border-slate-200 flex items-center justify-between">
           <Link
             href={isA1 ? `/${locale}/blog?category=German+A1` : `/${locale}/blog`}
-            className="inline-flex items-center text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline transition-colors"
+            className="inline-flex items-center text-sm font-semibold text-blue-600 hover:underline transition-colors"
           >
             {isA1 ? (isAr ? "← فهرس دروس A1" : "← A1 Course Index") : ui.backToBlog}
           </Link>
           {isA1 && (
             <Link
               href={`/${locale}/blog`}
-              className="inline-flex items-center text-xs text-slate-500 hover:text-slate-400 transition-colors"
+              className="inline-flex items-center text-xs text-slate-500 hover:text-slate-700 transition-colors"
             >
               {ui.backToBlog}
             </Link>
@@ -928,14 +928,14 @@ export default async function SinglePostPage({
 
         {/* Related Posts Section */}
         {relatedPosts.length > 0 && (
-          <section className={`mt-16 pt-12 border-t border-slate-200 dark:border-slate-800/80 space-y-8 ${isAr ? "text-right" : "text-left"}`} dir={dir}>
+          <section className={`mt-16 pt-12 border-t border-slate-200 space-y-8 ${isAr ? "text-right" : "text-left"}`} dir={dir}>
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#061838]">
                 {ui.relatedPosts}
               </h2>
               <Link
                 href={isA1 ? `/${locale}/blog?category=German+A1` : `/${locale}/blog`}
-                className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                className="text-sm font-semibold text-blue-600 hover:underline"
               >
                 {ui.viewAllPosts}
               </Link>
@@ -957,9 +957,9 @@ export default async function SinglePostPage({
                 return (
                   <div
                     key={relPost.id}
-                    className="flex flex-col bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800/80 shadow-sm hover:shadow-md transition-all group"
+                    className="flex flex-col bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition-all group"
                   >
-                    <div className="aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-800 relative">
+                    <div className="aspect-video w-full overflow-hidden bg-slate-100 relative">
                       {relCover ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
@@ -971,7 +971,7 @@ export default async function SinglePostPage({
                         />
                       ) : relIsA1 ? (
                         /* Dynamic Branded CSS Thumbnail for German A1 Lessons without Image */
-                        <div className="w-full h-full bg-gradient-to-br from-slate-900 via-blue-950/70 to-slate-900 flex flex-col items-center justify-center p-4 text-center select-none relative group-hover:scale-105 transition-transform duration-300">
+                        <div className="w-full h-full bg-[#061838] border border-[#0A2552] flex flex-col items-center justify-center p-4 text-center select-none relative group-hover:scale-105 transition-transform duration-300">
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 font-bold text-[10px] mb-1">
                             🇩🇪 A1 • Lektion {relParsed?.lessonNumber || "•"}
                           </span>
@@ -980,10 +980,10 @@ export default async function SinglePostPage({
                           </p>
                         </div>
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-blue-600 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 text-white text-center">
+                        <div className="w-full h-full bg-gradient-to-br from-[#061838] to-[#0A2552] flex flex-col items-center justify-center p-4 text-white text-center">
                           <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-md mb-2 border border-white/20">
                             <svg
-                              className="w-8 h-8 text-blue-200"
+                              className="w-8 h-8 text-[#FACC15]"
                               fill="none"
                               stroke="currentColor"
                               strokeWidth="1.5"
@@ -1005,17 +1005,17 @@ export default async function SinglePostPage({
 
                     <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                       <div className="space-y-2">
-                        <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
                           {relIsA1 && relParsed?.lessonNumber ? `🇩🇪 ${ui.lessonWord} ${relParsed.lessonNumber}` : localizeCategoryLabel(relPost.category, locale)}
                         </span>
-                        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 line-clamp-2 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        <h3 className="text-lg font-bold text-[#061838] group-hover:text-blue-600 line-clamp-2 leading-snug transition-colors">
                           {formatBidiInlineText(relTitle, isAr)}
                         </h3>
                       </div>
 
                       <Link
                         href={`/${locale}/blog/${encodeURIComponent(relPost.slug)}`}
-                        className="inline-flex items-center text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                        className="inline-flex items-center text-sm font-semibold text-blue-600 hover:underline"
                       >
                         {relIsA1 ? (isAr ? "🎧 ابدأ الدرس ←" : "🎧 Start Lesson →") : ui.readArticle}
                       </Link>

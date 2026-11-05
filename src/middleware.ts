@@ -110,6 +110,9 @@ export async function middleware(request: NextRequest) {
     const userSession = request.cookies.get("user_session")?.value;
     if (!userSession || userSession.trim() === "") {
       const loginUrl = getExternalUrl(request, `/${locale}/auth/login`);
+      if (pathname !== `/${locale}/dashboard` || (search && search.length > 0)) {
+        loginUrl.searchParams.set("next", `${pathname}${search}`);
+      }
       const res = NextResponse.redirect(loginUrl);
       res.cookies.set("preferred_locale", locale, {
         path: "/",

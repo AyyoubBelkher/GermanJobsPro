@@ -155,7 +155,7 @@ export default async function JobsPage({
   }));
 
   return (
-    <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between">
+    <div dir={dir} className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between">
       <Navbar locale={locale} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">

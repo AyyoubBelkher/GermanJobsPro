@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Cairo } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import MobileBottomNav from "@/components/ui/MobileBottomNav";
 import { LOCALES, LOCALE_METADATA, isValidLocale, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import "../globals.css";
 
@@ -49,10 +50,19 @@ export default async function LocaleLayout({
     <html
       lang={currentMeta.lang || "ar"}
       dir={currentMeta.dir || "rtl"}
-      className={`dark ${geistSans.variable} ${geistMono.variable} ${cairo.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${cairo.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className={`${fontClass} bg-slate-950 text-slate-100 min-h-full flex flex-col font-sans`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('gjp-theme');var d=t==='dark'||((!t||t==='system')&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body className={`${fontClass} bg-slate-50 dark:bg-[#040D21] text-slate-900 dark:text-slate-100 min-h-full flex flex-col font-sans transition-colors duration-200 pb-16 md:pb-0`}>
         {children}
+        <MobileBottomNav />
         <GoogleAnalytics gaId="G-K8HLLFTTDF" />
       </body>
     </html>

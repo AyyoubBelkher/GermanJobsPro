@@ -181,29 +181,29 @@ export default function PublicPricingClient({
       
       {/* Current Active Plan Status Banner (if logged in) */}
       {user && (
-        <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+        <div className="rounded-3xl bg-white border border-slate-200 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm text-slate-900">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-blue-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#061838] to-[#0A2552] flex items-center justify-center text-white font-bold text-lg shadow-md">
               {user.name?.[0]?.toUpperCase() || user.email[0]?.toUpperCase() || "U"}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-white text-base">
+                <h3 className="font-bold text-[#061838] text-base">
                   {user.name || user.email.split("@")[0]}
                 </h3>
                 <span
                   className={`px-2.5 py-0.5 rounded-full text-xs font-mono font-bold ${
                     isPro
-                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                      ? "bg-amber-100 text-amber-900 border border-amber-300"
                       : isTrial
-                      ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                      : "bg-slate-800 text-slate-300 border border-slate-700"
+                      ? "bg-blue-100 text-blue-900 border border-blue-300"
+                      : "bg-slate-100 text-slate-700 border border-slate-200"
                   }`}
                 >
-                  {isPro ? "💎 PRO PASS" : isTrial ? "🎁 TRIAL PRO" : "⚡ FREE STARTER"}
+                  {isPro ? "⭐ PRO PASS" : isTrial ? "🎁 TRIAL PRO" : "⚡ FREE STARTER"}
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-600 mt-0.5">
                 {isPro
                   ? isAr
                     ? "اشتراكك نشط مع حد استخدام يومي متجدد (20 طلب/يوم)"
@@ -218,7 +218,7 @@ export default function PublicPricingClient({
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Link
               href={`/${locale}/dashboard/cv`}
-              className="w-full sm:w-auto text-center px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs transition-colors"
+              className="w-full sm:w-auto text-center px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 hover:text-[#061838] font-bold text-xs transition-colors border border-slate-200"
             >
               {isAr ? "الانتقال إلى لوحة التحكم ←" : isDe ? "Zum Dashboard ←" : "Go to Dashboard ←"}
             </Link>
@@ -230,16 +230,16 @@ export default function PublicPricingClient({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-7xl mx-auto items-stretch">
         
         {/* TIER 1: Free Starter */}
-        <div className="rounded-3xl bg-slate-900/60 border border-slate-800/80 p-7 sm:p-8 flex flex-col justify-between space-y-6 backdrop-blur-xl relative">
+        <div className="rounded-3xl bg-white border border-slate-200 p-7 sm:p-8 flex flex-col justify-between space-y-6 shadow-sm relative text-slate-900">
           <div className="space-y-5">
             <div className="space-y-1.5">
-              <span className="px-3 py-1 rounded-full bg-slate-800 text-slate-300 font-bold text-xs uppercase tracking-wider inline-block">
+              <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 font-bold text-xs uppercase tracking-wider inline-block">
                 {isAr ? "البداية المجانية" : isDe ? "Kostenloser Einstieg" : "Free Starter"}
               </span>
-              <h3 className="text-2xl font-black text-white">
+              <h3 className="text-2xl font-black text-[#061838]">
                 {isAr ? "Starter" : isDe ? "Starter" : "Starter"}
               </h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                 {isAr
                   ? "مثالية للتعرف على المنصة وإنشاء سيرتك الذاتية وتجربة أدوات الفحص مجاناً."
                   : isDe
@@ -249,32 +249,32 @@ export default function PublicPricingClient({
             </div>
 
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl sm:text-5xl font-black text-white">$0</span>
-              <span className="text-xs text-slate-400 font-medium">
+              <span className="text-4xl sm:text-5xl font-black text-[#061838]">$0</span>
+              <span className="text-xs text-slate-500 font-medium">
                 {isAr ? "/ دائماً" : isDe ? "/ dauerhaft" : "/ forever"}
               </span>
             </div>
 
             {/* Features List */}
-            <ul className="space-y-3.5 text-xs sm:text-sm text-slate-300 pt-5 border-t border-slate-800/80">
+            <ul className="space-y-3.5 text-xs sm:text-sm text-slate-700 pt-5 border-t border-slate-100">
               <li className="flex items-start gap-2.5">
-                <span className="text-emerald-400 font-bold text-sm">✓</span>
+                <span className="text-emerald-600 font-bold text-sm">✓</span>
                 <span>{isAr ? "إنشاء سيرة ذاتية أساسية (1 سيرة بمعايير DIN 5008)" : isDe ? "Basis-Lebenslauf (1 DIN 5008 Lebenslauf)" : "Basic resume creation (1 CV DIN 5008)"}</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-emerald-400 font-bold text-sm">✓</span>
+                <span className="text-emerald-600 font-bold text-sm">✓</span>
                 <span>{isAr ? "البحث في الوظائف وحفظ الفرص المفضلة" : isDe ? "Jobsuche & Lesezeichen" : "Job search & bookmarks"}</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-emerald-400 font-bold text-sm">✓</span>
+                <span className="text-emerald-600 font-bold text-sm">✓</span>
                 <span>{isAr ? "3 أرصدة ذكاء اصطناعي أولية للبدء" : isDe ? "3 anfängliche KI-Guthaben" : "3 initial AI credits"}</span>
               </li>
-              <li className="flex items-start gap-2.5 text-slate-500 line-through">
-                <span className="text-slate-600 font-bold text-sm">✕</span>
+              <li className="flex items-start gap-2.5 text-slate-400 line-through">
+                <span className="text-slate-400 font-bold text-sm">✕</span>
                 <span>{isAr ? "تجميع ملف الترشيح الكامل (Bewerbungsmappe)" : isDe ? "Vollständige Bewerbungsmappe" : "Full Bewerbungsmappe Dossier Compiler"}</span>
               </li>
-              <li className="flex items-start gap-2.5 text-slate-500 line-through">
-                <span className="text-slate-600 font-bold text-sm">✕</span>
+              <li className="flex items-start gap-2.5 text-slate-400 line-through">
+                <span className="text-slate-400 font-bold text-sm">✕</span>
                 <span>
                   {isAr
                     ? "خطابات Anschreiben متقدمة يومياً"
@@ -283,8 +283,8 @@ export default function PublicPricingClient({
                     : "Daily advanced AI Cover Letters"}
                 </span>
               </li>
-              <li className="flex items-start gap-2.5 text-slate-500 line-through">
-                <span className="text-slate-600 font-bold text-sm">✕</span>
+              <li className="flex items-start gap-2.5 text-slate-400 line-through">
+                <span className="text-slate-400 font-bold text-sm">✕</span>
                 <span>
                   {isAr
                     ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
@@ -300,14 +300,14 @@ export default function PublicPricingClient({
             {user ? (
               <Link
                 href={`/${locale}/dashboard/cv`}
-                className="w-full block py-3.5 px-6 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm text-center transition-all border border-slate-700"
+                className="w-full block py-3.5 px-6 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 hover:text-[#061838] font-bold text-xs sm:text-sm text-center transition-all border border-slate-300"
               >
                 {isAr ? "متابعة استخدام الباقة الحالية" : isDe ? "Aktuellen Plan nutzen" : "Continue with Free Plan"}
               </Link>
             ) : (
               <Link
                 href={`/${locale}/auth/signup`}
-                className="w-full block py-3.5 px-6 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm text-center transition-all border border-slate-700"
+                className="w-full block py-3.5 px-6 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 hover:text-[#061838] font-bold text-xs sm:text-sm text-center transition-all border border-slate-300"
               >
                 {isAr ? "إنشاء حساب مجاني الآن 🚀" : isDe ? "Kostenlos starten 🚀" : "Start Free Account 🚀"}
               </Link>
@@ -317,17 +317,17 @@ export default function PublicPricingClient({
 
 
         {/* TIER 2: Quick Sprint */}
-        <div className="rounded-3xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 p-7 sm:p-8 flex flex-col justify-between space-y-6 backdrop-blur-xl relative shadow-xl transition-all">
+        <div className="rounded-3xl bg-white border border-slate-200 hover:border-slate-300 p-7 sm:p-8 flex flex-col justify-between space-y-6 shadow-sm relative transition-all text-slate-900">
           <div className="space-y-5">
             <div className="space-y-1.5">
-              <span className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-xs uppercase tracking-wider inline-block">
+              <span className="px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 font-bold text-xs uppercase tracking-wider inline-block">
                 {isAr ? "تصريح الـ 30 يوماً" : isDe ? "30-Tage-Pass" : "30-Day Sprint Pass"}
               </span>
-              <h3 className="text-2xl font-black text-white flex items-center gap-2">
+              <h3 className="text-2xl font-black text-[#061838] flex items-center gap-2">
                 <span>Quick Sprint</span>
                 <span className="text-xl">⚡</span>
               </h3>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                 {isAr
                   ? "صلاحية 30 يوماً للتقديمات السريعة والمكثفة على فرص العمل المتاحة."
                   : isDe
@@ -338,23 +338,23 @@ export default function PublicPricingClient({
 
             <div className="space-y-1">
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl sm:text-5xl font-black text-white">
+                <span className="text-4xl sm:text-5xl font-black text-[#061838]">
                   $9.99
                 </span>
-                <span className="text-xs text-slate-400 font-medium">
+                <span className="text-xs text-slate-500 font-medium">
                   {isAr ? "/ 30 يوماً" : isDe ? "/ 30 Tage" : "/ 30 days"}
                 </span>
               </div>
-              <p className="text-[11px] text-emerald-400 font-medium">
+              <p className="text-[11px] text-emerald-700 font-semibold">
                 {isAr ? "✓ دفع لمرة واحدة • بدون اشتراك متكرر • تفعيل فوري" : isDe ? "✓ Einmalzahlung • Keine Abofalle • Sofortfreischaltung" : "✓ One-time payment • No recurring fees • Instant activation"}
               </p>
             </div>
 
             {/* Features List */}
-            <ul className="space-y-3.5 text-xs sm:text-sm text-slate-200 pt-5 border-t border-slate-800/80">
+            <ul className="space-y-3.5 text-xs sm:text-sm text-slate-700 pt-5 border-t border-slate-100">
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
-                <span className="font-semibold text-white">
+                <span className="text-blue-600 font-bold text-sm">✓</span>
+                <span className="font-semibold text-[#061838]">
                   {isAr
                     ? "صلاحية 30 يوماً للتقديم السريع على الوظائف"
                     : isDe
@@ -363,8 +363,8 @@ export default function PublicPricingClient({
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
-                <span className="font-semibold text-white">
+                <span className="text-blue-600 font-bold text-sm">✓</span>
+                <span className="font-semibold text-[#061838]">
                   {isAr
                     ? "20 طلب ذكاء اصطناعي يومياً (وفق سياسة الاستخدام العادل)"
                     : isDe
@@ -373,25 +373,25 @@ export default function PublicPricingClient({
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
-                <span className="font-semibold text-white">
+                <span className="text-blue-600 font-bold text-sm">✓</span>
+                <span className="font-semibold text-[#061838]">
                   {isAr ? "منشئ السير الذاتية DIN 5008 وفحص الـ ATS" : isDe ? "DIN 5008 Lebenslauf-Builder & ATS-Checks" : "DIN 5008 CV builder & ATS checks"}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span className="text-blue-600 font-bold text-sm">✓</span>
                 <span>
                   {isAr ? "مولد خطابات دافع (Anschreiben) مخصص لكل وظيفة" : isDe ? "Maßgeschneiderte KI-Anschreiben für jede Stelle" : "Job-Tailored AI Cover Letters"}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span className="text-blue-600 font-bold text-sm">✓</span>
                 <span>
                   {isAr ? "تصدير غير محدود لسير ذاتية بصيغة PDF رسمية" : isDe ? "Unbegrenzter offizieller PDF-Export" : "Unlimited official DIN 5008 PDF exports"}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span className="text-blue-600 font-bold text-sm">✓</span>
                 <span>
                   {isAr
                     ? "دفع آمن ورابط مباشر عبر Gumroad"
@@ -408,7 +408,7 @@ export default function PublicPricingClient({
               type="button"
               onClick={() => handleCheckout("Quick Sprint (30 Days)")}
               disabled={isCheckingOut !== null}
-              className="w-full py-3.5 px-6 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs sm:text-sm shadow-lg hover:scale-[1.02] active:scale-98 transition-all disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2 border border-slate-700"
+              className="w-full py-3.5 px-6 rounded-2xl bg-[#061838] hover:bg-[#0A2552] text-white font-extrabold text-xs sm:text-sm shadow-md hover:scale-[1.02] active:scale-98 transition-all disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
             >
               {isCheckingOut === "Quick Sprint (30 Days)" ? (
                 <span>{isAr ? "جاري تحويلك إلى الدفع الآمن..." : isDe ? "Weiterleitung..." : "Redirecting to Checkout..."}</span>
@@ -418,31 +418,31 @@ export default function PublicPricingClient({
                 <span>{isAr ? "اختيار Quick Sprint (30 يوماً) ⚡" : isDe ? "Quick Sprint wählen (30 Tage) ⚡" : "Choose Quick Sprint (30 Days) ⚡"}</span>
               )}
             </button>
-            <p className="text-[11px] text-center text-slate-400">
+            <p className="text-[11px] text-center text-slate-500">
               🔒 {isAr ? "رابط مباشر عبر Gumroad • تفعيل فوري" : isDe ? "Direkter Gumroad-Link • Sofortaktivierung" : "Direct Gumroad link • Instant Access"}
             </p>
           </div>
         </div>
 
 
-        {/* TIER 3: PRO Job Pass (Featured) */}
-        <div className="rounded-3xl bg-gradient-to-b from-slate-900 via-blue-950/70 to-slate-900 border-2 border-blue-500 p-7 sm:p-8 flex flex-col justify-between space-y-6 backdrop-blur-xl relative shadow-2xl shadow-blue-500/10 scale-100 lg:scale-105">
+        {/* TIER 3: PRO Job Pass (Featured - Royal Navy + Gold) */}
+        <div className="rounded-3xl bg-[#061838] border-2 border-[#FACC15] p-7 sm:p-8 flex flex-col justify-between space-y-6 relative shadow-2xl scale-100 lg:scale-105 text-white">
           {/* Popular Badge */}
-          <div className="absolute -top-4 start-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-xs shadow-lg shadow-blue-600/30 uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap">
+          <div className="absolute -top-4 start-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-[#FACC15] text-[#061838] font-black text-xs shadow-lg uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap">
             <span>⭐</span>
             <span>{isAr ? "الأكثر طلباً • وفر 35%" : isDe ? "Bestseller • 35% Sparen" : "Most Popular • Save 35%"}</span>
           </div>
 
           <div className="space-y-5 pt-2">
             <div className="space-y-1.5">
-              <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 font-bold text-xs uppercase tracking-wider inline-block">
+              <span className="px-3 py-1 rounded-full bg-[#0A2552] border border-[#FACC15]/40 text-[#FACC15] font-bold text-xs uppercase tracking-wider inline-block">
                 {isAr ? "تصريح المحترفين الشامل" : isDe ? "Komplettpaket" : "All-Inclusive Pass"}
               </span>
               <h3 className="text-2xl font-black text-white flex items-center gap-2">
                 <span>PRO Job Pass</span>
-                <span className="text-xl">💎</span>
+                <span className="text-xl">⭐</span>
               </h3>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
                 {isAr
                   ? "90 يوماً كاملة تغطي دورة التوظيف بالكامل مع إمكانية تصدير الدوسيه الكامل وتكييف السيرة الذاتية."
                   : isDe
@@ -453,22 +453,22 @@ export default function PublicPricingClient({
 
             <div className="space-y-1">
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-200">
+                <span className="text-4xl sm:text-5xl font-black text-[#FACC15]">
                   $19.99
                 </span>
-                <span className="text-xs text-slate-400 font-medium">
+                <span className="text-xs text-slate-300 font-medium">
                   {isAr ? "/ 90 يوماً" : isDe ? "/ 90 Tage" : "/ 90 days"}
                 </span>
               </div>
-              <p className="text-[11px] text-emerald-400 font-medium">
+              <p className="text-[11px] text-amber-300 font-medium">
                 {isAr ? "✓ دفع لمرة واحدة لدورة التقديم • بدون اشتراك متكرر" : isDe ? "✓ Einmalzahlung für Ihren Bewerbungszyklus • Keine Abofalle" : "✓ One-time payment for your application cycle • No recurring fees"}
               </p>
             </div>
 
             {/* Features List */}
-            <ul className="space-y-3.5 text-xs sm:text-sm text-slate-200 pt-5 border-t border-slate-800/80">
+            <ul className="space-y-3.5 text-xs sm:text-sm text-slate-200 pt-5 border-t border-white/10">
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span className="text-[#FACC15] font-bold text-sm">✓</span>
                 <span className="font-semibold text-white">
                   {isAr
                     ? "90 يوماً كاملة تغطي دورة التوظيف الألمانية بالكامل"
@@ -478,7 +478,7 @@ export default function PublicPricingClient({
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span className="text-[#FACC15] font-bold text-sm">✓</span>
                 <span className="font-semibold text-white">
                   {isAr
                     ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
@@ -488,7 +488,7 @@ export default function PublicPricingClient({
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span className="text-[#FACC15] font-bold text-sm">✓</span>
                 <span className="font-semibold text-white">
                   {isAr
                     ? "تجميع ملف الترشيح الكامل (Bewerbungsmappe: غلاف + سيرة + خطاب)"
@@ -498,7 +498,7 @@ export default function PublicPricingClient({
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span className="text-[#FACC15] font-bold text-sm">✓</span>
                 <span className="font-semibold text-white">
                   {isAr
                     ? "20 طلب ذكاء اصطناعي يومياً (الاستخدام العادل)"
@@ -508,7 +508,7 @@ export default function PublicPricingClient({
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span className="text-[#FACC15] font-bold text-sm">✓</span>
                 <span>
                   {isAr
                     ? "فحص عميق للـ ATS ومطابقة الكلمات المفتاحية"
@@ -518,7 +518,7 @@ export default function PublicPricingClient({
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span className="text-[#FACC15] font-bold text-sm">✓</span>
                 <span>
                   {isAr
                     ? "دفع آمن ورابط مباشر عبر Gumroad"
@@ -535,7 +535,7 @@ export default function PublicPricingClient({
               type="button"
               onClick={() => handleCheckout("PRO Job Pass (90 Days)")}
               disabled={isCheckingOut !== null}
-              className="w-full py-4 px-8 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm sm:text-base shadow-xl shadow-blue-600/30 hover:scale-[1.02] active:scale-98 transition-all disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2 border border-blue-400/30"
+              className="w-full py-4 px-8 rounded-2xl bg-[#FACC15] hover:bg-amber-300 text-[#061838] font-black text-sm sm:text-base shadow-xl shadow-amber-400/20 hover:scale-[1.02] active:scale-98 transition-all disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
             >
               {isCheckingOut === "PRO Job Pass (90 Days)" ? (
                 <span>{isAr ? "جاري تحويلك إلى الدفع الآمن..." : isDe ? "Weiterleitung..." : "Redirecting to Checkout..."}</span>
@@ -545,7 +545,7 @@ export default function PublicPricingClient({
                 <span>{isAr ? "احصل على PRO Job Pass الآن 🚀" : isDe ? "PRO Job Pass jetzt sichern 🚀" : "Get PRO Job Pass Now 🚀"}</span>
               )}
             </button>
-            <p className="text-[11px] text-center text-slate-400">
+            <p className="text-[11px] text-center text-slate-300">
               🔒 {isAr ? "رابط مباشر عبر Gumroad • تفعيل فوري" : isDe ? "Direkter Gumroad-Link • Sofortaktivierung" : "Direct Gumroad link • Instant Access"}
             </p>
           </div>
@@ -557,16 +557,16 @@ export default function PublicPricingClient({
       {/* ========================================================= */}
       {/* PROMO CODE REDEMPTION SECTION */}
       {/* ========================================================= */}
-      <div className="max-w-2xl mx-auto rounded-3xl bg-slate-900/80 border border-slate-800 p-6 sm:p-8 space-y-5 text-center shadow-xl">
+      <div className="max-w-2xl mx-auto rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 space-y-5 text-center shadow-sm text-slate-900">
         <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold uppercase">
             <span>🎁</span>
             <span>{isAr ? "كوبون أو كود خصم ترويجي" : isDe ? "Gutscheincode" : "Voucher or Promo Code"}</span>
           </div>
-          <h3 className="text-xl sm:text-2xl font-bold text-white">
+          <h3 className="text-xl sm:text-2xl font-bold text-[#061838]">
             {isAr ? "هل تملك كوداً ترويجياً أو كوبون خصم؟" : isDe ? "Haben Sie einen Gutscheincode?" : "Have a Promo Code or Voucher?"}
           </h3>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-600">
             {isAr
               ? "أدخل كود التخفيض أو المنحة لتفعيل باقة PRO أو شحن رصيد إضافي فوراً على حسابك."
               : isDe
@@ -576,13 +576,13 @@ export default function PublicPricingClient({
         </div>
 
         {promoSuccess && (
-          <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs sm:text-sm font-medium animate-fadeIn">
+          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm font-medium animate-fadeIn">
             🎉 {promoSuccess}
           </div>
         )}
 
         {promoError && (
-          <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs sm:text-sm font-medium animate-fadeIn">
+          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm font-medium animate-fadeIn">
             ⚠️ {promoError}
           </div>
         )}
@@ -593,13 +593,13 @@ export default function PublicPricingClient({
             value={promoCode}
             onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
             placeholder={isAr ? "أدخل الكود هنا (مثال: GERMAN2026)" : "e.g. GERMAN2026"}
-            className="flex-1 w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 font-mono text-center sm:text-start text-sm uppercase focus:outline-none focus:border-blue-500 transition-all"
+            className="flex-1 w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 font-mono text-center sm:text-start text-sm uppercase focus:outline-none focus:bg-white focus:border-[#061838] transition-all"
             required
           />
           <button
             type="submit"
             disabled={isRedeeming || !promoCode.trim()}
-            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-md shadow-blue-600/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#061838] hover:bg-[#0A2552] text-white font-bold text-sm shadow-md active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
           >
             {isRedeeming ? (isAr ? "جاري التحقق..." : "Verifying...") : isAr ? "تفعيل الكود" : "Apply Code"}
           </button>
@@ -612,10 +612,10 @@ export default function PublicPricingClient({
       {/* ========================================================= */}
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="text-center space-y-2">
-          <h3 className="text-2xl sm:text-3xl font-black text-white">
+          <h3 className="text-2xl sm:text-3xl font-black text-[#061838]">
             {isAr ? "مقارنة تفصيلية بين الباقات" : isDe ? "Detaillierter Funktionsvergleich" : "Detailed Feature Comparison"}
           </h3>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-600">
             {isAr
               ? "تعرف على كافة الأدوات والخدمات المتاحة في كل خطة"
               : isDe
@@ -624,74 +624,74 @@ export default function PublicPricingClient({
           </p>
         </div>
 
-        <div className="overflow-x-auto rounded-3xl bg-slate-900/60 border border-slate-800 shadow-xl">
-          <table className="w-full text-start text-xs sm:text-sm text-slate-300">
+        <div className="overflow-x-auto rounded-3xl bg-white border border-slate-200 shadow-sm">
+          <table className="w-full text-start text-xs sm:text-sm text-slate-700">
             <thead>
-              <tr className="border-b border-slate-800 bg-slate-900/90 text-white">
+              <tr className="border-b border-slate-200 bg-slate-50 text-[#061838]">
                 <th className="py-4 px-6 text-start font-bold">{isAr ? "الميزة / الأداة" : isDe ? "Funktion / Werkzeug" : "Feature / Tool"}</th>
-                <th className="py-4 px-6 text-center font-bold text-slate-400">{isAr ? "المجانية ($0)" : isDe ? "Starter ($0)" : "Starter ($0)"}</th>
-                <th className="py-4 px-6 text-center font-bold text-slate-300 bg-slate-800/40">
+                <th className="py-4 px-6 text-center font-bold text-slate-600">{isAr ? "المجانية ($0)" : isDe ? "Starter ($0)" : "Starter ($0)"}</th>
+                <th className="py-4 px-6 text-center font-bold text-slate-700 bg-slate-100/60">
                   {isAr ? "Quick Sprint ($9.99)" : isDe ? "Quick Sprint ($9.99)" : "Quick Sprint ($9.99)"}
                 </th>
-                <th className="py-4 px-6 text-center font-bold text-blue-400 bg-blue-600/10 border-x border-blue-500/20">
+                <th className="py-4 px-6 text-center font-bold text-[#061838] bg-amber-50/60 border-x border-amber-200">
                   {isAr ? "PRO Job Pass ($19.99) ⭐" : isDe ? "PRO Job Pass ($19.99) ⭐" : "PRO Job Pass ($19.99) ⭐"}
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-100">
               <tr>
-                <td className="py-3.5 px-6 font-medium">{isAr ? "صلاحية الاستخدام" : isDe ? "Gültigkeitsdauer" : "Validity Duration"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-400">{isAr ? "دائماً" : isDe ? "Dauerhaft" : "Forever"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-300 bg-slate-800/20">{isAr ? "30 يوماً" : isDe ? "30 Tage" : "30 Days"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-400 font-bold bg-blue-600/5 border-x border-blue-500/10">{isAr ? "90 يوماً (دورة توظيف كاملة)" : isDe ? "90 Tage (voller Zyklus)" : "90 Days (Full Cycle)"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "صلاحية الاستخدام" : isDe ? "Gültigkeitsdauer" : "Validity Duration"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-600">{isAr ? "دائماً" : isDe ? "Dauerhaft" : "Forever"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-700 bg-slate-50">{isAr ? "30 يوماً" : isDe ? "30 Tage" : "30 Days"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">{isAr ? "90 يوماً (دورة توظيف كاملة)" : isDe ? "90 Tage (voller Zyklus)" : "90 Days (Full Cycle)"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium">{isAr ? "بناء سيرة DIN 5008 وتصدير PDF" : isDe ? "DIN 5008 Builder & PDF-Export" : "DIN 5008 Builder & PDF Export"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-400">{isAr ? "1 سيرة ذاتية" : isDe ? "1 Lebenslauf" : "1 Resume"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-400 bg-slate-800/20">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-400 font-bold bg-blue-600/5 border-x border-blue-500/10">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "بناء سيرة DIN 5008 وتصدير PDF" : isDe ? "DIN 5008 Builder & PDF-Export" : "DIN 5008 Builder & PDF Export"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-600">{isAr ? "1 سيرة ذاتية" : isDe ? "1 Lebenslauf" : "1 Resume"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 bg-slate-50">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium">{isAr ? "البحث في الوظائف وحفظ الفرص المفضلة" : isDe ? "Jobsuche & Lesezeichen" : "Job Search & Bookmarks"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-400">✓</td>
-                <td className="py-3.5 px-6 text-center text-emerald-400 bg-slate-800/20">✓</td>
-                <td className="py-3.5 px-6 text-center text-emerald-400 font-bold bg-blue-600/5 border-x border-blue-500/10">✓</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "البحث في الوظائف وحفظ الفرص المفضلة" : isDe ? "Jobsuche & Lesezeichen" : "Job Search & Bookmarks"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700">✓</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 bg-slate-50">✓</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">✓</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium">{isAr ? "طلبات الذكاء الاصطناعي اليومية" : isDe ? "Tägliche KI-Anfragen" : "Daily AI Requests"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-400">{isAr ? "3 أرصدة أولية" : isDe ? "3 anfängliche Guthaben" : "3 Initial Credits"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-400 bg-slate-800/20">{isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-400 font-bold bg-blue-600/5 border-x border-blue-500/10">{isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "طلبات الذكاء الاصطناعي اليومية" : isDe ? "Tägliche KI-Anfragen" : "Daily AI Requests"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-600">{isAr ? "3 أرصدة أولية" : isDe ? "3 anfängliche Guthaben" : "3 Initial Credits"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 bg-slate-50">{isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">{isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium">{isAr ? "فاحص الـ ATS وتحليل الكلمات المفتاحية" : isDe ? "ATS-Check & Keyword-Analyse" : "ATS Audit & Keyword Analysis"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-400">{isAr ? "فحص أساسي" : isDe ? "Basis-Check" : "Basic Audit"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-400 bg-slate-800/20">✓ {isAr ? "فحص ATS كامل" : isDe ? "Vollständiger ATS-Check" : "Full ATS Audit"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-400 font-bold bg-blue-600/5 border-x border-blue-500/10">✓ {isAr ? "فحص عميق وخطة كلمات مفتاحية" : isDe ? "Tiefer Audit & Keyword-Plan" : "Deep Audit & Keyword Plan"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "فاحص الـ ATS وتحليل الكلمات المفتاحية" : isDe ? "ATS-Check & Keyword-Analyse" : "ATS Audit & Keyword Analysis"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-600">{isAr ? "فحص أساسي" : isDe ? "Basis-Check" : "Basic Audit"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 bg-slate-50">✓ {isAr ? "فحص ATS كامل" : isDe ? "Vollständiger ATS-Check" : "Full ATS Audit"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">✓ {isAr ? "فحص عميق وخطة كلمات مفتاحية" : isDe ? "Tiefer Audit & Keyword-Plan" : "Deep Audit & Keyword Plan"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium">{isAr ? "مولد خطابات الدافع المخصص (Anschreiben)" : isDe ? "KI-Anschreiben Generator" : "AI Cover Letter Generator"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-400">{isAr ? "تجريبي" : isDe ? "1 Test" : "1 Trial"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-400 bg-slate-800/20">✓ {isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-400 font-bold bg-blue-600/5 border-x border-blue-500/10">✓ {isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "مولد خطابات الدافع المخصص (Anschreiben)" : isDe ? "KI-Anschreiben Generator" : "AI Cover Letter Generator"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-600">{isAr ? "تجريبي" : isDe ? "1 Test" : "1 Trial"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 bg-slate-50">✓ {isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">✓ {isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium">{isAr ? "استوديو ملف الترشيح الكامل (Bewerbungsmappe)" : isDe ? "Vollständige Bewerbungsmappe" : "Complete Bewerbungsmappe Studio"}</td>
-                <td className="py-3.5 px-6 text-center text-rose-400">✕</td>
-                <td className="py-3.5 px-6 text-center text-rose-400 bg-slate-800/20">✕</td>
-                <td className="py-3.5 px-6 text-center text-emerald-400 font-bold bg-blue-600/5 border-x border-blue-500/10">✓ {isAr ? "مضمّن بالكامل (غلاف + سيرة + خطاب)" : isDe ? "Inklusive (Deckblatt + CV + Anschreiben)" : "Included (Cover + CV + Anschreiben)"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "استوديو ملف الترشيح الكامل (Bewerbungsmappe)" : isDe ? "Vollständige Bewerbungsmappe" : "Complete Bewerbungsmappe Studio"}</td>
+                <td className="py-3.5 px-6 text-center text-rose-500">✕</td>
+                <td className="py-3.5 px-6 text-center text-rose-500 bg-slate-50">✕</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">✓ {isAr ? "مضمّن بالكامل (غلاف + سيرة + خطاب)" : isDe ? "Inklusive (Deckblatt + CV + Anschreiben)" : "Included (Cover + CV + Anschreiben)"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium">{isAr ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)" : isDe ? "1-Klick PDF zu DIN 5008 Auto-Adapt" : "1-Click PDF to DIN 5008 Auto-Adapt"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-400">{isAr ? "تجريبي" : isDe ? "1 Test" : "1 Trial"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-400 bg-slate-800/20">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-400 font-bold bg-blue-600/5 border-x border-blue-500/10">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)" : isDe ? "1-Klick PDF zu DIN 5008 Auto-Adapt" : "1-Click PDF to DIN 5008 Auto-Adapt"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-600">{isAr ? "تجريبي" : isDe ? "1 Test" : "1 Trial"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 bg-slate-50">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium">{isAr ? "طريقة الدفع والتفعيل" : isDe ? "Zahlungsmodell & Support" : "Payment & Support"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-400">{isAr ? "مجاناً $0" : isDe ? "Kostenlos $0" : "Free $0"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-300 bg-slate-800/20">{isAr ? "دفع لمرة واحدة ($9.99)" : isDe ? "Einmalzahlung ($9.99)" : "One-Time ($9.99)"}</td>
-                <td className="py-3.5 px-6 text-center text-amber-300 font-bold bg-blue-600/5 border-x border-blue-500/10">⚡ {isAr ? "دفع لمرة واحدة ($19.99) • أولوية 24/7" : isDe ? "Einmalzahlung ($19.99) • Priorität 24/7" : "One-Time ($19.99) • Priority 24/7"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "طريقة الدفع والتفعيل" : isDe ? "Zahlungsmodell & Support" : "Payment & Support"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-600">{isAr ? "مجاناً $0" : isDe ? "Kostenlos $0" : "Free $0"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-700 bg-slate-50">{isAr ? "دفع لمرة واحدة ($9.99)" : isDe ? "Einmalzahlung ($9.99)" : "One-Time ($9.99)"}</td>
+                <td className="py-3.5 px-6 text-center text-amber-700 font-bold bg-amber-50/30 border-x border-amber-100">⚡ {isAr ? "دفع لمرة واحدة ($19.99) • أولوية 24/7" : isDe ? "Einmalzahlung ($19.99) • Priorität 24/7" : "One-Time ($19.99) • Priority 24/7"}</td>
               </tr>
             </tbody>
           </table>
@@ -703,25 +703,25 @@ export default function PublicPricingClient({
       {/* TRUST & SECURITY BADGES */}
       {/* ========================================================= */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto text-center">
-        <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+        <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-2 shadow-sm">
           <div className="text-2xl">🔒</div>
-          <h4 className="font-bold text-white text-xs sm:text-sm">{isAr ? "دفع آمن 100%" : "100% Secure Checkout"}</h4>
-          <p className="text-[11px] text-slate-400">{isAr ? "تشفير بنكي عبر Gumroad" : "Bank-grade 256-bit encryption via Gumroad"}</p>
+          <h4 className="font-bold text-[#061838] text-xs sm:text-sm">{isAr ? "دفع آمن 100%" : "100% Secure Checkout"}</h4>
+          <p className="text-[11px] text-slate-600">{isAr ? "تشفير بنكي عبر Gumroad" : "Bank-grade 256-bit encryption via Gumroad"}</p>
         </div>
-        <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+        <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-2 shadow-sm">
           <div className="text-2xl">⚡</div>
-          <h4 className="font-bold text-white text-xs sm:text-sm">{isAr ? "تفعيل فوري" : "Instant Activation"}</h4>
-          <p className="text-[11px] text-slate-400">{isAr ? "وصول فوري لجميع الأدوات" : "Zero waiting time"}</p>
+          <h4 className="font-bold text-[#061838] text-xs sm:text-sm">{isAr ? "تفعيل فوري" : "Instant Activation"}</h4>
+          <p className="text-[11px] text-slate-600">{isAr ? "وصول فوري لجميع الأدوات" : "Zero waiting time"}</p>
         </div>
-        <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+        <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-2 shadow-sm">
           <div className="text-2xl">🛡️</div>
-          <h4 className="font-bold text-white text-xs sm:text-sm">{isAr ? "ضمان الرضا" : "Satisfaction Guarantee"}</h4>
-          <p className="text-[11px] text-slate-400">{isAr ? "ضمان استرجاع لمدة 14 يوماً" : "14-day money back guarantee"}</p>
+          <h4 className="font-bold text-[#061838] text-xs sm:text-sm">{isAr ? "ضمان الرضا" : "Satisfaction Guarantee"}</h4>
+          <p className="text-[11px] text-slate-600">{isAr ? "ضمان استرجاع لمدة 14 يوماً" : "14-day money back guarantee"}</p>
         </div>
-        <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+        <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-2 shadow-sm">
           <div className="text-2xl">🇩🇪</div>
-          <h4 className="font-bold text-white text-xs sm:text-sm">{isAr ? "معايير رسمية" : "German Standard"}</h4>
-          <p className="text-[11px] text-slate-400">{isAr ? "مطابق لتأشيرة وبطاقة الفرصة" : "DIN 5008 & Visa compliant"}</p>
+          <h4 className="font-bold text-[#061838] text-xs sm:text-sm">{isAr ? "معايير رسمية" : "German Standard"}</h4>
+          <p className="text-[11px] text-slate-600">{isAr ? "مطابق لتأشيرة وبطاقة الفرصة" : "DIN 5008 & Visa compliant"}</p>
         </div>
       </div>
 
@@ -731,10 +731,10 @@ export default function PublicPricingClient({
       {/* ========================================================= */}
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="text-center space-y-2">
-          <h3 className="text-2xl sm:text-3xl font-black text-white">
+          <h3 className="text-2xl sm:text-3xl font-black text-[#061838]">
             {isAr ? "الأسئلة الشائعة حول الخطط والاشتراك" : isDe ? "Häufige Fragen zu Preisen" : "Frequently Asked Questions About Pricing"}
           </h3>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-600">
             {isAr ? "إجابات واضحة وشفافة حول عمليات الدفع والتفعيل" : "Clear answers about payment and activation"}
           </p>
         </div>

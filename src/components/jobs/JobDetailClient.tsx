@@ -463,15 +463,15 @@ export default function JobDetailClient({
   const renderDirectApplicationChannels = (keyPrefix = "desktop") => (
     <div
       key={`${keyPrefix}-apply-card`}
-      className={`rounded-3xl p-6 sm:p-7 space-y-5 shadow-2xl backdrop-blur-xl relative overflow-hidden text-slate-100 ${
+      className={`rounded-3xl p-6 sm:p-7 space-y-5 shadow-sm border relative overflow-hidden text-slate-900 ${
         hasEmail
-          ? "bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/30 border border-emerald-500/30"
-          : "bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950/30 border border-blue-500/30"
+          ? "bg-emerald-50/40 border-emerald-200"
+          : "bg-blue-50/40 border-blue-200"
       }`}
     >
       <div
         className={`absolute top-0 right-0 w-64 h-64 blur-3xl pointer-events-none -mr-20 -mt-20 ${
-          hasEmail ? "bg-emerald-600/10" : "bg-blue-600/10"
+          hasEmail ? "bg-emerald-500/5" : "bg-blue-500/5"
         }`}
       />
 
@@ -479,19 +479,19 @@ export default function JobDetailClient({
         <div className="space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
             {hasEmail ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-xs font-bold text-emerald-400">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 border border-emerald-200 text-xs font-bold text-emerald-800">
                 <span>✉️</span>
                 <span>{isAr ? "تقديم مباشر عبر البريد الإلكتروني" : isDe ? "Direkte E-Mail-Bewerbung" : "Direct Email Application"}</span>
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/25 text-xs font-bold text-blue-400">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 border border-blue-200 text-xs font-bold text-blue-800">
                 <span>🌐</span>
                 <span>{isAr ? "تقديم مباشر عبر الموقع الرسمي للشركة" : isDe ? "Offizielles Unternehmensportal" : "Official Company Portal"}</span>
               </span>
             )}
           </div>
 
-          <h3 className="text-lg sm:text-xl font-black text-white">
+          <h3 className="text-lg sm:text-xl font-black text-[#061838]">
             {hasEmail
               ? isAr
                 ? "التقديم المباشر عبر البريد الإلكتروني"
@@ -505,7 +505,7 @@ export default function JobDetailClient({
               : "Apply via Official Company Portal"}
           </h3>
 
-          <p className="text-xs text-slate-300 leading-relaxed">
+          <p className="text-xs text-slate-600 leading-relaxed">
             {hasEmail
               ? isAr
                 ? `يمكنك مراسلة قسم التوظيف لدى ${cleanCompany} مباشرة وإرسال سيرتك الذاتية دون أي وسيط.`
@@ -519,19 +519,19 @@ export default function JobDetailClient({
         {/* State A: Direct HR Email Display & Actions */}
         {hasEmail && effectiveEmail && (
           <div className="space-y-4 pt-1">
-            <div className="p-4 rounded-2xl bg-slate-950/90 border border-emerald-500/20 space-y-2">
+            <div className="p-4 rounded-2xl bg-white border border-emerald-200 space-y-2 shadow-sm">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400 font-semibold">
+                <span className="text-slate-600 font-semibold">
                   {isAr ? "البريد الإلكتروني للتوظيف:" : isDe ? "E-Mail für Bewerbungen:" : "Official Recruiter Email:"}
                 </span>
-                <span className="text-emerald-400 font-bold flex items-center gap-1 text-[11px]">
+                <span className="text-emerald-700 font-bold flex items-center gap-1 text-[11px]">
                   <span>✉️</span>
                   <span>{isAr ? "بريد رسمي مباشر" : isDe ? "Direktkontakt" : "Direct Email"}</span>
                 </span>
               </div>
 
-              <div className="flex items-center justify-between gap-2 bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 font-mono text-xs sm:text-sm text-white" dir="ltr">
-                <span className="break-all font-bold select-all text-emerald-300 dir-ltr text-left [direction:ltr]" dir="ltr">
+              <div className="flex items-center justify-between gap-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200 font-mono text-xs sm:text-sm text-slate-900" dir="ltr">
+                <span className="break-all font-bold select-all text-emerald-800 dir-ltr text-left [direction:ltr]" dir="ltr">
                   {effectiveEmail}
                 </span>
               </div>
@@ -542,7 +542,7 @@ export default function JobDetailClient({
               <button
                 type="button"
                 onClick={() => handleSmartMailSend(effectiveEmail)}
-                className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-extrabold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/30 ring-1 ring-emerald-400/40"
+                className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-extrabold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20"
               >
                 <span>✉️</span>
                 <span>
@@ -557,7 +557,7 @@ export default function JobDetailClient({
               <button
                 type="button"
                 onClick={() => handleCopyEmail(effectiveEmail)}
-                className="w-full min-h-[48px] py-3.5 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-100 hover:text-white border border-slate-700 font-bold text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                className="w-full min-h-[48px] py-3.5 px-3.5 rounded-xl bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-800 hover:text-[#061838] border border-slate-300 font-bold text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
               >
                 <span>📋</span>
                 <span>
@@ -575,7 +575,7 @@ export default function JobDetailClient({
             {/* Preparation secondary CTA */}
             <Link
               href={coverLetterUrl}
-              className="w-full min-h-[44px] py-2.5 px-3.5 rounded-xl bg-blue-600/15 hover:bg-blue-600/25 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full min-h-[44px] py-2.5 px-3.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#061838] hover:text-blue-900 border border-blue-200 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>
                 {isAr
@@ -591,7 +591,7 @@ export default function JobDetailClient({
               <button
                 type="button"
                 onClick={() => setShowEmailModal(true)}
-                className="w-full sm:flex-1 min-h-[42px] py-2.5 px-3 rounded-xl bg-slate-950/70 hover:bg-slate-950 text-slate-300 hover:text-white border border-slate-800 text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                className="w-full sm:flex-1 min-h-[42px] py-2.5 px-3 rounded-xl bg-white hover:bg-slate-50 text-slate-700 hover:text-[#061838] border border-slate-200 text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
               >
                 <span>📝</span>
                 <span>
@@ -608,7 +608,7 @@ export default function JobDetailClient({
                   href={job.applyUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full sm:flex-1 min-h-[42px] py-2.5 px-3 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                  className="w-full sm:flex-1 min-h-[42px] py-2.5 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-[#061838] border border-slate-200 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center"
                 >
                   <span>🌐</span>
                   <span>
@@ -632,7 +632,7 @@ export default function JobDetailClient({
               href={job.applyUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full min-h-[52px] py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-black text-sm sm:text-base text-center shadow-xl shadow-blue-600/30 hover:shadow-blue-500/40 transition-all flex items-center justify-center gap-2 cursor-pointer ring-1 ring-blue-400/40"
+              className="w-full min-h-[52px] py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-black text-sm sm:text-base text-center shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>🌐</span>
               <span>
@@ -647,7 +647,7 @@ export default function JobDetailClient({
             {/* Secondary button: prepare Anschreiben */}
             <Link
               href={coverLetterUrl}
-              className="w-full min-h-[46px] py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-100 hover:text-white border border-slate-700 font-bold text-xs sm:text-sm text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+              className="w-full min-h-[46px] py-3 px-4 rounded-xl bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-800 hover:text-[#061838] border border-slate-300 font-bold text-xs sm:text-sm text-center transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
             >
               <span>
                 {isAr
@@ -659,8 +659,8 @@ export default function JobDetailClient({
             </Link>
 
             {/* German Bewerbungsformular Guide */}
-            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs space-y-2 text-start">
-              <div className="flex items-center gap-1.5 font-bold text-blue-400 text-[11px]">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-2 text-start">
+              <div className="flex items-center gap-1.5 font-bold text-blue-700 text-[11px]">
                 <span>💡</span>
                 <span>
                   {isAr
@@ -670,7 +670,7 @@ export default function JobDetailClient({
                     : "Guide for the Official Application Form (Bewerbungsformular):"}
                 </span>
               </div>
-              <ul className="space-y-2 text-[11px] text-slate-300 leading-relaxed">
+              <ul className="space-y-2 text-[11px] text-slate-600 leading-relaxed">
                 <li className="flex items-start gap-1.5">
                   <span className="shrink-0 select-none">1️⃣</span>
                   <span>
@@ -711,7 +711,7 @@ export default function JobDetailClient({
           <div className="space-y-3 pt-1">
             <Link
               href={coverLetterUrl}
-              className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-extrabold text-sm text-center shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-extrabold text-sm text-center shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>{isAr ? "تجهيز خطاب الدافع (Anschreiben) لهذه الوظيفة" : "Prepare Tailored Cover Letter"}</span>
             </Link>
@@ -719,14 +719,14 @@ export default function JobDetailClient({
         )}
 
         {/* Reassuring Source Transparency Micro-Copy */}
-        <div className="flex items-center gap-2 text-[11px] text-slate-300 pt-3 border-t border-slate-800/80">
-          <span className="text-emerald-400 text-sm shrink-0">🛡️</span>
+        <div className="flex items-center gap-2 text-[11px] text-slate-500 pt-3 border-t border-slate-200">
+          <span className="text-emerald-600 text-sm shrink-0">🛡️</span>
           <span className="leading-relaxed">{reassuringMicrocopy}</span>
         </div>
 
         {/* In-Card Toast Notification */}
         {toast && (
-          <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2 animate-fadeIn shadow-inner">
+          <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 animate-fadeIn shadow-inner">
             <span className="text-sm shrink-0">✓</span>
             <span className="leading-snug">{toast}</span>
           </div>
@@ -739,17 +739,17 @@ export default function JobDetailClient({
   const renderAiSuiteBox = (keyPrefix = "desktop") => (
     <div
       key={`${keyPrefix}-ai-box`}
-      className="rounded-3xl bg-slate-900/90 border border-blue-500/20 p-6 space-y-4 shadow-xl backdrop-blur-xl"
+      className="rounded-3xl bg-white border border-slate-200 p-6 space-y-4 shadow-sm"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-base">⚡</span>
-          <h3 className="font-bold text-white text-xs sm:text-sm">
+          <h3 className="font-bold text-[#061838] text-xs sm:text-sm">
             {isAr ? "أدوات الذكاء الاصطناعي التنافسية" : "AI Career Suite"}
           </h3>
         </div>
 
-        <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 font-mono text-[11px] font-bold">
+        <span className="px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 font-mono text-[11px] font-bold">
           +85% ATS Score
         </span>
       </div>
@@ -757,15 +757,15 @@ export default function JobDetailClient({
       {/* Tool 1: Cover Letter Generator */}
       <Link
         href={coverLetterUrl}
-        className="group block p-4 rounded-2xl bg-slate-950 hover:bg-slate-950/80 border border-slate-800 hover:border-blue-500/40 transition-all space-y-1.5 min-h-[48px]"
+        className="group block p-4 rounded-2xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200 hover:border-blue-400 transition-all space-y-1.5 min-h-[48px]"
       >
-        <div className="flex items-center justify-between text-white font-bold text-xs group-hover:text-blue-400 transition-colors">
+        <div className="flex items-center justify-between text-[#061838] font-bold text-xs group-hover:text-blue-600 transition-colors">
           <div className="flex items-center gap-2">
             <span>{isAr ? "توليد خطاب الدافع (Anschreiben)" : "DIN 5008 Cover Letter Studio"}</span>
           </div>
           <span className={dir === "rtl" ? "rotate-180" : ""}>→</span>
         </div>
-        <p className="text-[11px] text-slate-400 leading-relaxed">
+        <p className="text-[11px] text-slate-600 leading-relaxed">
           {isAr
             ? `صياغة خطاب دافع ألماني مخصص لـ ${cleanCompany} طبقاً لمعايير DIN 5008 معبأ بمتطلبات الشاغر.`
             : `Generate a tailored DIN 5008 cover letter pre-filled with ${cleanCompany} and role details.`}
@@ -775,16 +775,16 @@ export default function JobDetailClient({
       {/* Tool 2: ATS Analyzer */}
       <Link
         href={atsAnalyzerUrl}
-        className="group block p-4 rounded-2xl bg-slate-950 hover:bg-slate-950/80 border border-slate-800 hover:border-blue-500/40 transition-all space-y-1.5 min-h-[48px]"
+        className="group block p-4 rounded-2xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200 hover:border-blue-400 transition-all space-y-1.5 min-h-[48px]"
       >
-        <div className="flex items-center justify-between text-white font-bold text-xs group-hover:text-blue-400 transition-colors">
+        <div className="flex items-center justify-between text-[#061838] font-bold text-xs group-hover:text-blue-600 transition-colors">
           <div className="flex items-center gap-2">
             <span className="text-base">🔍</span>
             <span>{isAr ? "فاحص التوافق مع أنظمة الفرز (ATS)" : "ATS Job-Resume Matcher"}</span>
           </div>
           <span className={dir === "rtl" ? "rotate-180" : ""}>→</span>
         </div>
-        <p className="text-[11px] text-slate-400 leading-relaxed">
+        <p className="text-[11px] text-slate-600 leading-relaxed">
           {isAr
             ? "فحص نسبة تطابق سيرتك الذاتية مع متطلبات هذا الإعلان واكتشاف الكلمات المفتاحية الناقصة فوراً."
             : "Audit your CV against this job's keywords and score higher on recruiter ATS scans."}
@@ -797,11 +797,11 @@ export default function JobDetailClient({
   const renderRoadmapStepper = (keyPrefix = "desktop") => (
     <div
       key={`${keyPrefix}-stepper`}
-      className="rounded-3xl bg-slate-900/90 border border-slate-800 p-6 space-y-4 shadow-xl backdrop-blur-xl"
+      className="rounded-3xl bg-white border border-slate-200 p-6 space-y-4 shadow-sm"
     >
       <div className="flex items-center gap-2">
         <span className="text-base select-none">🧭</span>
-        <h3 className="font-bold text-white text-xs sm:text-sm">
+        <h3 className="font-bold text-[#061838] text-xs sm:text-sm">
           {isAr
             ? "مسار الخطوات الثلاث لضمان القبول"
             : isDe
@@ -816,13 +816,13 @@ export default function JobDetailClient({
             <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-black shrink-0">
               1
             </span>
-            <div className="w-0.5 h-10 bg-slate-800 mt-1" />
+            <div className="w-0.5 h-10 bg-slate-200 mt-1" />
           </div>
           <div className="space-y-0.5 flex-1">
-            <h4 className="text-xs font-bold text-white">
+            <h4 className="text-xs font-bold text-[#061838]">
               {isAr ? "تجهيز السيرة الذاتية (DIN 5008)" : "Lebenslauf vorbereiten (DIN 5008)"}
             </h4>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-slate-600 leading-relaxed">
               {isAr
                 ? "سيرة ذاتية بترتيب عكسي متوافقة أوروبياً مع خوارزميات الفرز الآلي."
                 : "ATS-optimized reverse chronological resume formatted to German standards."}
@@ -835,15 +835,15 @@ export default function JobDetailClient({
             <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-black shrink-0">
               2
             </span>
-            <div className="w-0.5 h-10 bg-slate-800 mt-1" />
+            <div className="w-0.5 h-10 bg-slate-200 mt-1" />
           </div>
           <div className="space-y-0.5 flex-1">
-            <h4 className="text-xs font-bold text-white">
+            <h4 className="text-xs font-bold text-[#061838]">
               {isAr
                 ? `صياغة خطاب الدافع المخصص لـ ${cleanCompany}`
                 : `Anschreiben für ${cleanCompany} erstellen`}
             </h4>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-slate-600 leading-relaxed">
               {isAr
                 ? "خطاب رسمي يستهدف مسمى الوظيفة ومتطلبات صاحب العمل بدقة."
                 : "Official German Anschreiben addressing role specifications."}
@@ -856,12 +856,12 @@ export default function JobDetailClient({
             3
           </span>
           <div className="space-y-0.5 flex-1">
-            <h4 className="text-xs font-bold text-white">
+            <h4 className="text-xs font-bold text-[#061838]">
               {isAr
                 ? "إرسال الملف الموحد (Bewerbungsmappe) مباشرة"
                 : "Bewerbungsmappe direkt einreichen"}
             </h4>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-slate-600 leading-relaxed">
               {isAr
                 ? "إرسال الملف عبر البوابة الرسمية للشركة أو بريد الموارد البشرية."
                 : "Submit via official ATS portal or directly to HR email."}
@@ -876,48 +876,48 @@ export default function JobDetailClient({
   const renderOverviewCard = (keyPrefix = "desktop") => (
     <div
       key={`${keyPrefix}-overview`}
-      className="rounded-3xl bg-slate-900/60 border border-slate-800 p-6 space-y-4 text-xs"
+      className="rounded-3xl bg-white border border-slate-200 p-6 space-y-4 text-xs shadow-sm"
     >
-      <h3 className="font-bold text-white text-sm flex items-center gap-2">
+      <h3 className="font-bold text-[#061838] text-sm flex items-center gap-2">
         <span>ℹ️</span>
         <span>{isAr ? "بيانات الاعتماد والشاغر" : dict?.jobs?.details?.overviewTitle || "Übersicht"}</span>
       </h3>
 
-      <div className="space-y-2.5 text-slate-300">
-        <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
-          <span className="text-slate-400 shrink-0">{dict?.jobs?.details?.company || (isAr ? "الشركة" : "Unternehmen")}</span>
-          <span className="font-semibold text-white text-end break-words [overflow-wrap:anywhere]">{job.company}</span>
+      <div className="space-y-2.5 text-slate-700">
+        <div className="flex justify-between py-1 border-b border-slate-100 gap-2">
+          <span className="text-slate-500 shrink-0">{dict?.jobs?.details?.company || (isAr ? "الشركة" : "Unternehmen")}</span>
+          <span className="font-semibold text-[#061838] text-end break-words [overflow-wrap:anywhere]">{job.company}</span>
         </div>
 
-        <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
-          <span className="text-slate-400 shrink-0">{dict?.jobs?.details?.city || (isAr ? "المدينة" : "Standort")}</span>
-          <span className="font-semibold text-white text-end break-words">{job.city || dict?.jobs?.details?.germany || "Deutschland"}</span>
+        <div className="flex justify-between py-1 border-b border-slate-100 gap-2">
+          <span className="text-slate-500 shrink-0">{dict?.jobs?.details?.city || (isAr ? "المدينة" : "Standort")}</span>
+          <span className="font-semibold text-[#061838] text-end break-words">{job.city || dict?.jobs?.details?.germany || "Deutschland"}</span>
         </div>
 
-        <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
-          <span className="text-slate-400 shrink-0">{dict?.jobs?.details?.jobType || (isAr ? "نوع العمل" : "Anstellungsart")}</span>
-          <span className="font-semibold text-white text-end">{job.jobType || dict?.jobs?.details?.fullTime || "Vollzeit"}</span>
+        <div className="flex justify-between py-1 border-b border-slate-100 gap-2">
+          <span className="text-slate-500 shrink-0">{dict?.jobs?.details?.jobType || (isAr ? "نوع العمل" : "Anstellungsart")}</span>
+          <span className="font-semibold text-[#061838] text-end">{job.jobType || dict?.jobs?.details?.fullTime || "Vollzeit"}</span>
         </div>
 
-        <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
-          <span className="text-slate-400 shrink-0">{dict?.jobs?.details?.languageLevel || (isAr ? "مستوى اللغة" : "Sprachniveau")}</span>
-          <span className="font-semibold text-emerald-400 font-mono text-end">{cefrLevel}</span>
+        <div className="flex justify-between py-1 border-b border-slate-100 gap-2">
+          <span className="text-slate-500 shrink-0">{dict?.jobs?.details?.languageLevel || (isAr ? "مستوى اللغة" : "Sprachniveau")}</span>
+          <span className="font-semibold text-emerald-700 font-mono text-end">{cefrLevel}</span>
         </div>
 
-        <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
-          <span className="text-slate-400 shrink-0">{isAr ? "كود المرجع:" : "Ref-Nr:"}</span>
-          <span dir="ltr" className="font-mono text-slate-300 font-bold">{referenceNumber}</span>
+        <div className="flex justify-between py-1 border-b border-slate-100 gap-2">
+          <span className="text-slate-500 shrink-0">{isAr ? "كود المرجع:" : "Ref-Nr:"}</span>
+          <span dir="ltr" className="font-mono text-slate-700 font-bold">{referenceNumber}</span>
         </div>
 
-        <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
-          <span className="text-slate-400 shrink-0">{isAr ? "معيار التقديم:" : "Standard:"}</span>
-          <span dir="ltr" className="font-mono text-blue-400 font-bold">DIN 5008</span>
+        <div className="flex justify-between py-1 border-b border-slate-100 gap-2">
+          <span className="text-slate-500 shrink-0">{isAr ? "معيار التقديم:" : "Standard:"}</span>
+          <span dir="ltr" className="font-mono text-blue-700 font-bold">DIN 5008</span>
         </div>
 
         {job.salary && (
-          <div className="flex justify-between py-1 border-b border-slate-800/80 gap-2">
-            <span className="text-slate-400 shrink-0">{dict?.jobs?.details?.salary || (isAr ? "الراتب" : "Gehalt")}</span>
-            <span className="font-semibold text-emerald-400 text-end break-words">
+          <div className="flex justify-between py-1 border-b border-slate-100 gap-2">
+            <span className="text-slate-500 shrink-0">{dict?.jobs?.details?.salary || (isAr ? "الراتب" : "Gehalt")}</span>
+            <span className="font-semibold text-emerald-700 text-end break-words">
               {job.salary}
             </span>
           </div>
@@ -928,7 +928,7 @@ export default function JobDetailClient({
         <button
           type="button"
           onClick={handleCopyLink}
-          className="w-full min-h-[48px] py-3 px-3 rounded-xl bg-slate-950 hover:bg-slate-800 active:scale-[0.98] border border-slate-800 text-slate-300 hover:text-white transition-all text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+          className="w-full min-h-[48px] py-3 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 active:scale-[0.98] border border-slate-200 text-slate-700 hover:text-slate-900 transition-all text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer shadow-sm"
         >
           <span>🔗</span>
           <span>{copiedLink ? (dict?.jobs?.details?.linkCopied || "✓ Kopiert!") : (dict?.jobs?.details?.shareJob || "Job teilen")}</span>
@@ -947,12 +947,12 @@ export default function JobDetailClient({
         <div className="lg:col-span-8 space-y-6">
 
           {/* 1. Header & Official Verification Seal (Trust Layer) */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl backdrop-blur-xl">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
             
             {/* Top Verification Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-800/80">
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-100">
               {/* Official Seal with Pulse Indicator */}
-              <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold shadow-[0_0_20px_rgba(16,185,129,0.12)]">
+              <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
@@ -963,11 +963,11 @@ export default function JobDetailClient({
               {/* German Standards & Reference ID Chips */}
               <div className="flex items-center gap-2 flex-wrap">
                 {/* DIN 5008 Compliance Badge */}
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950 border border-slate-800 text-slate-300 text-xs font-medium">
-                  <span className="text-blue-400 font-bold">DIN</span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium">
+                  <span className="text-blue-700 font-bold">DIN</span>
                   <span>
                     {isAr ? "معيار التقديم:" : "Standard:"}{" "}
-                    <span dir="ltr" className="font-mono text-white font-semibold">DIN 5008</span>
+                    <span dir="ltr" className="font-mono text-[#061838] font-semibold">DIN 5008</span>
                   </span>
                 </span>
 
@@ -976,11 +976,11 @@ export default function JobDetailClient({
                   type="button"
                   onClick={handleCopyRef}
                   title={isAr ? "اضغط لنسخ كود المرجع" : "Click to copy Reference Number"}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950 border border-slate-800 hover:border-blue-500/40 text-slate-400 hover:text-white text-xs font-mono transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 hover:border-blue-400 text-slate-600 hover:text-slate-900 text-xs font-mono transition-colors cursor-pointer"
                 >
                   <span className="text-slate-500">Ref-Nr:</span>
-                  <span dir="ltr" className="text-slate-200 font-bold">{referenceNumber}</span>
-                  <span className="text-[10px] text-blue-400">
+                  <span dir="ltr" className="text-slate-800 font-bold">{referenceNumber}</span>
+                  <span className="text-[10px] text-blue-600">
                     {copiedRef ? (isAr ? "✓ تم" : "✓") : "📋"}
                   </span>
                 </button>
@@ -993,7 +993,7 @@ export default function JobDetailClient({
                 <div className="space-y-2 flex-1">
                   <h1
                     dir="auto"
-                    className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-snug text-start break-words [overflow-wrap:anywhere]"
+                    className="text-2xl sm:text-4xl font-black text-[#061838] tracking-tight leading-snug text-start break-words [overflow-wrap:anywhere]"
                   >
                     <bdi>{primaryTitle}</bdi>
                   </h1>
@@ -1001,7 +1001,7 @@ export default function JobDetailClient({
                     <div className="pt-0.5">
                       <span
                         dir="ltr"
-                        className="inline-block px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-medium text-xs sm:text-sm font-mono dir-ltr text-left [direction:ltr] [unicode-bidi:isolate]"
+                        className="inline-block px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs sm:text-sm font-mono dir-ltr text-left [direction:ltr] [unicode-bidi:isolate]"
                       >
                         {latinSubtitle}
                       </span>
@@ -1016,12 +1016,12 @@ export default function JobDetailClient({
                 />
               </div>
 
-              <div className="flex items-center gap-4 text-sm sm:text-base text-slate-300 flex-wrap">
-                <span className="font-bold text-blue-400 flex items-center gap-1.5 break-words [overflow-wrap:anywhere]" dir="auto">
+              <div className="flex items-center gap-4 text-sm sm:text-base text-slate-600 flex-wrap">
+                <span className="font-bold text-blue-700 flex items-center gap-1.5 break-words [overflow-wrap:anywhere]" dir="auto">
                   <span>🏢</span>
                   <span>{job.company}</span>
                 </span>
-                <span className="text-slate-400 flex items-center gap-1.5 break-words">
+                <span className="text-slate-600 flex items-center gap-1.5 break-words">
                   <span>📍</span>
                   <span>{job.city || dict?.jobs?.details?.germany || "Deutschland"}</span>
                   {isAr && job.city && GERMAN_CITIES_MAP[job.city] && (
@@ -1030,7 +1030,7 @@ export default function JobDetailClient({
                     </span>
                   )}
                 </span>
-                <span className="text-slate-400 flex items-center gap-1.5 text-xs">
+                <span className="text-slate-500 flex items-center gap-1.5 text-xs">
                   <span>📅</span>
                   <span suppressHydrationWarning>{formattedDate}</span>
                 </span>
@@ -1039,17 +1039,17 @@ export default function JobDetailClient({
 
             {/* Official Meta Chips */}
             <div className="flex items-center gap-2.5 flex-wrap pt-2">
-              <span className="px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold flex items-center gap-1.5">
+              <span className="px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold flex items-center gap-1.5">
                 <span>🌐</span>
                 <span>{job.category}</span>
               </span>
 
-              <span className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-200 text-xs font-medium flex items-center gap-1.5">
+              <span className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1.5">
                 <span>💼</span>
                 <span>{job.jobType || dict?.jobs?.details?.fullTime || "Vollzeit"}</span>
               </span>
 
-              <span className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center gap-1.5">
+              <span className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-1.5">
                 <span>🇩🇪</span>
                 <span>
                   {isAr ? "المستوى اللغوي الإلزامي:" : "Language:"}{" "}
@@ -1058,7 +1058,7 @@ export default function JobDetailClient({
               </span>
 
               {job.salary && (
-                <span className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold flex items-center gap-1.5 break-words">
+                <span className="px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold flex items-center gap-1.5 break-words">
                   <span>💰</span>
                   <span>{job.salary}</span>
                 </span>
@@ -1076,17 +1076,17 @@ export default function JobDetailClient({
             {/* ==================================================== */}
             {/* Card A: نبذة ومسؤوليات العمل (Aufgaben & Verantwortung) */}
             {/* ==================================================== */}
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl backdrop-blur-xl">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800/80 flex-wrap gap-2">
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 flex-wrap gap-2">
                 <div className="flex items-center gap-2.5">
-                  <span className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center text-sm font-bold">
+                  <span className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center text-sm font-bold">
                     📋
                   </span>
                   <div>
-                    <h2 className="text-lg font-black text-white">
+                    <h2 className="text-lg font-black text-[#061838]">
                       {isAr ? "نبذة ومسؤوليات العمل" : isDe ? "Aufgaben & Verantwortung" : "Role & Responsibilities"}
                     </h2>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-500">
                       {isAr
                         ? "نظرة شاملة على المهام التشغيلية اليومية والدور الوظيفي داخل المؤسسة"
                         : "Operational overview of daily duties and corporate scope"}
@@ -1094,15 +1094,15 @@ export default function JobDetailClient({
                   </div>
                 </div>
 
-                <span dir="ltr" className="text-xs font-mono font-bold text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
+                <span dir="ltr" className="text-xs font-mono font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
                   Aufgaben & Verantwortung
                 </span>
               </div>
 
               {/* Executive Overview Highlight */}
               {parsedDescription.intro && (
-                <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/70 border border-slate-800/90 text-slate-200 text-sm leading-relaxed space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-blue-400">
+                <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-700 text-sm leading-relaxed space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-blue-700">
                     <span>🏢</span>
                     <span>
                       {isAr
@@ -1110,7 +1110,7 @@ export default function JobDetailClient({
                         : `Context at ${cleanCompany}:`}
                     </span>
                   </div>
-                  <p dir="auto" className="text-start text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  <p dir="auto" className="text-start text-xs sm:text-sm text-slate-600 leading-relaxed">
                     {parsedDescription.intro}
                   </p>
                 </div>
@@ -1119,8 +1119,8 @@ export default function JobDetailClient({
               {/* Structured Responsibilities Checklist */}
               {parsedDescription.responsibilities.length > 0 ? (
                 <div className="space-y-3 pt-1">
-                  <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
+                  <h3 className="text-xs sm:text-sm font-bold text-[#061838] flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-600" />
                     <span>
                       {isAr
                         ? "المهام والمسؤوليات الأساسية (Kernaufgaben):"
@@ -1134,14 +1134,14 @@ export default function JobDetailClient({
                     {parsedDescription.responsibilities.map((resp, idx) => (
                       <div
                         key={idx}
-                        className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/70 hover:border-slate-700 transition-colors"
+                        className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-slate-300 transition-colors"
                       >
-                        <span className="w-5 h-5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 select-none">
+                        <span className="w-5 h-5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 select-none">
                           ✓
                         </span>
                         <span
                           dir="auto"
-                          className="text-xs sm:text-sm text-slate-300 leading-relaxed text-start flex-1"
+                          className="text-xs sm:text-sm text-slate-700 leading-relaxed text-start flex-1"
                         >
                           {resp}
                         </span>
@@ -1150,15 +1150,15 @@ export default function JobDetailClient({
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-500">
                   {dict?.jobs?.details?.noDescription || (isAr ? "لا يوجد وصف إضافي متوفر للشاغر حالياً." : "Keine Beschreibung verfügbar.")}
                 </p>
               )}
 
               {/* Additional Context or Benefits if present */}
               {parsedDescription.additionalDetails.length > 0 && (
-                <div className="p-4 rounded-xl bg-slate-950/40 border border-slate-800/60 space-y-2 text-xs text-slate-400">
-                  <span className="font-bold text-slate-300 flex items-center gap-1.5">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs text-slate-600">
+                  <span className="font-bold text-slate-800 flex items-center gap-1.5">
                     <span>💡</span>
                     <span>{isAr ? "معلومات إضافية عن بيئة العمل:" : "Additional Workplace Context:"}</span>
                   </span>
@@ -1179,17 +1179,17 @@ export default function JobDetailClient({
             {/* ==================================================== */}
             {/* Card B: الشروط والمؤهلات المطلوبة (Anforderungen & Anerkennung) */}
             {/* ==================================================== */}
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl backdrop-blur-xl">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800/80 flex-wrap gap-2">
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 flex-wrap gap-2">
                 <div className="flex items-center gap-2.5">
-                  <span className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center text-sm font-bold">
+                  <span className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center text-sm font-bold">
                     🎯
                   </span>
                   <div>
-                    <h2 className="text-lg font-black text-white">
+                    <h2 className="text-lg font-black text-[#061838]">
                       {isAr ? "الشروط والمؤهلات المطلوبة" : isDe ? "Anforderungen & Anerkennung" : "Requirements & Recognition"}
                     </h2>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-500">
                       {isAr
                         ? "المعايير المحددة لقبول طلب الترشيح وفق اشتراطات سوق العمل الألماني"
                         : "Official prerequisites and criteria under German labor standards"}
@@ -1197,28 +1197,28 @@ export default function JobDetailClient({
                   </div>
                 </div>
 
-                <span dir="ltr" className="text-xs font-mono font-bold text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
+                <span dir="ltr" className="text-xs font-mono font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
                   Anforderungen & Qualifikation
                 </span>
               </div>
 
               {/* Module 1: Language Requirement Box (صندوق الكفاءة اللغوية - CEFR Level) */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-slate-950 border border-blue-500/20 space-y-3">
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-blue-100 space-y-3">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/30 flex items-center justify-center text-lg shrink-0">
+                    <span className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 border border-blue-200 flex items-center justify-center text-lg shrink-0">
                       🇩🇪
                     </span>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-white">
+                        <span className="text-xs font-bold text-[#061838]">
                           {isAr ? "شرط الكفاءة اللغوية الأوروبي (CEFR Sprachniveau)" : "Mandatory CEFR Language Level"}
                         </span>
-                        <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono text-xs font-bold">
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-100 border border-emerald-200 text-emerald-800 font-mono text-xs font-bold">
                           {cefrLevel}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-slate-500">
                         {isAr
                           ? "وفق الإطار المرجعي الأوروبي المشترك للغات (Goethe / telc / TestDaF / ÖSD)"
                           : "Common European Framework of Reference for Languages standard"}
@@ -1226,12 +1226,12 @@ export default function JobDetailClient({
                     </div>
                   </div>
 
-                  <span className="px-3 py-1 rounded-full bg-slate-900 border border-slate-700 text-slate-300 font-mono text-xs font-semibold">
+                  <span className="px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 font-mono text-xs font-semibold">
                     Zertifikat: {cefrLevel}
                   </span>
                 </div>
 
-                <p dir="auto" className="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 text-start">
+                <p dir="auto" className="text-xs text-slate-700 leading-relaxed bg-white p-3 rounded-xl border border-slate-200 text-start">
                   {parsedRequirements.languageItem
                     ? parsedRequirements.languageItem
                     : isAr
@@ -1241,31 +1241,31 @@ export default function JobDetailClient({
               </div>
 
               {/* Module 2: Degree & Equivalence Status (Anerkennung der ausländischen Berufsqualifikation) */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5">
                     <span className="text-base select-none">🎓</span>
-                    <h3 className="text-xs sm:text-sm font-bold text-white">
+                    <h3 className="text-xs sm:text-sm font-bold text-[#061838]">
                       {anerkennung.title}
                     </h3>
                   </div>
 
-                  <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/20 text-[11px] font-semibold">
+                  <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-semibold">
                     {anerkennung.badge}
                   </span>
                 </div>
 
-                <p dir="auto" className="text-xs text-slate-300 leading-relaxed text-start">
+                <p dir="auto" className="text-xs text-slate-700 leading-relaxed text-start">
                   {parsedRequirements.degreeItem ? (
-                    <span className="font-semibold text-slate-200 block mb-1">
+                    <span className="font-semibold text-slate-900 block mb-1">
                       {parsedRequirements.degreeItem}
                     </span>
                   ) : null}
                   {anerkennung.desc}
                 </p>
 
-                <div className="flex items-center gap-2 text-[11px] text-slate-400 pt-1">
-                  <span className="text-blue-400 font-bold">✓</span>
+                <div className="flex items-center gap-2 text-[11px] text-slate-500 pt-1">
+                  <span className="text-blue-600 font-bold">✓</span>
                   <span>{anerkennung.statusText}</span>
                 </div>
               </div>
@@ -1273,8 +1273,8 @@ export default function JobDetailClient({
               {/* Module 3: Clinical / Technical Skills Checklist */}
               {parsedRequirements.skillsItems.length > 0 && (
                 <div className="space-y-3 pt-2">
-                  <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
+                  <h3 className="text-xs sm:text-sm font-bold text-[#061838] flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-600" />
                     <span>
                       {isAr
                         ? "المهارات والخبرات العملية المطلوبة:"
@@ -1288,14 +1288,14 @@ export default function JobDetailClient({
                     {parsedRequirements.skillsItems.map((req, idx) => (
                       <div
                         key={idx}
-                        className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/70 hover:border-slate-700 transition-colors"
+                        className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-slate-300 transition-colors"
                       >
-                        <span className="w-5 h-5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 select-none">
+                        <span className="w-5 h-5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 select-none">
                           ✓
                         </span>
                         <span
                           dir="auto"
-                          className="text-xs sm:text-sm text-slate-300 leading-relaxed text-start flex-1"
+                          className="text-xs sm:text-sm text-slate-700 leading-relaxed text-start flex-1"
                         >
                           {req}
                         </span>
@@ -1309,21 +1309,21 @@ export default function JobDetailClient({
             {/* ==================================================== */}
             {/* Card C: إرشادات التقديم وقبول الملف لدى صاحب العمل (Bewerbungstipps) */}
             {/* ==================================================== */}
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl backdrop-blur-xl">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800/80 flex-wrap gap-2">
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 flex-wrap gap-2">
                 <div className="flex items-center gap-2.5">
-                  <span className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center text-sm font-bold">
+                  <span className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center text-sm font-bold">
                     🇩🇪
                   </span>
                   <div>
-                    <h2 className="text-lg font-black text-white">
+                    <h2 className="text-lg font-black text-[#061838]">
                       {isAr
                         ? "إرشادات التقديم وقبول الملف لدى صاحب العمل (Bewerbungstipps)"
                         : isDe
                         ? "Bewerbungstipps & DIN 5008 Standards"
                         : "German Application Guidelines & DIN 5008"}
                     </h2>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-500">
                       {isAr
                         ? "المعايير المتبعة لدى إدارات الموارد البشرية الألمانية لضمان دعوة المقابلة"
                         : "German HR recruiter standards to maximize interview invitation rates"}
@@ -1331,23 +1331,23 @@ export default function JobDetailClient({
                   </div>
                 </div>
 
-                <span dir="ltr" className="text-xs font-mono font-bold text-slate-300 bg-slate-950 px-3 py-1 rounded-full border border-slate-800">
+                <span dir="ltr" className="text-xs font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
                   Standard: DIN 5008
                 </span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Tip 1: Anti-chronological CV */}
-                <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-2">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center justify-center text-xs font-bold">
+                    <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 border border-blue-200 flex items-center justify-center text-xs font-bold">
                       1
                     </span>
-                    <h3 className="text-xs font-bold text-white">
+                    <h3 className="text-xs font-bold text-[#061838]">
                       {isAr ? "الترتيب الزمني العكسي" : "Antichronologischer Aufbau"}
                     </h3>
                   </div>
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                  <p className="text-xs text-slate-600 leading-relaxed">
                     {isAr
                       ? "نسّق سيرتك الذاتية من الأحدث للأقدم طبقاً لمعايير DIN 5008 لتجتاز خوارزميات الفرز الآلي (ATS)."
                       : "Structure your CV starting with your most recent experience according to DIN 5008 rules."}
@@ -1355,16 +1355,16 @@ export default function JobDetailClient({
                 </div>
 
                 {/* Tip 2: Targeted Cover Letter */}
-                <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-2">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center justify-center text-xs font-bold">
+                    <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 border border-blue-200 flex items-center justify-center text-xs font-bold">
                       2
                     </span>
-                    <h3 className="text-xs font-bold text-white">
+                    <h3 className="text-xs font-bold text-[#061838]">
                       {isAr ? "خطاب دافع مخصص (Anschreiben)" : "Passgenaues Anschreiben"}
                     </h3>
                   </div>
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                  <p className="text-xs text-slate-600 leading-relaxed">
                     {isAr
                       ? `وجّه الخطاب لشركة ${cleanCompany} مباشرة مع ذكر الرمز المرجعي (${referenceNumber}) في سطر الموضوع.`
                       : `Address the cover letter directly to ${cleanCompany} including the reference number (${referenceNumber}).`}
@@ -1372,16 +1372,16 @@ export default function JobDetailClient({
                 </div>
 
                 {/* Tip 3: Unified Dossier */}
-                <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-2">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center justify-center text-xs font-bold">
+                    <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 border border-blue-200 flex items-center justify-center text-xs font-bold">
                       3
                     </span>
-                    <h3 className="text-xs font-bold text-white">
+                    <h3 className="text-xs font-bold text-[#061838]">
                       {isAr ? "ملف موحد (Bewerbungsmappe)" : "Vollständige Bewerbungsmappe"}
                     </h3>
                   </div>
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                  <p className="text-xs text-slate-600 leading-relaxed">
                     {isAr
                       ? "اجمع سيرتك الذاتية وخطاب الدافع وشهادات الخبرة ومستوى اللغة في ملف PDF واحد لا يتجاوز 10 ميغابايت."
                       : "Bundle your resume, cover letter, diplomas, and language certificates into a single PDF under 10MB."}
@@ -1393,7 +1393,7 @@ export default function JobDetailClient({
               <div className="pt-2 flex items-center gap-3 flex-wrap">
                 <Link
                   href={`/${activeLocale}/dashboard/cv`}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold border border-slate-200 transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>📄</span>
                   <span>{isAr ? "منشئ السيرة الذاتية (DIN 5008)" : "DIN 5008 CV Builder"}</span>
@@ -1401,7 +1401,7 @@ export default function JobDetailClient({
 
                 <Link
                   href={coverLetterUrl}
-                  className="px-4 py-2.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>{isAr ? "صياغة خطاب الدافع للوظيفة" : "Draft Tailored Cover Letter"}</span>
                 </Link>
@@ -1431,12 +1431,12 @@ export default function JobDetailClient({
 
       {/* German Application Email Modal */}
       {showEmailModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 max-w-xl w-full space-y-5 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-xl w-full space-y-5 shadow-2xl">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <span className="text-2xl">📝</span>
-                <h3 className="text-base sm:text-lg font-bold text-white">
+                <h3 className="text-base sm:text-lg font-bold text-[#061838]">
                   {dict?.jobs?.details?.templateModalTitle || (isAr ? "نموذج رسالة التقديم بالألمانية" : "Muster-Bewerbungsschreiben")}
                 </h3>
                 <GermanTtsButton
@@ -1449,34 +1449,34 @@ export default function JobDetailClient({
               <button
                 type="button"
                 onClick={() => setShowEmailModal(false)}
-                className="text-slate-400 hover:text-white text-lg p-1 cursor-pointer shrink-0"
+                className="text-slate-400 hover:text-slate-700 text-lg p-1 cursor-pointer shrink-0"
               >
                 ✕
               </button>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-slate-400">
+              <label className="block text-xs font-bold text-slate-700">
                 {dict?.jobs?.details?.subject || (isAr ? "موضوع الرسالة" : "Betreff")}
               </label>
               <input
                 type="text"
                 readOnly
                 value={emailSubject}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono text-xs"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-mono text-xs"
                 dir="ltr"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-slate-400">
+              <label className="block text-xs font-bold text-slate-700">
                 {dict?.jobs?.details?.bodyText || (isAr ? "نص الرسالة" : "Nachrichtentext")}
               </label>
               <textarea
                 readOnly
                 rows={8}
                 value={emailBody}
-                className="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono text-xs leading-relaxed resize-none"
+                className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 font-mono text-xs leading-relaxed resize-none"
                 dir="ltr"
               />
             </div>
@@ -1489,7 +1489,7 @@ export default function JobDetailClient({
                   setCopiedEmail(true);
                   setTimeout(() => setCopiedEmail(false), 2500);
                 }}
-                className="flex-1 min-h-[48px] py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-white text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                className="flex-1 min-h-[48px] py-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-[0.98] text-slate-800 text-xs sm:text-sm font-bold border border-slate-200 transition-all cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <span>📋</span>
                 <span>{copiedEmail ? (dict?.jobs?.details?.copiedSuccess || "✓ Kopiert!") : (dict?.jobs?.details?.copyTemplate || "Vorlage kopieren")}</span>
@@ -1501,7 +1501,7 @@ export default function JobDetailClient({
                   handleSmartMailSend(effectiveEmail);
                   setShowEmailModal(false);
                 }}
-                className="flex-1 min-h-[48px] py-3 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white text-xs sm:text-sm font-extrabold text-center shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-1 cursor-pointer"
+                className="flex-1 min-h-[48px] py-3 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white text-xs sm:text-sm font-extrabold text-center shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-1 cursor-pointer"
               >
                 <span>✉️</span>
                 <span>{dict?.jobs?.details?.openGmail || "In Gmail öffnen"}</span>
@@ -1513,11 +1513,65 @@ export default function JobDetailClient({
 
       {/* Global Toast Notification */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-slate-900 border border-blue-500/40 text-white font-bold text-xs sm:text-sm shadow-2xl backdrop-blur-md animate-fadeIn">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-white border border-slate-200 text-slate-900 font-bold text-xs sm:text-sm shadow-xl backdrop-blur-md animate-fadeIn">
           <span className="text-base sm:text-lg shrink-0">📬</span>
           <span>{toast}</span>
         </div>
       )}
+
+      {/* Sticky Mobile Apply Bar */}
+      <div className="lg:hidden fixed bottom-16 inset-x-0 z-30 bg-white/95 dark:bg-[#061838]/95 backdrop-blur-md border-t border-slate-200 dark:border-white/10 px-4 py-2.5 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] flex items-center gap-2.5 print:hidden">
+        {hasEmail && effectiveEmail ? (
+          <button
+            type="button"
+            onClick={() => handleSmartMailSend(effectiveEmail)}
+            className="flex-1 py-3 px-4 rounded-xl font-extrabold text-xs text-center flex items-center justify-center gap-1.5 shadow-md active:scale-95 bg-emerald-600 text-white cursor-pointer"
+          >
+            <span>
+              {isAr
+                ? "✉️ إرسال السيرة مباشرة"
+                : isDe
+                ? "✉️ Per E-Mail bewerben"
+                : "✉️ Apply via Email"}
+            </span>
+          </button>
+        ) : hasPortal ? (
+          <a
+            href={job.applyUrl || "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 py-3 px-4 rounded-xl font-extrabold text-xs text-center flex items-center justify-center gap-1.5 shadow-md active:scale-95 bg-[#FACC15] text-[#061838] cursor-pointer"
+          >
+            <span>
+              {isAr
+                ? "🌐 التقديم بموقع الشركة ↗"
+                : isDe
+                ? "🌐 Jetzt bewerben ↗"
+                : "🌐 Apply on Portal ↗"}
+            </span>
+          </a>
+        ) : (
+          <Link
+            href={coverLetterUrl}
+            className="flex-1 py-3 px-4 rounded-xl font-extrabold text-xs text-center flex items-center justify-center gap-1.5 shadow-md active:scale-95 bg-[#FACC15] text-[#061838] cursor-pointer"
+          >
+            <span>
+              {isAr
+                ? "✍️ تجهيز خطاب الدافع"
+                : isDe
+                ? "✍️ Anschreiben erstellen"
+                : "✍️ Apply with Anschreiben"}
+            </span>
+          </Link>
+        )}
+
+        <Link
+          href={coverLetterUrl}
+          className="py-3 px-3.5 rounded-xl bg-[#0A2552] text-white font-bold text-xs shrink-0 flex items-center gap-1 border border-white/10 active:scale-95"
+        >
+          <span>✍️ Anschreiben</span>
+        </Link>
+      </div>
 
     </div>
   );

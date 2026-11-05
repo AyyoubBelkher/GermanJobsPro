@@ -16,10 +16,10 @@ export async function generateMetadata({
 
   return {
     title: isAr
-      ? "سياسة الاسترجاع وضمان الرضا 💎 | GermanJobsPro 🇩🇪"
+      ? "سياسة الاسترجاع وضمان الرضا | GermanJobsPro 🇩🇪"
       : isDe
-      ? "Rückerstattungsrichtlinie (Widerruf) 💎 | GermanJobsPro 🇩🇪"
-      : "Refund Policy & Satisfaction Guarantee 💎 | GermanJobsPro 🇩🇪",
+      ? "Rückerstattungsrichtlinie (Widerruf) | GermanJobsPro 🇩🇪"
+      : "Refund Policy & Satisfaction Guarantee | GermanJobsPro 🇩🇪",
     description: isAr
       ? "سياسة وضوابط استرداد الأموال الرقمية لباقة PRO Pass في GermanJobsPro. ضمان الرضا والشفافية التامة وحماية حقوق المستهلك."
       : "Transparente Rückerstattungsrichtlinie und Widerrufsbelehrung für den GermanJobsPro PRO Pass.",
@@ -42,30 +42,30 @@ export default async function RefundPage({
   return (
     <div
       dir={dir}
-      className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white"
+      className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white"
     >
       <Navbar locale={locale} initialUser={user} />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 w-full flex-1 space-y-12">
         {/* Breadcrumbs */}
-        <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-          <Link href={`/${locale}`} className="hover:text-blue-400 transition-colors">
+        <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+          <Link href={`/${locale}`} className="hover:text-blue-600 transition-colors">
             {isAr ? "الرئيسية" : isDe ? "Startseite" : "Home"}
           </Link>
           <span>/</span>
-          <span className="text-slate-200">
+          <span className="text-slate-800 font-semibold">
             {isAr ? "سياسة الاسترجاع والضمان" : isDe ? "Rückerstattungsrichtlinie" : "Refund Policy"}
           </span>
         </div>
 
         {/* Header Banner */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider">
-            <span>💎</span>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold uppercase tracking-wider">
+            <span>🛡️</span>
             <span>{isAr ? "ضمان الرضا والشفافية" : isDe ? "Transparenz-Garantie" : "Satisfaction Guarantee"}</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+          <h1 className="text-3xl sm:text-5xl font-black text-[#061838] tracking-tight">
             {isAr
               ? "سياسة الاسترجاع واسترداد الأموال"
               : isDe
@@ -73,7 +73,7 @@ export default async function RefundPage({
               : "Refund Policy & Satisfaction Guarantee"}
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
             {isAr
               ? "في GermanJobsPro، نلتزم بأعلى معايير الشفافية وتقديم قيمة حقيقية لرحلتك المهنية في ألمانيا. توضح هذه الوثيقة بوضوح شروط وسياسة استرداد المبالغ المدفوعة لباقة PRO Pass."
               : isDe
@@ -81,24 +81,24 @@ export default async function RefundPage({
               : "At GermanJobsPro, we stand behind our tools and prioritize fairness. Here is our clear and transparent refund policy for the PRO Pass digital software license."}
           </p>
 
-          <p className="text-xs text-slate-400 font-mono">
+          <p className="text-xs text-slate-500 font-mono">
             {isAr ? "آخر تحديث: 9 سبتمبر 2026" : isDe ? "Stand: 9. September 2026" : "Last updated: September 9, 2026"}
           </p>
         </div>
 
         {/* Highlight Summary Box */}
-        <div className="rounded-3xl bg-slate-900/80 border-2 border-blue-500/30 p-6 sm:p-8 space-y-4 text-slate-200 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 space-y-4 text-slate-700 shadow-sm">
           <div className="flex items-center gap-3">
             <span className="text-3xl">🛡️</span>
             <div>
-              <h2 className="text-lg sm:text-xl font-black text-white">
+              <h2 className="text-lg sm:text-xl font-black text-[#061838]">
                 {isAr
                   ? "ضمان استرجاع لمدة 14 يوماً للأعطال والمشاكل التقنية غير المحلولة"
                   : isDe
                   ? "14-Tage-Zufriedenheitsgarantie bei ungelösten technischen Störungen"
                   : "14-Day Satisfaction Guarantee for Unresolved Technical Defects"}
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 {isAr
                   ? "باقات PRO المعتمدة (Quick Sprint و PRO Job Pass) • بدون اشتراكات متكررة خفية"
                   : isDe
@@ -107,7 +107,7 @@ export default async function RefundPage({
               </p>
             </div>
           </div>
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed pt-2 border-t border-slate-800">
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed pt-2 border-t border-slate-100">
             {isAr
               ? "إذا واجهت أي خلل فني في توليد السيرة الذاتية وفق DIN 5008 أو إنشاء ملف الترشيح الكامل أو استيراد ملف الـ PDF، ولم يتمكن فريق الدعم الفني لدينا من حل المشكلة في غضون 48 ساعة من إبلاغنا، سنعيد إليك أموالك بنسبة 100% وبكل رحابة صدر."
               : isDe
@@ -117,12 +117,12 @@ export default async function RefundPage({
         </div>
 
         {/* Detailed Sections */}
-        <div className="space-y-8 text-slate-300 text-sm leading-relaxed">
+        <div className="space-y-8 text-slate-700 text-sm leading-relaxed">
           
           {/* Section 1: Nature of Digital Goods */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
-            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span className="text-blue-400">1.</span>
+          <section className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 space-y-3 shadow-sm">
+            <h3 className="text-base sm:text-lg font-bold text-[#061838] flex items-center gap-2">
+              <span className="text-blue-700">1.</span>
               <span>{isAr ? "طبيعة الخدمة الرقمية وباقة PRO Pass" : isDe ? "1. Art der digitalen Dienstleistung (PRO Pass)" : "1. Nature of the Digital PRO Pass Service"}</span>
             </h3>
             <p>
@@ -135,12 +135,12 @@ export default async function RefundPage({
           </section>
 
           {/* Section 2: Eligible Cases */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-4">
-            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span className="text-emerald-400">2.</span>
+          <section className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 space-y-4 shadow-sm">
+            <h3 className="text-base sm:text-lg font-bold text-[#061838] flex items-center gap-2">
+              <span className="text-emerald-700">2.</span>
               <span>{isAr ? "الحالات المؤهلة لاسترداد الأموال بنسبة 100%" : isDe ? "2. Berechtigte Gründe für eine vollständige Erstattung" : "2. Cases Eligible for a 100% Full Refund"}</span>
             </h3>
-            <ul className="space-y-2.5 text-xs sm:text-sm list-disc list-inside text-slate-300">
+            <ul className="space-y-2.5 text-xs sm:text-sm list-disc list-inside text-slate-700">
               <li>
                 <strong>{isAr ? "أعطال تقنية مؤكدة:" : isDe ? "Technische Defekte:" : "Confirmed Technical Malfunctions:"}</strong>{" "}
                 {isAr
@@ -169,12 +169,12 @@ export default async function RefundPage({
           </section>
 
           {/* Section 3: Non-eligible Cases */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-4">
-            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span className="text-rose-400">3.</span>
+          <section className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 space-y-4 shadow-sm">
+            <h3 className="text-base sm:text-lg font-bold text-[#061838] flex items-center gap-2">
+              <span className="text-rose-700">3.</span>
               <span>{isAr ? "الحالات غير المؤهلة للاسترداد" : isDe ? "3. Fälle ohne Anspruch auf Rückerstattung" : "3. Non-Refundable Situations"}</span>
             </h3>
-            <ul className="space-y-2.5 text-xs sm:text-sm list-disc list-inside text-slate-300">
+            <ul className="space-y-2.5 text-xs sm:text-sm list-disc list-inside text-slate-700">
               <li>
                 <strong>{isAr ? "عدم الحصول على وظيفة أو تأشيرة:" : isDe ? "Keine Jobzusage oder Visumsablehnung:" : "No Job Offer or Visa Rejection:"}</strong>{" "}
                 {isAr
@@ -203,9 +203,9 @@ export default async function RefundPage({
           </section>
 
           {/* Section 4: How to Request */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
-            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span className="text-blue-400">4.</span>
+          <section className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 space-y-3 shadow-sm">
+            <h3 className="text-base sm:text-lg font-bold text-[#061838] flex items-center gap-2">
+              <span className="text-blue-700">4.</span>
               <span>{isAr ? "إجراءات وخطوات تقديم طلب الاسترداد" : isDe ? "4. Ablauf der Rückerstattung" : "4. How to Request a Refund"}</span>
             </h3>
             <p>
@@ -215,7 +215,7 @@ export default async function RefundPage({
                 ? "Um eine Rückerstattung innerhalb der 14-tägigen Frist zu beantragen, senden Sie bitte eine E-Mail mit folgenden Angaben:"
                 : "To initiate a refund request within the 14-day guarantee window, email our support team with the following details:"}
             </p>
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs sm:text-sm space-y-1.5 font-mono">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs sm:text-sm space-y-1.5 font-mono text-slate-800">
               <p>1. {isAr ? "البريد الإلكتروني المسجل في حساب GermanJobsPro" : "Registered GermanJobsPro Account Email"}</p>
               <p>2. {isAr ? "رقم الطلب أو معرف العملية المستلم في إيصال الدفع" : "Order ID or Transaction Number from your receipt"}</p>
               <p>3. {isAr ? "وصف مختصر للمشكلة التقنية مع لقطة شاشة إن وجدت" : "Brief description of the technical issue encountered (with screenshot if applicable)"}</p>
@@ -223,9 +223,9 @@ export default async function RefundPage({
           </section>
 
           {/* Section 5: Timeline & Method */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
-            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span className="text-blue-400">5.</span>
+          <section className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 space-y-3 shadow-sm">
+            <h3 className="text-base sm:text-lg font-bold text-[#061838] flex items-center gap-2">
+              <span className="text-blue-700">5.</span>
               <span>{isAr ? "المدة الزمنية وطريقة إرجاع الأموال" : isDe ? "5. Bearbeitungszeit & Rückzahlungsmethode" : "5. Processing Timeline & Refund Method"}</span>
             </h3>
             <p>
@@ -238,7 +238,7 @@ export default async function RefundPage({
           </section>
 
           {/* Section 6: Contact */}
-          <section className="p-6 sm:p-8 rounded-3xl bg-blue-950/40 border border-blue-500/20 space-y-3 text-center">
+          <section className="p-6 sm:p-8 rounded-3xl bg-[#061838] text-white space-y-3 text-center shadow-lg">
             <h3 className="text-base sm:text-lg font-bold text-white">
               {isAr ? "مركز الدعم والاستفسارات المالية" : isDe ? "Kontakt für Erstattungen & Abrechnung" : "Billing & Refund Contact"}
             </h3>
@@ -251,7 +251,7 @@ export default async function RefundPage({
             </p>
             <a
               href="mailto:support@germanjobspro.com"
-              className="inline-block px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs font-bold transition-all shadow-md"
+              className="inline-block px-5 py-2.5 rounded-xl bg-[#FACC15] hover:bg-amber-300 text-[#061838] font-mono text-xs font-black transition-all shadow-md"
             >
               support@germanjobspro.com
             </a>

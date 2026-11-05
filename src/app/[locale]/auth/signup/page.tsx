@@ -19,6 +19,22 @@ export default function SignupPage({
   const isDe = locale === "de";
   const dir = isAr ? "rtl" : "ltr";
 
+  const [nextPath, setNextPath] = useState<string>("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const rawNext = new URLSearchParams(window.location.search).get("next");
+      if (rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")) {
+        setNextPath(rawNext);
+      }
+    }
+  }, []);
+
+  const getTargetRedirect = () =>
+    nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
+      ? nextPath
+      : `/${locale}/dashboard`;
+
   // Authenticated redirect guard
   useEffect(() => {
     let isMounted = true;
@@ -28,7 +44,7 @@ export default function SignupPage({
         if (res.ok) {
           const data = await res.json();
           if (data.authenticated && isMounted) {
-            router.replace(`/${locale}/dashboard`);
+            router.replace(getTargetRedirect());
           }
         }
       } catch {
@@ -39,7 +55,7 @@ export default function SignupPage({
     return () => {
       isMounted = false;
     };
-  }, [locale, router]);
+  }, [locale, router, nextPath]);
 
   // Check for OAuth error query param
   useEffect(() => {
@@ -305,8 +321,8 @@ export default function SignupPage({
         return;
       }
 
-      // Success redirect to dashboard
-      window.location.href = `/${locale}/dashboard`;
+      // Success redirect to dashboard or target
+      window.location.href = getTargetRedirect();
     } catch {
       setErrorMessage(
         isAr
@@ -374,25 +390,25 @@ export default function SignupPage({
   };
 
   return (
-    <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between">
+    <div dir={dir} className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between">
       <Navbar locale={locale} />
 
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div className="w-full max-w-md space-y-6 bg-slate-900/90 border border-slate-800/80 p-6 sm:p-8 rounded-3xl shadow-2xl backdrop-blur-xl my-8">
+        <div className="w-full max-w-md space-y-6 bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-lg my-8 text-slate-900">
           
           {/* STEP 1: INITIAL SIGNUP FORM */}
           {step === "signup" && (
             <>
               <div className="text-center space-y-2">
-                <div className="inline-flex p-3 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 mb-2">
+                <div className="inline-flex p-3 rounded-2xl bg-blue-50 border border-blue-200 text-blue-700 mb-2">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
                   </svg>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#061838]">
                   {isAr ? "إنشاء حساب جديد مجاناً" : isDe ? "Kostenloses Konto erstellen" : "Create New Account for Free"}
                 </h1>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-slate-600">
                   {isAr
                     ? "انضم إلى منصة GermanJobsPro وابدأ رحلتك للعمل في ألمانيا"
                     : isDe
@@ -402,16 +418,16 @@ export default function SignupPage({
               </div>
 
               {errorMessage && (
-                <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-sm font-medium text-center">
+                <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm font-medium text-center">
                   {errorMessage}
                 </div>
               )}
 
-              <GoogleAuthButton locale={locale} />
+              <GoogleAuthButton locale={locale} nextPath={nextPath} />
 
               <form onSubmit={handleSignupSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     {isAr ? "الاسم الكامل (اختياري)" : isDe ? "Vollständiger Name (Optional)" : "Full Name (Optional)"}
                   </label>
                   <input
@@ -419,12 +435,12 @@ export default function SignupPage({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder={isAr ? "مثال: أحمد محمد" : isDe ? "z. B. Max Mustermann" : "e.g., John Doe"}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm transition-all"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#061838] text-sm transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     {isAr ? "البريد الإلكتروني" : isDe ? "E-Mail-Adresse" : "Email Address"}
                   </label>
                   <input
@@ -432,13 +448,13 @@ export default function SignupPage({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@example.com"
-                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm dir-ltr transition-all"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#061838] text-sm dir-ltr transition-all"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     {isAr ? "كلمة المرور (8 أحرف على الأقل)" : isDe ? "Passwort (Mind. 8 Zeichen)" : "Password (Min. 8 chars)"}
                   </label>
                   <div className="relative">
@@ -447,7 +463,7 @@ export default function SignupPage({
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full px-4 py-3 ltr:pr-11 rtl:pl-11 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm dir-ltr transition-all"
+                      className="w-full px-4 py-3 ltr:pr-11 rtl:pl-11 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#061838] text-sm dir-ltr transition-all"
                       required
                     />
                     <button
@@ -467,7 +483,7 @@ export default function SignupPage({
                           ? "Passwort anzeigen"
                           : "Show password"
                       }
-                      className="absolute inset-y-0 ltr:right-0 rtl:left-0 flex items-center px-3.5 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none cursor-pointer"
+                      className="absolute inset-y-0 ltr:right-0 rtl:left-0 flex items-center px-3.5 text-slate-400 hover:text-slate-700 transition-colors focus:outline-none cursor-pointer"
                     >
                       {showPassword ? (
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
@@ -484,7 +500,7 @@ export default function SignupPage({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     {isAr ? "تأكيد كلمة المرور" : isDe ? "Passwort bestätigen" : "Confirm Password"}
                   </label>
                   <div className="relative">
@@ -493,7 +509,7 @@ export default function SignupPage({
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full px-4 py-3 ltr:pr-11 rtl:pl-11 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm dir-ltr transition-all"
+                      className="w-full px-4 py-3 ltr:pr-11 rtl:pl-11 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#061838] text-sm dir-ltr transition-all"
                       required
                     />
                     <button
@@ -513,7 +529,7 @@ export default function SignupPage({
                           ? "Passwortbestätigung anzeigen"
                           : "Show confirm password"
                       }
-                      className="absolute inset-y-0 ltr:right-0 rtl:left-0 flex items-center px-3.5 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none cursor-pointer"
+                      className="absolute inset-y-0 ltr:right-0 rtl:left-0 flex items-center px-3.5 text-slate-400 hover:text-slate-700 transition-colors focus:outline-none cursor-pointer"
                     >
                       {showConfirmPassword ? (
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
@@ -532,7 +548,7 @@ export default function SignupPage({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg hover:shadow-blue-500/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 mt-2"
+                  className="w-full py-3.5 rounded-xl bg-[#061838] hover:bg-[#0A2552] text-white font-bold text-sm shadow-md active:scale-95 transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 mt-2"
                 >
                   {loading ? (
                     <span>{isAr ? "جاري المعالجة..." : isDe ? "Wird verarbeitet..." : "Processing..."}</span>
@@ -542,11 +558,11 @@ export default function SignupPage({
                 </button>
               </form>
 
-              <div className="pt-4 border-t border-slate-800 text-center text-xs text-slate-400">
+              <div className="pt-4 border-t border-slate-100 text-center text-xs text-slate-600">
                 <span>{isAr ? "لديك حساب بالفعل؟ " : isDe ? "Bereits ein Konto? " : "Already have an account? "}</span>
                 <Link
-                  href={`/${locale}/auth/login`}
-                  className="font-semibold text-blue-400 hover:underline"
+                  href={`/${locale}/auth/login${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ""}`}
+                  className="font-semibold text-blue-700 hover:underline"
                 >
                   {isAr ? "سجل الدخول هنا" : isDe ? "Hier anmelden" : "Sign in here"}
                 </Link>
@@ -558,27 +574,27 @@ export default function SignupPage({
           {step === "verify" && (
             <>
               <div className="text-center space-y-2">
-                <div className="inline-flex p-3 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 mb-2">
+                <div className="inline-flex p-3 rounded-2xl bg-blue-50 border border-blue-200 text-blue-700 mb-2">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
                   </svg>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#061838]">
                   {isAr ? "تأكيد بريدك الإلكتروني" : isDe ? "E-Mail-Adresse bestätigen" : "Verify Your Email"}
                 </h1>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-slate-600">
                   {isAr
                     ? "أدخل رمز التحقق (OTP) المكون من 6 أرقام الذي أرسلناه إلى:"
                     : isDe
                     ? "Geben Sie den 6-stelligen Bestätigungscode ein, der an folgende Adresse gesendet wurde:"
                     : "Enter the 6-digit code sent to:"}
                 </p>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 text-xs text-blue-400 font-mono">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-xs text-[#061838] font-mono">
                   <span>{email}</span>
                   <button
                     type="button"
                     onClick={() => setStep("signup")}
-                    className="text-slate-400 hover:text-white underline text-[11px]"
+                    className="text-slate-500 hover:text-slate-800 underline text-[11px]"
                   >
                     {isAr ? "تغيير" : isDe ? "Ändern" : "Edit"}
                   </button>
@@ -586,13 +602,13 @@ export default function SignupPage({
               </div>
 
               {successMessage && (
-                <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-medium text-center">
+                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium text-center">
                   {successMessage}
                 </div>
               )}
 
               {errorMessage && (
-                <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-medium text-center">
+                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium text-center">
                   {errorMessage}
                 </div>
               )}
@@ -612,7 +628,7 @@ export default function SignupPage({
                       value={digit}
                       onChange={(e) => handleOtpChange(idx, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                      className="w-11 h-14 sm:w-13 sm:h-16 text-center text-xl sm:text-2xl font-bold font-mono bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all shadow-inner"
+                      className="w-11 h-14 sm:w-13 sm:h-16 text-center text-xl sm:text-2xl font-bold font-mono bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:bg-white focus:border-[#061838] focus:ring-2 focus:ring-[#061838]/20 transition-all shadow-inner"
                       required
                     />
                   ))}
@@ -621,7 +637,7 @@ export default function SignupPage({
                 <button
                   type="submit"
                   disabled={loading || otpDigits.some((d) => !d)}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg hover:shadow-blue-500/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full py-3.5 rounded-xl bg-[#061838] hover:bg-[#0A2552] text-white font-bold text-sm shadow-md active:scale-95 transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <span>{isAr ? "جاري التحقق..." : isDe ? "Überprüfung..." : "Verifying..."}</span>
@@ -633,7 +649,7 @@ export default function SignupPage({
 
               {/* Resend Code Section */}
               <div className="pt-2 text-center text-xs space-y-2">
-                <p className="text-slate-400">
+                <p className="text-slate-600">
                   {isAr ? "لم يصلك الرمز؟ " : isDe ? "Code nicht erhalten? " : "Didn't receive the code? "}
                   {countdown > 0 ? (
                     <span className="text-slate-500 font-mono">
@@ -648,7 +664,7 @@ export default function SignupPage({
                       type="button"
                       disabled={resending}
                       onClick={handleResendCode}
-                      className="font-semibold text-blue-400 hover:underline cursor-pointer disabled:opacity-50"
+                      className="font-semibold text-blue-700 hover:underline cursor-pointer disabled:opacity-50"
                     >
                       {resending
                         ? isAr
@@ -669,7 +685,7 @@ export default function SignupPage({
                   <button
                     type="button"
                     onClick={() => setStep("signup")}
-                    className="text-slate-400 hover:text-white text-xs underline"
+                    className="text-slate-500 hover:text-slate-800 text-xs underline"
                   >
                     {isAr ? "← العودة إلى صفحة التسجيل" : isDe ? "← Zurück zur Registrierung" : "← Back to signup"}
                   </button>

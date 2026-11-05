@@ -322,7 +322,7 @@ export default async function JobDetailPage({
   return (
     <div
       dir={dir}
-      className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white"
+      className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white"
     >
       <script
         type="application/ld+json"
@@ -335,16 +335,16 @@ export default async function JobDetailPage({
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 w-full flex-1 space-y-8">
         {/* Breadcrumb Navigation */}
-        <div className="flex items-center gap-2 text-xs text-slate-400 font-medium flex-wrap">
-          <Link href={`/${locale}`} className="hover:text-blue-400 transition-colors">
+        <div className="flex items-center gap-2 text-xs text-slate-500 font-medium flex-wrap">
+          <Link href={`/${locale}`} className="hover:text-blue-600 transition-colors">
             {isAr ? "الرئيسية" : isDe ? "Startseite" : "Home"}
           </Link>
           <span>/</span>
-          <Link href={`/${locale}/jobs`} className="hover:text-blue-400 transition-colors">
+          <Link href={`/${locale}/jobs`} className="hover:text-blue-600 transition-colors">
             {isAr ? "فرص العمل في ألمانيا" : isDe ? "Jobs" : "Jobs"}
           </Link>
           <span>/</span>
-          <span className="text-slate-200 truncate max-w-xs font-semibold" dir="auto">
+          <span className="text-[#061838] truncate max-w-xs font-semibold" dir="auto">
             {jobData.title}
           </span>
         </div>
@@ -358,9 +358,9 @@ export default async function JobDetailPage({
 
         {/* Similar Jobs in the Same Field */}
         {safeSimilarJobs.length > 0 && (
-          <section className="space-y-4 pt-6 border-t border-slate-800/80">
+          <section className="space-y-4 pt-6 border-t border-slate-200">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+              <h2 className="text-xl sm:text-2xl font-black text-[#061838] flex items-center gap-2">
                 <span>💼</span>
                 <span>
                   {isAr
@@ -372,7 +372,7 @@ export default async function JobDetailPage({
               </h2>
               <Link
                 href={`/${locale}/jobs`}
-                className="text-xs text-blue-400 hover:text-blue-300 font-bold flex items-center gap-1"
+                className="text-xs text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1"
               >
                 <span>{isAr ? "عرض جميع الوظائف" : isDe ? "Alle Jobs ansehen" : "View all jobs"}</span>
                 <span className={dir === "rtl" ? "rotate-180" : ""}>→</span>
@@ -386,15 +386,15 @@ export default async function JobDetailPage({
                   <Link
                     key={relJob.id}
                     href={`/${locale}/jobs/${relJob.id}`}
-                    className="group bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-3xl p-5 space-y-4 shadow-xl transition-all flex flex-col justify-between"
+                    className="group bg-white hover:bg-slate-50 border border-slate-200 hover:border-blue-400 rounded-3xl p-5 space-y-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between text-slate-900"
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
+                        <span className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold">
                           {relJob.category}
                         </span>
                         {relJob.salary && (
-                          <span className="px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[11px] font-medium">
+                          <span className="px-2 py-0.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-medium">
                             💰 {relJob.salary}
                           </span>
                         )}
@@ -402,35 +402,35 @@ export default async function JobDetailPage({
 
                       <div>
                         <h3
-                          className="font-extrabold text-white text-base leading-snug group-hover:text-blue-400 transition-colors line-clamp-2 text-start"
+                          className="font-extrabold text-[#061838] text-base leading-snug group-hover:text-blue-600 transition-colors line-clamp-2 text-start"
                           dir="auto"
                         >
                           <span>{primaryTitle}</span>
                           {latinSubtitle && (
                             <span
                               dir="ltr"
-                              className="block mt-1 font-normal text-xs text-slate-400 dir-ltr text-left [direction:ltr] [unicode-bidi:isolate]"
+                              className="block mt-1 font-normal text-xs text-slate-500 dir-ltr text-left [direction:ltr] [unicode-bidi:isolate]"
                             >
                               {latinSubtitle}
                             </span>
                           )}
                         </h3>
-                        <p className="text-xs text-slate-400 mt-1" dir="auto">
+                        <p className="text-xs text-slate-600 mt-1" dir="auto">
                           🏢 {relJob.company}
                         </p>
                       </div>
 
                       <div className="flex items-center gap-2 flex-wrap text-xs pt-1">
-                        <span className="px-2 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 font-medium">
+                        <span className="px-2 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 font-medium">
                           📍 {relJob.city || (isAr ? "ألمانيا" : isDe ? "Deutschland" : "Germany")}
                         </span>
-                        <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium">
+                        <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-medium">
                           🇩🇪 {relJob.languageReq || "B1/B2"}
                         </span>
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-bold text-blue-400 group-hover:text-blue-300">
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-blue-600 group-hover:text-blue-700">
                       <span>{isAr ? "عرض التفاصيل والتقديم" : isDe ? "Details ansehen" : "View Details"}</span>
                       <span className={dir === "rtl" ? "rotate-180" : ""}>→</span>
                     </div>

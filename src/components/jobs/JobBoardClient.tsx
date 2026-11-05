@@ -183,16 +183,16 @@ export default function JobBoardClient({
   return (
     <div className="space-y-8" dir={dir}>
       {/* Search & Header Section */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl backdrop-blur-md">
+      <div className="bg-[#061838] border border-[#0A2552] rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl text-white">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-bold">
             <span>🇩🇪</span>
             <span>{dict.jobs.marketBadge}</span>
           </div>
           <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
             {dict.jobs.title}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
             {dict.jobs.subtitle}
           </p>
         </div>
@@ -205,16 +205,16 @@ export default function JobBoardClient({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={dict.jobs.searchPlaceholder}
-              className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-white text-sm placeholder:text-slate-500 focus:border-blue-500 focus:outline-hidden transition-all shadow-inner"
+              className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white border border-slate-200 text-slate-900 text-sm placeholder:text-slate-400 focus:border-blue-500 focus:outline-hidden transition-all shadow-xs"
             />
-            <span className="absolute left-4 top-4 text-slate-500 text-base">🔍</span>
+            <span className="absolute left-4 top-4 text-slate-400 text-base">🔍</span>
           </div>
 
           <div className="sm:col-span-1 md:col-span-3">
             <select
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="w-full px-4 py-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden transition-all cursor-pointer"
+              className="w-full px-4 py-3.5 rounded-2xl bg-white border border-slate-200 text-slate-900 text-sm focus:border-blue-500 focus:outline-hidden transition-all cursor-pointer shadow-xs"
             >
               {topGermanCities.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -228,7 +228,7 @@ export default function JobBoardClient({
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="w-full px-4 py-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden transition-all cursor-pointer"
+              className="w-full px-4 py-3.5 rounded-2xl bg-white border border-slate-200 text-slate-900 text-sm focus:border-blue-500 focus:outline-hidden transition-all cursor-pointer shadow-xs"
             >
               {languages.map((l) => (
                 <option key={l.id} value={l.id}>
@@ -240,14 +240,14 @@ export default function JobBoardClient({
         </div>
 
         {/* Category Pills & Direct Email Toggle */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none flex-wrap sm:flex-nowrap">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-none flex-nowrap snap-x">
           <button
             type="button"
             onClick={() => setDirectEmailOnly((prev) => !prev)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer shrink-0 snap-start ${
               directEmailOnly
                 ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/25 ring-2 ring-emerald-400/50"
-                : "bg-slate-950 hover:bg-slate-800 text-emerald-400 border border-emerald-500/30"
+                : "bg-[#0A2552] hover:bg-[#0E3572] text-emerald-300 border border-emerald-500/30"
             }`}
           >
             <span>✉️</span>
@@ -263,7 +263,7 @@ export default function JobBoardClient({
             )}
           </button>
 
-          <div className="h-5 w-px bg-slate-800 hidden sm:block shrink-0" />
+          <div className="h-5 w-px bg-white/10 hidden sm:block shrink-0" />
 
           {categories.map((cat) => {
             const active = category === cat.id;
@@ -272,10 +272,10 @@ export default function JobBoardClient({
                 key={cat.id}
                 type="button"
                 onClick={() => setCategory(cat.id)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer shrink-0 snap-start ${
                   active
                     ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
-                    : "bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800/80"
+                    : "bg-[#0A2552] hover:bg-[#0E3572] text-slate-200 border border-white/10"
                 }`}
               >
                 <span>{cat.icon}</span>
@@ -287,11 +287,11 @@ export default function JobBoardClient({
       </div>
 
       {/* Results Header */}
-      <div className="flex items-center justify-between text-xs text-slate-400 px-1">
+      <div className="flex items-center justify-between text-xs text-slate-600 px-1">
         <div>
           {isPending ? (
-            <span className="text-blue-400 flex items-center gap-1.5">
-              <svg className="animate-spin h-3.5 w-3.5 text-blue-400" viewBox="0 0 24 24">
+            <span className="text-blue-600 flex items-center gap-1.5">
+              <svg className="animate-spin h-3.5 w-3.5 text-blue-600" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
@@ -311,15 +311,15 @@ export default function JobBoardClient({
 
       {/* Jobs Listing */}
       {jobs.length === 0 ? (
-        <div className="text-center py-20 px-4 rounded-3xl bg-slate-900/60 border border-dashed border-slate-800 space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-slate-800/80 text-slate-400 flex items-center justify-center mx-auto text-2xl">
+        <div className="text-center py-20 px-4 rounded-3xl bg-white border border-dashed border-slate-300 space-y-4 shadow-sm">
+          <div className="w-16 h-16 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center mx-auto text-2xl">
             💼
           </div>
           <div className="space-y-1">
-            <h3 className="text-lg font-bold text-white">
+            <h3 className="text-lg font-bold text-[#061838]">
               {dict.jobs.noJobsFound}
             </h3>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            <p className="text-xs text-slate-600 max-w-sm mx-auto">
               {dict.jobs.noJobsDesc}
             </p>
           </div>
@@ -332,7 +332,7 @@ export default function JobBoardClient({
               setCity("all");
               setDirectEmailOnly(false);
             }}
-            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer border border-slate-200"
           >
             {dict.jobs.resetFilters}
           </button>
@@ -349,16 +349,16 @@ export default function JobBoardClient({
             return (
               <div
                 key={job.id}
-                className="bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-3xl p-6 space-y-5 shadow-xl hover:shadow-2xl transition-all flex flex-col justify-between"
+                className="bg-white border border-slate-200 hover:border-blue-400 rounded-3xl p-6 space-y-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
+                      <span className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold">
                         {job.category}
                       </span>
                       {hasDirectEmail ? (
-                        <span className="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-1">
+                        <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-1">
                           <span>✉️</span>
                           <span>
                             {isAr
@@ -369,7 +369,7 @@ export default function JobBoardClient({
                           </span>
                         </span>
                       ) : (
-                        <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-300 text-xs font-medium flex items-center gap-1">
+                        <span className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-600 text-xs font-medium flex items-center gap-1">
                           <span>🌐</span>
                           <span>
                             {isAr
@@ -386,13 +386,13 @@ export default function JobBoardClient({
 
                   <div dir="auto" className="text-start">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 dir="auto" className="font-extrabold text-white text-base leading-snug hover:text-blue-400 transition-colors text-start flex-1">
+                      <h3 dir="auto" className="font-extrabold text-[#061838] text-base leading-snug hover:text-blue-600 transition-colors text-start flex-1">
                         <Link href={`/${activeLocale}/jobs/${job.id}`} className="block text-start" dir="auto">
                           <span>{primaryTitle}</span>
                           {latinSubtitle && (
                             <span
                               dir="ltr"
-                              className="block mt-1.5 font-medium text-xs text-slate-400 dir-ltr text-left [direction:ltr] [unicode-bidi:isolate]"
+                              className="block mt-1.5 font-medium text-xs text-slate-500 dir-ltr text-left [direction:ltr] [unicode-bidi:isolate]"
                             >
                               {latinSubtitle}
                             </span>
@@ -405,31 +405,31 @@ export default function JobBoardClient({
                         variant="blue"
                       />
                     </div>
-                    <p dir="auto" className="text-xs text-slate-400 mt-1.5 text-start">🏢 {job.company}</p>
+                    <p dir="auto" className="text-xs text-slate-600 mt-1.5 text-start">🏢 {job.company}</p>
                   </div>
 
                 <div className="flex items-center gap-2 flex-wrap text-xs">
-                  <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 font-medium">
+                  <span className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 font-medium">
                     📍 {job.city || dict.jobs.details.germany}
                   </span>
-                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium">
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-medium">
                     🇩🇪 {job.languageReq || "B1/B2"}
                   </span>
                   {job.salary && (
-                    <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 font-medium">
+                    <span className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 font-medium">
                       💰 {job.salary}
                     </span>
                   )}
                 </div>
 
                 {job.descriptionRaw && (
-                  <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed text-start" dir="auto">
+                  <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed text-start" dir="auto">
                     {stripHtml(job.descriptionRaw)}
                   </p>
                 )}
               </div>
 
-              <div className="pt-4 border-t border-slate-800/80 space-y-2">
+              <div className="pt-4 border-t border-slate-100 space-y-2">
                 <Link
                   href={`/${activeLocale}/jobs/${job.id}`}
                   className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs text-center transition-all shadow-md shadow-blue-600/20 flex items-center justify-center gap-1 cursor-pointer"
@@ -445,7 +445,7 @@ export default function JobBoardClient({
                     )}&companyName=${encodeURIComponent(
                       job.company
                     )}&jobDescription=${encodeURIComponent(job.requirements || job.descriptionRaw || "")}`}
-                    className="py-2 px-3 rounded-xl bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/20 font-bold text-xs text-center transition-all flex items-center justify-center gap-1"
+                    className="py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200 font-bold text-xs text-center transition-all flex items-center justify-center gap-1"
                   >
                     <span>{dict.jobs.generateAnschreiben}</span>
                   </Link>
@@ -454,7 +454,7 @@ export default function JobBoardClient({
                     href={`/${activeLocale}/dashboard/ats-analyzer?jobDescription=${encodeURIComponent(
                       job.requirements || job.descriptionRaw || ""
                     )}`}
-                    className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs text-center transition-all flex items-center justify-center gap-1"
+                    className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs text-center transition-all flex items-center justify-center gap-1 border border-slate-200"
                   >
                     <span>🔍</span>
                     <span>{dict.jobs.auditAts}</span>
@@ -474,7 +474,7 @@ export default function JobBoardClient({
             type="button"
             onClick={() => handlePageChange(page - 1)}
             disabled={page <= 1}
-            className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white disabled:opacity-30 text-xs font-bold transition-all cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-30 text-xs font-bold transition-all cursor-pointer shadow-sm"
           >
             {dict.jobs.previous}
           </button>
@@ -489,8 +489,8 @@ export default function JobBoardClient({
                   onClick={() => handlePageChange(p)}
                   className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     page === p
-                      ? "bg-blue-600 text-white"
-                      : "bg-slate-900 text-slate-400 hover:text-white border border-slate-800"
+                      ? "bg-[#061838] text-white shadow-sm"
+                      : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 shadow-xs"
                   }`}
                 >
                   {p}
@@ -503,7 +503,7 @@ export default function JobBoardClient({
             type="button"
             onClick={() => handlePageChange(page + 1)}
             disabled={page >= totalPages}
-            className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white disabled:opacity-30 text-xs font-bold transition-all cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-30 text-xs font-bold transition-all cursor-pointer shadow-sm"
           >
             {dict.jobs.next}
           </button>

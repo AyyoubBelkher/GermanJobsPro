@@ -25,6 +25,21 @@ export default function LoginPage({
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [unverifiedEmail, setUnverifiedEmail] = useState("");
+  const [nextPath, setNextPath] = useState<string>("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const rawNext = new URLSearchParams(window.location.search).get("next");
+      if (rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")) {
+        setNextPath(rawNext);
+      }
+    }
+  }, []);
+
+  const getTargetRedirect = () =>
+    nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
+      ? nextPath
+      : `/${locale}/dashboard`;
 
   // Authenticated redirect guard
   useEffect(() => {
@@ -35,7 +50,7 @@ export default function LoginPage({
         if (res.ok) {
           const data = await res.json();
           if (data.authenticated && isMounted) {
-            router.replace(`/${locale}/dashboard`);
+            router.replace(getTargetRedirect());
           }
         }
       } catch {
@@ -46,7 +61,7 @@ export default function LoginPage({
     return () => {
       isMounted = false;
     };
-  }, [locale, router]);
+  }, [locale, router, nextPath]);
 
   // Check for OAuth error query param
   useEffect(() => {
@@ -127,7 +142,7 @@ export default function LoginPage({
         return;
       }
 
-      window.location.href = `/${locale}/dashboard`;
+      window.location.href = getTargetRedirect();
     } catch {
       setErrorMessage(
         isAr
@@ -141,21 +156,21 @@ export default function LoginPage({
   };
 
   return (
-    <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between">
+    <div dir={dir} className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between">
       <Navbar locale={locale} />
 
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div className="w-full max-w-md space-y-8 bg-slate-900/90 border border-slate-800/80 p-6 sm:p-8 rounded-3xl shadow-2xl backdrop-blur-xl my-8">
+        <div className="w-full max-w-md space-y-8 bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-lg my-8 text-slate-900">
           <div className="text-center space-y-2">
-            <div className="inline-flex p-3 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 mb-2">
+            <div className="inline-flex p-3 rounded-2xl bg-blue-50 border border-blue-200 text-blue-700 mb-2">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
               </svg>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#061838]">
               {isAr ? "تسجيل الدخول إلى حسابك" : isDe ? "Bei Ihrem Konto anmelden" : "Sign In to Your Account"}
             </h1>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-600">
               {isAr
                 ? "مرحباً بك مجدداً في منصة GermanJobsPro"
                 : isDe
@@ -165,13 +180,13 @@ export default function LoginPage({
           </div>
 
           {errorMessage && (
-            <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-sm font-medium text-center space-y-2">
+            <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm font-medium text-center space-y-2">
               <p>{errorMessage}</p>
               {unverifiedEmail && (
                 <div>
                   <Link
-                    href={`/${locale}/auth/signup`}
-                    className="inline-block mt-1 px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 text-xs font-bold transition-all underline"
+                    href={`/${locale}/auth/signup${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ""}`}
+                    className="inline-block mt-1 px-3 py-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-bold transition-all underline"
                   >
                     {isAr ? "تأكيد بريدك الإلكتروني الآن ←" : isDe ? "E-Mail jetzt bestätigen ←" : "Verify Email Now ←"}
                   </Link>
@@ -180,11 +195,11 @@ export default function LoginPage({
             </div>
           )}
 
-          <GoogleAuthButton locale={locale} />
+          <GoogleAuthButton locale={locale} nextPath={nextPath} />
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 {isAr ? "البريد الإلكتروني" : isDe ? "E-Mail-Adresse" : "Email Address"}
               </label>
               <input
@@ -195,19 +210,19 @@ export default function LoginPage({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
-                className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm dir-ltr transition-all"
+                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#061838] text-sm dir-ltr transition-all"
                 required
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-slate-300">
+                <label className="block text-xs font-semibold text-slate-700">
                   {isAr ? "كلمة المرور" : isDe ? "Passwort" : "Password"}
                 </label>
                 <Link
                   href={`/${locale}/auth/forgot-password`}
-                  className="text-xs text-blue-400 hover:text-blue-300 hover:underline"
+                  className="text-xs text-blue-700 hover:text-blue-900 hover:underline font-medium"
                 >
                   {isAr ? "نسيت كلمة المرور؟" : isDe ? "Passwort vergessen?" : "Forgot password?"}
                 </Link>
@@ -221,7 +236,7 @@ export default function LoginPage({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full px-4 py-3 ltr:pr-11 rtl:pl-11 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm dir-ltr transition-all"
+                  className="w-full px-4 py-3 ltr:pr-11 rtl:pl-11 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#061838] text-sm dir-ltr transition-all"
                   required
                 />
                 <button
@@ -241,7 +256,7 @@ export default function LoginPage({
                       ? "Passwort anzeigen"
                       : "Show password"
                   }
-                  className="absolute inset-y-0 ltr:right-0 rtl:left-0 flex items-center px-3.5 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none cursor-pointer"
+                  className="absolute inset-y-0 ltr:right-0 rtl:left-0 flex items-center px-3.5 text-slate-400 hover:text-slate-700 transition-colors focus:outline-none cursor-pointer"
                 >
                   {showPassword ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
@@ -260,7 +275,7 @@ export default function LoginPage({
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg hover:shadow-blue-500/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 mt-2"
+              className="w-full py-3.5 rounded-xl bg-[#061838] hover:bg-[#0A2552] text-white font-bold text-sm shadow-md active:scale-95 transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 mt-2"
             >
               {loading ? (
                 <span>{isAr ? "جاري تسجيل الدخول..." : isDe ? "Wird angemeldet..." : "Signing In..."}</span>
@@ -270,11 +285,11 @@ export default function LoginPage({
             </button>
           </form>
 
-          <div className="pt-4 border-t border-slate-800 text-center text-xs text-slate-400">
+          <div className="pt-4 border-t border-slate-100 text-center text-xs text-slate-600">
             <span>{isAr ? "ليس لديك حساب بعد؟ " : isDe ? "Noch kein Konto? " : "Don't have an account yet? "}</span>
             <Link
-              href={`/${locale}/auth/signup`}
-              className="font-semibold text-blue-400 hover:underline"
+              href={`/${locale}/auth/signup${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ""}`}
+              className="font-semibold text-blue-700 hover:underline"
             >
               {isAr ? "أنشئ حساباً جديداً مجاناً" : isDe ? "Kostenlos registrieren" : "Create a new account for free"}
             </Link>

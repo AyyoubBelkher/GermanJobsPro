@@ -439,7 +439,7 @@ export default async function BlogPage({
   };
 
   return (
-    <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+    <div dir={dir} className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
       <Navbar locale={locale} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full flex-1">
@@ -447,17 +447,17 @@ export default async function BlogPage({
           <>
             {/* Header section */}
             <header className="text-center mb-12 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 text-xs font-bold uppercase tracking-wider shadow-xs">
                 <span>📚</span>
                 <span>{isAr ? "المقالات والدليل الإرشادي" : isDe ? "Ratgeber & Wissen" : "Guides & Articles"}</span>
               </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-sky-300 to-blue-200 bg-clip-text text-transparent">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#061838]">
                 {ui.title}
               </h1>
-              <p className="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
                 {ui.subtitle}
               </p>
-              <div className="h-1 w-20 bg-gradient-to-r from-blue-500 to-blue-400 mx-auto rounded-full" />
+              <div className="h-1 w-20 bg-gradient-to-r from-blue-600 to-amber-400 mx-auto rounded-full" />
             </header>
 
             {/* Category Filter Tabs with Platform Track Switcher */}
@@ -477,7 +477,7 @@ export default async function BlogPage({
             />
 
             {/* German A1 Course Hub Banner & Student Sorting Toggle */}
-            <div className="mb-10 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-blue-950/70 to-slate-900 border border-blue-500/30 shadow-2xl backdrop-blur-xl">
+            <div className="mb-10 p-6 sm:p-8 rounded-3xl bg-[#061838] border border-[#0A2552] shadow-xl text-white">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div className="space-y-3">
                 <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold border border-blue-400/30">
@@ -494,11 +494,11 @@ export default async function BlogPage({
                     <span>📚</span>
                     <span>{totalPosts} {ui.lessonCountText}</span>
                   </span>
-                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-slate-300">
+                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0A2552] border border-white/10 text-slate-200">
                     <span>🎯</span>
                     <span>Goethe-Zertifikat A1</span>
                   </span>
-                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-slate-300">
+                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0A2552] border border-white/10 text-slate-200">
                     <span>🆓</span>
                     <span>100% Free & Open</span>
                   </span>
@@ -506,18 +506,18 @@ export default async function BlogPage({
               </div>
 
               {/* Student Sorting Toggle */}
-              <div className="shrink-0 flex flex-col sm:flex-row items-start sm:items-center gap-2.5 bg-slate-950/90 p-2 rounded-2xl border border-slate-800 shadow-inner">
-                <span className="text-xs text-slate-400 font-bold px-2 whitespace-nowrap">
+              <div className="shrink-0 flex flex-col sm:flex-row items-start sm:items-center gap-2.5 bg-[#0A2552] p-2 rounded-2xl border border-white/10 shadow-inner">
+                <span className="text-xs text-slate-300 font-bold px-2 whitespace-nowrap">
                   {ui.sortLabel}
                 </span>
-                <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+                <div className="flex items-center gap-1 bg-[#061838] p-1 rounded-xl border border-white/10">
                   <Link
                     href={`/${locale}/blog?category=German+A1&sort=sequence`}
                     scroll={false}
                     className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
                       sortMode === "sequence"
                         ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
-                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                        : "text-slate-300 hover:text-white hover:bg-white/10"
                     }`}
                   >
                     <span>🚀</span>
@@ -529,7 +529,7 @@ export default async function BlogPage({
                     className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
                       sortMode === "chronological"
                         ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
-                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                        : "text-slate-300 hover:text-white hover:bg-white/10"
                     }`}
                   >
                     <span>⏱️</span>
@@ -544,16 +544,16 @@ export default async function BlogPage({
 
         {/* Posts grid / Empty State */}
         {posts.length === 0 ? (
-          <div className="text-center py-16 px-6 max-w-2xl mx-auto bg-slate-900/60 rounded-3xl border border-slate-800 space-y-6 shadow-2xl backdrop-blur-md">
-            <div className="w-20 h-20 rounded-3xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center mx-auto text-4xl shadow-inner">
+          <div className="text-center py-16 px-6 max-w-2xl mx-auto bg-white rounded-3xl border border-slate-200 space-y-6 shadow-sm">
+            <div className="w-20 h-20 rounded-3xl bg-slate-100 border border-slate-200 text-[#061838] flex items-center justify-center mx-auto text-4xl shadow-inner">
               {isGermanA1Selected ? "🇩🇪" : "🔍"}
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-white tracking-tight">
+              <h2 className="text-2xl font-bold text-[#061838] tracking-tight">
                 {isGermanA1Selected ? ui.noGermanA1Title : ui.noPosts}
               </h2>
-              <p className="text-sm text-slate-400 leading-relaxed max-w-lg mx-auto">
+              <p className="text-sm text-slate-600 leading-relaxed max-w-lg mx-auto">
                 {isGermanA1Selected ? ui.noGermanA1Desc : ui.noPostsDesc}
               </p>
             </div>
@@ -618,29 +618,29 @@ export default async function BlogPage({
                 {page > 1 ? (
                   <Link
                     href={buildPageUrl(page - 1)}
-                    className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-bold transition-all border border-slate-800 shadow-sm"
+                    className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-slate-200 shadow-sm"
                   >
                     {ui.previous}
                   </Link>
                 ) : (
-                  <span className="px-4 py-2.5 rounded-xl bg-slate-950 text-slate-600 text-xs font-bold cursor-not-allowed border border-slate-900">
+                  <span className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-400 text-xs font-bold cursor-not-allowed border border-slate-200">
                     {ui.previous}
                   </span>
                 )}
 
-                <div className="px-4 py-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-300 font-mono font-bold">
+                <div className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-700 font-mono font-bold shadow-xs">
                   {ui.page} {page} {ui.of} {totalPages}
                 </div>
 
                 {page < totalPages ? (
                   <Link
                     href={buildPageUrl(page + 1)}
-                    className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-bold transition-all border border-slate-800 shadow-sm"
+                    className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-slate-200 shadow-sm"
                   >
                     {ui.next}
                   </Link>
                 ) : (
-                  <span className="px-4 py-2.5 rounded-xl bg-slate-950 text-slate-600 text-xs font-bold cursor-not-allowed border border-slate-900">
+                  <span className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-400 text-xs font-bold cursor-not-allowed border border-slate-200">
                     {ui.next}
                   </span>
                 )}

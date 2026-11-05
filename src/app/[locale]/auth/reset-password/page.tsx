@@ -111,7 +111,7 @@ function ResetPasswordForm({ locale }: { locale: string }) {
   if (!token && !success) {
     return (
       <div className="space-y-5 text-center">
-        <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-sm">
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm">
           {isAr
             ? "رابط إعادة تعيين كلمة المرور غير صالح أو مفقود."
             : isDe
@@ -120,7 +120,7 @@ function ResetPasswordForm({ locale }: { locale: string }) {
         </div>
         <Link
           href={`/${locale}/auth/forgot-password`}
-          className="inline-block px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all"
+          className="inline-block px-5 py-3 rounded-xl bg-[#061838] hover:bg-[#0A2552] text-white text-sm font-bold transition-all shadow-md"
         >
           {isAr ? "طلب رابط جديد ✉️" : isDe ? "Neuen Link anfordern ✉️" : "Request a new link ✉️"}
         </Link>
@@ -131,14 +131,14 @@ function ResetPasswordForm({ locale }: { locale: string }) {
   if (success) {
     return (
       <div className="space-y-5 text-center animate-fadeIn">
-        <div className="p-5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-200 text-sm space-y-2">
-          <div className="flex items-center justify-center gap-2 font-bold text-emerald-300">
+        <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm space-y-2">
+          <div className="flex items-center justify-center gap-2 font-bold text-emerald-800">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
             </svg>
             <span>{isAr ? "تم تغيير كلمة المرور بنجاح!" : isDe ? "Passwort erfolgreich geändert!" : "Password reset successfully!"}</span>
           </div>
-          <p className="text-xs text-emerald-300/90">
+          <p className="text-xs text-emerald-700">
             {isAr
               ? "سيتم تحويلك إلى صفحة تسجيل الدخول خلال لحظات..."
               : isDe
@@ -148,7 +148,7 @@ function ResetPasswordForm({ locale }: { locale: string }) {
         </div>
         <Link
           href={`/${locale}/auth/login`}
-          className="w-full inline-block py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all"
+          className="w-full inline-block py-3.5 rounded-xl bg-[#061838] hover:bg-[#0A2552] text-white font-bold text-sm transition-all shadow-md"
         >
           {isAr ? "تسجيل الدخول الآن 🚀" : isDe ? "Jetzt anmelden 🚀" : "Sign In Now 🚀"}
         </Link>
@@ -159,20 +159,20 @@ function ResetPasswordForm({ locale }: { locale: string }) {
   return (
     <>
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-sm font-medium text-center">
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm font-medium text-center">
           {errorMessage}
         </div>
       )}
 
       {email && (
-        <div className="text-center text-xs text-slate-400 bg-slate-800/50 py-1.5 px-3 rounded-lg font-mono">
+        <div className="text-center text-xs text-slate-700 bg-slate-100 border border-slate-200 py-1.5 px-3 rounded-lg font-mono">
           {email}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
             {isAr ? "كلمة المرور الجديدة (8 أحرف على الأقل)" : isDe ? "Neues Passwort (Mind. 8 Zeichen)" : "New Password (Min. 8 chars)"}
           </label>
           <div className="relative">
@@ -181,7 +181,7 @@ function ResetPasswordForm({ locale }: { locale: string }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-3 ltr:pr-11 rtl:pl-11 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm dir-ltr transition-all"
+              className="w-full px-4 py-3 ltr:pr-11 rtl:pl-11 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#061838] text-sm dir-ltr transition-all"
               required
             />
             <button
@@ -201,7 +201,7 @@ function ResetPasswordForm({ locale }: { locale: string }) {
                   ? "Passwort anzeigen"
                   : "Show password"
               }
-              className="absolute inset-y-0 ltr:right-0 rtl:left-0 flex items-center px-3.5 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none cursor-pointer"
+              className="absolute inset-y-0 ltr:right-0 rtl:left-0 flex items-center px-3.5 text-slate-400 hover:text-slate-700 transition-colors focus:outline-none cursor-pointer"
             >
               {showPassword ? (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
@@ -218,7 +218,7 @@ function ResetPasswordForm({ locale }: { locale: string }) {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
             {isAr ? "تأكيد كلمة المرور الجديدة" : isDe ? "Neues Passwort bestätigen" : "Confirm New Password"}
           </label>
           <div className="relative">
@@ -227,7 +227,7 @@ function ResetPasswordForm({ locale }: { locale: string }) {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-3 ltr:pr-11 rtl:pl-11 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm dir-ltr transition-all"
+              className="w-full px-4 py-3 ltr:pr-11 rtl:pl-11 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#061838] text-sm dir-ltr transition-all"
               required
             />
             <button
@@ -247,7 +247,7 @@ function ResetPasswordForm({ locale }: { locale: string }) {
                   ? "Passwortbestätigung anzeigen"
                   : "Show confirm password"
               }
-              className="absolute inset-y-0 ltr:right-0 rtl:left-0 flex items-center px-3.5 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none cursor-pointer"
+              className="absolute inset-y-0 ltr:right-0 rtl:left-0 flex items-center px-3.5 text-slate-400 hover:text-slate-700 transition-colors focus:outline-none cursor-pointer"
             >
               {showConfirmPassword ? (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
@@ -266,7 +266,7 @@ function ResetPasswordForm({ locale }: { locale: string }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg hover:shadow-blue-500/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 mt-2"
+          className="w-full py-3.5 rounded-xl bg-[#061838] hover:bg-[#0A2552] text-white font-bold text-sm shadow-md active:scale-95 transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 mt-2"
         >
           {loading ? (
             <span>{isAr ? "جاري الحفظ..." : isDe ? "Wird gespeichert..." : "Saving..."}</span>
@@ -291,21 +291,21 @@ export default function ResetPasswordPage({
   const dir = isAr ? "rtl" : "ltr";
 
   return (
-    <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between">
+    <div dir={dir} className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between">
       <Navbar locale={locale} />
 
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div className="w-full max-w-md space-y-6 bg-slate-900/90 border border-slate-800/80 p-6 sm:p-8 rounded-3xl shadow-2xl backdrop-blur-xl my-8">
+        <div className="w-full max-w-md space-y-6 bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-lg my-8 text-slate-900">
           <div className="text-center space-y-2">
-            <div className="inline-flex p-3 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 mb-2">
+            <div className="inline-flex p-3 rounded-2xl bg-blue-50 border border-blue-200 text-blue-700 mb-2">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
               </svg>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#061838]">
               {isAr ? "تعيين كلمة مرور جديدة" : isDe ? "Neues Passwort festlegen" : "Set New Password"}
             </h1>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-600">
               {isAr
                 ? "أدخل كلمة المرور الجديدة لحسابك لتأكيد التغيير"
                 : isDe
@@ -314,7 +314,7 @@ export default function ResetPasswordPage({
             </p>
           </div>
 
-          <Suspense fallback={<div className="text-center text-sm text-slate-400 py-8">Loading...</div>}>
+          <Suspense fallback={<div className="text-center text-sm text-slate-600 py-8">Loading...</div>}>
             <ResetPasswordForm locale={locale} />
           </Suspense>
         </div>

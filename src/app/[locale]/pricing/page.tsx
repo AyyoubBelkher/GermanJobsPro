@@ -18,10 +18,10 @@ export async function generateMetadata({
 
   return {
     title: isAr
-      ? "الأسعار وباقات الاشتراك 💎 | GermanJobsPro 🇩🇪"
+      ? "الأسعار وباقات الاشتراك | GermanJobsPro 🇩🇪"
       : isDe
-      ? "Preise & Tarife (PRO Pass) 💎 | GermanJobsPro 🇩🇪"
-      : "Pricing & Plans (PRO Pass) 💎 | GermanJobsPro 🇩🇪",
+      ? "Preise & Tarife (PRO Pass) | GermanJobsPro 🇩🇪"
+      : "Pricing & Plans (PRO Pass) | GermanJobsPro 🇩🇪",
     description: isAr
       ? "احصل على ترخيص متكامل لتوليد خطابات الدافع، فحص الـ ATS، وتتبع تقديماتك للعمل في ألمانيا."
       : isDe
@@ -56,29 +56,28 @@ export default async function PublicPricingPage({
     : null;
 
   return (
-    <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+    <div dir={dir} className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
       <Navbar locale={locale} initialUser={clientUser} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 w-full flex-1 space-y-12">
         {/* Breadcrumb Navigation */}
-        <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-          <Link href={`/${locale}`} className="hover:text-blue-400 transition-colors">
+        <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+          <Link href={`/${locale}`} className="hover:text-blue-600 transition-colors">
             {isAr ? "الرئيسية" : isDe ? "Startseite" : "Home"}
           </Link>
           <span>/</span>
-          <span className="text-slate-200">
+          <span className="text-slate-800 font-semibold">
             {isAr ? "الأسعار وباقة المحترفين (PRO Pass)" : isDe ? "Preise & Tarife" : "Pricing & PRO Pass"}
           </span>
         </div>
 
         {/* Page Header */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider">
-            <span>💎</span>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold uppercase tracking-wider">
             <span>{isAr ? "استثمار مضمون في مستقبلك" : isDe ? "Transparente Preise" : "Transparent Pricing"}</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+          <h1 className="text-3xl sm:text-5xl font-black text-[#061838] tracking-tight">
             {isAr
               ? "خطط وباقات GermanJobsPro 🇩🇪"
               : isDe
@@ -86,7 +85,7 @@ export default async function PublicPricingPage({
               : "GermanJobsPro Plans & Pricing 🇩🇪"}
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal">
+          <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed font-normal">
             {isAr
               ? "احصل على ترخيص متكامل لتوليد خطابات الدافع، فحص الـ ATS، وتتبع تقديماتك للعمل في ألمانيا."
               : isDe
