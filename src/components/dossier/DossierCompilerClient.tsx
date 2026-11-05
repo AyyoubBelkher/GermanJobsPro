@@ -943,7 +943,7 @@ export default function DossierCompilerClient({
             {/* Authentic A4 Paper Preview */}
             <div
               dir="ltr"
-              className={`relative w-full aspect-[1/1.414] bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col justify-between p-4 sm:p-5 select-none transition-all duration-300 ${
+              className={`cv-print-area relative w-full aspect-[1/1.414] bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col justify-between p-4 sm:p-5 select-none transition-all duration-300 ${
                 !includeDeckblatt ? "opacity-30 grayscale" : ""
               }`}
             >

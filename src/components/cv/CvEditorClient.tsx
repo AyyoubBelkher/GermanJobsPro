@@ -1385,7 +1385,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
           </div>
 
           {/* Printable / Rendered DIN 5008 Sheet */}
-          <div dir="ltr" className="bg-white text-slate-900 p-4 sm:p-8 md:p-12 overflow-x-auto rounded-3xl shadow-2xl max-w-4xl mx-auto space-y-8 font-sans text-left">
+          <div dir="ltr" className="cv-print-area bg-white text-slate-900 p-4 sm:p-8 md:p-12 overflow-x-auto rounded-3xl shadow-2xl max-w-4xl mx-auto space-y-8 font-sans text-left">
             {/* Header: Name & Photo */}
             <div className="flex flex-col-reverse sm:flex-row items-start justify-between border-b-2 border-slate-900 pb-6 gap-4 sm:gap-6 text-left">
               <div className="space-y-1 text-left">

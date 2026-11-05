@@ -103,13 +103,27 @@ body {
     border-color: rgba(255, 255, 255, 0.12);
   }
 
-  /* Ensure .dark .text-slate-950, .dark .text-slate-900, .dark .text-slate-800, and .dark .text-[#061838] adapt to #f8fafc */
+  /* Ensure .dark .text-slate-950, .dark .text-slate-900, and .dark .text-slate-800 adapt to #f8fafc */
   .dark .text-slate-950:not(.bg-amber-400):not(.bg-amber-500):not(.bg-\[\#FACC15\]):not(.bg-amber-400 *):not(.bg-amber-500 *):not(.bg-\[\#FACC15\] *):not(.cv-print-area):not(.cv-print-area *),
   .dark .text-slate-900:not(.bg-amber-400):not(.bg-amber-500):not(.bg-\[\#FACC15\]):not(.bg-amber-400 *):not(.bg-amber-500 *):not(.bg-\[\#FACC15\] *):not(.cv-print-area):not(.cv-print-area *),
-  .dark .text-slate-800:not(.bg-amber-400):not(.bg-amber-500):not(.bg-\[\#FACC15\]):not(.bg-amber-400 *):not(.bg-amber-500 *):not(.bg-\[\#FACC15\] *):not(.cv-print-area):not(.cv-print-area *),
-  .dark .text-\[\#061838\]:not(.bg-amber-400):not(.bg-amber-500):not(.bg-\[\#FACC15\]):not(.bg-amber-400 *):not(.bg-amber-500 *):not(.bg-\[\#FACC15\] *):not(.cv-print-area):not(.cv-print-area *) {
+  .dark .text-slate-800:not(.bg-amber-400):not(.bg-amber-500):not(.bg-\[\#FACC15\]):not(.bg-amber-400 *):not(.bg-amber-500 *):not(.bg-\[\#FACC15\] *):not(.cv-print-area):not(.cv-print-area *) {
     color: #f8fafc;
   }
+
+  /* Ensure custom Royal Navy text classes adapt to #f8fafc in Dark Mode */
+  .dark .text-\[\#061838\], .dark .text-\[\#0A2552\] { color: #f8fafc !important; }
+
+  /* Gold/Amber CTA & Light-Surface exception: explicitly keep dark navy text inside yellow/amber/white badges and buttons */
+  .dark .bg-\[\#FACC15\].text-\[\#061838\], .dark .bg-\[\#FACC15\] .text-\[\#061838\], .dark .bg-amber-400.text-\[\#061838\], .dark .bg-amber-400 .text-\[\#061838\], .dark .bg-amber-300.text-\[\#061838\], .dark .bg-amber-50.text-\[\#061838\], .dark .bg-\[\#FACC15\].text-\[\#0A2552\], .dark .bg-\[\#FACC15\] .text-\[\#0A2552\], .dark .bg-amber-400.text-\[\#0A2552\], .dark .bg-amber-400 .text-\[\#0A2552\], .dark .bg-white.text-\[\#0A2552\], .dark .bg-white.text-\[\#061838\] { color: #061838 !important; }
+
+  /* Ensure printable A4 CV sheets retain dark ink */
+  .dark .cv-print-area .text-\[\#061838\], .dark .cv-print-area .text-\[\#0A2552\] { color: #061838 !important; }
+
+  /* Dark-mode surface overrides for pastel tint backgrounds outside .cv-print-area */
+  .dark [class*="bg-amber-50"]:not(.cv-print-area):not(.cv-print-area *) { background-color: rgba(250, 204, 21, 0.08) !important; border-color: rgba(250, 204, 21, 0.25) !important; }
+  .dark [class*="bg-blue-50"]:not(.cv-print-area):not(.cv-print-area *), .dark [class*="bg-indigo-50"]:not(.cv-print-area):not(.cv-print-area *) { background-color: rgba(59, 130, 246, 0.1) !important; border-color: rgba(59, 130, 246, 0.25) !important; }
+  .dark [class*="bg-emerald-50"]:not(.cv-print-area):not(.cv-print-area *) { background-color: rgba(16, 185, 129, 0.1) !important; border-color: rgba(16, 185, 129, 0.25) !important; }
+  .dark [class*="bg-rose-50"]:not(.cv-print-area):not(.cv-print-area *), .dark [class*="bg-red-50"]:not(.cv-print-area):not(.cv-print-area *) { background-color: rgba(244, 63, 94, 0.1) !important; border-color: rgba(244, 63, 94, 0.25) !important; }
 
   /* Ensure .dark .text-slate-700 and .dark .text-slate-600 adapt to #cbd5e1 */
   .dark .text-slate-700:not(.bg-amber-400 *):not(.bg-amber-500 *):not(.bg-\[\#FACC15\] *):not(.cv-print-area):not(.cv-print-area *),

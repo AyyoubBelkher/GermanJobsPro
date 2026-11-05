@@ -394,7 +394,7 @@ export default async function LandingPage({
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
             {/* Centered section title with golden curved SVG underline under "تجد وظيفة" */}
             <div className="inline-block relative">
-              <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-[#082046] tracking-tight">
+              <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-[#061838] dark:text-white tracking-tight">
                 {isAr ? (
                   <>
                     <span>تعلم الألمانية، </span>
@@ -419,7 +419,7 @@ export default async function LandingPage({
             </div>
 
             {/* Subtitle below heading */}
-            <p className="text-slate-600 text-base sm:text-lg mt-3 font-medium max-w-2xl mx-auto">
+            <p className="text-slate-600 dark:text-slate-300 text-base sm:text-lg mt-3 font-medium max-w-2xl mx-auto">
               {isAr
                 ? "3 خطوات بسيطة تفصلك عن سوق العمل الألماني بمعايير احترافية"
                 : (t.howItWorks?.mockupSubtitle || "3 simple steps separating you from the German job market with professional standards")}
@@ -436,20 +436,20 @@ export default async function LandingPage({
               {/* Step 1 (Right card in RTL) */}
               <div className="bg-white rounded-2xl p-7 shadow-[0_12px_35px_rgba(8,32,70,0.07)] border border-slate-200/80 hover:border-amber-400 hover:-translate-y-1.5 transition-all duration-300 relative z-10 flex flex-col items-center text-center">
                 {/* Top floating Gold Number Badge */}
-                <div className="w-10 h-10 rounded-full bg-[#FACC15] text-[#082046] font-extrabold text-base flex items-center justify-center shadow-md -mt-12 mb-4 border-4 border-white">
+                <div className="w-10 h-10 rounded-full bg-[#FACC15] text-[#061838] font-extrabold text-base flex items-center justify-center shadow-md -mt-12 mb-4 border-4 border-white dark:border-[#0A1936]">
                   1
                 </div>
                 {/* Icon Halo */}
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#EBF3FF] to-[#DBEAFE] flex items-center justify-center mb-5 shadow-inner">
-                  <svg className="w-10 h-10 text-[#082046]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#EBF3FF] to-[#DBEAFE] dark:from-blue-950/60 dark:to-slate-800/60 flex items-center justify-center mb-5 shadow-inner">
+                  <svg className="w-10 h-10 text-[#061838] dark:text-blue-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
                     <path d="M6 12v5c3 3 9 3 12 0v-5" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-extrabold text-[#082046] mb-2">
+                <h3 className="text-lg font-extrabold text-[#061838] dark:text-white mb-2">
                   {isAr ? "أنشئ حسابك مجانا" : (t.howItWorks?.step1?.title || "Create Account Free")}
                 </h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
+                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
                   {isAr
                     ? "سجل في ثوان واستفد من لوحة تحكم ذكية لتتبع مسارك المهني واللغوي."
                     : (t.howItWorks?.step1?.desc || "Sign up in seconds and leverage an intelligent dashboard to track your career and language journey.")}
@@ -459,20 +459,20 @@ export default async function LandingPage({
               {/* Step 2 (Center card) */}
               <div className="bg-white rounded-2xl p-7 shadow-[0_12px_35px_rgba(8,32,70,0.07)] border border-slate-200/80 hover:border-amber-400 hover:-translate-y-1.5 transition-all duration-300 relative z-10 flex flex-col items-center text-center">
                 {/* Top floating Gold Number Badge */}
-                <div className="w-10 h-10 rounded-full bg-[#FACC15] text-[#082046] font-extrabold text-base flex items-center justify-center shadow-md -mt-12 mb-4 border-4 border-white">
+                <div className="w-10 h-10 rounded-full bg-[#FACC15] text-[#061838] font-extrabold text-base flex items-center justify-center shadow-md -mt-12 mb-4 border-4 border-white dark:border-[#0A1936]">
                   2
                 </div>
                 {/* Icon Halo */}
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#EBF3FF] to-[#DBEAFE] flex items-center justify-center mb-5 shadow-inner">
-                  <svg className="w-10 h-10 text-[#082046]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#EBF3FF] to-[#DBEAFE] dark:from-blue-950/60 dark:to-slate-800/60 flex items-center justify-center mb-5 shadow-inner">
+                  <svg className="w-10 h-10 text-[#061838] dark:text-blue-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect width="18" height="12" x="3" y="4" rx="2" />
                     <line x1="2" x2="22" y1="20" y2="20" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-extrabold text-[#082046] mb-2">
+                <h3 className="text-lg font-extrabold text-[#061838] dark:text-white mb-2">
                   {isAr ? "حضر سيرتك الذاتية وتعلم الألمانية" : (t.howItWorks?.step2?.title || "Build CV & Learn German")}
                 </h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
+                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
                   {isAr
                     ? "صمم سيرة ذاتية مطابقة لمعيار DIN 5008 الألماني وتدرب على أساسيات اللغة A1."
                     : (t.howItWorks?.step2?.desc || "Create a CV matching the German DIN 5008 standard and practice A1 language fundamentals.")}
@@ -482,22 +482,22 @@ export default async function LandingPage({
               {/* Step 3 (Left card in RTL) */}
               <div className="bg-white rounded-2xl p-7 shadow-[0_12px_35px_rgba(8,32,70,0.07)] border border-slate-200/80 hover:border-amber-400 hover:-translate-y-1.5 transition-all duration-300 relative z-10 flex flex-col items-center text-center">
                 {/* Top floating Gold Number Badge */}
-                <div className="w-10 h-10 rounded-full bg-[#FACC15] text-[#082046] font-extrabold text-base flex items-center justify-center shadow-md -mt-12 mb-4 border-4 border-white">
+                <div className="w-10 h-10 rounded-full bg-[#FACC15] text-[#061838] font-extrabold text-base flex items-center justify-center shadow-md -mt-12 mb-4 border-4 border-white dark:border-[#0A1936]">
                   3
                 </div>
                 {/* Icon Halo */}
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#EBF3FF] to-[#DBEAFE] flex items-center justify-center mb-5 shadow-inner">
-                  <svg className="w-10 h-10 text-[#082046]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#EBF3FF] to-[#DBEAFE] dark:from-blue-950/60 dark:to-slate-800/60 flex items-center justify-center mb-5 shadow-inner">
+                  <svg className="w-10 h-10 text-[#061838] dark:text-blue-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
                     <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
                     <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
                     <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-extrabold text-[#082046] mb-2">
+                <h3 className="text-lg font-extrabold text-[#061838] dark:text-white mb-2">
                   {isAr ? "حسن ملف ترشحك واكتشف الفرص" : (t.howItWorks?.step3?.title || "Optimize Dossier & Get Jobs")}
                 </h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
+                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
                   {isAr
                     ? "افحص توافق ملفك مع أنظمة ATS، ولد خطاب الدافع، وتقدم لأحدث الوظائف."
                     : (t.howItWorks?.step3?.desc || "Check your profile against ATS systems, generate cover letters, and apply to the latest jobs.")}
@@ -509,10 +509,10 @@ export default async function LandingPage({
             <div className="mt-12 mb-10 flex justify-center relative z-20">
               <Link
                 href={user ? `/${locale}/dashboard` : `/${locale}/auth/signup`}
-                className="px-10 py-4 rounded-full bg-[#FACC15] hover:bg-[#FDE047] text-[#082046] font-extrabold text-lg shadow-[0_12px_30px_rgba(250,204,21,0.4)] hover:scale-[1.02] transition-all flex items-center gap-3.5 group cursor-pointer"
+                className="px-10 py-4 rounded-full bg-[#FACC15] hover:bg-[#FDE047] text-[#061838] font-extrabold text-lg shadow-[0_12px_30px_rgba(250,204,21,0.4)] hover:scale-[1.02] transition-all flex items-center gap-3.5 group cursor-pointer"
               >
                 <span>{isAr ? "ابدأ رحلتك نحو ألمانيا الآن" : (t.howItWorks?.ctaButton || "Start Your Journey to Germany Now")}</span>
-                <span className="w-8 h-8 rounded-full bg-[#082046] text-white flex items-center justify-center font-black text-sm shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                <span className="w-8 h-8 rounded-full bg-[#061838] text-white flex items-center justify-center font-black text-sm shrink-0 group-hover:scale-105 transition-transform shadow-sm">
                   {isAr ? "←" : "→"}
                 </span>
               </Link>

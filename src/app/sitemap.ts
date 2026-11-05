@@ -8,34 +8,42 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     process.env.NEXT_PUBLIC_SITE_URL ||
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://germanjobspro.com");
 
-  // Fetch published post slugs and timestamps from DB via Prisma
+  const isDummyDb =
+    !process.env.DATABASE_URL ||
+    process.env.DATABASE_URL.includes("localhost:5432/dummy");
+
+  // Fetch published post slugs and timestamps from DB via Prisma (skip if dummy DB during build)
   let posts: Array<{ slug: string; updatedAt: Date }> = [];
-  try {
-    posts = await prisma.post.findMany({
-      where: { published: true },
-      select: {
-        slug: true,
-        updatedAt: true,
-      },
-    });
-  } catch (error) {
-    console.warn("[Sitemap] Could not fetch dynamic posts during build prerender:", error instanceof Error ? error.message : error);
+  if (!isDummyDb) {
+    try {
+      posts = await prisma.post.findMany({
+        where: { published: true },
+        select: {
+          slug: true,
+          updatedAt: true,
+        },
+      });
+    } catch (error) {
+      console.warn("[Sitemap] Could not fetch dynamic posts during build prerender:", error instanceof Error ? error.message : error);
+    }
   }
 
-  // Fetch active jobs from DB via Prisma
+  // Fetch active jobs from DB via Prisma (skip if dummy DB during build)
   let jobs: Array<{ id: string; updatedAt: Date }> = [];
-  try {
-    jobs = await prisma.job.findMany({
-      where: { status: "ACTIVE" },
-      select: {
-        id: true,
-        updatedAt: true,
-      },
-      orderBy: { publishedAt: "desc" },
-      take: 500,
-    });
-  } catch (error) {
-    console.warn("[Sitemap] Could not fetch active jobs during build prerender:", error instanceof Error ? error.message : error);
+  if (!isDummyDb) {
+    try {
+      jobs = await prisma.job.findMany({
+        where: { status: "ACTIVE" },
+        select: {
+          id: true,
+          updatedAt: true,
+        },
+        orderBy: { publishedAt: "desc" },
+        take: 500,
+      });
+    } catch (error) {
+      console.warn("[Sitemap] Could not fetch active jobs during build prerender:", error instanceof Error ? error.message : error);
+    }
   }
 
   const locales = ["ar", "en", "de", "fr"];
