@@ -1,5 +1,6 @@
 export interface NavDictionary {
   home: string;
+  tools?: string;
   jobs: string;
   blog: string;
   germanA1: string;
@@ -171,4 +172,9 @@ export interface Dictionary {
   jobs: JobsDictionary;
   dashboard: DashboardDictionary;
   footer: FooterDictionary;
+  home?: {
+    heroCtaSecondary?: string;
+    heroSubBadge?: string;
+    [key: string]: any;
+  };
 }

@@ -3,6 +3,7 @@ import type { Dictionary } from '../types';
 export const fr: Dictionary = {
   nav: {
     home: 'Accueil',
+    tools: 'Outils',
     jobs: 'Emplois',
     blog: 'Blog',
     germanA1: 'Allemand A1',
@@ -164,5 +165,9 @@ export const fr: Dictionary = {
     privacy: 'Confidentialité (RGPD)',
     refunds: 'Remboursement',
     tagline: 'Votre passerelle complète vers l’Allemagne 🇩🇪',
+  },
+  home: {
+    heroCtaSecondary: 'Découvrir les outils',
+    heroSubBadge: 'Démarrez 100% gratuit – Testez les outils avant tout engagement',
   },
 };

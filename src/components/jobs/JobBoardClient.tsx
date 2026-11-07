@@ -17,6 +17,7 @@ export interface JobItem {
   category: string;
   jobType: string | null;
   languageReq: string | null;
+  languageLevel?: string | null;
   salary: string | null;
   applyUrl: string;
   contactEmail?: string | null;
@@ -24,6 +25,8 @@ export interface JobItem {
   descriptionRaw: string | null;
   publishedAt: string | Date;
 }
+
+const formatLangLevel = (lvl?: string | null) => (!lvl || lvl.toLowerCase() === "none") ? "Deutsch (B1/B2)" : lvl;
 
 interface JobBoardClientProps {
   initialJobs: JobItem[];
@@ -413,7 +416,7 @@ export default function JobBoardClient({
                     📍 {job.city || dict.jobs.details.germany}
                   </span>
                   <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-medium">
-                    🇩🇪 {job.languageReq || "B1/B2"}
+                    🇩🇪 {formatLangLevel(job.languageLevel || job.languageReq)}
                   </span>
                   {job.salary && (
                     <span className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 font-medium">

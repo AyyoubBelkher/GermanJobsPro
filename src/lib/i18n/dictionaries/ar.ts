@@ -3,6 +3,7 @@ import type { Dictionary } from '../types';
 export const ar: Dictionary = {
   nav: {
     home: 'الرئيسية',
+    tools: 'الأدوات',
     jobs: 'فرص العمل',
     blog: 'المقالات',
     germanA1: 'تعلم الألمانية A1',
@@ -165,5 +166,10 @@ export const ar: Dictionary = {
     privacy: 'الخصوصية (GDPR)',
     refunds: 'سياسة الاسترجاع',
     tagline: 'دليلك الشامل للعمل والعيش في ألمانيا 🇩🇪',
+  },
+  home: {
+    heroCtaSecondary: 'اكتشف الأدوات',
+    heroSubBadge: 'ابدأ مجانا – جرب الأدوات قبل الاشتراك',
+    stepsHeading: 'تعلّم الألمانية، اعثر على وظيفتك، وحقّق أهدافك',
   },
 };

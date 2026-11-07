@@ -242,8 +242,8 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       },
       subheadline: "Créez votre CV DIN 5008 certifié, optimisez votre candidature par IA, apprenez l'allemand facilement et découvrez les meilleures offres d'emploi et de formation.",
       primaryCta: "Commencer gratuitement",
-      secondaryCta: "▶️ Découvrir les outils",
-      trustMicro: "🛡️ Démarrez 100% gratuit – Testez les outils avant tout engagement",
+      secondaryCta: "Découvrir les outils",
+      trustMicro: "Démarrez 100% gratuit – Testez les outils avant tout engagement",
       trustBadges: [
         "Norme officielle DIN 5008",
         "Conforme RGPD 100%",
@@ -454,8 +454,8 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       },
       subheadline: "أنشئ سيرتك الذاتية الألمانية، حسن ملف ترشحك باستخدام الذكاء الاصطناعي، تعلم الألمانية باللغة العربية، واكتشف فرص العمل والتدريب المهني.",
       primaryCta: "ابدأ مجانا",
-      secondaryCta: "▶️ اكتشف الأدوات",
-      trustMicro: "🛡️ ابدأ مجانا – جرب الأدوات قبل الاشتراك",
+      secondaryCta: "اكتشف الأدوات",
+      trustMicro: "ابدأ مجانا – جرب الأدوات قبل الاشتراك",
       trustBadges: [
         "معايير DIN 5008 الرسمية",
         "أمان وخصوصية GDPR 100%",
@@ -554,7 +554,7 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
     },
     howItWorks: {
       badge: "كيف تعمل المنصة",
-      title: "تعلم الألمانية، تجد وظيفة، وتحقق أهدافك",
+      title: "تعلّم الألمانية، اعثر على وظيفتك، وحقّق أهدافك",
       ctaButton: "ابدأ رحلتك نحو ألمانيا الآن",
       step1: {
         number: "1",
@@ -666,8 +666,8 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       },
       subheadline: "Erstellen Sie Ihren DIN 5008 Lebenslauf, optimieren Sie Ihre Bewerbung mit KI, lernen Sie Deutsch von Grund auf und finden Sie aktuelle Jobs & Ausbildungsplätze.",
       primaryCta: "Kostenlos starten",
-      secondaryCta: "▶️ Tools entdecken",
-      trustMicro: "🛡️ 100% kostenlos starten – Tools vorab testen",
+      secondaryCta: "Tools entdecken",
+      trustMicro: "100% kostenlos starten – Tools vorab testen",
       trustBadges: [
         "Offizieller DIN 5008 Standard",
         "100% DSGVO / GDPR konform",
@@ -878,8 +878,8 @@ export const LANDING_CONTENT: Record<SupportedLocale, LandingContent> = {
       },
       subheadline: "Build your DIN 5008 German CV, optimize your application with AI, master German A1, and discover verified job & training opportunities.",
       primaryCta: "Start Free",
-      secondaryCta: "▶️ Explore Tools",
-      trustMicro: "🛡️ Start 100% Free – Test Tools Before Subscribing",
+      secondaryCta: "Explore Tools",
+      trustMicro: "Start 100% Free – Test Tools Before Subscribing",
       trustBadges: [
         "Official DIN 5008 Standards",
         "100% GDPR Privacy & Security",

@@ -3,6 +3,7 @@ import type { Dictionary } from '../types';
 export const de: Dictionary = {
   nav: {
     home: 'Startseite',
+    tools: 'Tools',
     jobs: 'Jobs',
     blog: 'Blog',
     germanA1: 'Deutsch A1',
@@ -164,5 +165,9 @@ export const de: Dictionary = {
     privacy: 'Datenschutz (DSGVO)',
     refunds: 'Widerruf',
     tagline: 'Ihr Portal für Arbeiten & Leben in Deutschland 🇩🇪',
+  },
+  home: {
+    heroCtaSecondary: 'Tools entdecken',
+    heroSubBadge: '100% kostenlos starten – Tools vorab testen',
   },
 };

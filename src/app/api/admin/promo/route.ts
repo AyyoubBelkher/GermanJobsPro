@@ -64,8 +64,10 @@ export async function POST(request: NextRequest) {
     const newPromo = await prisma.promoCode.create({
       data: {
         code: cleanCode,
-        planGranted: body.planGranted === "PRO" ? "PRO" : "TRIAL",
-        durationDays: typeof body.durationDays === "number" ? Math.max(1, body.durationDays) : 7,
+        planGranted: ["PRO", "SPRINT", "NONE", "TRIAL"].includes(String(body.planGranted).toUpperCase())
+          ? String(body.planGranted).toUpperCase()
+          : "SPRINT",
+        durationDays: typeof body.durationDays === "number" ? Math.max(1, body.durationDays) : 30,
         creditsGranted: typeof body.creditsGranted === "number" ? Math.max(1, body.creditsGranted) : 15,
         maxUses: typeof body.maxUses === "number" ? Math.max(1, body.maxUses) : 10,
         expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,

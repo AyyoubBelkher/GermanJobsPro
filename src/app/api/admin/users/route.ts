@@ -7,6 +7,25 @@ async function isAuthorizedAdmin(request: NextRequest): Promise<boolean> {
   return Boolean(admin);
 }
 
+const USER_SELECT = {
+  id: true,
+  email: true,
+  name: true,
+  plan: true,
+  planExpiresAt: true,
+  emailVerified: true,
+  aiCredits: true,
+  customerId: true,
+  createdAt: true,
+  updatedAt: true,
+  _count: {
+    select: {
+      cvs: true,
+      coverLetters: true,
+    },
+  },
+} as const;
+
 /**
  * GET /api/admin/users
  * Returns platform statistics and the complete list of users ordered by creation date descending.
@@ -17,7 +36,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const [totalUsers, proUsers, totalAiCreditsAgg, users] = await Promise.all([
+    const [totalUsers, proUsers, totalAiCreditsAgg, totalJobs, totalCvs, totalCoverLetters, users] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({
         where: {
@@ -33,24 +52,13 @@ export async function GET(request: NextRequest) {
           aiCredits: true,
         },
       }),
+      prisma.job.count({
+        where: { status: "ACTIVE" },
+      }),
+      prisma.cv.count(),
+      prisma.coverLetter.count(),
       prisma.user.findMany({
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          plan: true,
-          planExpiresAt: true,
-          aiCredits: true,
-          customerId: true,
-          createdAt: true,
-          updatedAt: true,
-          _count: {
-            select: {
-              cvs: true,
-              coverLetters: true,
-            },
-          },
-        },
+        select: USER_SELECT,
         orderBy: {
           createdAt: "desc",
         },
@@ -65,6 +73,9 @@ export async function GET(request: NextRequest) {
         totalUsers,
         proUsers,
         totalAiCredits,
+        totalJobs,
+        totalCvs,
+        totalCoverLetters,
       },
       users,
     });
@@ -106,9 +117,72 @@ export async function POST(request: NextRequest) {
     let updatedUser;
     let message = "";
 
-    switch (action) {
-      case "toggle_pro":
-      case "TOGGLE_PRO": {
+    const normalizedAction = String(action || "").toLowerCase().trim();
+
+    switch (normalizedAction) {
+      case "upgrade_sprint":
+      case "sprint": {
+        const thirtyDaysLater = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        updatedUser = await prisma.user.update({
+          where: { id: userId },
+          data: {
+            plan: "SPRINT",
+            planExpiresAt: thirtyDaysLater,
+            aiCredits: {
+              increment: 50,
+            },
+          },
+          select: USER_SELECT,
+        });
+        message = `تمت ترقية حساب ${existingUser.email} إلى باقة SPRINT (30 يوماً) وإضافة +50 رصيد AI بنجاح.`;
+        break;
+      }
+
+      case "upgrade_pro":
+      case "pro": {
+        const ninetyDaysLater = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+        updatedUser = await prisma.user.update({
+          where: { id: userId },
+          data: {
+            plan: "PRO",
+            planExpiresAt: ninetyDaysLater,
+            aiCredits: {
+              increment: 100,
+            },
+          },
+          select: USER_SELECT,
+        });
+        message = `تمت ترقية حساب ${existingUser.email} إلى باقة PRO (90 يوماً) وإضافة +100 رصيد AI بنجاح.`;
+        break;
+      }
+
+      case "downgrade_free":
+      case "free": {
+        updatedUser = await prisma.user.update({
+          where: { id: userId },
+          data: {
+            plan: "FREE",
+            planExpiresAt: null,
+          },
+          select: USER_SELECT,
+        });
+        message = `تم تحويل حساب ${existingUser.email} إلى الخطة المجانية (FREE).`;
+        break;
+      }
+
+      case "verify_email": {
+        updatedUser = await prisma.user.update({
+          where: { id: userId },
+          data: {
+            emailVerified: true,
+          },
+          select: USER_SELECT,
+        });
+        message = `تم تفعيل البريد الإلكتروني للمستخدم ${existingUser.email} يدوياً بنجاح.`;
+        break;
+      }
+
+      case "toggle_pro": {
         const isCurrentlyPro =
           (existingUser.plan === "PRO" || existingUser.plan === "SPRINT") &&
           (!existingUser.planExpiresAt || existingUser.planExpiresAt > new Date());
@@ -121,23 +195,7 @@ export async function POST(request: NextRequest) {
               plan: "FREE",
               planExpiresAt: null,
             },
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              plan: true,
-              planExpiresAt: true,
-              aiCredits: true,
-              customerId: true,
-              createdAt: true,
-              updatedAt: true,
-              _count: {
-                select: {
-                  cvs: true,
-                  coverLetters: true,
-                },
-              },
-            },
+            select: USER_SELECT,
           });
           message = `تم تحويل حساب ${existingUser.email} إلى الخطة المجانية (FREE)`;
         } else {
@@ -148,24 +206,11 @@ export async function POST(request: NextRequest) {
             data: {
               plan: "PRO",
               planExpiresAt: ninetyDaysLater,
-            },
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              plan: true,
-              planExpiresAt: true,
-              aiCredits: true,
-              customerId: true,
-              createdAt: true,
-              updatedAt: true,
-              _count: {
-                select: {
-                  cvs: true,
-                  coverLetters: true,
-                },
+              aiCredits: {
+                increment: 100,
               },
             },
+            select: USER_SELECT,
           });
           message = `تمت ترقية حساب ${existingUser.email} إلى خطة PRO بنجاح (90 يوماً)`;
         }
@@ -173,7 +218,6 @@ export async function POST(request: NextRequest) {
       }
 
       case "add_credits":
-      case "ADD_CREDITS":
       case "increment_credits": {
         const amount = typeof body.amount === "number" && body.amount > 0 ? body.amount : 50;
         updatedUser = await prisma.user.update({
@@ -183,23 +227,7 @@ export async function POST(request: NextRequest) {
               increment: amount,
             },
           },
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            plan: true,
-            planExpiresAt: true,
-            aiCredits: true,
-            customerId: true,
-            createdAt: true,
-            updatedAt: true,
-            _count: {
-              select: {
-                cvs: true,
-                coverLetters: true,
-              },
-            },
-          },
+          select: USER_SELECT,
         });
         message = `تمت إضافة +${amount} رصيد AI للمستخدم ${existingUser.email}. الرصيد الإجمالي: ${updatedUser.aiCredits}`;
         break;

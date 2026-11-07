@@ -14,6 +14,8 @@ export interface JobDetailData {
   category: string;
   jobType: string | null;
   languageReq: string | null;
+  languageLevel?: string | null;
+  sourceUrl?: string | null;
   salary: string | null;
   applyUrl: string;
   contactEmail: string | null;
@@ -24,6 +26,33 @@ export interface JobDetailData {
   createdAt?: string | null;
   updatedAt?: string | null;
   isVerified?: boolean;
+}
+
+export const LEGACY_NEWS_OUTLETS = [
+  "Fränkischer Tag",
+  "Vietnam.vn",
+  "Ad-hoc-news.de",
+  "Freie Presse",
+  "swp.de",
+  "Giessener Anzeiger",
+  "Deutsches Handwerksblatt",
+  "Baden Online",
+  "Peiner Allgemeine Zeitung",
+  "Fußballverband",
+] as const;
+
+export const formatLangLevel = (lvl?: string | null): string =>
+  !lvl || lvl.toLowerCase() === "none" ? "Deutsch (B1/B2)" : lvl;
+
+export function isLegacyNewsJob(job: {
+  applyUrl?: string | null;
+  sourceUrl?: string | null;
+  company?: string | null;
+}): boolean {
+  const url = (job.sourceUrl || job.applyUrl || "").toLowerCase();
+  if (url.includes("news.google.com") || url.includes("news.google.")) return true;
+  const company = (job.company || "").toLowerCase();
+  return LEGACY_NEWS_OUTLETS.some((outlet) => company.includes(outlet.toLowerCase()));
 }
 
 export const GENERIC_HR_PREFIXES = [
@@ -241,6 +270,9 @@ export function extractReferenceNumber(job?: Partial<JobDetailData> | null): str
 export function extractCefrLevel(languageReq?: string | null, requirements?: string | null): string {
   try {
     if (languageReq && typeof languageReq === "string" && languageReq.trim()) {
+      if (languageReq.trim().toLowerCase() === "none") {
+        return "Deutsch (B1/B2)";
+      }
       const match = languageReq.match(/\b([ABC][12](?:\s*[\/\-]\s*[ABC][12])?)\b/i);
       if (match) return match[1].toUpperCase();
       return languageReq.trim();
@@ -249,9 +281,9 @@ export function extractCefrLevel(languageReq?: string | null, requirements?: str
       const match = requirements.match(/\b([ABC][12](?:\s*[\/\-]\s*[ABC][12])?)\b/i);
       if (match) return match[1].toUpperCase();
     }
-    return "B1/B2";
+    return "Deutsch (B1/B2)";
   } catch {
-    return "B1/B2";
+    return "Deutsch (B1/B2)";
   }
 }
 

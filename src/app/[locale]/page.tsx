@@ -6,6 +6,7 @@ import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
 import { getUserSession } from "@/lib/user-session";
 import { getLandingContent } from "@/lib/i18n/landing-content";
+import { getDictionary, isValidLocale, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 
 export const revalidate = 60;
 
@@ -62,8 +63,20 @@ export default async function LandingPage({
 }) {
   const { locale } = await params;
   const t = getLandingContent(locale);
+  const activeLocale: Locale = isValidLocale(locale) ? (locale as Locale) : DEFAULT_LOCALE;
+  const dict = getDictionary(activeLocale) as Record<string, any>;
   const isAr = locale === "ar";
   const dir = isAr ? "rtl" : "ltr";
+
+  const heroCtaSecondary = (
+    dict.home?.heroCtaSecondary ||
+    (isAr ? "اكتشف الأدوات" : t.hero.secondaryCta)
+  ).replace(/^[▶️▶🛡️\s]+/u, "");
+
+  const heroSubBadge = (
+    dict.home?.heroSubBadge ||
+    (isAr ? "ابدأ مجانا – جرب الأدوات قبل الاشتراك" : (t.hero.trustMicro || "Start Free – Test Tools Before Subscribing"))
+  ).replace(/^[▶️▶🛡️\s]+/u, "");
 
   const authResult = await getUserSession();
   const user = authResult ? authResult.user : null;
@@ -166,13 +179,13 @@ export default async function LandingPage({
                   <span className="w-6 h-6 rounded-full bg-white text-[#0A2552] flex items-center justify-center text-xs font-black shrink-0">
                     ▶
                   </span>
-                  <span>{isAr ? "اكتشف الأدوات" : t.hero.secondaryCta}</span>
+                  <span>{heroCtaSecondary}</span>
                 </a>
               </div>
 
               <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-amber-300/95 pt-1 drop-shadow-[0_2px_8px_rgba(6,24,56,0.9)]">
                 <span className="text-base">🛡️</span>
-                <span>{isAr ? "ابدأ مجانا – جرب الأدوات قبل الاشتراك" : (t.hero.trustMicro || "Start Free – Test Tools Before Subscribing")}</span>
+                <span>{heroSubBadge}</span>
               </div>
             </div>
           </div>
@@ -392,14 +405,14 @@ export default async function LandingPage({
         {/* ========================================================= */}
         <section className="mt-16 sm:mt-24 pt-12 pb-0 bg-slate-50 relative overflow-hidden">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-            {/* Centered section title with golden curved SVG underline under "تجد وظيفة" */}
+            {/* Centered section title with golden curved SVG underline under "اعثر على وظيفتك" */}
             <div className="inline-block relative">
               <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-[#061838] dark:text-white tracking-tight">
                 {isAr ? (
                   <>
-                    <span>تعلم الألمانية، </span>
+                    <span>تعلّم الألمانية، </span>
                     <span className="relative inline-block">
-                      تجد وظيفة
+                      اعثر على وظيفتك
                       <svg
                         className="absolute -bottom-2.5 inset-x-0 w-full h-3 sm:h-4 text-[#FACC15] pointer-events-none"
                         viewBox="0 0 160 14"
@@ -410,7 +423,7 @@ export default async function LandingPage({
                         <path d="M2 10.5C40 3.5 120 3.5 158 10.5" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
                       </svg>
                     </span>
-                    <span>، وتحقق أهدافك</span>
+                    <span>، وحقّق أهدافك</span>
                   </>
                 ) : (
                   t.howItWorks?.title || "Learn German, Find a Job, Achieve Your Goals"

@@ -30,6 +30,12 @@ interface NavbarProps {
 
 const ORDERED_LOCALES: Locale[] = ['ar', 'de', 'en', 'fr'];
 
+function getToolsLabel(locale: string) {
+  if (locale === "ar") return "الأدوات";
+  if (locale === "fr") return "Outils";
+  return "Tools"; // en and de
+}
+
 function buildSwitchLocaleUrl(
   pathname: string | null,
   searchParamsString: string | null | undefined,
@@ -483,7 +489,7 @@ function DesktopNav({
         {dict.nav.home}
       </Link>
       <Link href={`/${activeLocale}#tools-hub`} dir={isAr ? "rtl" : "ltr"} className={inactiveLinkClass}>
-        {isAr ? "الأدوات" : (dict.nav.tools || "Tools")}
+        {dict.nav.tools || getToolsLabel(activeLocale)}
       </Link>
       <Link href={germanA1Link} dir={isAr ? "rtl" : "ltr"} className={isGermanA1 ? activeLinkClass : inactiveLinkClass}>
         {dict.nav.germanA1}
@@ -537,7 +543,7 @@ function DesktopNavFallback({
         {dict.nav.home}
       </Link>
       <Link href={`/${activeLocale}#tools-hub`} dir={isAr ? "rtl" : "ltr"} className={inactiveLinkClass}>
-        {isAr ? "الأدوات" : (dict.nav.tools || "Tools")}
+        {dict.nav.tools || getToolsLabel(activeLocale)}
       </Link>
       <Link href={germanA1Link} dir={isAr ? "rtl" : "ltr"} className={inactiveLinkClass}>
         {dict.nav.germanA1}
@@ -612,7 +618,7 @@ function MobileNav({
         className={`${mobileInactiveClass} flex items-center gap-2`}
       >
         <span>🛠️</span>
-        <span>{activeLocale === "ar" ? "الأدوات" : (dict.nav.tools || "Tools")}</span>
+        <span>{dict.nav.tools || getToolsLabel(activeLocale)}</span>
       </Link>
 
       <Link
@@ -735,7 +741,7 @@ function MobileNavFallback({
         className={`${mobileInactiveClass} flex items-center gap-2`}
       >
         <span>🛠️</span>
-        <span>{isAr ? "الأدوات" : (dict.nav.tools || "Tools")}</span>
+        <span>{dict.nav.tools || getToolsLabel(activeLocale)}</span>
       </Link>
       <Link href={jobsLink} dir={isAr ? "rtl" : "ltr"} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2`}>
         <span>💼</span>

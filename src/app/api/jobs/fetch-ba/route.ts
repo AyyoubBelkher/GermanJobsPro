@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAutomationSecret } from "@/lib/admin-auth";
+import { verifyAutomationSecret, requireAdmin } from "@/lib/admin-auth";
 import { isValidHrEmail } from "@/lib/jobUtils";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
+
+async function isAuthorized(request: NextRequest): Promise<boolean> {
+  if (verifyAutomationSecret(request)) return true;
+  const admin = await requireAdmin(request);
+  return Boolean(admin);
+}
 
 interface ExtractedVerifiedInfo {
   contactEmail: string | null;
@@ -89,8 +96,8 @@ function extractVerifiedEmailAndForm(rawHtmlOrText: string): ExtractedVerifiedIn
 }
 
 export async function GET(request: NextRequest) {
-  // 1. التحقق من مفتاح الأمان لحماية المسار
-  if (!verifyAutomationSecret(request)) {
+  // 1. التحقق من صلاحيات المدير أو مفتاح الأتمتة لحماية المسار
+  if (!(await isAuthorized(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -152,10 +159,44 @@ export async function GET(request: NextRequest) {
             };
           });
 
+          let savedCount = 0;
+          for (const j of baJobs.slice(0, size)) {
+            if (!j.applyUrl) continue;
+            try {
+              await prisma.job.upsert({
+                where: { applyUrl: j.applyUrl },
+                update: {
+                  title: j.title,
+                  company: j.company,
+                  city: j.city,
+                  status: "ACTIVE",
+                },
+                create: {
+                  title: j.title,
+                  company: j.company,
+                  city: j.city,
+                  category: "Ausbildung",
+                  jobType: "Vollzeit",
+                  languageReq: "B1/B2",
+                  applyUrl: j.applyUrl,
+                  contactEmail: j.contactEmail,
+                  descriptionRaw: j.description,
+                  status: "ACTIVE",
+                  isVerified: true,
+                },
+              });
+              savedCount++;
+            } catch {
+              // skip duplicate/error
+            }
+          }
+
           return NextResponse.json({
             success: true,
             total: baJobs.length,
+            savedCount,
             source: "Bundesagentur für Arbeit",
+            message: `تم جلب ${baJobs.length} وظيفة من وكالة العمل الألمانية (BA) وتحديث ${savedCount} وظيفة نشطة في قاعدة البيانات.`,
             jobs: baJobs.slice(0, size),
           });
         }
@@ -258,14 +299,52 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    let savedCount = 0;
+    for (const j of formattedJobs.slice(0, size)) {
+      if (!j.applyUrl) continue;
+      try {
+        await prisma.job.upsert({
+          where: { applyUrl: j.applyUrl },
+          update: {
+            title: j.title,
+            company: j.company,
+            city: j.city,
+            status: "ACTIVE",
+          },
+          create: {
+            title: j.title,
+            company: j.company,
+            city: j.city,
+            category: "General",
+            jobType: "Vollzeit",
+            languageReq: "B1/B2",
+            applyUrl: j.applyUrl,
+            contactEmail: j.contactEmail,
+            descriptionRaw: j.description,
+            status: "ACTIVE",
+            isVerified: true,
+          },
+        });
+        savedCount++;
+      } catch {
+        // skip duplicate/error
+      }
+    }
+
     return NextResponse.json({
       success: true,
       total: formattedJobs.length,
+      savedCount,
       source: "ArbeitNow Network",
+      message: `تم جلب ${formattedJobs.length} وظيفة وتحديث ${savedCount} وظيفة نشطة في قاعدة البيانات.`,
       jobs: formattedJobs.slice(0, size),
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal Server Error";
     return NextResponse.json({ error: message, jobs: [] }, { status: 500 });
   }
+}
+
+export async function POST(request: NextRequest) {
+  return GET(request);
 }

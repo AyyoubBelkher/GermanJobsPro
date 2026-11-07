@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma, withDbRetry } from "@/lib/prisma";
 import { getCityVariants } from "@/lib/cityAliases";
 import { handleJobIngestion } from "@/lib/jobIngestion";
+import { LEGACY_NEWS_OUTLETS, isLegacyNewsJob } from "@/lib/jobUtils";
 
 export async function GET(request: NextRequest) {
   try {
@@ -91,6 +92,16 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Exclude legacy news-scraper entries
+    whereConditions.push({
+      NOT: [
+        { applyUrl: { contains: "news.google" } },
+        ...LEGACY_NEWS_OUTLETS.map((outlet) => ({
+          company: { contains: outlet, mode: "insensitive" as const },
+        })),
+      ],
+    });
+
     const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
 
     const [total, jobs] = await withDbRetry(() =>
@@ -105,12 +116,31 @@ export async function GET(request: NextRequest) {
       ])
     );
 
+    // Filter out any legacy news scraper entries from results
+    const filteredJobs = jobs.filter((j) => !isLegacyNewsJob(j));
+
+    // Automatically trigger a background cleanup for legacy news rows so only real employer job listings remain in the database
+    prisma.job
+      .deleteMany({
+        where: {
+          OR: [
+            { applyUrl: { contains: "news.google" } },
+            ...LEGACY_NEWS_OUTLETS.map((outlet) => ({
+              company: { contains: outlet, mode: "insensitive" as const },
+            })),
+          ],
+        },
+      })
+      .catch((err) => {
+        console.error("[GET /api/jobs] Background news cleanup error:", err instanceof Error ? err.message : err);
+      });
+
     const totalPages = Math.ceil(total / limit) || 1;
 
     return NextResponse.json(
       {
         success: true,
-        jobs,
+        jobs: filteredJobs,
         total,
         page,
         totalPages,

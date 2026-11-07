@@ -4,6 +4,7 @@ import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
 import { prisma } from "@/lib/prisma";
 import { getCityVariants } from "@/lib/cityAliases";
+import { LEGACY_NEWS_OUTLETS, isLegacyNewsJob } from "@/lib/jobUtils";
 import JobBoardClient, { JobItem } from "@/components/jobs/JobBoardClient";
 
 export const revalidate = 60;
@@ -98,6 +99,16 @@ export default async function JobsPage({
     status: "ACTIVE",
   });
 
+  // Exclude legacy news-scraper entries
+  whereConditions.push({
+    NOT: [
+      { applyUrl: { contains: "news.google" } },
+      ...LEGACY_NEWS_OUTLETS.map((outlet) => ({
+        company: { contains: outlet, mode: "insensitive" as const },
+      })),
+    ],
+  });
+
   const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
 
   let total = 0;
@@ -129,6 +140,22 @@ export default async function JobsPage({
     ]);
     total = fetchedTotal;
     rawJobs = fetchedJobs;
+
+    // Automatically trigger a background cleanup for legacy news rows so only real employer job listings remain
+    prisma.job
+      .deleteMany({
+        where: {
+          OR: [
+            { applyUrl: { contains: "news.google" } },
+            ...LEGACY_NEWS_OUTLETS.map((outlet) => ({
+              company: { contains: outlet, mode: "insensitive" as const },
+            })),
+          ],
+        },
+      })
+      .catch((err) => {
+        console.error("[JobsPage] Background news cleanup error:", err instanceof Error ? err.message : err);
+      });
   } catch (error) {
     console.error(
       "[JobsPage] Database query warning (Neon connection timeout or offline):",
@@ -136,23 +163,26 @@ export default async function JobsPage({
     );
   }
 
-  const totalPages = Math.ceil(total / limit) || 1;
+  const initialJobs: JobItem[] = rawJobs
+    .filter((j) => !isLegacyNewsJob(j))
+    .map((j) => ({
+      id: j.id,
+      title: j.title,
+      company: j.company,
+      city: j.city,
+      category: j.category,
+      jobType: j.jobType,
+      languageReq: j.languageReq,
+      languageLevel: j.languageReq,
+      salary: j.salary,
+      applyUrl: j.applyUrl,
+      contactEmail: j.contactEmail,
+      requirements: j.requirements,
+      descriptionRaw: j.descriptionRaw,
+      publishedAt: j.publishedAt instanceof Date ? j.publishedAt.toISOString() : String(j.publishedAt),
+    }));
 
-  const initialJobs: JobItem[] = rawJobs.map((j) => ({
-    id: j.id,
-    title: j.title,
-    company: j.company,
-    city: j.city,
-    category: j.category,
-    jobType: j.jobType,
-    languageReq: j.languageReq,
-    salary: j.salary,
-    applyUrl: j.applyUrl,
-    contactEmail: j.contactEmail,
-    requirements: j.requirements,
-    descriptionRaw: j.descriptionRaw,
-    publishedAt: j.publishedAt instanceof Date ? j.publishedAt.toISOString() : String(j.publishedAt),
-  }));
+  const totalPages = Math.ceil(total / limit) || 1;
 
   return (
     <div dir={dir} className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between">

@@ -3,6 +3,7 @@ import type { Dictionary } from '../types';
 export const en: Dictionary = {
   nav: {
     home: 'Home',
+    tools: 'Tools',
     jobs: 'Jobs',
     blog: 'Blog',
     germanA1: 'German A1',
@@ -164,5 +165,9 @@ export const en: Dictionary = {
     privacy: 'Privacy (GDPR)',
     refunds: 'Refunds',
     tagline: 'Your All-in-One Gateway to Germany 🇩🇪',
+  },
+  home: {
+    heroCtaSecondary: 'Explore Tools',
+    heroSubBadge: 'Start 100% Free – Test Tools Before Subscribing',
   },
 };

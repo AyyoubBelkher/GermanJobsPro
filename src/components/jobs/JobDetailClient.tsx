@@ -22,6 +22,8 @@ import {
   getAnerkennungDetails,
 } from "@/lib/jobUtils";
 
+const formatLangLevel = (lvl?: string | null) => (!lvl || lvl.toLowerCase() === "none") ? "Deutsch (B1/B2)" : lvl;
+
 interface JobDetailClientProps {
   job?: JobDetailData | null;
   locale?: string | null;
@@ -182,10 +184,14 @@ function parseRequirementsSections(
     }
   }
 
+  const formattedLangReq = formatLangLevel(safeLangReq);
+
   return {
     languageItem:
       languageItem ||
-      (safeLangReq ? `إتقان اللغة الألمانية / الإنجليزية بمستوى ${safeLangReq}` : null),
+      (safeLangReq && safeLangReq.toLowerCase() !== "none"
+        ? `إتقان اللغة الألمانية / الإنجليزية بمستوى ${formattedLangReq}`
+        : null),
     degreeItem,
     skillsItems,
   };
@@ -274,6 +280,7 @@ export default function JobDetailClient({
     category: initialJob?.category || "General",
     jobType: initialJob?.jobType || "Vollzeit",
     languageReq: initialJob?.languageReq || "B1",
+    languageLevel: initialJob?.languageLevel || initialJob?.languageReq || "Deutsch (B1/B2)",
     salary: initialJob?.salary || null,
     applyUrl: initialJob?.applyUrl || "",
     contactEmail: initialJob?.contactEmail || null,
@@ -301,13 +308,13 @@ export default function JobDetailClient({
     job.company ||
     "Arbeitgeber";
   const referenceNumber = extractReferenceNumber(job);
-  const cefrLevel = extractCefrLevel(job.languageReq, job.requirements);
+  const cefrLevel = formatLangLevel(extractCefrLevel(job.languageLevel || job.languageReq, job.requirements));
   const portalInfo = detectPortalInfo(job.applyUrl);
   const anerkennung = getAnerkennungDetails(job.category, isAr, isDe);
   const formattedDate = formatJobDate(job.publishedAt, isAr, isDe);
 
   const parsedDescription = parseDescriptionSections(job.descriptionRaw);
-  const parsedRequirements = parseRequirementsSections(job.requirements, job.languageReq);
+  const parsedRequirements = parseRequirementsSections(job.requirements, job.languageLevel || job.languageReq);
 
   // URLs for AI suites with safe URI encoding
   const coverLetterUrl = `/${activeLocale}/dashboard/cover-letters/new?jobTitle=${encodeURIComponent(
@@ -901,7 +908,7 @@ export default function JobDetailClient({
 
         <div className="flex justify-between py-1 border-b border-slate-100 gap-2">
           <span className="text-slate-500 shrink-0">{dict?.jobs?.details?.languageLevel || (isAr ? "مستوى اللغة" : "Sprachniveau")}</span>
-          <span className="font-semibold text-emerald-700 font-mono text-end">{cefrLevel}</span>
+          <span className="font-semibold text-emerald-700 font-mono text-end">{formatLangLevel(cefrLevel)}</span>
         </div>
 
         <div className="flex justify-between py-1 border-b border-slate-100 gap-2">
@@ -1053,7 +1060,7 @@ export default function JobDetailClient({
                 <span>🇩🇪</span>
                 <span>
                   {isAr ? "المستوى اللغوي الإلزامي:" : "Language:"}{" "}
-                  <span dir="ltr" className="font-mono">{cefrLevel}</span>
+                  <span dir="ltr" className="font-mono">{formatLangLevel(cefrLevel)}</span>
                 </span>
               </span>
 
@@ -1215,7 +1222,7 @@ export default function JobDetailClient({
                           {isAr ? "شرط الكفاءة اللغوية الأوروبي (CEFR Sprachniveau)" : "Mandatory CEFR Language Level"}
                         </span>
                         <span className="px-2 py-0.5 rounded-md bg-emerald-100 border border-emerald-200 text-emerald-800 font-mono text-xs font-bold">
-                          {cefrLevel}
+                          {formatLangLevel(cefrLevel)}
                         </span>
                       </div>
                       <p className="text-xs text-slate-500">
@@ -1227,7 +1234,7 @@ export default function JobDetailClient({
                   </div>
 
                   <span className="px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 font-mono text-xs font-semibold">
-                    Zertifikat: {cefrLevel}
+                    Zertifikat: {formatLangLevel(cefrLevel)}
                   </span>
                 </div>
 
@@ -1235,8 +1242,8 @@ export default function JobDetailClient({
                   {parsedRequirements.languageItem
                     ? parsedRequirements.languageItem
                     : isAr
-                    ? `يتطلب هذا الدور إتقان اللغة بالمستوى المحدد (${cefrLevel}) لضمان التواصل المهني السلس، ويوصى بإرفاق شهادة لغة معتمدة ضمن ملف الترشيح.`
-                    : `This position requires proficiency at level ${cefrLevel}. An accredited language certificate is strongly recommended.`}
+                    ? `يتطلب هذا الدور إتقان اللغة بالمستوى المحدد (${formatLangLevel(cefrLevel)}) لضمان التواصل المهني السلس، ويوصى بإرفاق شهادة لغة معتمدة ضمن ملف الترشيح.`
+                    : `This position requires proficiency at level ${formatLangLevel(cefrLevel)}. An accredited language certificate is strongly recommended.`}
                 </p>
               </div>
 

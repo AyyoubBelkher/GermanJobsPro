@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, verifyAutomationSecret } from "@/lib/admin-auth";
+import { LEGACY_NEWS_OUTLETS } from "@/lib/jobUtils";
 
 async function isAuthorized(request: NextRequest): Promise<boolean> {
   if (verifyAutomationSecret(request)) {
@@ -33,6 +34,9 @@ async function handleCleanup(request: NextRequest) {
           { company: { equals: "Google News", mode: "insensitive" } },
           { company: { equals: "Unknown", mode: "insensitive" } },
           { title: { equals: "" } },
+          ...LEGACY_NEWS_OUTLETS.map((outlet) => ({
+            company: { contains: outlet, mode: "insensitive" as const },
+          })),
         ],
       },
     });
