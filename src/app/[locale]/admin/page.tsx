@@ -4,10 +4,36 @@ import React, { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 
+interface CvPersonalInfo {
+  fullName: string;
+  targetJobTitle: string | null;
+  photoUrl: string | null;
+  phone: string | null;
+  address: string | null;
+}
+
+interface CvItem {
+  id: string;
+  title: string;
+  language: string;
+  updatedAt: string;
+  personalInfo?: CvPersonalInfo | null;
+}
+
+interface CoverLetterItem {
+  id: string;
+  title: string;
+  jobTitle: string;
+  companyName: string;
+  updatedAt: string;
+}
+
 interface UserItem {
   id: string;
   email: string;
   name: string | null;
+  avatarUrl?: string | null;
+  googleId?: string | null;
   plan: string;
   planExpiresAt: string | null;
   emailVerified: boolean;
@@ -19,6 +45,8 @@ interface UserItem {
     cvs: number;
     coverLetters: number;
   };
+  cvs?: CvItem[];
+  coverLetters?: CoverLetterItem[];
 }
 
 interface PlatformStats {
@@ -43,6 +71,64 @@ interface PromoCodeItem {
   createdAt: string;
 }
 
+function UserAvatar({
+  user,
+  onClick,
+}: {
+  user: UserItem;
+  onClick?: () => void;
+}) {
+  const [imageError, setImageError] = useState(false);
+  const resolvedAvatar =
+    user.avatarUrl ||
+    user.cvs?.find((c) => c.personalInfo?.photoUrl)?.personalInfo?.photoUrl ||
+    null;
+
+  const isProActive =
+    user.plan === "PRO" && (!user.planExpiresAt || new Date(user.planExpiresAt) > new Date());
+  const isSprintActive =
+    user.plan === "SPRINT" && (!user.planExpiresAt || new Date(user.planExpiresAt) > new Date());
+
+  const ringClass = isProActive
+    ? "border-amber-400 shadow-md shadow-amber-500/20"
+    : isSprintActive
+    ? "border-cyan-400 shadow-md shadow-cyan-500/20"
+    : "border-slate-700";
+
+  return (
+    <div
+      className={`relative w-11 h-11 shrink-0 rounded-2xl ${onClick ? "cursor-pointer hover:opacity-90" : ""}`}
+      onClick={onClick}
+      title={user.name || user.email}
+    >
+      {resolvedAvatar && !imageError ? (
+        <img
+          src={resolvedAvatar}
+          alt={user.name || user.email}
+          className={`w-11 h-11 rounded-2xl object-cover border-2 ${ringClass}`}
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <div
+          className={`w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-md border-2 ${ringClass}`}
+        >
+          {(user.name?.[0] || user.email[0] || "U").toUpperCase()}
+        </div>
+      )}
+
+      {/* Google Auth Indicator Badge on bottom-left */}
+      {user.googleId && (
+        <span
+          className="absolute -bottom-1 -left-1 w-4 h-4 rounded-full bg-white text-blue-600 font-black text-[9px] flex items-center justify-center border border-slate-900 shadow-sm select-none"
+          title="تم التسجيل عبر حساب Google"
+        >
+          G
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function AdminDashboardPage() {
   const params = useParams();
   const router = useRouter();
@@ -61,9 +147,10 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Search & Filter State
+  // Search, Filter & Sort State
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [planFilter, setPlanFilter] = useState<"ALL" | "PRO" | "SPRINT" | "FREE" | "TRIAL" | "HOT_LEADS">("ALL");
+  const [sortBy, setSortBy] = useState<"newest" | "most_docs" | "lowest_credits">("newest");
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
@@ -86,6 +173,15 @@ export default function AdminDashboardPage() {
     durationDays: 30,
   });
   const [creatingPromo, setCreatingPromo] = useState<boolean>(false);
+
+  // User Dossier Inspector Modal State
+  const [selectedUserForDossier, setSelectedUserForDossier] = useState<UserItem | null>(null);
+
+  // Direct Resend Email Modal State
+  const [selectedUserForEmail, setSelectedUserForEmail] = useState<UserItem | null>(null);
+  const [emailSubject, setEmailSubject] = useState<string>("");
+  const [emailMessage, setEmailMessage] = useState<string>("");
+  const [sendingEmail, setSendingEmail] = useState<boolean>(false);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -159,7 +255,10 @@ export default function AdminDashboardPage() {
         prev.map((u) => (u.id === userId ? { ...u, ...data.user } : u))
       );
 
-      // Smooth recalculation of stats
+      if (selectedUserForDossier?.id === userId) {
+        setSelectedUserForDossier((prev) => (prev ? { ...prev, ...data.user } : null));
+      }
+
       const wasPaid = users.find((u) => u.id === userId)?.plan !== "FREE";
       const isPaidNow = targetPlan !== "free";
       if (!wasPaid && isPaidNow) {
@@ -210,6 +309,10 @@ export default function AdminDashboardPage() {
         prev.map((u) => (u.id === userId ? { ...u, ...data.user } : u))
       );
 
+      if (selectedUserForDossier?.id === userId) {
+        setSelectedUserForDossier((prev) => (prev ? { ...prev, ...data.user } : null));
+      }
+
       setStats((prev) => ({
         ...prev,
         totalAiCredits: prev.totalAiCredits + amount,
@@ -256,6 +359,10 @@ export default function AdminDashboardPage() {
         prev.map((u) => (u.id === userId ? { ...u, ...data.user } : u))
       );
 
+      if (selectedUserForDossier?.id === userId) {
+        setSelectedUserForDossier((prev) => (prev ? { ...prev, ...data.user } : null));
+      }
+
       setFeedback({
         type: "success",
         message: data.message || `تم تفعيل بريد ${currentEmail} يدوياً بنجاح.`,
@@ -297,6 +404,10 @@ export default function AdminDashboardPage() {
 
       setUsers((prev) => prev.filter((u) => u.id !== userId));
       setStats((prev) => ({ ...prev, totalUsers: Math.max(0, prev.totalUsers - 1) }));
+
+      if (selectedUserForDossier?.id === userId) {
+        setSelectedUserForDossier(null);
+      }
 
       setFeedback({
         type: "success",
@@ -464,6 +575,76 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Direct Resend Email Templates
+  const applyEmailTemplate = (templateType: "hot_lead" | "bonus_credits" | "cv_help") => {
+    const userName = selectedUserForEmail?.name || selectedUserForEmail?.email.split("@")[0] || "عزيزي المستخدم";
+
+    switch (templateType) {
+      case "hot_lead":
+        setEmailSubject("عرض ترقية استثنائي على باقة PRO في GermanJobsPro 🇩🇪");
+        setEmailMessage(
+          `مرحباً ${userName}،\n\nنلاحظ اهتمامك بتجهيز ملف ترشيحك والتقديم على الوظائف في ألمانيا.\nيسعدنا تقديم خصم حصري بنسبة 40% على باقة PRO أو SPRINT لتفعيل فحص ATS وتوليد خطابات الدافع Anschreiben بدون قيود.\n\nاستخدم كود الخصم: SPECIAL40 عند الترقية، أو تواصل معنا مباشرة لتفعيل حسابك.\n\nنتمنى لك كل التوفيق في مسيرتك المهنية!\nفريق GermanJobsPro`
+        );
+        break;
+      case "bonus_credits":
+        setEmailSubject("هدية رصيد إضافي مجاني لحسابك في GermanJobsPro 🎁");
+        setEmailMessage(
+          `مرحباً ${userName}،\n\nتقديراً لاستخدامك منصة GermanJobsPro، قمنا بإضافة رصيد إضافي مجاني لحسابك لتجربة أدوات الذكاء الاصطناعي وصياغة سيرتك الذاتية الألمانية DIN 5008.\n\nيمكنك تسجيل الدخول الآن ومتابعة بناء ملفك المهني.\n\nبالتوفيق!\nفريق GermanJobsPro`
+        );
+        break;
+      case "cv_help":
+        setEmailSubject("هل تحتاج مساعدة في إكمال سيرتك الذاتية الألمانية؟ 🇩🇪");
+        setEmailMessage(
+          `مرحباً ${userName}،\n\nلاحظنا أنك بدأت إعداد ملفك في GermanJobsPro ولم تكمله بعد.\nهل واجهت أي صعوبة في ترجمة المسميات أو تنسيق معايير DIN 5008 أو إرفاق شهادات اللغة؟\n\nنحن هنا لمساعدتك! يمكنك الرد مباشرة على هذا البريد لأي استفسار وسيسعدنا تقديم الدعم الكامل لك.\n\nمع خالص التحيات،\nفريق دعم GermanJobsPro`
+        );
+        break;
+    }
+  };
+
+  const handleOpenEmailModal = (user: UserItem) => {
+    setSelectedUserForEmail(user);
+    const userName = user.name || user.email.split("@")[0] || "عزيزي المستخدم";
+    setEmailSubject("عرض ترقية استثنائي على باقة PRO في GermanJobsPro 🇩🇪");
+    setEmailMessage(
+      `مرحباً ${userName}،\n\nنلاحظ اهتمامك بتجهيز ملف ترشيحك والتقديم على الوظائف في ألمانيا.\nيسعدنا تقديم خصم حصري بنسبة 40% على باقة PRO أو SPRINT لتفعيل فحص ATS وتوليد خطابات الدافع Anschreiben بدون قيود.\n\nاستخدم كود الخصم: SPECIAL40 عند الترقية، أو تواصل معنا مباشرة لتفعيل حسابك.\n\nنتمنى لك كل التوفيق في مسيرتك المهنية!\nفريق GermanJobsPro`
+    );
+  };
+
+  const handleSendEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUserForEmail) return;
+
+    setSendingEmail(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          action: "send_email",
+          userId: selectedUserForEmail.id,
+          subject: emailSubject,
+          message: emailMessage,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "فشل إرسال البريد الإلكتروني.");
+      }
+
+      setFeedback({
+        type: "success",
+        message: data.message || `تم إرسال البريد بنجاح إلى ${selectedUserForEmail.email} عبر Resend.`,
+      });
+      setSelectedUserForEmail(null);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "حدث خطأ أثناء إرسال البريد.");
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await fetch("/api/admin/logout", { method: "POST" });
@@ -473,9 +654,39 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Filtered Users List
+  // Filter Counts Calculation
+  const filterCounts = useMemo(() => {
+    let all = users.length;
+    let pro = 0;
+    let sprint = 0;
+    let free = 0;
+    let trial = 0;
+    let hotLeads = 0;
+
+    for (const u of users) {
+      const isPaidActive =
+        (u.plan === "PRO" || u.plan === "SPRINT") &&
+        (!u.planExpiresAt || new Date(u.planExpiresAt) > new Date());
+
+      if (u.plan === "PRO" && isPaidActive) pro++;
+      if (u.plan === "SPRINT" && isPaidActive) sprint++;
+      if (u.plan === "FREE") {
+        free++;
+        const hasSpentCredits = u.aiCredits === 0;
+        const hasCreatedDocs = ((u._count?.cvs || 0) > 0) || ((u._count?.coverLetters || 0) > 0);
+        if (hasSpentCredits || hasCreatedDocs) {
+          hotLeads++;
+        }
+      }
+      if (u.plan === "TRIAL") trial++;
+    }
+
+    return { all, pro, sprint, free, trial, hotLeads };
+  }, [users]);
+
+  // Filtered & Sorted Users List
   const filteredUsers = useMemo(() => {
-    return users.filter((u) => {
+    const list = users.filter((u) => {
       const matchesSearch =
         u.email.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
         (u.name && u.name.toLowerCase().includes(searchTerm.toLowerCase().trim())) ||
@@ -510,7 +721,22 @@ export default function AdminDashboardPage() {
 
       return true;
     });
-  }, [users, searchTerm, planFilter]);
+
+    list.sort((a, b) => {
+      if (sortBy === "most_docs") {
+        const docsA = (a._count?.cvs || 0) + (a._count?.coverLetters || 0);
+        const docsB = (b._count?.cvs || 0) + (b._count?.coverLetters || 0);
+        return docsB - docsA;
+      }
+      if (sortBy === "lowest_credits") {
+        return a.aiCredits - b.aiCredits;
+      }
+      // default: newest
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    return list;
+  }, [users, searchTerm, planFilter, sortBy]);
 
   const proPercentage = stats.totalUsers > 0 ? Math.round((stats.proUsers / stats.totalUsers) * 100) : 0;
   const avgCredits = stats.totalUsers > 0 ? Math.round(stats.totalAiCredits / stats.totalUsers) : 0;
@@ -751,7 +977,7 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* Card 4 (NEW): Platform Activity & Active Jobs */}
+          {/* Card 4: Platform Activity & Active Jobs */}
           <div className="relative overflow-hidden rounded-3xl bg-slate-900/90 border border-slate-800/90 p-5 shadow-xl backdrop-blur-sm group hover:border-emerald-500/30 transition">
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-emerald-500/20 transition" />
             <div className="flex items-center justify-between mb-3">
@@ -778,7 +1004,7 @@ export default function AdminDashboardPage() {
           </div>
         </section>
 
-        {/* CONTROLS & SEARCH BAR */}
+        {/* CONTROLS, SEARCH BAR & SMART SORTING */}
         <section className="bg-slate-900/80 border border-slate-800/80 rounded-3xl p-5 shadow-lg backdrop-blur-sm space-y-4">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             
@@ -806,42 +1032,61 @@ export default function AdminDashboardPage() {
               )}
             </div>
 
-            {/* Plan Filter Pills with SPRINT and Hot Leads */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-slate-400 font-medium ml-1">
-                {isAr ? "تصفية الخطة:" : "Filter:"}
-              </span>
+            {/* Smart Sorting Dropdown & Plan Filter Pills with Dynamic Counts */}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Sort By Dropdown */}
+              <div className="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
+                <span className="text-xs text-slate-400 font-semibold">
+                  {isAr ? "ترتيب:" : "Sort:"}
+                </span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as "newest" | "most_docs" | "lowest_credits")}
+                  className="bg-transparent text-xs font-bold text-slate-200 focus:outline-none cursor-pointer"
+                >
+                  <option value="newest" className="bg-slate-900 text-white">
+                    {isAr ? "الأحدث تسجيلاً" : "Newest Joined"}
+                  </option>
+                  <option value="most_docs" className="bg-slate-900 text-white">
+                    {isAr ? "الأكثر إنشاءً للملفات" : "Most Documents"}
+                  </option>
+                  <option value="lowest_credits" className="bg-slate-900 text-white">
+                    {isAr ? "الأقل رصيداً" : "Lowest Credits"}
+                  </option>
+                </select>
+              </div>
 
-              {(
-                [
-                  { id: "ALL", label: isAr ? "الكل" : "All" },
-                  { id: "PRO", label: "PRO ⭐" },
-                  { id: "SPRINT", label: "⚡ SPRINT" },
-                  { id: "FREE", label: isAr ? "مجاني" : "Free" },
-                  { id: "TRIAL", label: isAr ? "تجريبي" : "Trial" },
-                  { id: "HOT_LEADS", label: isAr ? "🔥 استنفدوا الرصيد (Hot Leads)" : "🔥 Hot Leads" },
-                ] as const
-              ).map((filterOption) => {
-                const isActive = planFilter === filterOption.id;
+              {/* Filter Pills with Live Counts */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  { id: "ALL", label: isAr ? `الكل (${filterCounts.all})` : `All (${filterCounts.all})` },
+                  { id: "PRO", label: `PRO ⭐ (${filterCounts.pro})` },
+                  { id: "SPRINT", label: `⚡ SPRINT (${filterCounts.sprint})` },
+                  { id: "FREE", label: isAr ? `مجاني (${filterCounts.free})` : `Free (${filterCounts.free})` },
+                  { id: "TRIAL", label: isAr ? `تجريبي (${filterCounts.trial})` : `Trial (${filterCounts.trial})` },
+                  { id: "HOT_LEADS", label: isAr ? `🔥 استنفدوا الرصيد (${filterCounts.hotLeads})` : `🔥 Hot Leads (${filterCounts.hotLeads})` },
+                ].map((filterOption) => {
+                  const isActive = planFilter === filterOption.id;
 
-                return (
-                  <button
-                    key={filterOption.id}
-                    onClick={() => setPlanFilter(filterOption.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                      isActive
-                        ? filterOption.id === "HOT_LEADS"
-                          ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 border border-amber-400"
-                          : "bg-blue-600 text-white shadow-md shadow-blue-600/30 border border-blue-500"
-                        : filterOption.id === "HOT_LEADS"
-                        ? "bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 border border-amber-500/30"
-                        : "bg-slate-950 text-slate-400 hover:text-white border border-slate-800 hover:border-slate-700"
-                    }`}
-                  >
-                    <span>{filterOption.label}</span>
-                  </button>
-                );
-              })}
+                  return (
+                    <button
+                      key={filterOption.id}
+                      onClick={() => setPlanFilter(filterOption.id as any)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                        isActive
+                          ? filterOption.id === "HOT_LEADS"
+                            ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 border border-amber-400"
+                            : "bg-blue-600 text-white shadow-md shadow-blue-600/30 border border-blue-500"
+                          : filterOption.id === "HOT_LEADS"
+                          ? "bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 border border-amber-500/30"
+                          : "bg-slate-950 text-slate-400 hover:text-white border border-slate-800 hover:border-slate-700"
+                      }`}
+                    >
+                      <span>{filterOption.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -924,29 +1169,32 @@ export default function AdminDashboardPage() {
                       remainingDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
                     }
 
-                    // Special mailto draft for Hot Leads / Users
-                    const specialOfferSubject = isAr
-                      ? "عرض ترقية استثنائي على باقة PRO في GermanJobsPro 🇩🇪"
-                      : "Special Upgrade Offer on GermanJobsPro 🇩🇪";
-                    const specialOfferBody = isAr
-                      ? `مرحباً ${user.name || ""},\n\nنلاحظ اهتمامك بتجهيز ملف ترشيحك والتقديم على الوظائف في ألمانيا.\nيسعدنا تقديم كود خصم حصري لتفعيل اشتراك PRO أو SPRINT والاستفادة من فحص ATS وتوليد خطابات الدافع Anschreiben بدون قيود.\n\nتواصل معنا للبدء!\nفريق GermanJobsPro`
-                      : `Hello ${user.name || ""},\n\nWe noticed you started preparing your German application dossier. We'd love to offer you a special discount on our PRO pass.\n\nBest regards,\nGermanJobsPro Team`;
-                    const mailtoUrl = `mailto:${user.email}?subject=${encodeURIComponent(specialOfferSubject)}&body=${encodeURIComponent(specialOfferBody)}`;
+                    // Target profession extracted from their latest CV
+                    const targetProfession = user.cvs?.find((c) => c.personalInfo?.targetJobTitle)?.personalInfo?.targetJobTitle || null;
 
                     return (
                       <tr
                         key={user.id}
                         className="hover:bg-slate-800/30 transition duration-150 group"
                       >
-                        {/* User info */}
+                        {/* User info with Real Avatar, Google Badge, and Target Profession */}
                         <td className="py-4 px-6">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-md shrink-0">
-                              {(user.name?.[0] || user.email[0] || "U").toUpperCase()}
-                            </div>
+                            <UserAvatar
+                              user={user}
+                              onClick={() => setSelectedUserForDossier(user)}
+                            />
+
                             <div className="space-y-1 min-w-0">
-                              <div className="font-bold text-white text-sm truncate flex items-center gap-2">
-                                <span>{user.name || (isAr ? "بدون اسم" : "Unnamed")}</span>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedUserForDossier(user)}
+                                  className="font-bold text-white text-sm truncate hover:text-blue-400 transition cursor-pointer text-right"
+                                >
+                                  {user.name || (isAr ? "بدون اسم" : "Unnamed")}
+                                </button>
+
                                 {isProActive && (
                                   <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">
                                     PRO
@@ -957,20 +1205,33 @@ export default function AdminDashboardPage() {
                                     SPRINT
                                   </span>
                                 )}
+
+                                {targetProfession && (
+                                  <span
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-300 border border-blue-500/20 truncate max-w-[170px]"
+                                    title={targetProfession}
+                                  >
+                                    <span>🎯</span>
+                                    <span className="truncate">{targetProfession}</span>
+                                  </span>
+                                )}
                               </div>
 
-                              <div className="flex items-center gap-2 flex-wrap">
+                              <div className="flex items-center gap-2.5 flex-wrap">
                                 <span className="text-xs text-slate-400 font-mono truncate">
                                   {user.email}
                                 </span>
-                                <a
-                                  href={mailtoUrl}
-                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 hover:text-amber-300 hover:underline transition"
-                                  title="إرسال عرض خاص بالبريد"
+                                
+                                {/* In-App Direct Resend Email Trigger */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEmailModal(user)}
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 hover:text-amber-300 hover:underline transition cursor-pointer"
+                                  title="إرسال رسالة رسمية أو عرض خاص للمستخدم عبر Resend"
                                 >
                                   <span>✉️</span>
-                                  <span>{isAr ? "عرض خاص" : "Special Offer"}</span>
-                                </a>
+                                  <span>{isAr ? "عرض خاص" : "Send Email"}</span>
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -1055,16 +1316,21 @@ export default function AdminDashboardPage() {
                           </div>
                         </td>
 
-                        {/* Created Documents */}
+                        {/* Clickable Created Documents badges -> Opens Dossier Inspector */}
                         <td className="py-4 px-6">
-                          <div className="flex items-center gap-2 text-xs text-slate-400">
-                            <span className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 font-mono text-slate-300">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedUserForDossier(user)}
+                            className="flex items-center gap-2 text-xs text-slate-400 hover:text-white transition cursor-pointer group"
+                            title="اضغط لمعاينة السير الذاتية وخطابات الدافع لهذا المستخدم"
+                          >
+                            <span className="px-2 py-0.5 rounded bg-slate-950 group-hover:bg-blue-600/20 border border-slate-800 group-hover:border-blue-500/40 font-mono text-slate-300 transition">
                               📄 {user._count?.cvs ?? 0} CV
                             </span>
-                            <span className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 font-mono text-slate-300">
+                            <span className="px-2 py-0.5 rounded bg-slate-950 group-hover:bg-purple-600/20 border border-slate-800 group-hover:border-purple-500/40 font-mono text-slate-300 transition">
                               ✉️ {user._count?.coverLetters ?? 0} CL
                             </span>
-                          </div>
+                          </button>
                         </td>
 
                         {/* Joined Date */}
@@ -1171,6 +1437,338 @@ export default function AdminDashboardPage() {
         </section>
 
       </div>
+
+      {/* MODAL 1: USER DOSSIER & DOCUMENTS INSPECTOR */}
+      {selectedUserForDossier && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 sm:p-8 space-y-6 text-slate-100">
+            {/* Modal Header with User Identity */}
+            <div className="flex items-start justify-between border-b border-slate-800 pb-5">
+              <div className="flex items-center gap-4">
+                <UserAvatar user={selectedUserForDossier} />
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-extrabold text-white">
+                      {selectedUserForDossier.name || (isAr ? "بدون اسم" : "Unnamed")}
+                    </h3>
+                    {selectedUserForDossier.googleId && (
+                      <span className="px-2 py-0.5 rounded-md bg-white text-blue-600 font-extrabold text-xs">
+                        Google
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400 font-mono">
+                    {selectedUserForDossier.email}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setSelectedUserForDossier(null)}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition cursor-pointer text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Quick Summary Pill Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl space-y-1">
+                <span className="text-[11px] text-slate-400 font-semibold block">{isAr ? "الخطة:" : "Plan:"}</span>
+                <span className="text-xs font-bold text-amber-300">{selectedUserForDossier.plan}</span>
+              </div>
+              <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl space-y-1">
+                <span className="text-[11px] text-slate-400 font-semibold block">{isAr ? "رصيد الذكاء:" : "Credits:"}</span>
+                <span className="text-xs font-bold text-blue-300 font-mono">⚡ {selectedUserForDossier.aiCredits}</span>
+              </div>
+              <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl space-y-1">
+                <span className="text-[11px] text-slate-400 font-semibold block">{isAr ? "تأكيد البريد:" : "Email Verified:"}</span>
+                <span className={`text-xs font-bold ${selectedUserForDossier.emailVerified ? "text-emerald-400" : "text-amber-400"}`}>
+                  {selectedUserForDossier.emailVerified ? (isAr ? "✓ مفعّل" : "Verified") : (isAr ? "⏳ غير مفعّل" : "Unverified")}
+                </span>
+              </div>
+              <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl space-y-1">
+                <span className="text-[11px] text-slate-400 font-semibold block">{isAr ? "تاريخ الانضمام:" : "Joined:"}</span>
+                <span className="text-xs font-mono text-slate-300">
+                  {new Date(selectedUserForDossier.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+
+            {/* Personal Details Extracted from CV (if any) */}
+            {(() => {
+              const info = selectedUserForDossier.cvs?.find((c) => c.personalInfo)?.personalInfo;
+              if (!info) return null;
+
+              return (
+                <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 space-y-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <span>👤</span>
+                    <span>{isAr ? "بيانات السيرة الذاتية الشخصية:" : "CV Personal Profile:"}</span>
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {info.fullName && (
+                      <div className="text-slate-300">
+                        <span className="text-slate-500 font-medium">{isAr ? "الاسم الكامل: " : "Full Name: "}</span>
+                        <span className="font-semibold text-white">{info.fullName}</span>
+                      </div>
+                    )}
+                    {info.targetJobTitle && (
+                      <div className="text-slate-300">
+                        <span className="text-slate-500 font-medium">{isAr ? "المسمى المهني المستهدف: " : "Target Role: "}</span>
+                        <span className="font-semibold text-blue-300">🎯 {info.targetJobTitle}</span>
+                      </div>
+                    )}
+                    {info.phone && (
+                      <div className="text-slate-300">
+                        <span className="text-slate-500 font-medium">{isAr ? "الهاتف: " : "Phone: "}</span>
+                        <span className="font-mono text-slate-200">{info.phone}</span>
+                      </div>
+                    )}
+                    {info.address && (
+                      <div className="text-slate-300">
+                        <span className="text-slate-500 font-medium">{isAr ? "العنوان/المدينة: " : "Location: "}</span>
+                        <span>{info.address}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* User CVs List */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-bold text-white flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <span>📄</span>
+                  <span>{isAr ? "السير الذاتية المنشأة (DIN 5008 CVs)" : "Generated Resumes (CVs)"}</span>
+                </span>
+                <span className="text-xs font-mono text-slate-400">({selectedUserForDossier.cvs?.length ?? 0})</span>
+              </h4>
+
+              {(!selectedUserForDossier.cvs || selectedUserForDossier.cvs.length === 0) ? (
+                <p className="text-xs text-slate-500 p-4 bg-slate-950/40 rounded-xl border border-slate-800 text-center">
+                  {isAr ? "لم يقم هذا المستخدم بإنشاء أي سيرة ذاتية بعد." : "No resumes created yet."}
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {selectedUserForDossier.cvs.map((cv) => (
+                    <div
+                      key={cv.id}
+                      className="bg-slate-950/60 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="space-y-0.5">
+                        <div className="font-bold text-slate-200 flex items-center gap-2">
+                          <span>{cv.title || "Lebenslauf"}</span>
+                          <span className="px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono text-[10px]">
+                            {cv.language.toUpperCase()}
+                          </span>
+                        </div>
+                        {cv.personalInfo?.targetJobTitle && (
+                          <div className="text-blue-400 font-medium text-[11px]">
+                            🎯 {cv.personalInfo.targetJobTitle}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="text-[11px] text-slate-500 font-mono shrink-0">
+                        {new Date(cv.updatedAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* User Cover Letters List */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-bold text-white flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <span>✉️</span>
+                  <span>{isAr ? "خطابات الدافع (Anschreiben)" : "Cover Letters"}</span>
+                </span>
+                <span className="text-xs font-mono text-slate-400">({selectedUserForDossier.coverLetters?.length ?? 0})</span>
+              </h4>
+
+              {(!selectedUserForDossier.coverLetters || selectedUserForDossier.coverLetters.length === 0) ? (
+                <p className="text-xs text-slate-500 p-4 bg-slate-950/40 rounded-xl border border-slate-800 text-center">
+                  {isAr ? "لم يقم هذا المستخدم بتوليد أي خطاب دافع بعد." : "No cover letters generated yet."}
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {selectedUserForDossier.coverLetters.map((cl) => (
+                    <div
+                      key={cl.id}
+                      className="bg-slate-950/60 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="space-y-0.5">
+                        <div className="font-bold text-slate-200">
+                          {cl.jobTitle}
+                        </div>
+                        <div className="text-slate-400 text-[11px]">
+                          🏢 {cl.companyName}
+                        </div>
+                      </div>
+
+                      <div className="text-[11px] text-slate-500 font-mono shrink-0">
+                        {new Date(cl.updatedAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  const target = selectedUserForDossier;
+                  setSelectedUserForDossier(null);
+                  handleOpenEmailModal(target);
+                }}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-blue-600/30"
+              >
+                <span>✉️</span>
+                <span>{isAr ? "مراسلة هذا المستخدم عبر Resend" : "Send Resend Email"}</span>
+              </button>
+
+              <button
+                onClick={() => setSelectedUserForDossier(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition cursor-pointer"
+              >
+                {isAr ? "إغلاق" : "Close"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: DIRECT RESEND EMAIL MODAL WITH 3 TEMPLATES */}
+      {selectedUserForEmail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 sm:p-8 space-y-6 text-slate-100">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="space-y-1">
+                <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
+                  <span>✉️</span>
+                  <span>{isAr ? "إرسال رسالة رسمية عبر Resend" : "Send Official Email via Resend"}</span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  {isAr ? `المستلم: ${selectedUserForEmail.name || ""} (${selectedUserForEmail.email})` : `Recipient: ${selectedUserForEmail.email}`}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setSelectedUserForEmail(null)}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition cursor-pointer text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Quick 1-Click Templates */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-300 block">
+                {isAr ? "⚡ قوالب جاهزة بضغطة واحدة:" : "⚡ 1-Click Quick Templates:"}
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => applyEmailTemplate("hot_lead")}
+                  className="p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold text-right transition cursor-pointer flex flex-col gap-1"
+                >
+                  <span>🔥 عرض ترقية خاص</span>
+                  <span className="text-[10px] text-amber-400/70 font-normal">عرض 40% على PRO / SPRINT</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => applyEmailTemplate("bonus_credits")}
+                  className="p-2.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs font-bold text-right transition cursor-pointer flex flex-col gap-1"
+                >
+                  <span>🎁 هدية رصيد إضافي</span>
+                  <span className="text-[10px] text-blue-400/70 font-normal">رصيد مجاني لتجربة الأدوات</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => applyEmailTemplate("cv_help")}
+                  className="p-2.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 text-xs font-bold text-right transition cursor-pointer flex flex-col gap-1"
+                >
+                  <span>👋 مساعدة في إكمال السيرة</span>
+                  <span className="text-[10px] text-purple-400/70 font-normal">مساعدة في ترجمة وتنسيق DIN</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSendEmail} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-400 block">
+                  {isAr ? "موضوع الرسالة (Subject):" : "Subject:"}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500 font-sans"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-400 block">
+                  {isAr ? "نص الرسالة (Message Content):" : "Message Body:"}
+                </label>
+                <textarea
+                  rows={7}
+                  required
+                  value={emailMessage}
+                  onChange={(e) => setEmailMessage(e.target.value)}
+                  className="w-full p-4 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs sm:text-sm leading-relaxed focus:outline-none focus:border-blue-500 font-sans resize-y"
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-[11px] text-slate-500">
+                  {isAr ? "يتم الإرسال رسمياً من: GermanJobsPro <support@germanjobspro.com>" : "Sent via Resend from GermanJobsPro"}
+                </span>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedUserForEmail(null)}
+                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition cursor-pointer"
+                  >
+                    {isAr ? "إلغاء" : "Cancel"}
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={sendingEmail}
+                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-md shadow-blue-600/30"
+                  >
+                    {sendingEmail ? (
+                      <>
+                        <span className="animate-spin text-xs">⏳</span>
+                        <span>{isAr ? "جاري الإرسال عبر Resend..." : "Sending..."}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>✉️</span>
+                        <span>{isAr ? "إرسال الآن عبر Resend" : "Send Now via Resend"}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* BUILT-IN PROMO CODES MODAL */}
       {showPromoModal && (

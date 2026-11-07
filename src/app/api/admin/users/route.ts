@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-auth";
+import { sendEmail, escapeHtml } from "@/lib/email";
 
 async function isAuthorizedAdmin(request: NextRequest): Promise<boolean> {
   const admin = await requireAdmin(request);
@@ -11,6 +12,8 @@ const USER_SELECT = {
   id: true,
   email: true,
   name: true,
+  avatarUrl: true,
+  googleId: true,
   plan: true,
   planExpiresAt: true,
   emailVerified: true,
@@ -23,6 +26,36 @@ const USER_SELECT = {
       cvs: true,
       coverLetters: true,
     },
+  },
+  cvs: {
+    select: {
+      id: true,
+      title: true,
+      language: true,
+      updatedAt: true,
+      personalInfo: {
+        select: {
+          fullName: true,
+          targetJobTitle: true,
+          photoUrl: true,
+          phone: true,
+          address: true,
+        },
+      },
+    },
+    orderBy: { updatedAt: "desc" as const },
+    take: 5,
+  },
+  coverLetters: {
+    select: {
+      id: true,
+      title: true,
+      jobTitle: true,
+      companyName: true,
+      updatedAt: true,
+    },
+    orderBy: { updatedAt: "desc" as const },
+    take: 5,
   },
 } as const;
 
@@ -180,6 +213,97 @@ export async function POST(request: NextRequest) {
         });
         message = `تم تفعيل البريد الإلكتروني للمستخدم ${existingUser.email} يدوياً بنجاح.`;
         break;
+      }
+
+      case "send_email": {
+        const { subject, message: emailContent } = body;
+        if (!subject || typeof subject !== "string" || !subject.trim()) {
+          return NextResponse.json({ success: false, error: "موضوع الرسالة مطلوب." }, { status: 400 });
+        }
+        if (!emailContent || typeof emailContent !== "string" || !emailContent.trim()) {
+          return NextResponse.json({ success: false, error: "نص الرسالة مطلوب." }, { status: 400 });
+        }
+
+        const safeSubject = subject.trim();
+        const safeMessage = emailContent.trim();
+        const userName = existingUser.name || existingUser.email.split("@")[0] || "عضو GermanJobsPro";
+
+        const emailHtml = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(safeSubject)}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #020617; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #f8fafc; direction: rtl; text-align: right;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #020617; padding: 35px 15px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 580px; background-color: #0f172a; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+          <!-- German Flag Top Accent -->
+          <tr>
+            <td style="height: 4px; background: linear-gradient(90deg, #111827 0%, #DC2626 50%, #FBBF24 100%);"></td>
+          </tr>
+          <!-- Header -->
+          <tr>
+            <td style="padding: 30px 30px 15px 30px; text-align: right;">
+              <div style="display: inline-block; padding: 8px 16px; background: rgba(37, 99, 235, 0.12); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 12px; margin-bottom: 12px;">
+                <span style="font-size: 18px; font-weight: 800; color: #60A5FA; letter-spacing: 0.5px;">GermanJobs<span style="color: #FBBF24;">Pro</span></span>
+              </div>
+              <h2 style="margin: 10px 0 0 0; font-size: 20px; font-weight: 800; color: #ffffff;">${escapeHtml(safeSubject)}</h2>
+              <p style="margin: 6px 0 0 0; font-size: 14px; color: #94a3b8;">رسالة رسمية من إدارة المنصة</p>
+            </td>
+          </tr>
+          <!-- Content Box -->
+          <tr>
+            <td style="padding: 15px 30px 30px 30px;">
+              <div style="background-color: #090e1a; border: 1px solid #1e293b; border-radius: 14px; padding: 22px; color: #e2e8f0; font-size: 14px; line-height: 1.8; white-space: pre-wrap;">
+مرحباً ${escapeHtml(userName)}،
+
+${escapeHtml(safeMessage)}
+              </div>
+              <div style="margin-top: 25px; text-align: center;">
+                <a href="https://www.germanjobspro.com" target="_blank" style="display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; text-decoration: none; font-weight: 700; font-size: 13px; border-radius: 12px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);">
+                  زيارة منصة GermanJobsPro ←
+                </a>
+              </div>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 18px 30px; background-color: #080d1a; border-top: 1px solid #1e293b; text-align: center;">
+              <p style="margin: 0; font-size: 11px; color: #64748b; line-height: 1.6;">
+                فريق GermanJobsPro • بوابة العمل والمهنة في ألمانيا 🇩🇪<br>
+                <a href="https://www.germanjobspro.com" style="color: #3b82f6; text-decoration: none;">www.germanjobspro.com</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+        const emailResult = await sendEmail({
+          from: "GermanJobsPro <support@germanjobspro.com>",
+          to: existingUser.email,
+          subject: safeSubject,
+          html: emailHtml,
+          text: `مرحباً ${userName}،\n\n${safeMessage}\n\nفريق GermanJobsPro\nhttps://www.germanjobspro.com`,
+        });
+
+        if (!emailResult.success) {
+          return NextResponse.json(
+            { success: false, error: emailResult.error || "فشل إرسال البريد الإلكتروني عبر مزود الخدمة." },
+            { status: 500 }
+          );
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: "تم إرسال البريد الإلكتروني للمستخدم بنجاح عبر Resend.",
+        });
       }
 
       case "toggle_pro": {
