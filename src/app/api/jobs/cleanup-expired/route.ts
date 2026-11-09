@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, verifyAutomationSecret } from "@/lib/admin-auth";
-import { LEGACY_NEWS_OUTLETS } from "@/lib/jobUtils";
+import { LEGACY_NEWS_OUTLETS, NON_GERMANY_LOCATIONS, isExcludedJob, deduplicateJobs } from "@/lib/jobUtils";
 
 async function isAuthorized(request: NextRequest): Promise<boolean> {
   if (verifyAutomationSecret(request)) {
@@ -23,7 +23,7 @@ async function handleCleanup(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const mode = searchParams.get("mode") || "archive"; // "archive" (mark EXPIRED) or "delete"
 
-    // 1. Purge non-job entries or Google News aggregator entries
+    // 1. Purge non-job entries, Google News aggregator entries, and Swiss/non-German listings
     const nonJobPurgeResult = await prisma.job.deleteMany({
       where: {
         OR: [
@@ -37,11 +37,50 @@ async function handleCleanup(request: NextRequest) {
           ...LEGACY_NEWS_OUTLETS.map((outlet) => ({
             company: { contains: outlet, mode: "insensitive" as const },
           })),
+          ...NON_GERMANY_LOCATIONS.map((loc) => ({
+            city: { contains: loc, mode: "insensitive" as const },
+          })),
+          ...NON_GERMANY_LOCATIONS.map((loc) => ({
+            title: { contains: loc, mode: "insensitive" as const },
+          })),
         ],
       },
     });
 
-    // 2. 30 days cutoff or explicit expiresAt reached
+    // 2. Multi-city & Duplicate listings deduplication + non-German listings cleanup
+    const activeJobs = await prisma.job.findMany({
+      where: { status: "ACTIVE" },
+      select: { id: true, title: true, company: true, city: true, applyUrl: true, publishedAt: true },
+      orderBy: { publishedAt: "desc" },
+    });
+
+    // Check for any remaining excluded jobs in activeJobs
+    const excludedIds = activeJobs.filter((j) => isExcludedJob(j)).map((j) => j.id);
+
+    // Keep only first occurrence of each normalized title|company pair
+    const nonExcludedActive = activeJobs.filter((j) => !excludedIds.includes(j.id));
+    const uniqueActive = deduplicateJobs(nonExcludedActive);
+    const uniqueIds = new Set(uniqueActive.map((j) => j.id));
+    const duplicateIds = nonExcludedActive.filter((j) => !uniqueIds.has(j.id)).map((j) => j.id);
+
+    const idsToPurge = Array.from(new Set([...excludedIds, ...duplicateIds]));
+    let deduplicatedCount = 0;
+    if (idsToPurge.length > 0) {
+      if (mode === "delete" || request.method === "DELETE") {
+        const delRes = await prisma.job.deleteMany({
+          where: { id: { in: idsToPurge } },
+        });
+        deduplicatedCount = delRes.count;
+      } else {
+        const updRes = await prisma.job.updateMany({
+          where: { id: { in: idsToPurge } },
+          data: { status: "EXPIRED" },
+        });
+        deduplicatedCount = updRes.count;
+      }
+    }
+
+    // 3. 30 days cutoff or explicit expiresAt reached
     const now = new Date();
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
@@ -78,8 +117,9 @@ async function handleCleanup(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: `Cleanup completed. Purged ${nonJobPurgeResult.count} non-job entries. ${mode === "delete" ? "Deleted" : "Expired"} ${expiredCount} expired jobs.`,
+        message: `Cleanup completed. Purged ${nonJobPurgeResult.count} non-job entries. Deduplicated/filtered ${deduplicatedCount} duplicate/Swiss listings. ${mode === "delete" ? "Deleted" : "Expired"} ${expiredCount} expired jobs.`,
         purgedNonJobsCount: nonJobPurgeResult.count,
+        deduplicatedCount,
         expiredJobsCount: expiredCount,
         mode,
         cutoffDate: thirtyDaysAgo.toISOString(),

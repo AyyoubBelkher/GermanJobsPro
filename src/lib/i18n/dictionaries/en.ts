@@ -14,6 +14,7 @@ export const en: Dictionary = {
     newCv: '+ New CV',
     signIn: 'Sign In',
     signOut: 'Sign Out',
+    register: 'Get Started Free',
     createCv: 'Create German CV 🇩🇪',
     createCvFree: 'Create Free German CV 🇩🇪',
     mainDashboard: 'Main Dashboard',

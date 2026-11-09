@@ -4,7 +4,7 @@ import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
 import { prisma } from "@/lib/prisma";
 import { getCityVariants } from "@/lib/cityAliases";
-import { LEGACY_NEWS_OUTLETS, isLegacyNewsJob } from "@/lib/jobUtils";
+import { LEGACY_NEWS_OUTLETS, NON_GERMANY_LOCATIONS, isLegacyNewsJob, isExcludedJob, deduplicateJobs } from "@/lib/jobUtils";
 import JobBoardClient, { JobItem } from "@/components/jobs/JobBoardClient";
 
 export const revalidate = 60;
@@ -99,12 +99,18 @@ export default async function JobsPage({
     status: "ACTIVE",
   });
 
-  // Exclude legacy news-scraper entries
+  // Exclude legacy news-scraper entries and Swiss/non-German listings
   whereConditions.push({
     NOT: [
       { applyUrl: { contains: "news.google" } },
       ...LEGACY_NEWS_OUTLETS.map((outlet) => ({
         company: { contains: outlet, mode: "insensitive" as const },
+      })),
+      ...NON_GERMANY_LOCATIONS.map((loc) => ({
+        city: { contains: loc, mode: "insensitive" as const },
+      })),
+      ...NON_GERMANY_LOCATIONS.map((loc) => ({
+        title: { contains: loc, mode: "insensitive" as const },
       })),
     ],
   });
@@ -141,7 +147,7 @@ export default async function JobsPage({
     total = fetchedTotal;
     rawJobs = fetchedJobs;
 
-    // Automatically trigger a background cleanup for legacy news rows so only real employer job listings remain
+    // Automatically trigger a background cleanup for legacy news rows and non-German listings
     prisma.job
       .deleteMany({
         where: {
@@ -150,11 +156,17 @@ export default async function JobsPage({
             ...LEGACY_NEWS_OUTLETS.map((outlet) => ({
               company: { contains: outlet, mode: "insensitive" as const },
             })),
+            ...NON_GERMANY_LOCATIONS.map((loc) => ({
+              city: { contains: loc, mode: "insensitive" as const },
+            })),
+            ...NON_GERMANY_LOCATIONS.map((loc) => ({
+              title: { contains: loc, mode: "insensitive" as const },
+            })),
           ],
         },
       })
       .catch((err) => {
-        console.error("[JobsPage] Background news cleanup error:", err instanceof Error ? err.message : err);
+        console.error("[JobsPage] Background cleanup error:", err instanceof Error ? err.message : err);
       });
   } catch (error) {
     console.error(
@@ -163,9 +175,9 @@ export default async function JobsPage({
     );
   }
 
-  const initialJobs: JobItem[] = rawJobs
-    .filter((j) => !isLegacyNewsJob(j))
-    .map((j) => ({
+  const initialJobs: JobItem[] = deduplicateJobs(
+    rawJobs.filter((j) => !isExcludedJob(j))
+  ).map((j) => ({
       id: j.id,
       title: j.title,
       company: j.company,

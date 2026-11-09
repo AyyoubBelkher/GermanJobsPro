@@ -1,6 +1,7 @@
 {
   "nav": {
-    "tools": "Tools"
+    "tools": "Tools",
+    "register": "Konto erstellen"
   },
   "home": {
     "heroCtaSecondary": "Tools entdecken",

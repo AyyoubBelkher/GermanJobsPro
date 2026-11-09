@@ -1,6 +1,7 @@
 {
   "nav": {
-    "tools": "الأدوات"
+    "tools": "الأدوات",
+    "register": "إنشاء حساب"
   },
   "home": {
     "heroCtaSecondary": "اكتشف الأدوات",

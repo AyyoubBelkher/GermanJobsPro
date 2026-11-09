@@ -41,6 +41,21 @@ export const LEGACY_NEWS_OUTLETS = [
   "Fußballverband",
 ] as const;
 
+export const NON_GERMANY_LOCATIONS = [
+  "zürich",
+  "zurich",
+  "payerne",
+  "winterthur",
+  "lausanne",
+  "oberglatt",
+  "geneva",
+  "genève",
+  "basel",
+  "bern",
+  "schweiz",
+  "switzerland",
+] as const;
+
 export const formatLangLevel = (lvl?: string | null): string =>
   !lvl || lvl.toLowerCase() === "none" ? "Deutsch (B1/B2)" : lvl;
 
@@ -48,11 +63,50 @@ export function isLegacyNewsJob(job: {
   applyUrl?: string | null;
   sourceUrl?: string | null;
   company?: string | null;
+  city?: string | null;
+  title?: string | null;
 }): boolean {
   const url = (job.sourceUrl || job.applyUrl || "").toLowerCase();
   if (url.includes("news.google.com") || url.includes("news.google.")) return true;
   const company = (job.company || "").toLowerCase();
-  return LEGACY_NEWS_OUTLETS.some((outlet) => company.includes(outlet.toLowerCase()));
+  if (LEGACY_NEWS_OUTLETS.some((outlet) => company.includes(outlet.toLowerCase()))) return true;
+
+  const city = (job.city || "").toLowerCase();
+  const title = (job.title || "").toLowerCase();
+  return NON_GERMANY_LOCATIONS.some((loc) => {
+    const l = loc.toLowerCase();
+    return (
+      city.includes(l) ||
+      title.includes(l) ||
+      company.includes(l) ||
+      url.includes(l)
+    );
+  });
+}
+
+export function isExcludedJob(job: {
+  applyUrl?: string | null;
+  sourceUrl?: string | null;
+  company?: string | null;
+  city?: string | null;
+  title?: string | null;
+}): boolean {
+  return isLegacyNewsJob(job);
+}
+
+export function deduplicateJobs<T extends { title: string; company: string }>(jobs: T[]): T[] {
+  const seen = new Set<string>();
+  const result: T[] = [];
+
+  for (const job of jobs) {
+    const key = `${(job.title || "").trim().toLowerCase()}|${(job.company || "").trim().toLowerCase()}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(job);
+    }
+  }
+
+  return result;
 }
 
 export const GENERIC_HR_PREFIXES = [

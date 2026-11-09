@@ -119,7 +119,7 @@ export default async function LandingPage({
 
           {/* Hero Content Container (Text sits on visual LEFT over #061838) */}
           <div className="max-w-7xl mx-auto w-full relative z-10" dir="ltr">
-            <div className="w-full lg:w-[52%] space-y-6 sm:space-y-8 text-right pb-4" dir="rtl">
+            <div className={`w-full lg:w-[52%] space-y-6 sm:space-y-8 ${isAr ? "text-right" : "text-left"} pb-4`} dir={locale === "ar" ? "rtl" : "ltr"}>
               <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.25]">
                 {isAr ? (
                   <>
@@ -221,9 +221,9 @@ export default async function LandingPage({
                 </svg>
               </div>
               <h3 className="font-black text-slate-900 text-sm sm:text-base group-hover:text-blue-900 transition-colors">
-                German Jobs
+                {t.toolsHub.card6.title}
               </h3>
-              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir="rtl">{t.toolsHub.card6.subtitle}</p>
+              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir={dir}>{t.toolsHub.card6.subtitle}</p>
               <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
                 <svg
                   className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`}
@@ -253,9 +253,9 @@ export default async function LandingPage({
                 </svg>
               </div>
               <h3 className="font-black text-slate-900 text-sm sm:text-base group-hover:text-blue-900 transition-colors">
-                German A1 Academy
+                {t.toolsHub.card5.title}
               </h3>
-              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir="rtl">{t.toolsHub.card5.subtitle}</p>
+              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir={dir}>{t.toolsHub.card5.subtitle}</p>
               <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
                 <svg
                   className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`}
@@ -282,9 +282,9 @@ export default async function LandingPage({
                 </svg>
               </div>
               <h3 className="font-black text-slate-900 text-sm sm:text-base group-hover:text-blue-900 transition-colors">
-                AI Cover Letter
+                {t.toolsHub.card4.title}
               </h3>
-              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir="rtl">{t.toolsHub.card4.subtitle}</p>
+              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir={dir}>{t.toolsHub.card4.subtitle}</p>
               <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
                 <svg
                   className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`}
@@ -310,9 +310,9 @@ export default async function LandingPage({
                 </svg>
               </div>
               <h3 className="font-black text-slate-900 text-sm sm:text-base group-hover:text-blue-900 transition-colors">
-                Dossier Studio
+                {t.toolsHub.card3.title}
               </h3>
-              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir="rtl">{t.toolsHub.card3.subtitle}</p>
+              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir={dir}>{t.toolsHub.card3.subtitle}</p>
               <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
                 <svg
                   className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`}
@@ -342,9 +342,9 @@ export default async function LandingPage({
                 </svg>
               </div>
               <h3 className="font-black text-slate-900 text-sm sm:text-base group-hover:text-blue-900 transition-colors">
-                ATS CV Analyzer
+                {t.toolsHub.card2.title}
               </h3>
-              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir="rtl">{t.toolsHub.card2.subtitle}</p>
+              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir={dir}>{t.toolsHub.card2.subtitle}</p>
               <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
                 <svg
                   className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`}
@@ -382,9 +382,9 @@ export default async function LandingPage({
                 </svg>
               </div>
               <h3 className="font-black text-slate-900 text-sm sm:text-base group-hover:text-blue-900 transition-colors">
-                AI CV Builder
+                {t.toolsHub.card1.title}
               </h3>
-              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir="rtl">{t.toolsHub.card1.subtitle}</p>
+              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir={dir}>{t.toolsHub.card1.subtitle}</p>
               <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
                 <svg
                   className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`}

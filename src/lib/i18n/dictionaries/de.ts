@@ -14,6 +14,7 @@ export const de: Dictionary = {
     newCv: '+ Neuer CV',
     signIn: 'Anmelden',
     signOut: 'Abmelden',
+    register: 'Konto erstellen',
     createCv: 'Lebenslauf erstellen 🇩🇪',
     createCvFree: 'Kostenlos registrieren 🇩🇪',
     mainDashboard: 'Dashboard Übersicht',

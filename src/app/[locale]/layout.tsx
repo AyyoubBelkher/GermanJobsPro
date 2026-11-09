@@ -48,8 +48,8 @@ export default async function LocaleLayout({
 
   return (
     <html
-      lang={currentMeta.lang || "ar"}
-      dir={currentMeta.dir || "rtl"}
+      lang={locale}
+      dir={locale === "ar" ? "rtl" : "ltr"}
       className={`${geistSans.variable} ${geistMono.variable} ${cairo.variable} h-full antialiased`}
       suppressHydrationWarning
     >

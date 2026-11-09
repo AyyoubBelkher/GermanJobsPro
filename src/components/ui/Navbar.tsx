@@ -1147,14 +1147,24 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
               <div className="flex items-center gap-3">
                 <Link
                   href={signupLink}
-                  className="inline-flex items-center gap-2 bg-[#FACC15] hover:bg-amber-300 text-[#0A2552] font-black rounded-full px-5 py-2.5 shadow-sm text-xs sm:text-sm transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap"
+                  className="inline-flex items-center gap-2 bg-[#FACC15] hover:bg-amber-300 text-[#061838] font-bold rounded-full px-5 py-2.5 shadow-sm text-xs sm:text-sm transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap"
                 >
-                  <div className="w-5 h-5 rounded-full bg-[#0A2552] text-[#FACC15] flex items-center justify-center shrink-0 shadow-2xs">
+                  <div className="w-5 h-5 rounded-full bg-[#061838] text-[#FACC15] flex items-center justify-center shrink-0 shadow-2xs">
                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                     </svg>
                   </div>
-                  <span>{isAr ? "إنشاء حساب" : dict.nav.createCv}</span>
+                  <span className="text-[#061838] font-bold">
+                    {dict?.nav?.register ||
+                      dict?.nav?.createCv ||
+                      (activeLocale === "ar"
+                        ? "إنشاء حساب"
+                        : activeLocale === "de"
+                        ? "Konto erstellen"
+                        : activeLocale === "fr"
+                        ? "Créer un compte"
+                        : "Get Started Free")}
+                  </span>
                 </Link>
               </div>
             )
@@ -1177,9 +1187,19 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
           {authChecked && !user && (
             <Link
               href={signupLink}
-              className="sm:hidden inline-flex items-center gap-1 bg-[#FACC15] hover:bg-amber-300 text-[#0A2552] font-black rounded-full px-3 py-1.5 text-[11px] shadow-xs whitespace-nowrap"
+              className="sm:hidden inline-flex items-center gap-1 bg-[#FACC15] hover:bg-amber-300 text-[#061838] font-bold rounded-full px-3 py-1.5 text-[11px] shadow-xs whitespace-nowrap"
             >
-              <span>{isAr ? "إنشاء حساب" : dict.nav.signIn}</span>
+              <span className="text-[#061838] font-bold">
+                {dict?.nav?.register ||
+                  dict?.nav?.createCv ||
+                  (activeLocale === "ar"
+                    ? "إنشاء حساب"
+                    : activeLocale === "de"
+                    ? "Konto erstellen"
+                    : activeLocale === "fr"
+                    ? "Créer un compte"
+                    : "Get Started Free")}
+              </span>
             </Link>
           )}
 
@@ -1335,9 +1355,20 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
               <Link
                 href={signupLink}
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-3 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs text-center flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                className="w-full py-3 rounded-full bg-[#FACC15] hover:bg-amber-300 text-[#061838] font-bold text-xs text-center flex items-center justify-center gap-1.5 shadow-sm transition-all"
               >
-                <span>{isAr ? "إنشاء حساب" : dict.nav.createCvFree}</span>
+                <span className="text-[#061838] font-bold">
+                  {dict?.nav?.register ||
+                    dict?.nav?.createCvFree ||
+                    dict?.nav?.createCv ||
+                    (activeLocale === "ar"
+                      ? "إنشاء حساب"
+                      : activeLocale === "de"
+                      ? "Konto erstellen"
+                      : activeLocale === "fr"
+                      ? "Créer un compte"
+                      : "Get Started Free")}
+                </span>
               </Link>
             )}
           </div>

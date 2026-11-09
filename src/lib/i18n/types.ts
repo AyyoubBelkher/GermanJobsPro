@@ -11,6 +11,7 @@ export interface NavDictionary {
   newCv: string;
   signIn: string;
   signOut: string;
+  register?: string;
   createCv: string;
   createCvFree: string;
   mainDashboard: string;

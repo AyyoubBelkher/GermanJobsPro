@@ -14,6 +14,7 @@ export const ar: Dictionary = {
     newCv: '+ سيرة جديدة',
     signIn: 'تسجيل الدخول',
     signOut: 'تسجيل الخروج',
+    register: 'إنشاء حساب',
     createCv: 'أنشئ سيرتك الذاتية 🇩🇪',
     createCvFree: 'أنشئ سيرتك الذاتية مجاناً 🇩🇪',
     mainDashboard: 'لوحة التحكم الرئيسية',

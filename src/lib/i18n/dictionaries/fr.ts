@@ -14,6 +14,7 @@ export const fr: Dictionary = {
     newCv: '+ Nouveau CV',
     signIn: 'Connexion',
     signOut: 'Déconnexion',
+    register: 'Créer un compte',
     createCv: 'Créer votre CV 🇩🇪',
     createCvFree: 'Créer votre CV gratuit 🇩🇪',
     mainDashboard: 'Tableau de bord principal',
