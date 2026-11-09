@@ -1156,7 +1156,7 @@ export default function AdminDashboardPage() {
                     const isPaid = isProActive || isSprintActive;
 
                     const isActionLoading = actionLoadingId?.includes(user.id);
-                    const formattedDate = new Date(user.createdAt).toLocaleDateString(isAr ? "ar-EG" : "en-US", {
+                    const formattedDate = new Date(user.createdAt).toLocaleDateString(isAr ? "ar-MA" : "en-US", {
                       year: "numeric",
                       month: "short",
                       day: "numeric",

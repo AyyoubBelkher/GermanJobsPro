@@ -154,6 +154,31 @@ export default function JobBoardClient({
     window.scrollTo({ top: 200, behavior: "smooth" });
   };
 
+  const hasActiveFilters = Boolean(
+    search.trim() !== "" ||
+    category.toLowerCase() !== "all" ||
+    city.toLowerCase() !== "all" ||
+    language.toLowerCase() !== "all" ||
+    directEmailOnly
+  );
+
+  const handleResetFilters = () => {
+    setSearch("");
+    setCategory("all");
+    setCity("all");
+    setLanguage("all");
+    setDirectEmailOnly(false);
+  };
+
+  const clearFiltersLabel =
+    isAr
+      ? "✕ مسح الفلاتر"
+      : isDe
+      ? "✕ Filter zurücksetzen"
+      : activeLocale === "fr"
+      ? "✕ Effacer les filtres"
+      : "✕ Clear filters";
+
   const formatDate = (dateVal: string | Date) => {
     const d = new Date(dateVal);
     const now = new Date();
@@ -171,7 +196,7 @@ export default function JobBoardClient({
     }
     const localeCode =
       activeLocale === "ar"
-        ? "ar-EG"
+        ? "ar-MA"
         : activeLocale === "de"
         ? "de-DE"
         : activeLocale === "fr"
@@ -286,12 +311,22 @@ export default function JobBoardClient({
               </button>
             );
           })}
+
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer shrink-0 snap-start bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 hover:text-white border border-rose-400/30 shadow-xs"
+            >
+              <span>{clearFiltersLabel}</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Results Header */}
-      <div className="flex items-center justify-between text-xs text-slate-600 px-1">
-        <div>
+      <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 px-1">
+        <div className="flex items-center gap-2.5 flex-wrap">
           {isPending ? (
             <span className="text-blue-600 flex items-center gap-1.5">
               <svg className="animate-spin h-3.5 w-3.5 text-blue-600" viewBox="0 0 24 24">
@@ -301,7 +336,17 @@ export default function JobBoardClient({
               <span>{dict.jobs.updating}</span>
             </span>
           ) : (
-            <span>{dict.jobs.foundJobs.replace("{count}", String(total))}</span>
+            <span className="font-semibold text-slate-700">{dict.jobs.foundJobs.replace("{count}", String(total))}</span>
+          )}
+
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all cursor-pointer shadow-xs"
+            >
+              <span>{clearFiltersLabel}</span>
+            </button>
           )}
         </div>
 
@@ -328,16 +373,10 @@ export default function JobBoardClient({
           </div>
           <button
             type="button"
-            onClick={() => {
-              setSearch("");
-              setCategory("all");
-              setLanguage("all");
-              setCity("all");
-              setDirectEmailOnly(false);
-            }}
-            className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer border border-slate-200"
+            onClick={handleResetFilters}
+            className="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 text-slate-700 text-xs font-bold transition-all cursor-pointer border border-slate-200"
           >
-            {dict.jobs.resetFilters}
+            {clearFiltersLabel}
           </button>
         </div>
       ) : (

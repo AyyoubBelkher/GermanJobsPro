@@ -216,7 +216,7 @@ function formatJobDate(dateInput?: string | Date | null, isAr = false, isDe = fa
     if (diffDays < 7) {
       return isAr ? `منذ ${diffDays} أيام` : isDe ? `Vor ${diffDays} Tagen` : `${diffDays} days ago`;
     }
-    return d.toLocaleDateString(isAr ? "ar-EG" : isDe ? "de-DE" : "en-GB", {
+    return d.toLocaleDateString(isAr ? "ar-MA" : isDe ? "de-DE" : "en-GB", {
       year: "numeric",
       month: "short",
       day: "numeric",

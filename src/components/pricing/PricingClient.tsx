@@ -96,7 +96,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
   const formatExpiry = (dateStr: string | null) => {
     if (!dateStr) return null;
     const d = new Date(dateStr);
-    return d.toLocaleDateString(isAr ? "ar-EG" : isDe ? "de-DE" : "en-US", {
+    return d.toLocaleDateString(isAr ? "ar-MA" : isDe ? "de-DE" : "en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",

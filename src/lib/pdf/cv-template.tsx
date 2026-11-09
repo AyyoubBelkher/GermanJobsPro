@@ -370,7 +370,7 @@ export function CvDocument({
 
   const groupedSkills = groupSkillsByCategory(cv.skills || [], isArabic);
 
-  const todayFormatted = new Date().toLocaleDateString(isArabic ? "ar-EG" : "de-DE", {
+  const todayFormatted = new Date().toLocaleDateString(isArabic ? "ar-MA" : "de-DE", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",

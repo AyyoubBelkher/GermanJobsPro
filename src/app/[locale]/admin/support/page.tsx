@@ -300,7 +300,7 @@ export default function AdminSupportPage() {
   const formatDate = (dateStr: string) => {
     try {
       const d = new Date(dateStr);
-      return d.toLocaleDateString(isAr ? "ar-EG" : "en-US", {
+      return d.toLocaleDateString(isAr ? "ar-MA" : "en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",

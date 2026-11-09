@@ -34,6 +34,7 @@ export default async function RefundPage({
   const { locale } = await params;
   const isAr = locale === "ar";
   const isDe = locale === "de";
+  const isFr = locale === "fr";
   const dir = isAr ? "rtl" : "ltr";
 
   const authResult = await getUserSession();
@@ -82,7 +83,13 @@ export default async function RefundPage({
           </p>
 
           <p className="text-xs text-slate-500 font-mono">
-            {isAr ? "آخر تحديث: 9 سبتمبر 2026" : isDe ? "Stand: 9. September 2026" : "Last updated: September 9, 2026"}
+            {isAr
+              ? "آخر تحديث: نوفمبر 2026"
+              : isDe
+              ? "Stand: November 2026"
+              : isFr
+              ? "Dernière mise à jour : Novembre 2026"
+              : "Last updated: November 2026"}
           </p>
         </div>
 
