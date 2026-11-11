@@ -204,8 +204,9 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                 type="text"
                 value={promoCode}
                 onChange={(e) => setPromoCode(e.target.value)}
+                dir={isAr && !promoCode ? "rtl" : "ltr"}
                 placeholder={isAr ? "أدخل الكود هنا (مثال: GERMAN2026)" : "Enter code (e.g. GERMAN2026)"}
-                className="flex-1 px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs sm:text-sm uppercase font-mono tracking-wider focus:border-blue-500 focus:outline-hidden"
+                className="flex-1 px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs sm:text-sm font-sans uppercase placeholder:font-sans placeholder:normal-case placeholder:tracking-normal focus:border-blue-500 focus:outline-hidden"
               />
               <button
                 type="submit"

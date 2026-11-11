@@ -18,6 +18,7 @@ import {
   getArticlesOnlyPrismaFilter,
   getCourseLessonsPrismaFilter,
 } from "@/lib/courseUtils";
+import { localizeBlogPost } from "@/lib/blogLocalization";
 
 export const revalidate = 60;
 
@@ -291,19 +292,20 @@ export default async function BlogPage({
   const totalPages = Math.ceil(totalPosts / pageSize);
 
   const posts = dbPosts.map((post) => {
+    const localized = localizeBlogPost(post, locale);
     const isA1 = isCourseLesson({
-      category: post.category,
+      category: localized.category,
       slug: post.slug,
-      title: post.title,
+      title: localized.title,
     });
     const parsed = isA1
-      ? parseLessonTitle(post.title, post.markdown_content)
+      ? parseLessonTitle(localized.title, post.markdown_content)
       : null;
-    const postTitle = parsed?.fullTitle || post.title;
-    const cleanExcerpt = extractCleanExcerpt(post.markdown_content, postTitle, 150);
+    const postTitle = parsed?.fullTitle || localized.title;
+    const cleanExcerpt = localized.excerpt || extractCleanExcerpt(post.markdown_content, postTitle, 150);
     const resolvedCover = isA1
       ? resolveLessonImage(post.image_url, parsed?.lessonNumber, post.slug, post.title)
-      : post.image_url;
+      : (localized.cover_image || post.image_url);
 
     return {
       id: post.id,
@@ -314,9 +316,10 @@ export default async function BlogPage({
       author: post.generated_by_ai
         ? (isAr ? "فريق GermanJobsPro" : "GermanJobsPro Team")
         : (isAr ? "إدارة التحرير" : "Editorial Team"),
-      tags: [post.category],
+      tags: [localized.category],
       created_at: post.createdAt.toISOString(),
       markdown_content: post.markdown_content,
+      hasArabicReference: localized.hasArabicReference,
     };
   });
 
@@ -627,6 +630,7 @@ export default async function BlogPage({
                     arabicSubtitle={parsed?.arabicSubtitle}
                     readTime={readTime}
                     priority={index < 3}
+                    hasArabicReference={post.hasArabicReference}
                   />
                 );
               })}

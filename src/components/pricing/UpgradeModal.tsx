@@ -516,8 +516,9 @@ export default function UpgradeModal({
               type="text"
               value={promoCode}
               onChange={(e) => setPromoCode(e.target.value)}
+              dir={locale === "ar" && !promoCode ? "rtl" : "ltr"}
               placeholder={t.promo.placeholder}
-              className="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700/80 text-white text-xs font-mono uppercase tracking-wider focus:outline-none focus:border-blue-500 placeholder:text-slate-500"
+              className="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700/80 text-white text-xs font-sans uppercase placeholder:font-sans placeholder:normal-case placeholder:tracking-normal focus:outline-none focus:border-blue-500 placeholder:text-slate-500"
             />
             <button
               type="submit"

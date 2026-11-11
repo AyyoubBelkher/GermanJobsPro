@@ -615,8 +615,9 @@ export default function PublicPricingClient({
             type="text"
             value={promoCode}
             onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+            dir={isAr && !promoCode ? "rtl" : "ltr"}
             placeholder={isAr ? "أدخل الكود هنا (مثال: GERMAN2026)" : "e.g. GERMAN2026"}
-            className="flex-1 w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 font-mono text-center sm:text-start text-sm uppercase focus:outline-none focus:bg-white focus:border-[#061838] transition-all"
+            className="flex-1 w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 font-sans placeholder:font-sans placeholder:normal-case placeholder:tracking-normal text-center sm:text-start text-sm uppercase focus:outline-none focus:bg-white focus:border-[#061838] transition-all"
             required
           />
           <button

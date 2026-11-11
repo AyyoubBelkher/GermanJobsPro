@@ -538,7 +538,7 @@ export default async function LandingPage({
                       <span className="px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 font-bold text-xs">
                         ❌ {t.comparison.negativeBadge}
                       </span>
-                      <span className="text-rose-400 font-mono text-xs font-bold">{t.comparison.negativeRate}</span>
+                      <span className="text-rose-400 font-sans text-xs font-bold">{t.comparison.negativeRate}</span>
                     </div>
                     <ul className="space-y-3 text-xs sm:text-sm text-slate-300">
                       {t.comparison.negativePoints.map((point, idx) => (
@@ -556,7 +556,7 @@ export default async function LandingPage({
                       <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-xs">
                         ✅ {t.comparison.positiveBadge}
                       </span>
-                      <span className="text-emerald-400 font-mono text-xs font-bold">{t.comparison.positiveRate}</span>
+                      <span className="text-emerald-400 font-sans text-xs font-bold">{t.comparison.positiveRate}</span>
                     </div>
                     <ul className="space-y-3 text-xs sm:text-sm text-slate-200">
                       {t.comparison.positivePoints.map((point, idx) => (
@@ -574,7 +574,7 @@ export default async function LandingPage({
             {/* FAQ Section */}
             <div className="mt-20 max-w-4xl mx-auto space-y-8">
               <div className="text-center space-y-3 max-w-2xl mx-auto">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[#061838] dark:text-blue-400 text-xs font-bold uppercase tracking-wider">
+                <div className={`inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[#061838] dark:text-blue-400 text-xs font-bold ${isAr ? "" : "uppercase tracking-wider"}`}>
                   {t.faq.badge}
                 </div>
                 <h2 className="text-2xl sm:text-4xl font-black text-[#061838] dark:text-white">

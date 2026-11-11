@@ -28,6 +28,7 @@ export interface PostCardProps {
   arabicSubtitle?: string | null;
   readTime?: string | null;
   priority?: boolean;
+  hasArabicReference?: boolean;
 }
 
 const DEFAULT_UNSPLASH_IMAGE =
@@ -50,6 +51,7 @@ export default function PostCard({
   arabicSubtitle: propArabicSubtitle,
   readTime: propReadTime,
   priority = false,
+  hasArabicReference = false,
 }: PostCardProps) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
@@ -218,6 +220,13 @@ export default function PostCard({
               ) : (
                 <span className="absolute top-4 start-4 text-xs font-semibold px-3 py-1 rounded-full bg-slate-900/80 text-white backdrop-blur-sm border border-slate-700/50 z-10">
                   {localizeCategoryLabel(category, locale)}
+                </span>
+              )}
+
+              {hasArabicReference && !isArabicLocale && (
+                <span className="absolute top-4 end-4 text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-950/80 text-amber-300 backdrop-blur-sm border border-amber-500/30 z-10 flex items-center gap-1">
+                  <span>🌐</span>
+                  <span>DE + AR</span>
                 </span>
               )}
             </>

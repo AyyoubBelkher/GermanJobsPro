@@ -22,6 +22,7 @@ import {
   localizeCategoryLabel,
   formatBidiInlineText,
 } from "@/lib/courseUtils";
+import { localizeBlogPost } from "@/lib/blogLocalization";
 
 export const revalidate = 60;
 
@@ -142,17 +143,18 @@ export async function generateMetadata({
     };
   }
 
+  const localized = localizeBlogPost(post, locale);
   const isA1 = isCourseLesson({
-    category: post.category,
+    category: localized.category,
     slug: post.slug,
-    title: post.title,
+    title: localized.title,
   });
-  const parsedLesson = isA1 ? parseLessonTitle(post.title, post.markdown_content) : null;
-  const title = parsedLesson?.fullTitle || post.title;
-  const description = extractDescription(post.markdown_content);
+  const parsedLesson = isA1 ? parseLessonTitle(localized.title, post.markdown_content) : null;
+  const title = parsedLesson?.fullTitle || localized.title;
+  const description = localized.excerpt || extractDescription(post.markdown_content);
   const resolvedCover = isA1
     ? resolveLessonImage(post.image_url, parsedLesson?.lessonNumber, post.slug, post.title)
-    : post.image_url;
+    : (localized.cover_image || post.image_url);
   const images = resolvedCover ? [resolvedCover] : [];
   const authorName = getAuthorName(Boolean(post.generated_by_ai), locale);
 
@@ -165,7 +167,7 @@ export async function generateMetadata({
       type: "article",
       publishedTime: post.createdAt.toISOString(),
       authors: [authorName],
-      tags: [post.category],
+      tags: [localized.category],
       images: images.length > 0 ? images : undefined,
     },
     twitter: {
@@ -204,16 +206,17 @@ export default async function SinglePostPage({
     isAdmin = false;
   }
 
+  const localized = localizeBlogPost(post, locale);
   const isA1 = isCourseLesson({
-    category: post.category,
+    category: localized.category,
     slug: post.slug,
-    title: post.title,
+    title: localized.title,
   });
-  const currentLessonParsed = isA1 ? parseLessonTitle(post.title, post.markdown_content) : null;
+  const currentLessonParsed = isA1 ? parseLessonTitle(localized.title, post.markdown_content) : null;
   const readTime = calculateReadTime(post.markdown_content, locale);
   const resolvedHeroImage = isA1
     ? resolveLessonImage(post.image_url, currentLessonParsed?.lessonNumber, post.slug, post.title)
-    : post.image_url;
+    : (localized.cover_image || post.image_url);
 
   // Linear Stepper Navigation state for German A1 Course
   let prevLesson: {
@@ -508,8 +511,8 @@ export default async function SinglePostPage({
   });
 
   const author = getAuthorName(Boolean(post.generated_by_ai), locale);
-  const postTitle = currentLessonParsed?.fullTitle || post.title;
-  const postDescription = extractDescription(post.markdown_content);
+  const postTitle = currentLessonParsed?.fullTitle || localized.title;
+  const postDescription = localized.excerpt || extractDescription(post.markdown_content);
   const postImages = resolvedHeroImage ? [resolvedHeroImage] : undefined;
 
   const articleLd = {
@@ -574,7 +577,7 @@ export default async function SinglePostPage({
                 </Link>
                 <span>/</span>
                 <span className="text-[#061838] font-bold">
-                  {currentLessonParsed?.lessonNumber ? `${ui.lessonWord} ${currentLessonParsed.lessonNumber}` : formatBidiInlineText(post.title, isAr)}
+                  {currentLessonParsed?.lessonNumber ? `${ui.lessonWord} ${currentLessonParsed.lessonNumber}` : formatBidiInlineText(localized.title, isAr)}
                 </span>
               </>
             ) : (
@@ -585,7 +588,7 @@ export default async function SinglePostPage({
                 </Link>
                 <span>/</span>
                 <span className="text-[#061838] font-bold line-clamp-1 max-w-[160px] sm:max-w-xs truncate">
-                  {formatBidiInlineText(post.title, isAr)}
+                  {formatBidiInlineText(localized.title, isAr)}
                 </span>
               </>
             )}
@@ -622,7 +625,7 @@ export default async function SinglePostPage({
               </span>
             ) : (
               <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 shadow-sm">
-                {localizeCategoryLabel(post.category, locale)}
+                {localizeCategoryLabel(localized.category, locale)}
               </span>
             )}
 
@@ -654,7 +657,7 @@ export default async function SinglePostPage({
               dir={dir}
               className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-[#061838] leading-snug sm:leading-tight text-start break-words"
             >
-              {formatBidiInlineText(currentLessonParsed?.fullTitle || post.title, isAr)}
+              {formatBidiInlineText(currentLessonParsed?.fullTitle || localized.title, isAr)}
             </h1>
           )}
 
@@ -763,8 +766,36 @@ export default async function SinglePostPage({
                 </svg>
               </div>
               <h2 className="text-xl sm:text-2xl font-bold tracking-tight max-w-xl">
-                {isA1 ? `${ui.a1CourseTitle} • ${ui.lessonWord} ${currentLessonParsed?.lessonNumber || ""}` : localizeCategoryLabel(post.category, locale)}
+                {isA1 ? `${ui.a1CourseTitle} • ${ui.lessonWord} ${currentLessonParsed?.lessonNumber || ""}` : localizeCategoryLabel(localized.category, locale)}
               </h2>
+            </div>
+          </div>
+        )}
+
+        {/* Bilingual / Arabic Reference Badge & Notice for International Readers */}
+        {localized.hasArabicReference && !isAr && (
+          <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/80 border border-blue-200/80 text-blue-950 flex items-start gap-3.5 shadow-xs">
+            <span className="text-xl sm:text-2xl shrink-0 mt-0.5">🌐</span>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sm sm:text-base">
+                  {locale === "de"
+                    ? "Zweisprachiger Leitfaden (Deutsch & Arabisch)"
+                    : locale === "fr"
+                    ? "Guide bilingue (Allemand & Arabe)"
+                    : "Bilingual Guide (German & Arabic Reference)"}
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-200/70 text-blue-800 uppercase tracking-wide">
+                  DE + AR
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                {locale === "de"
+                  ? "Dieser Leitfaden enthält authentische deutsche Fachbegriffe und Richtlinien sowie zweisprachige Referenzen für internationale Fachkräfte."
+                  : locale === "fr"
+                  ? "Ce guide comprend la terminologie officielle allemande ainsi que des annotations de référence pour les candidats internationaux."
+                  : "This guide contains authentic German career regulations and terminology alongside comprehensive reference notes for international applicants."}
+              </p>
             </div>
           </div>
         )}
@@ -773,11 +804,11 @@ export default async function SinglePostPage({
         <div dir={dir} className="prose prose-base sm:prose-lg max-w-none leading-relaxed text-slate-800 text-start prose-code:before:content-none prose-code:after:content-none prose-headings:text-[#061838] prose-a:text-blue-600">
           <LessonContentRenderer
             content={stripLeadingH1(post.markdown_content)}
-            category={post.category}
+            category={localized.category}
             locale={locale}
             mode={isA1 ? "lesson" : "article"}
             slug={post.slug}
-            title={post.title}
+            title={localized.title}
           />
         </div>
 
@@ -943,16 +974,17 @@ export default async function SinglePostPage({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {relatedPosts.map((relPost) => {
+                const relLocalized = localizeBlogPost(relPost, locale);
                 const relIsA1 = isCourseLesson({
-                  category: relPost.category,
+                  category: relLocalized.category,
                   slug: relPost.slug,
-                  title: relPost.title,
+                  title: relLocalized.title,
                 });
-                const relParsed = relIsA1 ? parseLessonTitle(relPost.title, relPost.markdown_content) : null;
-                const relTitle = relParsed?.fullTitle || relPost.title;
+                const relParsed = relIsA1 ? parseLessonTitle(relLocalized.title, relPost.markdown_content) : null;
+                const relTitle = relParsed?.fullTitle || relLocalized.title;
                 const relCover = relIsA1
                   ? resolveLessonImage(relPost.image_url, relParsed?.lessonNumber, relPost.slug, relPost.title)
-                  : relPost.image_url;
+                  : (relLocalized.cover_image || relPost.image_url);
 
                 return (
                   <div
@@ -997,7 +1029,7 @@ export default async function SinglePostPage({
                             </svg>
                           </div>
                           <span className="font-bold text-xs tracking-wider text-blue-100 uppercase">
-                            {localizeCategoryLabel(relPost.category, locale)}
+                            {localizeCategoryLabel(relLocalized.category, locale)}
                           </span>
                         </div>
                       )}
@@ -1006,7 +1038,7 @@ export default async function SinglePostPage({
                     <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                       <div className="space-y-2">
                         <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
-                          {relIsA1 && relParsed?.lessonNumber ? `🇩🇪 ${ui.lessonWord} ${relParsed.lessonNumber}` : localizeCategoryLabel(relPost.category, locale)}
+                          {relIsA1 && relParsed?.lessonNumber ? `🇩🇪 ${ui.lessonWord} ${relParsed.lessonNumber}` : localizeCategoryLabel(relLocalized.category, locale)}
                         </span>
                         <h3 className="text-lg font-bold text-[#061838] group-hover:text-blue-600 line-clamp-2 leading-snug transition-colors">
                           {formatBidiInlineText(relTitle, isAr)}
