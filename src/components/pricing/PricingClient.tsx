@@ -19,6 +19,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
   const router = useRouter();
   const isAr = locale === "ar";
   const isDe = locale === "de";
+  const isFr = locale === "fr";
 
   const [promoCode, setPromoCode] = useState("");
   const [isRedeeming, setIsRedeeming] = useState(false);
@@ -293,14 +294,16 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                     : "3 initial AI credits"}
                 </span>
               </li>
-              <li className="flex items-start gap-2.5 text-slate-500">
-                <span className="text-slate-600 font-bold text-sm">✕</span>
+              <li className="flex items-start gap-2.5 text-slate-300">
+                <span className="text-blue-400 font-bold text-sm">✓</span>
                 <span>
                   {isAr
-                    ? "تصدير ملف الترشيح الكامل (Bewerbungsmappe)"
+                    ? "تجميع ملف الترشيح الكامل (Bewerbungsmappe) — تجريبي (1 رصيد)"
                     : isDe
-                    ? "Vollständige Bewerbungsmappe"
-                    : "Full Bewerbungsmappe Dossier Compiler"}
+                    ? "Vollständige Bewerbungsmappe — Test (1 Credit)"
+                    : isFr
+                    ? "Compilateur Bewerbungsmappe — Essai (1 crédit)"
+                    : "Full Bewerbungsmappe Dossier Compiler — Trial (1 Credit)"}
                 </span>
               </li>
               <li className="flex items-start gap-2.5 text-slate-500">
@@ -389,6 +392,18 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                     : isDe
                     ? "20 tägliche KI-Anfragen (Fair Use)"
                     : "20 daily AI requests (Fair Use)"}
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <span className="font-semibold text-white">
+                  {isAr
+                    ? "تجميع ملف الترشيح الكامل (Bewerbungsmappe) — ✓ متاح (30 يوماً)"
+                    : isDe
+                    ? "Vollständige Bewerbungsmappe — ✓ Inklusive (30 Tage)"
+                    : isFr
+                    ? "Compilateur Bewerbungsmappe — ✓ Inclus (30 jours)"
+                    : "Full Bewerbungsmappe Dossier Compiler — ✓ Included (30 days)"}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
@@ -512,6 +527,8 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                     ? "تجميع ملف الترشيح الكامل (Bewerbungsmappe: غلاف + سيرة + خطاب)"
                     : isDe
                     ? "Bewerbungsmappe-Dossier-Studio (Deckblatt + CV + Anschreiben)"
+                    : isFr
+                    ? "Studio Bewerbungsmappe complet (Deckblatt + CV + Lettre)"
                     : "Bewerbungsmappe full dossier compiler (Cover + CV + Anschreiben)"}
                 </span>
               </li>

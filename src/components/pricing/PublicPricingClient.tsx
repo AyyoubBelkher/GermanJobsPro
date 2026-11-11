@@ -35,6 +35,7 @@ export default function PublicPricingClient({
 
   const isAr = locale === "ar";
   const isDe = locale === "de";
+  const isFr = locale === "fr";
 
   const isPro =
     (user?.plan === "PRO" || user?.plan === "SPRINT") &&
@@ -269,9 +270,17 @@ export default function PublicPricingClient({
                 <span className="text-emerald-600 font-bold text-sm">✓</span>
                 <span>{isAr ? "3 أرصدة ذكاء اصطناعي أولية للبدء" : isDe ? "3 anfängliche KI-Guthaben" : "3 initial AI credits"}</span>
               </li>
-              <li className="flex items-start gap-2.5 text-slate-400 line-through">
-                <span className="text-slate-400 font-bold text-sm">✕</span>
-                <span>{isAr ? "تجميع ملف الترشيح الكامل (Bewerbungsmappe)" : isDe ? "Vollständige Bewerbungsmappe" : "Full Bewerbungsmappe Dossier Compiler"}</span>
+              <li className="flex items-start gap-2.5 text-slate-700">
+                <span className="text-emerald-600 font-bold text-sm">✓</span>
+                <span>
+                  {isAr
+                    ? "تجميع ملف الترشيح الكامل (Bewerbungsmappe) — تجريبي (1 رصيد)"
+                    : isDe
+                    ? "Vollständige Bewerbungsmappe — Test (1 Credit)"
+                    : isFr
+                    ? "Compilateur Bewerbungsmappe — Essai (1 crédit)"
+                    : "Full Bewerbungsmappe Dossier Compiler — Trial (1 Credit)"}
+                </span>
               </li>
               <li className="flex items-start gap-2.5 text-slate-400 line-through">
                 <span className="text-slate-400 font-bold text-sm">✕</span>
@@ -370,6 +379,18 @@ export default function PublicPricingClient({
                     : isDe
                     ? "Bis zu 20 tägliche KI-Anfragen (Fair-Use-Richtlinie)"
                     : "20 daily AI requests (Fair Use)"}
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="text-blue-600 font-bold text-sm">✓</span>
+                <span className="font-semibold text-[#061838]">
+                  {isAr
+                    ? "تجميع ملف الترشيح الكامل (Bewerbungsmappe) — ✓ متاح (30 يوماً)"
+                    : isDe
+                    ? "Vollständige Bewerbungsmappe — ✓ Inklusive (30 Tage)"
+                    : isFr
+                    ? "Compilateur Bewerbungsmappe — ✓ Inclus (30 jours)"
+                    : "Full Bewerbungsmappe Dossier Compiler — ✓ Included (30 days)"}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
@@ -494,6 +515,8 @@ export default function PublicPricingClient({
                     ? "تجميع ملف الترشيح الكامل (Bewerbungsmappe: غلاف + سيرة + خطاب)"
                     : isDe
                     ? "Bewerbungsmappe-Dossier-Studio (Deckblatt + CV + Anschreiben)"
+                    : isFr
+                    ? "Studio Bewerbungsmappe complet (Deckblatt + CV + Lettre)"
                     : "Bewerbungsmappe full dossier compiler (Cover + CV + Anschreiben)"}
                 </span>
               </li>
@@ -676,10 +699,10 @@ export default function PublicPricingClient({
                 <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">✓ {isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "استوديو ملف الترشيح الكامل (Bewerbungsmappe)" : isDe ? "Vollständige Bewerbungsmappe" : "Complete Bewerbungsmappe Studio"}</td>
-                <td className="py-3.5 px-6 text-center text-rose-500">✕</td>
-                <td className="py-3.5 px-6 text-center text-rose-500 bg-slate-50">✕</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">✓ {isAr ? "مضمّن بالكامل (غلاف + سيرة + خطاب)" : isDe ? "Inklusive (Deckblatt + CV + Anschreiben)" : "Included (Cover + CV + Anschreiben)"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "استوديو ملف الترشيح الكامل (Bewerbungsmappe)" : isDe ? "Vollständige Bewerbungsmappe" : isFr ? "Studio Bewerbungsmappe complet" : "Complete Bewerbungsmappe Studio"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-600 font-medium">{isAr ? "تجريبي (1 رصيد)" : isDe ? "Test (1 Credit)" : isFr ? "Essai (1 crédit)" : "Trial (1 Credit)"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 bg-slate-50 font-medium">{isAr ? "✓ متاح (30 يوماً)" : isDe ? "✓ Inklusive (30 Tage)" : isFr ? "✓ Inclus (30 jours)" : "✓ Included (30 days)"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">✓ {isAr ? "مضمّن بالكامل (غلاف + سيرة + خطاب)" : isDe ? "Inklusive (Deckblatt + CV + Anschreiben)" : isFr ? "Inclus (Page de garde + CV + Lettre)" : "Included (Cover + CV + Anschreiben)"}</td>
               </tr>
               <tr>
                 <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)" : isDe ? "1-Klick PDF zu DIN 5008 Auto-Adapt" : "1-Click PDF to DIN 5008 Auto-Adapt"}</td>

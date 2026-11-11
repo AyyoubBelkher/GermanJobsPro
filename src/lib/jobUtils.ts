@@ -54,6 +54,54 @@ export const NON_GERMANY_LOCATIONS = [
   "bern",
   "schweiz",
   "switzerland",
+  "st. gallen",
+  "luzern",
+  "zug",
+  "lugano",
+  "aarau",
+  "schaffhausen",
+  "paris",
+  "france",
+  "frankreich",
+  "lyon",
+  "london",
+  "united kingdom",
+  "england",
+  "manchester",
+  "österreich",
+  "austria",
+  "wien",
+  "vienna",
+  "salzburg",
+  "linz",
+  "graz",
+  "innsbruck",
+  "rheintal",
+  "liechtenstein",
+  "vaduz",
+  "amsterdam",
+  "netherlands",
+  "niederlande",
+  "madrid",
+  "barcelona",
+  "spain",
+  "warsaw",
+  "poland",
+  "romania",
+  "ukraine",
+] as const;
+
+export const NON_GERMANY_DESC_INDICATORS = [
+  "doccheck schweiz",
+  "remote innerhalb der schweiz",
+  "4052 basel",
+  "9490 vaduz",
+  "raum rheintal, österreich",
+  "in our paris office",
+  "location: paris",
+  "headquartered in london",
+  "jobs in switzerland on arbeitnow",
+  "jobs in united kingdom on arbeitnow",
 ] as const;
 
 export const formatLangLevel = (lvl?: string | null): string =>
@@ -64,24 +112,41 @@ export function isLegacyNewsJob(job: {
   sourceUrl?: string | null;
   company?: string | null;
   city?: string | null;
+  location?: string | null;
   title?: string | null;
+  description?: string | null;
+  descriptionRaw?: string | null;
 }): boolean {
   const url = (job.sourceUrl || job.applyUrl || "").toLowerCase();
   if (url.includes("news.google.com") || url.includes("news.google.")) return true;
   const company = (job.company || "").toLowerCase();
   if (LEGACY_NEWS_OUTLETS.some((outlet) => company.includes(outlet.toLowerCase()))) return true;
 
-  const city = (job.city || "").toLowerCase();
+  const loc = (job.city || job.location || "").toLowerCase();
   const title = (job.title || "").toLowerCase();
-  return NON_GERMANY_LOCATIONS.some((loc) => {
-    const l = loc.toLowerCase();
+  const desc = (job.description || job.descriptionRaw || "").toLowerCase();
+
+  // 1. Check NON_GERMANY_LOCATIONS across city/location, title, company, url
+  const matchesNonGermanyLoc = NON_GERMANY_LOCATIONS.some((nonGerLoc) => {
+    const l = nonGerLoc.toLowerCase();
     return (
-      city.includes(l) ||
+      loc.includes(l) ||
       title.includes(l) ||
       company.includes(l) ||
       url.includes(l)
     );
   });
+  if (matchesNonGermanyLoc) return true;
+
+  // 2. Whole-word UK check on location and title
+  if (/\buk\b/i.test(loc) || /\buk\b/i.test(title)) return true;
+
+  // 3. Explicit non-Germany workplace indicators in description
+  if (NON_GERMANY_DESC_INDICATORS.some((ind) => desc.includes(ind))) {
+    return true;
+  }
+
+  return false;
 }
 
 export function isExcludedJob(job: {
@@ -89,9 +154,56 @@ export function isExcludedJob(job: {
   sourceUrl?: string | null;
   company?: string | null;
   city?: string | null;
+  location?: string | null;
   title?: string | null;
+  description?: string | null;
+  descriptionRaw?: string | null;
 }): boolean {
   return isLegacyNewsJob(job);
+}
+
+/**
+ * Strips raw HTML, converts tags to structured plain text with bullets and clean breaks,
+ * removes promotional ArbeitNow footers, and normalizes spacing.
+ */
+export function cleanJobDescription(raw?: string | null): string {
+  if (!raw || typeof raw !== "string") return "";
+
+  let text = raw;
+
+  // 1. Convert block endings and line breaks to newlines
+  text = text.replace(/<br\s*\/?>/gi, "\n");
+  text = text.replace(/<\/(?:p|div|h[1-6]|li|ul|ol)>/gi, "\n");
+
+  // 2. Format list items with bullet points
+  text = text.replace(/<li[^>]*>/gi, "• ");
+
+  // 3. Strip all remaining HTML tags
+  text = text.replace(/<[^>]+>/g, "");
+
+  // 4. Decode HTML entities
+  text = text
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">");
+
+  // 5. Strip trailing ArbeitNow promotional lines matching /Find (?:more )?(?:English Speaking )?Jobs in [A-Za-z\s]+ on Arbeitnow\.?/gi
+  text = text.replace(
+    /Find (?:more )?(?:English Speaking )?Jobs in [A-Za-z\s]+ on Arbeitnow\.?/gi,
+    ""
+  );
+
+  // 6. Collapse multiple spaces and 3+ consecutive newlines into "\n\n", then trim
+  text = text
+    .replace(/[ \t]+/g, " ")
+    .replace(/\r/g, "")
+    .replace(/\n\s*\n\s*\n+/g, "\n\n")
+    .trim();
+
+  return text;
 }
 
 export function deduplicateJobs<T extends { title: string; company: string }>(jobs: T[]): T[] {

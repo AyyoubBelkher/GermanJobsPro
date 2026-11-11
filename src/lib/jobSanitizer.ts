@@ -1,3 +1,5 @@
+import { cleanJobDescription } from "@/lib/jobUtils";
+
 /**
  * Job Classification & Title Sanitizer
  * Automatically detects and fixes false healthcare/nursing classifications
@@ -264,6 +266,23 @@ export function sanitizeJobPayload<T extends JobSanitizerInput>(input: T): T {
       }
     }
   }
+
+  // 5. Clean HTML and promotional text from job descriptions
+  let cleanedDescriptionRaw = result.descriptionRaw;
+  if (cleanedDescriptionRaw !== undefined && cleanedDescriptionRaw !== null) {
+    cleanedDescriptionRaw = cleanJobDescription(cleanedDescriptionRaw);
+  }
+
+  let cleanedDescription = result.description;
+  if (cleanedDescription !== undefined && cleanedDescription !== null) {
+    cleanedDescription = cleanJobDescription(cleanedDescription);
+  }
+
+  result = {
+    ...result,
+    ...(cleanedDescriptionRaw !== undefined ? { descriptionRaw: cleanedDescriptionRaw } : {}),
+    ...(cleanedDescription !== undefined ? { description: cleanedDescription } : {}),
+  };
 
   return result;
 }

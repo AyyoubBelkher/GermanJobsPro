@@ -5,6 +5,7 @@ import Footer from "@/components/ui/Footer";
 import { prisma } from "@/lib/prisma";
 import { getCityVariants } from "@/lib/cityAliases";
 import { LEGACY_NEWS_OUTLETS, NON_GERMANY_LOCATIONS, isLegacyNewsJob, isExcludedJob, deduplicateJobs } from "@/lib/jobUtils";
+import { sanitizeJobPayload } from "@/lib/jobSanitizer";
 import JobBoardClient, { JobItem } from "@/components/jobs/JobBoardClient";
 
 export const revalidate = 60;
@@ -187,7 +188,9 @@ export default async function JobsPage({
 
   const initialJobs: JobItem[] = deduplicateJobs(
     rawJobs.filter((j) => !isExcludedJob(j))
-  ).map((j) => ({
+  ).map((raw) => {
+    const j = sanitizeJobPayload(raw);
+    return {
       id: j.id,
       title: j.title,
       company: j.company,
@@ -202,7 +205,8 @@ export default async function JobsPage({
       requirements: j.requirements,
       descriptionRaw: j.descriptionRaw,
       publishedAt: j.publishedAt instanceof Date ? j.publishedAt.toISOString() : String(j.publishedAt),
-    }));
+    };
+  });
 
   const totalPages = Math.ceil(total / limit) || 1;
 

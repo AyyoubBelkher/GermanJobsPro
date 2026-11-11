@@ -7,7 +7,8 @@ import Footer from "@/components/ui/Footer";
 import { prisma } from "@/lib/prisma";
 import { getUserSession } from "@/lib/user-session";
 import JobDetailClient from "@/components/jobs/JobDetailClient";
-import { JobDetailData, extractCleanHrEmail, splitBilingualTitle } from "@/lib/jobUtils";
+import { JobDetailData, extractCleanHrEmail, splitBilingualTitle, cleanJobDescription } from "@/lib/jobUtils";
+import { sanitizeJobPayload } from "@/lib/jobSanitizer";
 import { stripHtml } from "@/lib/cover-letter";
 
 export const revalidate = 60;
@@ -260,24 +261,26 @@ export default async function JobDetailPage({
   const safeCreatedAt = toSafeIsoString(job.createdAt);
   const safeUpdatedAt = toSafeIsoString(job.updatedAt);
 
+  const sanitizedJob = sanitizeJobPayload(job);
+
   const jobData: JobDetailData = {
-    id: String(job.id),
-    title: String(job.title || "Job Offer"),
-    company: String(job.company || "Employer"),
-    city: job.city ? String(job.city) : null,
-    category: String(job.category || "General"),
-    jobType: job.jobType ? String(job.jobType) : null,
-    languageReq: job.languageReq ? String(job.languageReq) : null,
-    salary: job.salary ? String(job.salary) : null,
-    applyUrl: String(job.applyUrl || ""),
+    id: String(sanitizedJob.id),
+    title: String(sanitizedJob.title || "Job Offer"),
+    company: String(sanitizedJob.company || "Employer"),
+    city: sanitizedJob.city ? String(sanitizedJob.city) : null,
+    category: String(sanitizedJob.category || "General"),
+    jobType: sanitizedJob.jobType ? String(sanitizedJob.jobType) : null,
+    languageReq: sanitizedJob.languageReq ? String(sanitizedJob.languageReq) : null,
+    salary: sanitizedJob.salary ? String(sanitizedJob.salary) : null,
+    applyUrl: String(sanitizedJob.applyUrl || ""),
     contactEmail: cleanEmail ? String(cleanEmail) : null,
-    requirements: job.requirements ? String(job.requirements) : null,
-    descriptionRaw: job.descriptionRaw ? String(job.descriptionRaw) : null,
+    requirements: sanitizedJob.requirements ? String(sanitizedJob.requirements) : null,
+    descriptionRaw: sanitizedJob.descriptionRaw ? cleanJobDescription(sanitizedJob.descriptionRaw) : null,
     publishedAt: safePublishedAt,
     expiresAt: safeExpiresAt,
     createdAt: safeCreatedAt,
     updatedAt: safeUpdatedAt,
-    isVerified: Boolean(job.isVerified ?? true),
+    isVerified: Boolean(sanitizedJob.isVerified ?? true),
   };
 
   const datePosted = safePublishedAt;
