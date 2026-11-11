@@ -56,6 +56,16 @@ export async function generateMetadata({
     return {
       title,
       description,
+      alternates: {
+        canonical: `https://www.germanjobspro.com/${locale}/blog`,
+        languages: {
+          ar: "https://www.germanjobspro.com/ar/blog",
+          de: "https://www.germanjobspro.com/de/blog",
+          en: "https://www.germanjobspro.com/en/blog",
+          fr: "https://www.germanjobspro.com/fr/blog",
+          "x-default": "https://www.germanjobspro.com/de/blog",
+        },
+      },
       openGraph: {
         title,
         description,
@@ -89,6 +99,16 @@ export async function generateMetadata({
   return {
     title,
     description,
+    alternates: {
+      canonical: `https://www.germanjobspro.com/${locale}/blog`,
+      languages: {
+        ar: "https://www.germanjobspro.com/ar/blog",
+        de: "https://www.germanjobspro.com/de/blog",
+        en: "https://www.germanjobspro.com/en/blog",
+        fr: "https://www.germanjobspro.com/fr/blog",
+        "x-default": "https://www.germanjobspro.com/de/blog",
+      },
+    },
     openGraph: {
       title,
       description,

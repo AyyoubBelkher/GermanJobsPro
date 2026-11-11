@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAutomationSecret, requireAdmin } from "@/lib/admin-auth";
-import { isValidHrEmail } from "@/lib/jobUtils";
+import { isValidHrEmail, isExcludedJob } from "@/lib/jobUtils";
+import { sanitizeJobPayload } from "@/lib/jobSanitizer";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -159,23 +160,37 @@ export async function GET(request: NextRequest) {
             };
           });
 
+          const validBaJobs = baJobs.filter((j: any) => !isExcludedJob(j));
+
           let savedCount = 0;
-          for (const j of baJobs.slice(0, size)) {
-            if (!j.applyUrl) continue;
+          for (const j of validBaJobs.slice(0, size)) {
+            if (!j.applyUrl || isExcludedJob(j)) continue;
             try {
+              const sanitized = sanitizeJobPayload({
+                title: j.title,
+                category: "Ausbildung",
+                salary: null,
+                descriptionRaw: j.description,
+                applyUrl: j.applyUrl,
+                contactEmail: j.contactEmail,
+              });
+
               await prisma.job.upsert({
                 where: { applyUrl: j.applyUrl },
                 update: {
-                  title: j.title,
+                  title: sanitized.title,
+                  category: sanitized.category || "Ausbildung",
+                  salary: sanitized.salary || null,
                   company: j.company,
                   city: j.city,
                   status: "ACTIVE",
                 },
                 create: {
-                  title: j.title,
+                  title: sanitized.title,
                   company: j.company,
                   city: j.city,
-                  category: "Ausbildung",
+                  category: sanitized.category || "Ausbildung",
+                  salary: sanitized.salary || null,
                   jobType: "Vollzeit",
                   languageReq: "B1/B2",
                   applyUrl: j.applyUrl,
@@ -193,11 +208,11 @@ export async function GET(request: NextRequest) {
 
           return NextResponse.json({
             success: true,
-            total: baJobs.length,
+            total: validBaJobs.length,
             savedCount,
             source: "Bundesagentur für Arbeit",
-            message: `تم جلب ${baJobs.length} وظيفة من وكالة العمل الألمانية (BA) وتحديث ${savedCount} وظيفة نشطة في قاعدة البيانات.`,
-            jobs: baJobs.slice(0, size),
+            message: `تم جلب ${validBaJobs.length} وظيفة من وكالة العمل الألمانية (BA) وتحديث ${savedCount} وظيفة نشطة في قاعدة البيانات.`,
+            jobs: validBaJobs.slice(0, size),
           });
         }
       }
@@ -299,23 +314,37 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    const validFormattedJobs = formattedJobs.filter((j: any) => !isExcludedJob(j));
+
     let savedCount = 0;
-    for (const j of formattedJobs.slice(0, size)) {
-      if (!j.applyUrl) continue;
+    for (const j of validFormattedJobs.slice(0, size)) {
+      if (!j.applyUrl || isExcludedJob(j)) continue;
       try {
+        const sanitized = sanitizeJobPayload({
+          title: j.title,
+          category: "General",
+          salary: null,
+          descriptionRaw: j.description,
+          applyUrl: j.applyUrl,
+          contactEmail: j.contactEmail,
+        });
+
         await prisma.job.upsert({
           where: { applyUrl: j.applyUrl },
           update: {
-            title: j.title,
+            title: sanitized.title,
+            category: sanitized.category || "General",
+            salary: sanitized.salary || null,
             company: j.company,
             city: j.city,
             status: "ACTIVE",
           },
           create: {
-            title: j.title,
+            title: sanitized.title,
             company: j.company,
             city: j.city,
-            category: "General",
+            category: sanitized.category || "General",
+            salary: sanitized.salary || null,
             jobType: "Vollzeit",
             languageReq: "B1/B2",
             applyUrl: j.applyUrl,
@@ -333,11 +362,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      total: formattedJobs.length,
+      total: validFormattedJobs.length,
       savedCount,
       source: "ArbeitNow Network",
-      message: `تم جلب ${formattedJobs.length} وظيفة وتحديث ${savedCount} وظيفة نشطة في قاعدة البيانات.`,
-      jobs: formattedJobs.slice(0, size),
+      message: `تم جلب ${validFormattedJobs.length} وظيفة وتحديث ${savedCount} وظيفة نشطة في قاعدة البيانات.`,
+      jobs: validFormattedJobs.slice(0, size),
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal Server Error";

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Metadata } from "next";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
+import LandingFaqAccordion from "@/components/landing/LandingFaqAccordion";
 import { getUserSession } from "@/lib/user-session";
 import { getLandingContent } from "@/lib/i18n/landing-content";
 import { getDictionary, isValidLocale, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
@@ -518,8 +519,93 @@ export default async function LandingPage({
               </div>
             </div>
 
+            {/* High-Converting 2-Column "Before vs After DIN 5008" Comparison Section */}
+            <div className="mt-20 max-w-5xl mx-auto text-start">
+              <div className="rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-10 space-y-8 shadow-2xl relative overflow-hidden">
+                <div className="text-center space-y-3 max-w-2xl mx-auto">
+                  <h2 className="text-2xl sm:text-3xl font-black text-white">
+                    {t.comparison.title}
+                  </h2>
+                  <p className="text-slate-400 text-xs sm:text-sm">
+                    {t.comparison.subtitle}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Before / Non-compliant */}
+                  <div className="rounded-2xl bg-rose-950/20 border border-rose-500/30 p-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 font-bold text-xs">
+                        ❌ {t.comparison.negativeBadge}
+                      </span>
+                      <span className="text-rose-400 font-mono text-xs font-bold">{t.comparison.negativeRate}</span>
+                    </div>
+                    <ul className="space-y-3 text-xs sm:text-sm text-slate-300">
+                      {t.comparison.negativePoints.map((point, idx) => (
+                        <li key={idx} className="flex items-start gap-2.5">
+                          <span className="text-rose-400 font-bold mt-0.5 shrink-0">✕</span>
+                          <span>{point}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* After / DIN 5008 Compliant */}
+                  <div className="rounded-2xl bg-emerald-950/20 border border-emerald-500/30 p-6 space-y-4 shadow-lg shadow-emerald-500/5">
+                    <div className="flex items-center justify-between">
+                      <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-xs">
+                        ✅ {t.comparison.positiveBadge}
+                      </span>
+                      <span className="text-emerald-400 font-mono text-xs font-bold">{t.comparison.positiveRate}</span>
+                    </div>
+                    <ul className="space-y-3 text-xs sm:text-sm text-slate-200">
+                      {t.comparison.positivePoints.map((point, idx) => (
+                        <li key={idx} className="flex items-start gap-2.5">
+                          <span className="text-emerald-400 font-bold mt-0.5 shrink-0">✓</span>
+                          <span>{point}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* FAQ Section */}
+            <div className="mt-20 max-w-4xl mx-auto space-y-8">
+              <div className="text-center space-y-3 max-w-2xl mx-auto">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[#061838] dark:text-blue-400 text-xs font-bold uppercase tracking-wider">
+                  {t.faq.badge}
+                </div>
+                <h2 className="text-2xl sm:text-4xl font-black text-[#061838] dark:text-white">
+                  {t.faq.title}
+                </h2>
+              </div>
+
+              <LandingFaqAccordion items={t.faq.items} />
+
+              {/* FAQPage JSON-LD for rich Google Search snippets */}
+              <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                  __html: JSON.stringify({
+                    "@context": "https://schema.org",
+                    "@type": "FAQPage",
+                    mainEntity: t.faq.items.map((item) => ({
+                      "@type": "Question",
+                      name: item.question,
+                      acceptedAnswer: {
+                        "@type": "Answer",
+                        text: item.answer,
+                      },
+                    })),
+                  }),
+                }}
+              />
+            </div>
+
             {/* Clean Breathing Room for the Golden Pill CTA Button */}
-            <div className="mt-12 mb-10 flex justify-center relative z-20">
+            <div className="mt-16 mb-12 flex justify-center relative z-20">
               <Link
                 href={user ? `/${locale}/dashboard` : `/${locale}/auth/signup`}
                 className="px-10 py-4 rounded-full bg-[#FACC15] hover:bg-[#FDE047] text-[#061838] font-extrabold text-lg shadow-[0_12px_30px_rgba(250,204,21,0.4)] hover:scale-[1.02] transition-all flex items-center gap-3.5 group cursor-pointer"

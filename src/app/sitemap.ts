@@ -1,12 +1,13 @@
 import { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
+import { isExcludedJob } from "@/lib/jobUtils";
 
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://germanjobspro.com");
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://www.germanjobspro.com");
 
   const isDummyDb =
     !process.env.DATABASE_URL ||
@@ -32,15 +33,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let jobs: Array<{ id: string; updatedAt: Date }> = [];
   if (!isDummyDb) {
     try {
-      jobs = await prisma.job.findMany({
+      const dbJobs = await prisma.job.findMany({
         where: { status: "ACTIVE" },
         select: {
           id: true,
           updatedAt: true,
+          applyUrl: true,
+          company: true,
+          city: true,
+          title: true,
         },
         orderBy: { publishedAt: "desc" },
         take: 500,
       });
+      jobs = dbJobs.filter((job) => !isExcludedJob(job));
     } catch (error) {
       console.warn("[Sitemap] Could not fetch active jobs during build prerender:", error instanceof Error ? error.message : error);
     }

@@ -319,6 +319,7 @@ export async function POST(request: NextRequest) {
               subscriptionPlan: isNinetyDays ? "pro_90d" : "sprint_30d",
               subscriptionStatus: "active",
               subscriptionExpiresAt: planExpiresAt,
+              aiCredits: { increment: isNinetyDays ? 100 : 50 },
               dailyAiCredits: 20,
               dailyAiCreditsUsed: 0,
               customerId: saleId || orderNumber || user.customerId || undefined,

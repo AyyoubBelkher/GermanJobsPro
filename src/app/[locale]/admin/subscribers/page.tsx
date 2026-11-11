@@ -336,7 +336,7 @@ export default function AdminSubscribersPage() {
                           </span>
                         </td>
                         <td className="py-4 px-6 text-slate-400 text-xs dir-ltr text-right">
-                          {new Date(sub.createdAt).toLocaleString(locale === "ar" ? "ar-EG" : "en-US", {
+                          {new Date(sub.createdAt).toLocaleString(locale === "ar" ? "ar-MA" : "en-US", {
                             year: "numeric",
                             month: "short",
                             day: "numeric",

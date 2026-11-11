@@ -15,7 +15,7 @@ import { DeckblattData } from "@/lib/pdf/deckblatt-template";
 import { extractApplicantInfoAI } from "@/lib/gemini";
 import { extractText } from "unpdf";
 import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
-import { consumeAiCredit, refundAiCredit } from "@/lib/monetization";
+import { deductAiCreditAtomic, refundAiCredit } from "@/lib/monetization";
 
 const MAX_TOTAL_SIZE = 15 * 1024 * 1024; // 15MB
 
@@ -28,6 +28,9 @@ export async function POST(request: NextRequest) {
   const rateLimitResponse = checkRateLimit(request, AUTH_RATE_LIMITS.AI_API);
   if (rateLimitResponse) return rateLimitResponse;
 
+  let creditDeducted = false;
+  let userId: string | null = null;
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("user_session")?.value;
@@ -39,6 +42,8 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    userId = authResult.user.id;
 
     // PRO Plan or Credit Guardrail for 3-in-1 Bewerbungsmappe Compiler
     const isPro = Boolean(
@@ -152,10 +157,37 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Pre-validate saved CV if no direct file uploaded
+    const savedCv = !cvFile
+      ? await prisma.cv.findFirst({
+          where: {
+            id: cvId!,
+            userId: authResult.user.id,
+          },
+          include: {
+            personalInfo: true,
+            experiences: { orderBy: { order: "asc" } },
+            educations: { orderBy: { order: "asc" } },
+            skills: { orderBy: { order: "asc" } },
+            languages: { orderBy: { order: "asc" } },
+            certifications: { orderBy: { order: "asc" } },
+            projects: { orderBy: { order: "asc" } },
+          },
+        })
+      : null;
+
+    if (!cvFile && !savedCv) {
+      return NextResponse.json(
+        { success: false, error: "Selected CV not found or access denied." },
+        { status: 404 }
+      );
+    }
+
     let compiledPdfBytes: Uint8Array;
     let applicantName = authResult.user.name || "Bewerber";
+    let cvFileBuffer: Buffer | null = null;
 
-    // 2. Handle Direct Uploaded CV PDF
+    // 2. Handle Direct Uploaded CV PDF Validation
     if (cvFile) {
       const fileName = cvFile instanceof File ? cvFile.name : "Lebenslauf.pdf";
       const fileType = cvFile.type;
@@ -180,7 +212,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Read array buffer once into a Node Buffer
-      const cvFileBuffer = Buffer.from(await cvFile.arrayBuffer());
+      cvFileBuffer = Buffer.from(await cvFile.arrayBuffer());
 
       // Validate PDF magic bytes: %PDF-
       const isCvPdfMagic =
@@ -197,7 +229,35 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+    }
 
+    // Atomically deduct 1 AI credit for non-Pro users for both saved DB CVs and uploaded PDF CVs
+    if (!isPro) {
+      const creditRes = await deductAiCreditAtomic({
+        userId: authResult.user.id,
+        operation: "DOSSIER_COMPILE",
+        requiredCredits: 1,
+      });
+
+      if (!creditRes.success || !creditRes.allowed) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "INSUFFICIENT_CREDITS",
+            requiresPro: true,
+            outOfCredits: true,
+            message:
+              creditRes.error ||
+              "تجميع ملف الترشيح (Bewerbungsmappe) ميزة متقدمة تتطلب رصيداً أو ترقية إلى باقة PRO.",
+          },
+          { status: 402 }
+        );
+      }
+      creditDeducted = true;
+    }
+
+    // 3. Compile Pipeline for Direct Uploaded CV PDF
+    if (cvFile && cvFileBuffer) {
       // Extract text from CV to extract candidate contact details for the Deckblatt
       const deckblattMetadata: DeckblattData = {
         fullName: authResult.user.name || "Bewerber",
@@ -214,38 +274,11 @@ export async function POST(request: NextRequest) {
         const rawText = Array.isArray(text) ? text.join("\n") : String(text || "");
         const cleanedText = rawText.trim();
         if (cleanedText.length >= 25) {
-          let creditConsumed = false;
-          if (!isPro) {
-            const creditRes = await consumeAiCredit(authResult.user.id);
-            if (!creditRes.success || !creditRes.allowed) {
-              return NextResponse.json(
-                {
-                  success: false,
-                  error: "INSUFFICIENT_CREDITS",
-                  requiresPro: true,
-                  outOfCredits: true,
-                  message: "رصيد الذكاء الاصطناعي غير كافٍ لاستخراج بيانات السيرة الذاتية.",
-                },
-                { status: 402 }
-              );
-            }
-            creditConsumed = true;
-          }
-
           let extracted = null;
           try {
             extracted = await extractApplicantInfoAI(cleanedText);
           } catch (aiErr) {
             console.error("[Dossier AI Extraction Error]:", aiErr);
-            if (creditConsumed) {
-              await refundAiCredit(authResult.user.id).catch(() => {});
-              creditConsumed = false;
-            }
-          }
-
-          if (!extracted && creditConsumed) {
-            await refundAiCredit(authResult.user.id).catch(() => {});
-            creditConsumed = false;
           }
 
           if (extracted) {
@@ -325,28 +358,7 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // 3. Handle Saved Database CV
-      const cv = await prisma.cv.findFirst({
-        where: {
-          id: cvId!,
-          userId: authResult.user.id,
-        },
-        include: {
-          personalInfo: true,
-          experiences: { orderBy: { order: "asc" } },
-          educations: { orderBy: { order: "asc" } },
-          skills: { orderBy: { order: "asc" } },
-          languages: { orderBy: { order: "asc" } },
-          certifications: { orderBy: { order: "asc" } },
-          projects: { orderBy: { order: "asc" } },
-        },
-      });
-
-      if (!cv) {
-        return NextResponse.json(
-          { success: false, error: "Selected CV not found or access denied." },
-          { status: 404 }
-        );
-      }
+      const cv = savedCv!;
 
       applicantName = cv.personalInfo?.fullName || authResult.user.name || "Bewerber";
 
@@ -465,6 +477,9 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: unknown) {
+    if (creditDeducted && userId) {
+      await refundAiCredit(userId).catch(() => {});
+    }
     console.error("[Dossier Compile Error]:", error instanceof Error ? error.message : error);
     return NextResponse.json(
       {

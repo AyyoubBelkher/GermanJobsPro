@@ -27,6 +27,16 @@ export async function generateMetadata({
       : isDe
       ? "Komplettzugang zu DIN 5008 Anschreiben, ATS-Check und Bewerbungs-Tracker für Deutschland."
       : "Get full access to AI cover letters, ATS resume audits, and application tracking for the German job market.",
+    alternates: {
+      canonical: `https://www.germanjobspro.com/${locale}/pricing`,
+      languages: {
+        ar: "https://www.germanjobspro.com/ar/pricing",
+        de: "https://www.germanjobspro.com/de/pricing",
+        en: "https://www.germanjobspro.com/en/pricing",
+        fr: "https://www.germanjobspro.com/fr/pricing",
+        "x-default": "https://www.germanjobspro.com/de/pricing",
+      },
+    },
   };
 }
 

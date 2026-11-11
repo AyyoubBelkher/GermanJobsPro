@@ -27,6 +27,16 @@ export async function generateMetadata({
     description: isAr
       ? "تصفح أحدث الوظائف وعقود الأوسبيلدونغ في ألمانيا مع أدوات التقديم المباشر وتوليد خطاب الدافع Anschreiben بالذكاء الاصطناعي."
       : "Finden Sie aktuelle Jobs in Deutschland mit 1-Klick Anschreiben-Generator und ATS-Lebenslauf-Check.",
+    alternates: {
+      canonical: `https://www.germanjobspro.com/${locale}/jobs`,
+      languages: {
+        ar: "https://www.germanjobspro.com/ar/jobs",
+        de: "https://www.germanjobspro.com/de/jobs",
+        en: "https://www.germanjobspro.com/en/jobs",
+        fr: "https://www.germanjobspro.com/fr/jobs",
+        "x-default": "https://www.germanjobspro.com/de/jobs",
+      },
+    },
   };
 }
 

@@ -17,6 +17,6 @@
     "EXPOSE 3000",
     "ENV WS_NO_BUFFER_UTIL=1",
     "ENV WS_NO_UTF_8_VALIDATE=1",
-    "CMD [\"sh\", \"-c\", \"npx prisma db push --accept-data-loss && npm start\"]"
+    "CMD [\"sh\", \"-c\", \"npx prisma db push && npm start\"]"
   ]
 }
