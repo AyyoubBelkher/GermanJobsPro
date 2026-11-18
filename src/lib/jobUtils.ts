@@ -197,19 +197,37 @@ export function cleanJobDescription(raw?: string | null): string {
   );
 
   // 6. Fix RTL parentheses/slash wrapping and BiDi inversion
-  // Specifically formats "(Deutsches Krankenhaus / Pflegezentrum)" as "Deutsches Krankenhaus - Pflegezentrum"
-  // and wraps any parenthetical Latin/German segment in Unicode Left-to-Right Isolate (\u2066...\u2069)
+  // Strip outer parentheses around "Deutsches Krankenhaus - Pflegezentrum" completely
+  // to avoid RTL parenthesis splitting across line breaks.
+  text = text.replace(
+    /(?:\u2066)?\(\s*Deutsches Krankenhaus\s*[-/]\s*Pflegezentrum\s*\)(?:\u2069)?/gi,
+    "Deutsches Krankenhaus - Pflegezentrum"
+  );
+  text = text.replace(
+    /Deutsches Krankenhaus\s*\/\s*Pflegezentrum/g,
+    "Deutsches Krankenhaus - Pflegezentrum"
+  );
+
+  // Wrap any other parenthetical Latin/German segment in Unicode Left-to-Right Isolate (\u2066...\u2069)
+  // and replace inner slashes with hyphens
   text = text.replace(
     /(?:\u2066)?\(([^)\u2069]*[a-zA-ZäöüÄÖÜß][^)\u2069]*)\)(?:\u2069)?/g,
     (_, inner: string) => {
+      if (/Deutsches Krankenhaus\s*[-/]\s*Pflegezentrum/i.test(inner)) {
+        return "Deutsches Krankenhaus - Pflegezentrum";
+      }
       const normalized = inner
-        .replace(/Deutsches Krankenhaus\s*\/\s*Pflegezentrum/g, "Deutsches Krankenhaus - Pflegezentrum")
         .replace(/\s+\/\s+/g, " - ")
         .replace(/([a-zA-ZäöüÄÖÜß0-9]{2,})\s*\/\s*([a-zA-ZäöüÄÖÜß0-9]{2,})/g, "$1 - $2");
       return `\u2066(${normalized})\u2069`;
     }
   );
-  text = text.replace(/Deutsches Krankenhaus\s*\/\s*Pflegezentrum/g, "Deutsches Krankenhaus - Pflegezentrum");
+
+  // Final check to guarantee no outer parentheses remain around Deutsches Krankenhaus - Pflegezentrum
+  text = text.replace(
+    /(?:\u2066)?\(\s*Deutsches Krankenhaus\s*[-/]\s*Pflegezentrum\s*\)(?:\u2069)?/gi,
+    "Deutsches Krankenhaus - Pflegezentrum"
+  );
 
   // 7. Collapse multiple spaces and 3+ consecutive newlines into "\n\n", then trim
   text = text
@@ -261,6 +279,74 @@ export function inferDisplayLanguageReq(job?: {
   }
 
   return rawReq || "B1/B2";
+}
+
+/**
+ * Infers the display category for a job.
+ * If job.category is already a specific non-general category (anything other than "General", "Other", "", or null), return job.category.
+ * If job.category is "General" (or empty/other), inspect job.title and job.descriptionRaw:
+ * - If matches IT/Software keywords, return "IT".
+ * - If matches Engineering/Industrial keywords, return "Engineering".
+ * - If matches Healthcare/Nursing keywords, return "Healthcare".
+ * - Otherwise, return job.category || "General".
+ */
+export function inferDisplayCategory(job?: {
+  title?: string | null;
+  category?: string | null;
+  descriptionRaw?: string | null;
+} | null): string {
+  if (!job) return "General";
+
+  const rawCat = (job.category || "").trim();
+  const normalizedCat = rawCat.toLowerCase();
+
+  // If already a specific recognized non-general category
+  if (
+    rawCat &&
+    normalizedCat !== "general" &&
+    normalizedCat !== "other" &&
+    normalizedCat !== "all"
+  ) {
+    if (normalizedCat === "it" || normalizedCat.includes("information") || normalizedCat.includes("software")) {
+      return "IT";
+    }
+    if (normalizedCat.includes("health") || normalizedCat.includes("pflege") || normalizedCat.includes("nurs") || normalizedCat.includes("mediz")) {
+      return "Healthcare";
+    }
+    if (normalizedCat.includes("ausbildung") || normalizedCat.includes("تدريب") || normalizedCat.includes("azubi")) {
+      return "Ausbildung";
+    }
+    if (normalizedCat.includes("engineer") || normalizedCat.includes("ingenieur") || normalizedCat.includes("mechatron")) {
+      return "Engineering";
+    }
+    return rawCat;
+  }
+
+  const title = job.title || "";
+  const desc = job.descriptionRaw || "";
+
+  // 1. IT / Software keywords
+  const itRegex =
+    /\b(?:Software|Developer|DevOps|Frontend|Backend|Full[- ]?Stack|Data|Database|Cloud|Cyber|Security|QA|SRE|Platform|System Administrator|IT|C\+\+|Python|Java|React|Node|Kubernetes|Machine Learning|AI|Informatik|Entwickler)\b/i;
+  if (itRegex.test(title) || itRegex.test(desc)) {
+    return "IT";
+  }
+
+  // 2. Engineering / Industrial keywords
+  const engRegex =
+    /\b(?:Mechanical|Electrical|Civil|Automation|Robotics|Mechatronik|Maschinenbau|Elektrotechnik|Ingenieur|Process Engineer|Manufacturing|Hardware)\b/i;
+  if (engRegex.test(title) || engRegex.test(desc)) {
+    return "Engineering";
+  }
+
+  // 3. Healthcare / Nursing keywords
+  const healthRegex =
+    /\b(?:Pflege|Krankenhaus|Krankenpfleger|Altenpflege|Nurse|Nursing|Arzt|Ärztin|Medizin|Healthcare|Caregiver|Hebamme|Physiotherap)\b/i;
+  if (healthRegex.test(title) || healthRegex.test(desc)) {
+    return "Healthcare";
+  }
+
+  return rawCat || "General";
 }
 
 export function deduplicateJobs<T extends { title: string; company: string }>(jobs: T[]): T[] {

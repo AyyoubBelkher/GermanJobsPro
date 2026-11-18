@@ -1,11 +1,17 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useTransition, useCallback } from "react";
+import React, { useState, useEffect, useRef, useTransition, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { extractGermanJobTitle, stripHtml } from "@/lib/cover-letter";
 import GermanTtsButton from "@/components/blog/GermanTtsButton";
 import { getDictionary, isValidLocale, DEFAULT_LOCALE, LOCALE_METADATA, type Locale } from "@/lib/i18n";
-import { splitBilingualTitle, extractCleanHrEmail, cleanJobDescription, inferDisplayLanguageReq } from "@/lib/jobUtils";
+import {
+  splitBilingualTitle,
+  extractCleanHrEmail,
+  cleanJobDescription,
+  inferDisplayLanguageReq,
+  inferDisplayCategory,
+} from "@/lib/jobUtils";
 
 export { stripHtml };
 
@@ -82,9 +88,7 @@ export default function JobBoardClient({
   ];
 
   const [jobs, setJobs] = useState<JobItem[]>(initialJobs);
-  const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(initialPage);
-  const [totalPages, setTotalPages] = useState(initialTotalPages);
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
@@ -98,31 +102,22 @@ export default function JobBoardClient({
   const fetchJobs = useCallback(
     async (
       searchQuery: string,
-      cat: string,
-      lang: string,
       selectedCity: string,
-      directEmail: boolean,
-      targetPage: number
+      directEmail: boolean
     ) => {
       try {
         const params = new URLSearchParams();
         if (searchQuery) params.set("search", searchQuery);
-        if (cat && cat !== "all") params.set("category", cat);
-        if (lang && lang !== "all") params.set("language", lang);
         if (selectedCity && selectedCity !== "all") params.set("city", selectedCity);
         if (directEmail) params.set("directEmail", "true");
-        params.set("page", String(targetPage));
-        params.set("limit", "15");
+        params.set("limit", "50");
 
         const res = await fetch(`/api/jobs?${params.toString()}`);
         if (!res.ok) throw new Error("Failed to load jobs");
         const data = await res.json();
 
-        if (data.success) {
+        if (data.success && Array.isArray(data.jobs)) {
           setJobs(data.jobs);
-          setTotal(data.total);
-          setPage(data.page);
-          setTotalPages(data.totalPages);
         }
       } catch (err) {
         console.error("Error fetching jobs:", err);
@@ -132,6 +127,13 @@ export default function JobBoardClient({
   );
 
   useEffect(() => {
+    // If the server rendered batch has fewer jobs than initialTotal, fetch all in the background
+    if (initialJobs.length < initialTotal) {
+      fetchJobs(search, city, directEmailOnly);
+    }
+  }, [fetchJobs, initialJobs.length, initialTotal, search, city, directEmailOnly]);
+
+  useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
@@ -139,18 +141,62 @@ export default function JobBoardClient({
 
     const timer = setTimeout(() => {
       startTransition(() => {
-        fetchJobs(search, category, language, city, directEmailOnly, 1);
+        fetchJobs(search, city, directEmailOnly);
       });
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [search, category, language, city, directEmailOnly, fetchJobs]);
+  }, [search, city, directEmailOnly, fetchJobs]);
+
+  const filteredJobs = useMemo(() => {
+    return jobs.filter((job) => {
+      // 1. Category filtering using inferDisplayCategory
+      if (category && category !== "all") {
+        const effectiveCategory = inferDisplayCategory(job);
+        if (effectiveCategory.toLowerCase() !== category.toLowerCase()) {
+          return false;
+        }
+      }
+
+      // 2. Language filtering using inferDisplayLanguageReq
+      if (language && language !== "all") {
+        const effectiveLang = inferDisplayLanguageReq(job);
+        const isEnglishListing =
+          effectiveLang.startsWith("EN") ||
+          effectiveLang.toLowerCase().includes("english");
+
+        if (language === "English" || language.toLowerCase() === "en") {
+          if (!isEnglishListing) {
+            return false;
+          }
+        } else {
+          // German levels: "B1", "B2", "C1", etc.
+          // Ensure English jobs are not falsely matched as German
+          if (isEnglishListing) {
+            return false;
+          }
+          if (!effectiveLang.toLowerCase().includes(language.toLowerCase())) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    });
+  }, [jobs, category, language]);
+
+  const PAGE_SIZE = 15;
+  const total = filteredJobs.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const activePage = Math.min(page, totalPages);
+  const paginatedJobs = filteredJobs.slice(
+    (activePage - 1) * PAGE_SIZE,
+    activePage * PAGE_SIZE
+  );
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
-    startTransition(() => {
-      fetchJobs(search, category, language, city, directEmailOnly, newPage);
-    });
+    setPage(newPage);
     window.scrollTo({ top: 200, behavior: "smooth" });
   };
 
@@ -168,6 +214,7 @@ export default function JobBoardClient({
     setCity("all");
     setLanguage("all");
     setDirectEmailOnly(false);
+    setPage(1);
   };
 
   const clearFiltersLabel =
@@ -231,7 +278,10 @@ export default function JobBoardClient({
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               placeholder={dict.jobs.searchPlaceholder}
               className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white border border-slate-200 text-slate-900 text-sm placeholder:text-slate-400 focus:border-blue-500 focus:outline-hidden transition-all shadow-xs"
             />
@@ -241,7 +291,10 @@ export default function JobBoardClient({
           <div className="sm:col-span-1 md:col-span-3">
             <select
               value={city}
-              onChange={(e) => setCity(e.target.value)}
+              onChange={(e) => {
+                setCity(e.target.value);
+                setPage(1);
+              }}
               className="w-full px-4 py-3.5 rounded-2xl bg-white border border-slate-200 text-slate-900 text-sm focus:border-blue-500 focus:outline-hidden transition-all cursor-pointer shadow-xs"
             >
               {topGermanCities.map((c) => (
@@ -255,7 +308,10 @@ export default function JobBoardClient({
           <div className="sm:col-span-1 md:col-span-3">
             <select
               value={language}
-              onChange={(e) => setLanguage(e.target.value)}
+              onChange={(e) => {
+                setLanguage(e.target.value);
+                setPage(1);
+              }}
               className="w-full px-4 py-3.5 rounded-2xl bg-white border border-slate-200 text-slate-900 text-sm focus:border-blue-500 focus:outline-hidden transition-all cursor-pointer shadow-xs"
             >
               {languages.map((l) => (
@@ -271,7 +327,10 @@ export default function JobBoardClient({
         <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
           <button
             type="button"
-            onClick={() => setDirectEmailOnly((prev) => !prev)}
+            onClick={() => {
+              setDirectEmailOnly((prev) => !prev);
+              setPage(1);
+            }}
             className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer shrink-0 snap-start ${
               directEmailOnly
                 ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/25 ring-2 ring-emerald-400/50"
@@ -299,7 +358,10 @@ export default function JobBoardClient({
               <button
                 key={cat.id}
                 type="button"
-                onClick={() => setCategory(cat.id)}
+                onClick={() => {
+                  setCategory(cat.id);
+                  setPage(1);
+                }}
                 className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer shrink-0 snap-start ${
                   active
                     ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
@@ -352,13 +414,13 @@ export default function JobBoardClient({
 
         {totalPages > 1 && (
           <span>
-            {dict.jobs.pageOf.replace("{page}", String(page)).replace("{totalPages}", String(totalPages))}
+            {dict.jobs.pageOf.replace("{page}", String(activePage)).replace("{totalPages}", String(totalPages))}
           </span>
         )}
       </div>
 
       {/* Jobs Listing */}
-      {jobs.length === 0 ? (
+      {paginatedJobs.length === 0 ? (
         <div className="text-center py-20 px-4 rounded-3xl bg-white border border-dashed border-slate-300 space-y-4 shadow-sm">
           <div className="w-16 h-16 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center mx-auto text-2xl">
             💼
@@ -382,11 +444,12 @@ export default function JobBoardClient({
       ) : (
         /* CARDS GRID VIEW */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {jobs.map((job) => {
+          {paginatedJobs.map((job) => {
             const cleanEmail = extractCleanHrEmail(job);
             const hasDirectEmail = Boolean(cleanEmail);
             const { primaryTitle, latinSubtitle } = splitBilingualTitle(job.title);
             const spokenGermanTitle = latinSubtitle || extractGermanJobTitle(job.title) || job.title;
+            const effectiveCategory = inferDisplayCategory(job);
             const langBadge = inferDisplayLanguageReq(job);
 
             return (
@@ -398,7 +461,7 @@ export default function JobBoardClient({
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold">
-                        {job.category}
+                        {effectiveCategory}
                       </span>
                       {hasDirectEmail ? (
                         <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-1">
@@ -515,8 +578,8 @@ export default function JobBoardClient({
         <div className="flex items-center justify-center gap-2 pt-6">
           <button
             type="button"
-            onClick={() => handlePageChange(page - 1)}
-            disabled={page <= 1}
+            onClick={() => handlePageChange(activePage - 1)}
+            disabled={activePage <= 1}
             className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-30 text-xs font-bold transition-all cursor-pointer shadow-sm"
           >
             {dict.jobs.previous}
@@ -531,7 +594,7 @@ export default function JobBoardClient({
                   type="button"
                   onClick={() => handlePageChange(p)}
                   className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    page === p
+                    activePage === p
                       ? "bg-[#061838] text-white shadow-sm"
                       : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 shadow-xs"
                   }`}
@@ -544,8 +607,8 @@ export default function JobBoardClient({
 
           <button
             type="button"
-            onClick={() => handlePageChange(page + 1)}
-            disabled={page >= totalPages}
+            onClick={() => handlePageChange(activePage + 1)}
+            disabled={activePage >= totalPages}
             className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-30 text-xs font-bold transition-all cursor-pointer shadow-sm"
           >
             {dict.jobs.next}

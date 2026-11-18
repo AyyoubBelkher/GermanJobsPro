@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAutomationSecret, requireAdmin } from "@/lib/admin-auth";
-import { isValidHrEmail, isExcludedJob, inferDisplayLanguageReq } from "@/lib/jobUtils";
+import { isValidHrEmail, isExcludedJob, inferDisplayLanguageReq, inferDisplayCategory } from "@/lib/jobUtils";
 import { sanitizeJobPayload } from "@/lib/jobSanitizer";
 import { prisma } from "@/lib/prisma";
 
@@ -130,10 +130,9 @@ export async function GET(request: NextRequest) {
             const referenznummer = j.refnr || "";
             const titel = j.titel || j.beruf || "Stellenangebot";
             const rawArbeitgeber = j.arbeitgeber || "Arbeitgeber in Deutschland";
-            const arbeitgeber = rawArbeitgeber.replace(
-              /Deutsches Krankenhaus\s*\/\s*Pflegezentrum/g,
-              "Deutsches Krankenhaus - Pflegezentrum"
-            );
+            const arbeitgeber = rawArbeitgeber
+              .replace(/(?:\u2066)?\(\s*Deutsches Krankenhaus\s*[-/]\s*Pflegezentrum\s*\)(?:\u2069)?/gi, "Deutsches Krankenhaus - Pflegezentrum")
+              .replace(/Deutsches Krankenhaus\s*[-/]\s*Pflegezentrum/gi, "Deutsches Krankenhaus - Pflegezentrum");
             const arbeitsort = j.arbeitsort;
             const externeUrl = j.externeUrl || null;
             const applyUrl = referenznummer
@@ -148,10 +147,9 @@ export async function GET(request: NextRequest) {
                 : "Deutschland";
 
             const rawDescription = j.beruf || titel;
-            const description = rawDescription.replace(
-              /Deutsches Krankenhaus\s*\/\s*Pflegezentrum/g,
-              "Deutsches Krankenhaus - Pflegezentrum"
-            );
+            const description = rawDescription
+              .replace(/(?:\u2066)?\(\s*Deutsches Krankenhaus\s*[-/]\s*Pflegezentrum\s*\)(?:\u2069)?/gi, "Deutsches Krankenhaus - Pflegezentrum")
+              .replace(/Deutsches Krankenhaus\s*[-/]\s*Pflegezentrum/gi, "Deutsches Krankenhaus - Pflegezentrum");
 
             return {
               id: referenznummer || String(Math.floor(Math.random() * 1000000)),
@@ -185,11 +183,17 @@ export async function GET(request: NextRequest) {
                 contactEmail: j.contactEmail,
               });
 
+              const resolvedCategory = inferDisplayCategory({
+                title: sanitized.title,
+                category: sanitized.category || "Ausbildung",
+                descriptionRaw: j.description,
+              });
+
               await prisma.job.upsert({
                 where: { applyUrl: j.applyUrl },
                 update: {
                   title: sanitized.title,
-                  category: sanitized.category || "Ausbildung",
+                  category: resolvedCategory,
                   salary: sanitized.salary || null,
                   company: j.company,
                   city: j.city,
@@ -204,7 +208,7 @@ export async function GET(request: NextRequest) {
                   title: sanitized.title,
                   company: j.company,
                   city: j.city,
-                  category: sanitized.category || "Ausbildung",
+                  category: resolvedCategory,
                   salary: sanitized.salary || null,
                   jobType: "Vollzeit",
                   languageReq: inferDisplayLanguageReq({
@@ -315,13 +319,13 @@ export async function GET(request: NextRequest) {
       const rawDesc = j.description || "";
       const cleanDesc = rawDesc
         .replace(/<[^>]*>?/gm, " ")
-        .replace(/Deutsches Krankenhaus\s*\/\s*Pflegezentrum/g, "Deutsches Krankenhaus - Pflegezentrum")
+        .replace(/(?:\u2066)?\(\s*Deutsches Krankenhaus\s*[-/]\s*Pflegezentrum\s*\)(?:\u2069)?/gi, "Deutsches Krankenhaus - Pflegezentrum")
+        .replace(/Deutsches Krankenhaus\s*[-/]\s*Pflegezentrum/gi, "Deutsches Krankenhaus - Pflegezentrum")
         .trim();
       const rawCompany = j.company_name || "German Employer";
-      const cleanCompany = rawCompany.replace(
-        /Deutsches Krankenhaus\s*\/\s*Pflegezentrum/g,
-        "Deutsches Krankenhaus - Pflegezentrum"
-      );
+      const cleanCompany = rawCompany
+        .replace(/(?:\u2066)?\(\s*Deutsches Krankenhaus\s*[-/]\s*Pflegezentrum\s*\)(?:\u2069)?/gi, "Deutsches Krankenhaus - Pflegezentrum")
+        .replace(/Deutsches Krankenhaus\s*[-/]\s*Pflegezentrum/gi, "Deutsches Krankenhaus - Pflegezentrum");
       const { contactEmail, directAtsUrl } = extractVerifiedEmailAndForm(rawDesc);
 
       return {
@@ -356,11 +360,17 @@ export async function GET(request: NextRequest) {
           contactEmail: j.contactEmail,
         });
 
+        const resolvedCategory = inferDisplayCategory({
+          title: sanitized.title,
+          category: sanitized.category || "General",
+          descriptionRaw: j.description,
+        });
+
         await prisma.job.upsert({
           where: { applyUrl: j.applyUrl },
           update: {
             title: sanitized.title,
-            category: sanitized.category || "General",
+            category: resolvedCategory,
             salary: sanitized.salary || null,
             company: j.company,
             city: j.city,
@@ -375,7 +385,7 @@ export async function GET(request: NextRequest) {
             title: sanitized.title,
             company: j.company,
             city: j.city,
-            category: sanitized.category || "General",
+            category: resolvedCategory,
             salary: sanitized.salary || null,
             jobType: "Vollzeit",
             languageReq: inferDisplayLanguageReq({
