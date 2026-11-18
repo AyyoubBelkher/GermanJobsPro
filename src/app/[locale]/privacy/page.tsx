@@ -23,6 +23,16 @@ export async function generateMetadata({
     description: isAr
       ? "سياسة الخصوصية وحماية بيانات السير الذاتية وفق معايير اللائحة العامة لحماية البيانات في الاتحاد الأوروبي (GDPR). حماية وتشفير وحذف البيانات عند الطلب."
       : "Datenschutzerklärung von GermanJobsPro gemäß DSGVO: Transparente Verarbeitung, sichere Speicherung und Löschung von Bewerbungsdaten auf Anfrage.",
+    alternates: {
+      canonical: `https://www.germanjobspro.com/${locale}/privacy`,
+      languages: {
+        ar: "https://www.germanjobspro.com/ar/privacy",
+        de: "https://www.germanjobspro.com/de/privacy",
+        en: "https://www.germanjobspro.com/en/privacy",
+        fr: "https://www.germanjobspro.com/fr/privacy",
+        "x-default": "https://www.germanjobspro.com/de/privacy",
+      },
+    },
   };
 }
 

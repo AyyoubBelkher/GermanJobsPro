@@ -23,6 +23,16 @@ export async function generateMetadata({
     description: isAr
       ? "سياسة وضوابط استرداد الأموال الرقمية لباقة PRO Pass في GermanJobsPro. ضمان الرضا والشفافية التامة وحماية حقوق المستهلك."
       : "Transparente Rückerstattungsrichtlinie und Widerrufsbelehrung für den GermanJobsPro PRO Pass.",
+    alternates: {
+      canonical: `https://www.germanjobspro.com/${locale}/refund`,
+      languages: {
+        ar: "https://www.germanjobspro.com/ar/refund",
+        de: "https://www.germanjobspro.com/de/refund",
+        en: "https://www.germanjobspro.com/en/refund",
+        fr: "https://www.germanjobspro.com/fr/refund",
+        "x-default": "https://www.germanjobspro.com/de/refund",
+      },
+    },
   };
 }
 

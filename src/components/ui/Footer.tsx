@@ -22,6 +22,25 @@ export default function Footer({ locale = "ar", className }: FooterProps) {
   const termsLink = `/${activeLocale}/terms`;
   const privacyLink = `/${activeLocale}/privacy`;
   const refundLink = `/${activeLocale}/refund`;
+  const impressumLink = `/${activeLocale}/impressum`;
+
+  const impressumLabel =
+    activeLocale === "de"
+      ? "Impressum (§ 5 DDG)"
+      : activeLocale === "ar"
+      ? "بيانات المنصة القانونية (Impressum)"
+      : activeLocale === "fr"
+      ? "Mentions Légales (Impressum)"
+      : "Legal Notice (Impressum)";
+
+  const impressumShortLabel =
+    activeLocale === "de"
+      ? "Impressum"
+      : activeLocale === "ar"
+      ? "بيانات المنصة (Impressum)"
+      : activeLocale === "fr"
+      ? "Mentions Légales"
+      : "Impressum";
 
   return (
     <footer className={`bg-[#061838] ${className !== undefined ? className : "mt-20 border-t border-white/10"} transition-colors`} dir={dir}>
@@ -142,6 +161,12 @@ export default function Footer({ locale = "ar", className }: FooterProps) {
                   <span>{dict.footer.refundPolicy}</span>
                 </Link>
               </li>
+              <li>
+                <Link href={impressumLink} className="hover:text-[#FACC15] transition-colors flex items-center gap-1.5">
+                  <span>🏛️</span>
+                  <span>{impressumLabel}</span>
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
@@ -161,6 +186,10 @@ export default function Footer({ locale = "ar", className }: FooterProps) {
             <span>•</span>
             <Link href={refundLink} className="hover:text-white transition-colors">
               {dict.footer.refunds}
+            </Link>
+            <span>•</span>
+            <Link href={impressumLink} className="hover:text-white transition-colors">
+              {impressumShortLabel}
             </Link>
           </div>
 

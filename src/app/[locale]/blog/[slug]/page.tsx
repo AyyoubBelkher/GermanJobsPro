@@ -158,9 +158,21 @@ export async function generateMetadata({
   const images = resolvedCover ? [resolvedCover] : [];
   const authorName = getAuthorName(Boolean(post.generated_by_ai), locale);
 
+  const encodedSlug = encodeURIComponent(post.slug);
+
   return {
     title: `${title} | GermanJobsPro`,
     description,
+    alternates: {
+      canonical: `https://www.germanjobspro.com/${locale}/blog/${encodedSlug}`,
+      languages: {
+        ar: `https://www.germanjobspro.com/ar/blog/${encodedSlug}`,
+        de: `https://www.germanjobspro.com/de/blog/${encodedSlug}`,
+        en: `https://www.germanjobspro.com/en/blog/${encodedSlug}`,
+        fr: `https://www.germanjobspro.com/fr/blog/${encodedSlug}`,
+        "x-default": `https://www.germanjobspro.com/de/blog/${encodedSlug}`,
+      },
+    },
     openGraph: {
       title,
       description,

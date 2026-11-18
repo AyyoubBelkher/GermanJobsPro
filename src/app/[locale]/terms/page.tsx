@@ -23,6 +23,16 @@ export async function generateMetadata({
     description: isAr
       ? "شروط الاستخدام والامتثال القانوني لمنصة GermanJobsPro. منصة برمجية وأدوات ذكاء اصطناعي لتنسيق السير الذاتية DIN 5008 وإعداد ملفات الترشيح للعمل في ألمانيا."
       : "Nutzungsbedingungen der GermanJobsPro Plattform für DIN 5008 Bewerbungsunterlagen und KI-gestützte Dokumentenerstellung.",
+    alternates: {
+      canonical: `https://www.germanjobspro.com/${locale}/terms`,
+      languages: {
+        ar: "https://www.germanjobspro.com/ar/terms",
+        de: "https://www.germanjobspro.com/de/terms",
+        en: "https://www.germanjobspro.com/en/terms",
+        fr: "https://www.germanjobspro.com/fr/terms",
+        "x-default": "https://www.germanjobspro.com/de/terms",
+      },
+    },
   };
 }
 

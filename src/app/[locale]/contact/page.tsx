@@ -24,6 +24,16 @@ export async function generateMetadata({
     description: isAr
       ? "يسعدنا دائماً استقبال استفساراتك، ومساعدتك في إعداد ملف الترشيح الألماني DIN 5008 وحل أي مشكلة تقنية."
       : "Kontaktieren Sie das GermanJobsPro-Supportteam bei Fragen zu Lebenslauf, Bewerbungsmappe und Tarifen.",
+    alternates: {
+      canonical: `https://www.germanjobspro.com/${locale}/contact`,
+      languages: {
+        ar: "https://www.germanjobspro.com/ar/contact",
+        de: "https://www.germanjobspro.com/de/contact",
+        en: "https://www.germanjobspro.com/en/contact",
+        fr: "https://www.germanjobspro.com/fr/contact",
+        "x-default": "https://www.germanjobspro.com/de/contact",
+      },
+    },
   };
 }
 

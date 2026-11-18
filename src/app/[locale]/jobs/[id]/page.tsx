@@ -98,6 +98,16 @@ export async function generateMetadata({
         (isAr
           ? `تفاصيل وظيفة ${job.title || "شاغر وظيفي"} في شركة ${job.company || "ألمانيا"}. قدم الآن مع إمكانية توليد خطاب الدافع Anschreiben وفحص التوافق ATS.`
           : `Stellenangebot für ${job.title || "Stelle"} bei ${job.company || "Deutschland"}. Jetzt mit KI-Anschreiben bewerben.`),
+      alternates: {
+        canonical: `https://www.germanjobspro.com/${locale}/jobs/${id}`,
+        languages: {
+          ar: `https://www.germanjobspro.com/ar/jobs/${id}`,
+          de: `https://www.germanjobspro.com/de/jobs/${id}`,
+          en: `https://www.germanjobspro.com/en/jobs/${id}`,
+          fr: `https://www.germanjobspro.com/fr/jobs/${id}`,
+          "x-default": `https://www.germanjobspro.com/de/jobs/${id}`,
+        },
+      },
     };
   } catch (err: any) {
     if (err?.digest?.startsWith?.("NEXT_")) {
