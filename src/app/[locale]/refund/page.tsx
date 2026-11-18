@@ -82,7 +82,7 @@ export default async function RefundPage({
               : "At GermanJobsPro, we stand behind our tools and prioritize fairness. Here is our clear and transparent refund policy for the PRO Pass digital software license."}
           </p>
 
-          <p className="text-xs text-slate-500 font-mono">
+          <p className="text-xs text-slate-500">
             {isAr
               ? "آخر تحديث: نوفمبر 2026"
               : isDe

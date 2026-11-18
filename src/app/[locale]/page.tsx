@@ -206,25 +206,35 @@ export default async function LandingPage({
         {/* 2. THE 6-CARD ACTION HUB (#tools-hub)                     */}
         {/* ========================================================= */}
         <section id="tools-hub" className="-mt-12 sm:-mt-16 relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5 sm:gap-4" dir="ltr">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5 sm:gap-4">
             
-            {/* Card 1 (Leftmost): German Jobs */}
+            {/* Card 1: AI CV Builder */}
             <Link
-              href={`/${locale}/jobs`}
+              href={`/${locale}/dashboard/cv/new`}
               className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-3.5 sm:p-4 active:scale-[0.98] flex flex-col items-center text-center group cursor-pointer"
             >
               <div className="w-12 h-12 mb-3 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <svg className="w-11 h-11 text-[#0D47A1]" viewBox="0 0 48 48" fill="none">
-                  <path d="M18 16V11C18 9.89543 18.8954 9 20 9H28C29.1046 9 30 9.89543 30 11V16" stroke="#94A3B8" strokeWidth="3" strokeLinecap="round" />
-                  <rect x="7" y="15" width="34" height="23" rx="3.5" fill="#0D47A1" />
-                  <line x1="7" y1="25" x2="41" y2="25" stroke="#1E3A8A" strokeWidth="1.5" />
-                  <rect x="22" y="22" width="4" height="6" rx="1" fill="#E2E8F0" stroke="#94A3B8" strokeWidth="1" />
+                  <path d="M12 6C10.8954 6 10 6.89543 10 8V40C10 41.1046 10.8954 42 12 42H36C37.1046 42 38 41.1046 38 40V16L28 6H12Z" stroke="#0D47A1" strokeWidth="2.5" fill="white" />
+                  <path d="M28 6V16H38" stroke="#0D47A1" strokeWidth="2.5" fill="#EBF2FA" />
+                  <text x="14" y="24" fill="#0D47A1" fontSize="10.5" fontWeight="900" fontFamily="sans-serif">CV</text>
+                  <line x1="14" y1="29" x2="26" y2="29" stroke="#0D47A1" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="14" y1="34" x2="22" y2="34" stroke="#0D47A1" strokeWidth="2" strokeLinecap="round" />
+                  <g transform="translate(25, 27)">
+                    <circle cx="8" cy="8" r="7.5" fill="white" stroke="#0D47A1" strokeWidth="1.5" />
+                    <clipPath id="de-flag-clip-card-cv"><circle cx="8" cy="8" r="6.75" /></clipPath>
+                    <g clipPath="url(#de-flag-clip-card-cv)">
+                      <rect x="0" y="0" width="16" height="5.33" fill="#000000" />
+                      <rect x="0" y="5.33" width="16" height="5.34" fill="#DD0000" />
+                      <rect x="0" y="10.67" width="16" height="5.33" fill="#FFCC00" />
+                    </g>
+                  </g>
                 </svg>
               </div>
               <h3 className="font-black text-slate-900 text-sm sm:text-base group-hover:text-blue-900 transition-colors">
-                {t.toolsHub.card6.title}
+                {t.toolsHub.card1.title}
               </h3>
-              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir={dir}>{t.toolsHub.card6.subtitle}</p>
+              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir={dir}>{t.toolsHub.card1.subtitle}</p>
               <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
                 <svg
                   className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`}
@@ -238,25 +248,25 @@ export default async function LandingPage({
               </span>
             </Link>
 
-            {/* Card 2: German A1 Academy */}
+            {/* Card 2: ATS CV Analyzer */}
             <Link
-              href={`/${locale}/blog?category=German+A1`}
+              href={`/${locale}/dashboard/ats-analyzer`}
               className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-3.5 sm:p-4 active:scale-[0.98] flex flex-col items-center text-center group cursor-pointer"
             >
               <div className="w-12 h-12 mb-3 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <svg className="w-11 h-11 text-[#0D47A1]" viewBox="0 0 48 48" fill="none">
                   <line x1="8" y1="38" x2="40" y2="38" stroke="#0D47A1" strokeWidth="2.5" strokeLinecap="round" />
-                  <rect x="12" y="27" width="6" height="11" rx="1.5" fill="#0D47A1" />
-                  <rect x="21" y="20" width="6" height="18" rx="1.5" fill="#0D47A1" />
-                  <rect x="30" y="13" width="6" height="25" rx="1.5" fill="#0D47A1" />
-                  <path d="M10 28L21 17L28 22L37 10" stroke="#FACC15" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M31 10H38V17" stroke="#FACC15" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                  <rect x="11" y="24" width="6" height="14" rx="1.5" fill="#0D47A1" />
+                  <rect x="21" y="15" width="6" height="23" rx="1.5" fill="#0D47A1" />
+                  <rect x="31" y="20" width="6" height="18" rx="1.5" fill="#0D47A1" />
+                  <circle cx="23" cy="19" r="10" stroke="#0D47A1" strokeWidth="3" fill="none" />
+                  <line x1="30.5" y1="26.5" x2="39" y2="35" stroke="#0D47A1" strokeWidth="3.5" strokeLinecap="round" />
                 </svg>
               </div>
               <h3 className="font-black text-slate-900 text-sm sm:text-base group-hover:text-blue-900 transition-colors">
-                {t.toolsHub.card5.title}
+                {t.toolsHub.card2.title}
               </h3>
-              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir={dir}>{t.toolsHub.card5.subtitle}</p>
+              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir={dir}>{t.toolsHub.card2.subtitle}</p>
               <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
                 <svg
                   className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`}
@@ -327,25 +337,25 @@ export default async function LandingPage({
               </span>
             </Link>
 
-            {/* Card 5: ATS CV Analyzer */}
+            {/* Card 5: German A1 Academy */}
             <Link
-              href={`/${locale}/dashboard/ats-analyzer`}
+              href={`/${locale}/blog?category=German+A1`}
               className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-3.5 sm:p-4 active:scale-[0.98] flex flex-col items-center text-center group cursor-pointer"
             >
               <div className="w-12 h-12 mb-3 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <svg className="w-11 h-11 text-[#0D47A1]" viewBox="0 0 48 48" fill="none">
                   <line x1="8" y1="38" x2="40" y2="38" stroke="#0D47A1" strokeWidth="2.5" strokeLinecap="round" />
-                  <rect x="11" y="24" width="6" height="14" rx="1.5" fill="#0D47A1" />
-                  <rect x="21" y="15" width="6" height="23" rx="1.5" fill="#0D47A1" />
-                  <rect x="31" y="20" width="6" height="18" rx="1.5" fill="#0D47A1" />
-                  <circle cx="23" cy="19" r="10" stroke="#0D47A1" strokeWidth="3" fill="none" />
-                  <line x1="30.5" y1="26.5" x2="39" y2="35" stroke="#0D47A1" strokeWidth="3.5" strokeLinecap="round" />
+                  <rect x="12" y="27" width="6" height="11" rx="1.5" fill="#0D47A1" />
+                  <rect x="21" y="20" width="6" height="18" rx="1.5" fill="#0D47A1" />
+                  <rect x="30" y="13" width="6" height="25" rx="1.5" fill="#0D47A1" />
+                  <path d="M10 28L21 17L28 22L37 10" stroke="#FACC15" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M31 10H38V17" stroke="#FACC15" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <h3 className="font-black text-slate-900 text-sm sm:text-base group-hover:text-blue-900 transition-colors">
-                {t.toolsHub.card2.title}
+                {t.toolsHub.card5.title}
               </h3>
-              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir={dir}>{t.toolsHub.card2.subtitle}</p>
+              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir={dir}>{t.toolsHub.card5.subtitle}</p>
               <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
                 <svg
                   className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`}
@@ -359,33 +369,23 @@ export default async function LandingPage({
               </span>
             </Link>
 
-            {/* Card 6 (Rightmost): AI CV Builder */}
+            {/* Card 6: German Jobs */}
             <Link
-              href={`/${locale}/dashboard/cv/new`}
+              href={`/${locale}/jobs`}
               className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-3.5 sm:p-4 active:scale-[0.98] flex flex-col items-center text-center group cursor-pointer"
             >
               <div className="w-12 h-12 mb-3 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <svg className="w-11 h-11 text-[#0D47A1]" viewBox="0 0 48 48" fill="none">
-                  <path d="M12 6C10.8954 6 10 6.89543 10 8V40C10 41.1046 10.8954 42 12 42H36C37.1046 42 38 41.1046 38 40V16L28 6H12Z" stroke="#0D47A1" strokeWidth="2.5" fill="white" />
-                  <path d="M28 6V16H38" stroke="#0D47A1" strokeWidth="2.5" fill="#EBF2FA" />
-                  <text x="14" y="24" fill="#0D47A1" fontSize="10.5" fontWeight="900" fontFamily="sans-serif">CV</text>
-                  <line x1="14" y1="29" x2="26" y2="29" stroke="#0D47A1" strokeWidth="2" strokeLinecap="round" />
-                  <line x1="14" y1="34" x2="22" y2="34" stroke="#0D47A1" strokeWidth="2" strokeLinecap="round" />
-                  <g transform="translate(25, 27)">
-                    <circle cx="8" cy="8" r="7.5" fill="white" stroke="#0D47A1" strokeWidth="1.5" />
-                    <clipPath id="de-flag-clip-card-cv"><circle cx="8" cy="8" r="6.75" /></clipPath>
-                    <g clipPath="url(#de-flag-clip-card-cv)">
-                      <rect x="0" y="0" width="16" height="5.33" fill="#000000" />
-                      <rect x="0" y="5.33" width="16" height="5.34" fill="#DD0000" />
-                      <rect x="0" y="10.67" width="16" height="5.33" fill="#FFCC00" />
-                    </g>
-                  </g>
+                  <path d="M18 16V11C18 9.89543 18.8954 9 20 9H28C29.1046 9 30 9.89543 30 11V16" stroke="#94A3B8" strokeWidth="3" strokeLinecap="round" />
+                  <rect x="7" y="15" width="34" height="23" rx="3.5" fill="#0D47A1" />
+                  <line x1="7" y1="25" x2="41" y2="25" stroke="#1E3A8A" strokeWidth="1.5" />
+                  <rect x="22" y="22" width="4" height="6" rx="1" fill="#E2E8F0" stroke="#94A3B8" strokeWidth="1" />
                 </svg>
               </div>
               <h3 className="font-black text-slate-900 text-sm sm:text-base group-hover:text-blue-900 transition-colors">
-                {t.toolsHub.card1.title}
+                {t.toolsHub.card6.title}
               </h3>
-              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir={dir}>{t.toolsHub.card1.subtitle}</p>
+              <p className="text-xs text-slate-500 font-medium line-clamp-2 mt-1 mb-3" dir={dir}>{t.toolsHub.card6.subtitle}</p>
               <span className="bg-amber-400 hover:bg-amber-300 text-slate-950 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs mt-auto transition-colors">
                 <svg
                   className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`}
@@ -543,7 +543,7 @@ export default async function LandingPage({
                     <ul className="space-y-3 text-xs sm:text-sm text-slate-300">
                       {t.comparison.negativePoints.map((point, idx) => (
                         <li key={idx} className="flex items-start gap-2.5">
-                          <span className="text-rose-400 font-bold mt-0.5 shrink-0">✕</span>
+                          <span className="text-rose-400 font-bold mt-0.5 shrink-0">×</span>
                           <span>{point}</span>
                         </li>
                       ))}
@@ -552,7 +552,7 @@ export default async function LandingPage({
 
                   {/* After / DIN 5008 Compliant */}
                   <div className="rounded-2xl bg-emerald-950/20 border border-emerald-500/30 p-6 space-y-4 shadow-lg shadow-emerald-500/5">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
                       <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-xs">
                         ✅ {t.comparison.positiveBadge}
                       </span>

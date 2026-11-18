@@ -47,6 +47,14 @@ export default function LocaleNotFound() {
       homeBtn: "Return Home",
       jobsBtn: "Browse Jobs",
     },
+    fr: {
+      badge: "404 - Non trouvée",
+      title: "Page non trouvée",
+      description:
+        "Désolé, la page que vous recherchez n'existe pas ou a été déplacée. Retournez à la page d'accueil ou parcourez les offres d'emploi disponibles.",
+      homeBtn: "Retour à l'accueil",
+      jobsBtn: "Consulter les offres d'emploi",
+    },
   };
 
   const current = content[locale] || content.ar;

@@ -260,15 +260,39 @@ export default function PublicPricingClient({
             <ul className="space-y-3.5 text-xs sm:text-sm text-slate-700 pt-5 border-t border-slate-100">
               <li className="flex items-start gap-2.5">
                 <span className="text-emerald-600 font-bold text-sm">✓</span>
-                <span>{isAr ? "إنشاء سيرة ذاتية أساسية (1 سيرة بمعايير DIN 5008)" : isDe ? "Basis-Lebenslauf (1 DIN 5008 Lebenslauf)" : "Basic resume creation (1 CV DIN 5008)"}</span>
+                <span>
+                  {isAr
+                    ? "إنشاء سيرة ذاتية أساسية (1 سيرة بمعايير DIN 5008)"
+                    : isDe
+                    ? "Basis-Lebenslauf (1 DIN 5008 Lebenslauf)"
+                    : isFr
+                    ? "Création de CV standard (1 CV conforme DIN 5008)"
+                    : "Basic resume creation (1 CV DIN 5008)"}
+                </span>
               </li>
               <li className="flex items-start gap-2.5">
                 <span className="text-emerald-600 font-bold text-sm">✓</span>
-                <span>{isAr ? "البحث في الوظائف وحفظ الفرص المفضلة" : isDe ? "Jobsuche & Lesezeichen" : "Job search & bookmarks"}</span>
+                <span>
+                  {isAr
+                    ? "البحث في الوظائف وحفظ الفرص المفضلة"
+                    : isDe
+                    ? "Jobsuche & Lesezeichen"
+                    : isFr
+                    ? "Recherche d'emploi et favoris"
+                    : "Job search & bookmarks"}
+                </span>
               </li>
               <li className="flex items-start gap-2.5">
                 <span className="text-emerald-600 font-bold text-sm">✓</span>
-                <span>{isAr ? "3 أرصدة ذكاء اصطناعي أولية للبدء" : isDe ? "3 anfängliche KI-Guthaben" : "3 initial AI credits"}</span>
+                <span>
+                  {isAr
+                    ? "3 أرصدة ذكاء اصطناعي أولية للبدء (3 محاولات تجريبية)"
+                    : isDe
+                    ? "3 anfängliche KI-Guthaben (3 Testguthaben)"
+                    : isFr
+                    ? "3 crédits IA initiaux pour démarrer (3 essais gratuits)"
+                    : "3 starter AI trial credits to get started"}
+                </span>
               </li>
               <li className="flex items-start gap-2.5 text-slate-700">
                 <span className="text-emerald-600 font-bold text-sm">✓</span>
@@ -289,6 +313,8 @@ export default function PublicPricingClient({
                     ? "خطابات Anschreiben متقدمة يومياً"
                     : isDe
                     ? "Tägliche erweiterte Anschreiben"
+                    : isFr
+                    ? "Lettres de motivation Anschreiben avancées quotidiennes"
                     : "Daily advanced AI Cover Letters"}
                 </span>
               </li>
@@ -299,6 +325,8 @@ export default function PublicPricingClient({
                     ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
                     : isDe
                     ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
+                    : isFr
+                    ? "Conversion instantanée 1-Click PDF vers DIN 5008"
                     : "1-Click PDF to DIN 5008 Auto-Adapt"}
                 </span>
               </li>
@@ -368,6 +396,8 @@ export default function PublicPricingClient({
                     ? "صلاحية 30 يوماً للتقديم السريع على الوظائف"
                     : isDe
                     ? "30 Tage Gültigkeit für schnelle Bewerbungen"
+                    : isFr
+                    ? "Validité de 30 jours pour candidatures intensives"
                     : "30 days validity for fast applications"}
                 </span>
               </li>
@@ -375,10 +405,24 @@ export default function PublicPricingClient({
                 <span className="text-blue-600 font-bold text-sm">✓</span>
                 <span className="font-semibold text-[#061838]">
                   {isAr
-                    ? "20 طلب ذكاء اصطناعي يومياً (وفق سياسة الاستخدام العادل)"
+                    ? "20 عملية ذكاء اصطناعي يومياً (وفق سياسة الاستخدام العادل)"
                     : isDe
-                    ? "Bis zu 20 tägliche KI-Anfragen (Fair-Use-Richtlinie)"
-                    : "20 daily AI requests (Fair Use)"}
+                    ? "Bis zu 20 tägliche KI-Operationen (Fair-Use-Richtlinie)"
+                    : isFr
+                    ? "Jusqu'à 20 opérations IA par jour (utilisation équitable)"
+                    : "Up to 20 daily AI operations (Fair Use)"}
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="text-blue-600 font-bold text-sm">✓</span>
+                <span className="font-semibold text-[#061838]">
+                  {isAr
+                    ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
+                    : isDe
+                    ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
+                    : isFr
+                    ? "Conversion instantanée 1-Click PDF vers DIN 5008"
+                    : "1-Click PDF to DIN 5008 Auto-Adapt"}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
@@ -396,19 +440,37 @@ export default function PublicPricingClient({
               <li className="flex items-start gap-2.5">
                 <span className="text-blue-600 font-bold text-sm">✓</span>
                 <span className="font-semibold text-[#061838]">
-                  {isAr ? "منشئ السير الذاتية DIN 5008 وفحص الـ ATS" : isDe ? "DIN 5008 Lebenslauf-Builder & ATS-Checks" : "DIN 5008 CV builder & ATS checks"}
+                  {isAr
+                    ? "منشئ السير الذاتية DIN 5008 وفحص الـ ATS"
+                    : isDe
+                    ? "DIN 5008 Lebenslauf-Builder & ATS-Checks"
+                    : isFr
+                    ? "Créateur de CV DIN 5008 et audits ATS"
+                    : "DIN 5008 CV builder & ATS checks"}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
                 <span className="text-blue-600 font-bold text-sm">✓</span>
                 <span>
-                  {isAr ? "مولد خطابات دافع (Anschreiben) مخصص لكل وظيفة" : isDe ? "Maßgeschneiderte KI-Anschreiben für jede Stelle" : "Job-Tailored AI Cover Letters"}
+                  {isAr
+                    ? "مولد خطابات دافع (Anschreiben) مخصص لكل وظيفة"
+                    : isDe
+                    ? "Maßgeschneiderte KI-Anschreiben für jede Stelle"
+                    : isFr
+                    ? "Lettres de motivation personnalisées par IA"
+                    : "Job-Tailored AI Cover Letters"}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
                 <span className="text-blue-600 font-bold text-sm">✓</span>
                 <span>
-                  {isAr ? "تصدير غير محدود لسير ذاتية بصيغة PDF رسمية" : isDe ? "Unbegrenzter offizieller PDF-Export" : "Unlimited official DIN 5008 PDF exports"}
+                  {isAr
+                    ? "تصدير غير محدود لسير ذاتية بصيغة PDF رسمية"
+                    : isDe
+                    ? "Unbegrenzter offizieller PDF-Export"
+                    : isFr
+                    ? "Exports PDF officiels illimités"
+                    : "Unlimited official DIN 5008 PDF exports"}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
@@ -418,6 +480,8 @@ export default function PublicPricingClient({
                     ? "دفع آمن ورابط مباشر عبر Gumroad"
                     : isDe
                     ? "Direkter Checkout via Gumroad"
+                    : isFr
+                    ? "Paiement sécurisé direct via Gumroad"
                     : "Direct checkout link to Gumroad"}
                 </span>
               </li>
@@ -449,7 +513,7 @@ export default function PublicPricingClient({
         {/* TIER 3: PRO Job Pass (Featured - Royal Navy + Gold) */}
         <div className="rounded-3xl bg-[#061838] border-2 border-[#FACC15] p-7 sm:p-8 flex flex-col justify-between space-y-6 relative shadow-2xl scale-100 lg:scale-105 text-white">
           {/* Popular Badge */}
-          <div className="absolute -top-4 start-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-[#FACC15] text-[#061838] font-black text-xs shadow-lg uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap">
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-[#FACC15] text-[#061838] font-black text-xs shadow-lg uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap">
             <span>⭐</span>
             <span>{isAr ? "الأكثر طلباً • وفر 35%" : isDe ? "Bestseller • 35% Sparen" : "Most Popular • Save 35%"}</span>
           </div>
@@ -495,6 +559,8 @@ export default function PublicPricingClient({
                     ? "90 يوماً كاملة تغطي دورة التوظيف الألمانية بالكامل"
                     : isDe
                     ? "90 volle Tage für den gesamten deutschen Bewerbungszyklus"
+                    : isFr
+                    ? "90 jours complets couvrant tout le cycle de recrutement"
                     : "90 full days covering the entire German hiring cycle"}
                 </span>
               </li>
@@ -505,6 +571,8 @@ export default function PublicPricingClient({
                     ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
                     : isDe
                     ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
+                    : isFr
+                    ? "Conversion instantanée 1-Click PDF vers DIN 5008"
                     : "1-Click PDF to DIN 5008 Auto-Adapt"}
                 </span>
               </li>
@@ -516,7 +584,7 @@ export default function PublicPricingClient({
                     : isDe
                     ? "Bewerbungsmappe-Dossier-Studio (Deckblatt + CV + Anschreiben)"
                     : isFr
-                    ? "Studio Bewerbungsmappe complet (Deckblatt + CV + Lettre)"
+                    ? "Studio Bewerbungsmappe complet (Page de garde + CV + Lettre)"
                     : "Bewerbungsmappe full dossier compiler (Cover + CV + Anschreiben)"}
                 </span>
               </li>
@@ -524,10 +592,12 @@ export default function PublicPricingClient({
                 <span className="text-[#FACC15] font-bold text-sm">✓</span>
                 <span className="font-semibold text-white">
                   {isAr
-                    ? "20 طلب ذكاء اصطناعي يومياً (الاستخدام العادل)"
+                    ? "20 عملية ذكاء اصطناعي يومياً (وفق سياسة الاستخدام العادل)"
                     : isDe
-                    ? "20 tägliche KI-Anfragen (Fair Use)"
-                    : "20 daily AI requests (Fair Use)"}
+                    ? "20 tägliche KI-Operationen (Fair Use)"
+                    : isFr
+                    ? "20 opérations IA quotidiennes (utilisation équitable)"
+                    : "Up to 20 daily AI operations (Fair Use)"}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
@@ -537,6 +607,8 @@ export default function PublicPricingClient({
                     ? "فحص عميق للـ ATS ومطابقة الكلمات المفتاحية"
                     : isDe
                     ? "Tiefer ATS-Audit & Keyword-Lückenanalyse"
+                    : isFr
+                    ? "Audit ATS approfondi et analyse des mots-clés"
                     : "Deep ATS audit & keyword gap analysis"}
                 </span>
               </li>
@@ -547,6 +619,8 @@ export default function PublicPricingClient({
                     ? "دفع آمن ورابط مباشر عبر Gumroad"
                     : isDe
                     ? "Direkter Checkout via Gumroad"
+                    : isFr
+                    ? "Paiement sécurisé direct via Gumroad"
                     : "Direct checkout link to Gumroad"}
                 </span>
               </li>

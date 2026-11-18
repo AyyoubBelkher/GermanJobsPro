@@ -82,7 +82,7 @@ export default async function TermsPage({
               : "These terms govern your access to GermanJobsPro, our DIN 5008 resume generators, and AI career dossier tools for the German job market."}
           </p>
 
-          <p className="text-xs text-slate-500 font-mono">
+          <p className="text-xs text-slate-500">
             {isAr
               ? "آخر تحديث: نوفمبر 2026"
               : isDe

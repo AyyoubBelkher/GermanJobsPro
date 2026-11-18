@@ -82,7 +82,7 @@ export default async function PrivacyPage({
               : "GermanJobsPro is fully committed to safeguarding your personal and resume data in strict compliance with the European General Data Protection Regulation (GDPR)."}
           </p>
 
-          <p className="text-xs text-slate-500 font-mono">
+          <p className="text-xs text-slate-500">
             {isAr
               ? "آخر تحديث: نوفمبر 2026"
               : isDe

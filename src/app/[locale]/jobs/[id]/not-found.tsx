@@ -47,6 +47,14 @@ export default function JobNotFound() {
       browseBtn: "Browse All Jobs",
       homeBtn: "Return Home",
     },
+    fr: {
+      badge: "404 - Offre indisponible",
+      title: "Cette offre d'emploi n'est plus disponible",
+      description:
+        "Désolé, l'offre d'emploi que vous recherchez n'est plus active ou a été supprimée par le recruteur. Découvrez des centaines d'autres opportunités en Allemagne.",
+      browseBtn: "Toutes les offres d'emploi",
+      homeBtn: "Retour à l'accueil",
+    },
   };
 
   const current = content[locale] || content.ar;

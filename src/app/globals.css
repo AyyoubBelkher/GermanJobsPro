@@ -16,7 +16,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-cairo), var(--font-geist-sans), Arial, sans-serif;
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-geist-mono), var(--font-cairo), ui-monospace, SFMono-Regular, monospace;
 }
 
 html {

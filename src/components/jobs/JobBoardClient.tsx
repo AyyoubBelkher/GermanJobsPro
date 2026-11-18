@@ -5,7 +5,7 @@ import Link from "next/link";
 import { extractGermanJobTitle, stripHtml } from "@/lib/cover-letter";
 import GermanTtsButton from "@/components/blog/GermanTtsButton";
 import { getDictionary, isValidLocale, DEFAULT_LOCALE, LOCALE_METADATA, type Locale } from "@/lib/i18n";
-import { splitBilingualTitle, extractCleanHrEmail } from "@/lib/jobUtils";
+import { splitBilingualTitle, extractCleanHrEmail, cleanJobDescription } from "@/lib/jobUtils";
 
 export { stripHtml };
 
@@ -268,7 +268,7 @@ export default function JobBoardClient({
         </div>
 
         {/* Category Pills & Direct Email Toggle */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-none flex-nowrap snap-x">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 px-4 scroll-px-4 scrollbar-none flex-nowrap snap-x">
           <button
             type="button"
             onClick={() => setDirectEmailOnly((prev) => !prev)}
@@ -447,12 +447,12 @@ export default function JobBoardClient({
                         variant="blue"
                       />
                     </div>
-                    <p dir="auto" className="text-xs text-slate-600 mt-1.5 text-start">🏢 {job.company}</p>
+                    <p dir="auto" className="text-xs text-slate-600 mt-1.5 text-start">🏢 <bdi dir="ltr">{job.company}</bdi></p>
                   </div>
 
                 <div className="flex items-center gap-2 flex-wrap text-xs">
                   <span className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 font-medium">
-                    📍 {job.city || dict.jobs.details.germany}
+                    📍 <bdi dir="ltr">{job.city || dict.jobs.details.germany}</bdi>
                   </span>
                   <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-medium">
                     🇩🇪 {formatLangLevel(job.languageLevel || job.languageReq)}
@@ -466,7 +466,7 @@ export default function JobBoardClient({
 
                 {job.descriptionRaw && (
                   <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed text-start" dir="auto">
-                    {stripHtml(job.descriptionRaw)}
+                    {cleanJobDescription(job.descriptionRaw)}
                   </p>
                 )}
               </div>
