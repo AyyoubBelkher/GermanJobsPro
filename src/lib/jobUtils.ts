@@ -196,7 +196,22 @@ export function cleanJobDescription(raw?: string | null): string {
     ""
   );
 
-  // 6. Collapse multiple spaces and 3+ consecutive newlines into "\n\n", then trim
+  // 6. Fix RTL parentheses/slash wrapping and BiDi inversion
+  // Specifically formats "(Deutsches Krankenhaus / Pflegezentrum)" as "Deutsches Krankenhaus - Pflegezentrum"
+  // and wraps any parenthetical Latin/German segment in Unicode Left-to-Right Isolate (\u2066...\u2069)
+  text = text.replace(
+    /(?:\u2066)?\(([^)\u2069]*[a-zA-ZäöüÄÖÜß][^)\u2069]*)\)(?:\u2069)?/g,
+    (_, inner: string) => {
+      const normalized = inner
+        .replace(/Deutsches Krankenhaus\s*\/\s*Pflegezentrum/g, "Deutsches Krankenhaus - Pflegezentrum")
+        .replace(/\s+\/\s+/g, " - ")
+        .replace(/([a-zA-ZäöüÄÖÜß0-9]{2,})\s*\/\s*([a-zA-ZäöüÄÖÜß0-9]{2,})/g, "$1 - $2");
+      return `\u2066(${normalized})\u2069`;
+    }
+  );
+  text = text.replace(/Deutsches Krankenhaus\s*\/\s*Pflegezentrum/g, "Deutsches Krankenhaus - Pflegezentrum");
+
+  // 7. Collapse multiple spaces and 3+ consecutive newlines into "\n\n", then trim
   text = text
     .replace(/[ \t]+/g, " ")
     .replace(/\r/g, "")
@@ -204,6 +219,48 @@ export function cleanJobDescription(raw?: string | null): string {
     .trim();
 
   return text;
+}
+
+/**
+ * Infers the display language requirement for a job.
+ * If the language requirement is already specific (e.g. "A2", "C1", "EN"), it returns it.
+ * If the job title or description is clearly in English (and lacks German markers), it returns "EN (B2)".
+ * Otherwise, it returns the provided requirement or "B1/B2".
+ */
+export function inferDisplayLanguageReq(job?: {
+  title?: string | null;
+  descriptionRaw?: string | null;
+  languageReq?: string | null;
+  languageLevel?: string | null;
+} | null): string {
+  if (!job) return "B1/B2";
+
+  const rawReq = (job.languageLevel || job.languageReq || "").trim();
+
+  // If already specific other than generic "B1/B2" or "Deutsch (B1/B2)", return as-is
+  if (rawReq && rawReq !== "B1/B2" && rawReq !== "Deutsch (B1/B2)") {
+    return rawReq;
+  }
+
+  const title = job.title || "";
+  const desc = cleanJobDescription(job.descriptionRaw || "");
+  const fullText = `${title} ${desc}`;
+
+  // German & Arabic-German indicators
+  const germanMarkersRegex =
+    /(?:m\/w\/d|ausbildung|azubi|pflegefachkraft|krankenpfleg|assistenzarzt|berufserfahrung|deutschkenntnisse|bewerbung|fachkraft|فرصة عمل مميزة)/i;
+  const hasGermanMarkers = germanMarkersRegex.test(fullText);
+
+  // Common English job indicators
+  const englishMarkersRegex =
+    /\b(?:Senior|Principal|Engineer|Developer|Manager|Specialist|Working Student|Intern|with experience in|we are looking for|requirements|responsibilities|you will)\b/i;
+  const hasEnglishMarkers = englishMarkersRegex.test(fullText);
+
+  if (hasEnglishMarkers && !hasGermanMarkers) {
+    return "EN (B2)";
+  }
+
+  return rawReq || "B1/B2";
 }
 
 export function deduplicateJobs<T extends { title: string; company: string }>(jobs: T[]): T[] {

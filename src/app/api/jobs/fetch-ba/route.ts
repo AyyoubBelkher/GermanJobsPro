@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAutomationSecret, requireAdmin } from "@/lib/admin-auth";
-import { isValidHrEmail, isExcludedJob } from "@/lib/jobUtils";
+import { isValidHrEmail, isExcludedJob, inferDisplayLanguageReq } from "@/lib/jobUtils";
 import { sanitizeJobPayload } from "@/lib/jobSanitizer";
 import { prisma } from "@/lib/prisma";
 
@@ -129,7 +129,11 @@ export async function GET(request: NextRequest) {
           const baJobs = baData.stellenangebote.map((j: any) => {
             const referenznummer = j.refnr || "";
             const titel = j.titel || j.beruf || "Stellenangebot";
-            const arbeitgeber = j.arbeitgeber || "Arbeitgeber in Deutschland";
+            const rawArbeitgeber = j.arbeitgeber || "Arbeitgeber in Deutschland";
+            const arbeitgeber = rawArbeitgeber.replace(
+              /Deutsches Krankenhaus\s*\/\s*Pflegezentrum/g,
+              "Deutsches Krankenhaus - Pflegezentrum"
+            );
             const arbeitsort = j.arbeitsort;
             const externeUrl = j.externeUrl || null;
             const applyUrl = referenznummer
@@ -143,6 +147,12 @@ export async function GET(request: NextRequest) {
                 ? arbeitsort
                 : "Deutschland";
 
+            const rawDescription = j.beruf || titel;
+            const description = rawDescription.replace(
+              /Deutsches Krankenhaus\s*\/\s*Pflegezentrum/g,
+              "Deutsches Krankenhaus - Pflegezentrum"
+            );
+
             return {
               id: referenznummer || String(Math.floor(Math.random() * 1000000)),
               referenznummer,
@@ -155,7 +165,7 @@ export async function GET(request: NextRequest) {
               externeUrl,
               contactEmail: null,
               applyUrl,
-              description: j.beruf || titel,
+              description,
               source: "Bundesagentur für Arbeit",
             };
           });
@@ -183,6 +193,11 @@ export async function GET(request: NextRequest) {
                   salary: sanitized.salary || null,
                   company: j.company,
                   city: j.city,
+                  languageReq: inferDisplayLanguageReq({
+                    title: j.title,
+                    descriptionRaw: j.description,
+                    languageReq: "B1/B2",
+                  }),
                   status: "ACTIVE",
                 },
                 create: {
@@ -192,7 +207,11 @@ export async function GET(request: NextRequest) {
                   category: sanitized.category || "Ausbildung",
                   salary: sanitized.salary || null,
                   jobType: "Vollzeit",
-                  languageReq: "B1/B2",
+                  languageReq: inferDisplayLanguageReq({
+                    title: j.title,
+                    descriptionRaw: j.description,
+                    languageReq: "B1/B2",
+                  }),
                   applyUrl: j.applyUrl,
                   contactEmail: j.contactEmail,
                   descriptionRaw: j.description,
@@ -294,7 +313,15 @@ export async function GET(request: NextRequest) {
 
     const formattedJobs = matchedJobs.map((j: any) => {
       const rawDesc = j.description || "";
-      const cleanDesc = rawDesc.replace(/<[^>]*>?/gm, " ").trim();
+      const cleanDesc = rawDesc
+        .replace(/<[^>]*>?/gm, " ")
+        .replace(/Deutsches Krankenhaus\s*\/\s*Pflegezentrum/g, "Deutsches Krankenhaus - Pflegezentrum")
+        .trim();
+      const rawCompany = j.company_name || "German Employer";
+      const cleanCompany = rawCompany.replace(
+        /Deutsches Krankenhaus\s*\/\s*Pflegezentrum/g,
+        "Deutsches Krankenhaus - Pflegezentrum"
+      );
       const { contactEmail, directAtsUrl } = extractVerifiedEmailAndForm(rawDesc);
 
       return {
@@ -302,8 +329,8 @@ export async function GET(request: NextRequest) {
         referenznummer: j.slug || null,
         titel: j.title || "فرصة مهنية في ألمانيا",
         title: j.title || "فرصة مهنية في ألمانيا",
-        arbeitgeber: j.company_name || "German Employer",
-        company: j.company_name || "German Employer",
+        arbeitgeber: cleanCompany,
+        company: cleanCompany,
         arbeitsort: j.location || "Deutschland",
         city: j.location || "Deutschland",
         externeUrl: j.url || null,
@@ -337,6 +364,11 @@ export async function GET(request: NextRequest) {
             salary: sanitized.salary || null,
             company: j.company,
             city: j.city,
+            languageReq: inferDisplayLanguageReq({
+              title: j.title,
+              descriptionRaw: j.description,
+              languageReq: "B1/B2",
+            }),
             status: "ACTIVE",
           },
           create: {
@@ -346,7 +378,11 @@ export async function GET(request: NextRequest) {
             category: sanitized.category || "General",
             salary: sanitized.salary || null,
             jobType: "Vollzeit",
-            languageReq: "B1/B2",
+            languageReq: inferDisplayLanguageReq({
+              title: j.title,
+              descriptionRaw: j.description,
+              languageReq: "B1/B2",
+            }),
             applyUrl: j.applyUrl,
             contactEmail: j.contactEmail,
             descriptionRaw: j.description,

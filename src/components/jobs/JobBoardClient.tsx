@@ -5,7 +5,7 @@ import Link from "next/link";
 import { extractGermanJobTitle, stripHtml } from "@/lib/cover-letter";
 import GermanTtsButton from "@/components/blog/GermanTtsButton";
 import { getDictionary, isValidLocale, DEFAULT_LOCALE, LOCALE_METADATA, type Locale } from "@/lib/i18n";
-import { splitBilingualTitle, extractCleanHrEmail, cleanJobDescription } from "@/lib/jobUtils";
+import { splitBilingualTitle, extractCleanHrEmail, cleanJobDescription, inferDisplayLanguageReq } from "@/lib/jobUtils";
 
 export { stripHtml };
 
@@ -268,7 +268,7 @@ export default function JobBoardClient({
         </div>
 
         {/* Category Pills & Direct Email Toggle */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 px-4 scroll-px-4 scrollbar-none flex-nowrap snap-x">
+        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
           <button
             type="button"
             onClick={() => setDirectEmailOnly((prev) => !prev)}
@@ -387,6 +387,7 @@ export default function JobBoardClient({
             const hasDirectEmail = Boolean(cleanEmail);
             const { primaryTitle, latinSubtitle } = splitBilingualTitle(job.title);
             const spokenGermanTitle = latinSubtitle || extractGermanJobTitle(job.title) || job.title;
+            const langBadge = inferDisplayLanguageReq(job);
 
             return (
               <div
@@ -455,7 +456,7 @@ export default function JobBoardClient({
                     📍 <bdi dir="ltr">{job.city || dict.jobs.details.germany}</bdi>
                   </span>
                   <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-medium">
-                    🇩🇪 {formatLangLevel(job.languageLevel || job.languageReq)}
+                    {langBadge.startsWith("EN") ? `🇬🇧 ${langBadge}` : `🇩🇪 ${formatLangLevel(langBadge)}`}
                   </span>
                   {job.salary && (
                     <span className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 font-medium">
