@@ -207,7 +207,7 @@ export default async function DashboardPage({
                     >
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-white text-sm truncate">{cv.title}</h4>
+                          <h4 className="font-bold text-white text-sm truncate" dir="auto">{cv.title}</h4>
                           <span
                             className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                               cv.isDraft
@@ -218,8 +218,8 @@ export default async function DashboardPage({
                             {cv.isDraft ? (isAr ? "مسودة" : "Draft") : isAr ? "مكتمل" : "Complete"}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-400">
-                          {cv.personalInfo?.fullName || "Unbekannt"} • {new Date(cv.updatedAt).toLocaleDateString(locale)}
+                        <p className="text-xs text-slate-400 truncate">
+                          <bdi dir="auto">{cv.personalInfo?.fullName || "Unbekannt"}</bdi> • <bdi dir="ltr">{new Date(cv.updatedAt).toLocaleDateString(locale)}</bdi>
                         </p>
                       </div>
                       <Link
@@ -314,9 +314,9 @@ export default async function DashboardPage({
                       className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 transition-all flex items-center justify-between gap-4"
                     >
                       <div className="space-y-1 min-w-0">
-                        <h4 className="font-bold text-white text-sm truncate">{cl.jobTitle}</h4>
+                        <h4 className="font-bold text-white text-sm truncate" dir="auto">{cl.jobTitle}</h4>
                         <p className="text-xs text-slate-400 truncate">
-                          🏢 {cl.companyName} • {new Date(cl.updatedAt).toLocaleDateString(locale)}
+                          🏢 <bdi dir="auto">{cl.companyName}</bdi> • <bdi dir="ltr">{new Date(cl.updatedAt).toLocaleDateString(locale)}</bdi>
                         </p>
                       </div>
                       <Link

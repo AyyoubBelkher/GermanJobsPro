@@ -29,3 +29,14 @@ export function stripHtml(html?: string | null): string {
     .replace(/\s+/g, " ")
     .trim();
 }
+
+/**
+ * Strips raw markdown bold asterisks (**text** or ***text***) from cover letter text
+ * while preserving standard DIN 5008 line breaks and plain text layout.
+ */
+export function stripMarkdownAsterisks(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/\*{2,3}(.*?)\*{2,3}/g, "$1")
+    .replace(/\*\*/g, "");
+}

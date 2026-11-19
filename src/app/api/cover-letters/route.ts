@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { verifyUserSession } from "@/lib/user-session";
 import { coverLetterSchema } from "@/lib/validations/cover-letter";
-import { extractGermanJobTitle } from "@/lib/cover-letter";
+import { extractGermanJobTitle, stripMarkdownAsterisks } from "@/lib/cover-letter";
 
 /**
  * GET /api/cover-letters
@@ -89,29 +89,27 @@ export async function POST(request: NextRequest) {
     const data = parseResult.data;
 
     // If cvId is specified, ensure it belongs to the authenticated user
-    if (data.cvId) {
+    let validCvId: string | null = null;
+    const requestedCvId = typeof data.cvId === "string" ? data.cvId.trim() : null;
+    if (requestedCvId) {
       const referencedCv = await prisma.cv.findFirst({
         where: {
-          id: data.cvId,
+          id: requestedCvId,
           userId: authResult.user.id,
         },
       });
 
-      if (!referencedCv) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Referenced CV not found or does not belong to you",
-          },
-          { status: 400 }
-        );
+      if (referencedCv) {
+        validCvId = referencedCv.id;
       }
     }
+
+    const cleanedContent = stripMarkdownAsterisks(data.generatedContent);
 
     const coverLetter = await prisma.coverLetter.create({
       data: {
         userId: authResult.user.id,
-        cvId: data.cvId || null,
+        cvId: validCvId,
         title: data.title,
         jobTitle: extractGermanJobTitle(data.jobTitle) || data.jobTitle,
         companyName: data.companyName,
@@ -119,7 +117,7 @@ export async function POST(request: NextRequest) {
         jobDescriptionRaw: data.jobDescriptionRaw || null,
         language: data.language,
         tone: data.tone,
-        generatedContent: data.generatedContent,
+        generatedContent: cleanedContent,
       },
       include: {
         cv: {

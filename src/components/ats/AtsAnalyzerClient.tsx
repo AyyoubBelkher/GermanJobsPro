@@ -26,6 +26,7 @@ export default function AtsAnalyzerClient({
   const router = useRouter();
   const isAr = locale === "ar";
   const isDe = locale === "de";
+  const isFr = locale === "fr";
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -497,7 +498,9 @@ export default function AtsAnalyzerClient({
                   ? "إعلان الوظيفة المستهدفة (اختياري - لمطابقة الكلمات المفتاحية)"
                   : "Target Job Description (Optional for Keyword Match)"}
               </span>
-              <span className="text-[11px] text-slate-500 font-normal">Optional</span>
+              <span className="text-[11px] text-slate-500 font-normal">
+                {isAr ? "اختياري" : isFr ? "Optionnel" : "Optional"}
+              </span>
             </label>
             <textarea
               rows={4}
@@ -654,33 +657,35 @@ export default function AtsAnalyzerClient({
               {/* Overall ATS Score */}
               <div className={`p-6 rounded-3xl border ${getScoreColor(analysis.overallScore)} flex flex-col items-center justify-center text-center space-y-2 shadow-xl`}>
                 <span className="text-xs font-bold uppercase tracking-wider">
-                  {isAr ? "التقييم العام (ATS Score)" : "Overall ATS Score"}
+                  {isAr ? "التقييم العام (ATS Score)" : isDe ? "Gesamtbewertung (ATS)" : isFr ? "Score global ATS" : "Overall ATS Score"}
                 </span>
                 <div className="text-4xl sm:text-5xl font-black">{analysis.overallScore}%</div>
                 <span className="text-xs font-semibold">
                   {analysis.overallScore >= 80
-                    ? isAr ? "ممتاز وجاهز للتقديم ✅" : "Excellent Readiness"
+                    ? isAr ? "ممتاز وجاهز للتقديم ✅" : isDe ? "Exzellent & bereit ✅" : isFr ? "Excellent & prêt ✅" : "Excellent Readiness"
                     : analysis.overallScore >= 60
-                    ? isAr ? "جيد ويحتاج تحسينات ⚠️" : "Moderate Readiness"
-                    : isAr ? "ضعيف ويتطلب تعديل ❌" : "Needs Immediate Revision"}
+                    ? isAr ? "جيد ويحتاج تحسينات ⚠️" : isDe ? "Gut mit Verbesserungsbedarf ⚠️" : isFr ? "Moyen, améliorations nécessaires ⚠️" : "Moderate Readiness"
+                    : isAr ? "ضعيف ويتطلب تعديل ❌" : isDe ? "Schwach, Überarbeitung nötig ❌" : isFr ? "Faible, révision urgente ❌" : "Needs Immediate Revision"}
                 </span>
               </div>
 
               {/* DIN 5008 Standard Score */}
               <div className={`p-6 rounded-3xl border ${getScoreColor(analysis.din5008Score)} flex flex-col items-center justify-center text-center space-y-2 shadow-xl`}>
                 <span className="text-xs font-bold uppercase tracking-wider">
-                  {isAr ? "معايير ألمانيا (DIN 5008)" : "DIN 5008 Standard"}
+                  {isAr ? "معايير ألمانيا (DIN 5008)" : isDe ? "DIN 5008 Standard" : isFr ? "Norme DIN 5008" : "DIN 5008 Standard"}
                 </span>
                 <div className="text-4xl sm:text-5xl font-black">{analysis.din5008Score}%</div>
                 <span className="text-xs font-semibold">
-                  {analysis.din5008Score >= 80 ? "DIN 5008 Konform" : "Strukturanpassung nötig"}
+                  {analysis.din5008Score >= 80
+                    ? isAr ? "متوافق مع DIN 5008" : isDe ? "DIN 5008 Konform" : isFr ? "Conforme DIN 5008" : "DIN 5008 Compliant"
+                    : isAr ? "تعديل الهيكلية مطلوب" : isDe ? "Strukturanpassung nötig" : isFr ? "Ajustement structurel requis" : "Structural adjustment needed"}
                 </span>
               </div>
 
               {/* Keyword Match Score */}
               <div className={`p-6 rounded-3xl border ${getScoreColor(analysis.keywordMatchScore)} flex flex-col items-center justify-center text-center space-y-2 shadow-xl`}>
                 <span className="text-xs font-bold uppercase tracking-wider">
-                  {isAr ? "مطابقة الكلمات المفتاحية" : "Keyword Match"}
+                  {isAr ? "مطابقة الكلمات المفتاحية" : isDe ? "Keyword-Abgleich" : isFr ? "Correspondance des mots-clés" : "Keyword Match"}
                 </span>
                 <div className="text-4xl sm:text-5xl font-black">
                   {analysis.keywordMatchScore !== null ? `${analysis.keywordMatchScore}%` : "—"}
@@ -688,9 +693,9 @@ export default function AtsAnalyzerClient({
                 <span className="text-xs font-semibold">
                   {analysis.keywordMatchScore !== null
                     ? jobDescription.trim()
-                      ? isAr ? "بناءً على إعلان الوظيفة" : "Based on Job Posting"
-                      : isAr ? "بناءً على معايير المجال" : "Industry Standard Match"
-                    : isAr ? "يتطلب إدخال وصف وظيفي" : isDe ? "Erfordert Stellenbeschreibung" : "Requires Job Description"}
+                      ? isAr ? "بناءً على إعلان الوظيفة" : isDe ? "Basierend auf Stellenanzeige" : isFr ? "Basé sur l'offre d'emploi" : "Based on Job Posting"
+                      : isAr ? "بناءً على معايير المجال" : isDe ? "Branchenstandard-Abgleich" : isFr ? "Standard du secteur" : "Industry Standard Match"
+                    : isAr ? "يتطلب إدخال وصف وظيفي" : isDe ? "Erfordert Stellenbeschreibung" : isFr ? "Description de poste requise" : "Requires Job Description"}
                 </span>
               </div>
             </div>
@@ -704,10 +709,10 @@ export default function AtsAnalyzerClient({
                     <div>
                       <h3 className="text-lg sm:text-xl font-black text-white">
                         {isAr
-                          ? "✅ سيرتك الذاتية مقبولة وجاهزة للتقديم ولا تحتاج إلى تعديل!"
+                          ? "سيرتك الذاتية مقبولة وجاهزة للتقديم ولا تحتاج إلى تعديل!"
                           : isDe
-                          ? "✅ Ihr Lebenslauf ist ATS-konform und bereit zur Bewerbung!"
-                          : "✅ Your CV is Accepted & Ready for Application!"}
+                          ? "Ihr Lebenslauf ist ATS-konform und bereit zur Bewerbung!"
+                          : "Your CV is Accepted & Ready for Application!"}
                       </h3>
                       <p className="text-xs text-emerald-300 font-semibold mt-0.5">
                         {isAr
@@ -824,10 +829,10 @@ export default function AtsAnalyzerClient({
                     <div>
                       <h3 className="text-lg sm:text-xl font-black text-white">
                         {isAr
-                          ? "⚠️ السيرة الذاتية تحتاج إلى تحسين وتعديل قبل التقديم"
+                          ? "السيرة الذاتية تحتاج إلى تحسين وتعديل قبل التقديم"
                           : isDe
-                          ? "⚠️ Lebenslauf benötigt Optimierung vor der Bewerbung"
-                          : "⚠️ CV Needs Improvement Before Applying"}
+                          ? "Lebenslauf benötigt Optimierung vor der Bewerbung"
+                          : "CV Needs Improvement Before Applying"}
                       </h3>
                       <p className="text-xs text-amber-300 font-semibold mt-0.5">
                         {isAr

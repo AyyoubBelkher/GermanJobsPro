@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { extractGermanJobTitle } from "@/lib/cover-letter";
+import Link from "next/link";
+import { extractGermanJobTitle, stripMarkdownAsterisks } from "@/lib/cover-letter";
 import FieldTooltip from "@/components/cv/FieldTooltip";
 import UpgradeModal from "@/components/pricing/UpgradeModal";
 
@@ -49,6 +50,9 @@ export default function CoverLetterGeneratorClient({
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedText, setGeneratedText] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savedCoverLetterId, setSavedCoverLetterId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -70,6 +74,9 @@ export default function CoverLetterGeneratorClient({
 
     setIsGenerating(true);
     setError(null);
+    setSaveError(null);
+    setSaveStatus("idle");
+    setSavedCoverLetterId(null);
 
     try {
       const cleanJobTitle = extractGermanJobTitle(jobTitle.trim()) || jobTitle.trim();
@@ -106,7 +113,8 @@ export default function CoverLetterGeneratorClient({
         throw new Error(data.error || "Failed to generate cover letter");
       }
 
-      setGeneratedText(data.generatedContent);
+      const cleanedContent = stripMarkdownAsterisks(data.generatedContent || "");
+      setGeneratedText(cleanedContent);
       if (data.cvId) {
         setSelectedCvId(data.cvId);
       }
@@ -124,35 +132,60 @@ export default function CoverLetterGeneratorClient({
     if (!generatedText.trim()) return;
 
     setIsSaving(true);
+    setSaveStatus("saving");
+    setSaveError(null);
     setError(null);
 
     try {
-      const cleanJobTitle = extractGermanJobTitle(jobTitle.trim()) || jobTitle.trim();
+      const cleanJobTitle = (extractGermanJobTitle(jobTitle.trim()) || jobTitle.trim()) || "Bewerbung";
+      const cleanCompany = companyName.trim() || "Unternehmen";
+      const cleanedBody = stripMarkdownAsterisks(generatedText.trim());
+      const fullTitle = `Anschreiben - ${cleanJobTitle} (${cleanCompany})`;
+      const safeTitle = fullTitle.length > 200 ? `${fullTitle.slice(0, 197)}...` : fullTitle;
+
+      const payload = {
+        title: safeTitle,
+        jobTitle: cleanJobTitle.slice(0, 255),
+        companyName: cleanCompany.slice(0, 255),
+        recipientName: recipientName.trim() ? recipientName.trim().slice(0, 255) : null,
+        jobDescriptionRaw: jobDescriptionRaw.trim() ? jobDescriptionRaw.trim().slice(0, 20000) : null,
+        language,
+        tone,
+        generatedContent: cleanedBody,
+        cvId: selectedCvId && selectedCvId.trim() !== "" ? selectedCvId.trim() : null,
+      };
+
       const res = await fetch("/api/cover-letters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: `Anschreiben - ${cleanJobTitle} (${companyName})`,
-          jobTitle: cleanJobTitle,
-          companyName: companyName.trim(),
-          recipientName: recipientName.trim() || null,
-          jobDescriptionRaw: jobDescriptionRaw.trim() || null,
-          language,
-          tone,
-          generatedContent: generatedText,
-          cvId: selectedCvId || null,
-        }),
+        body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to save cover letter");
+      if (!res.ok || !data.success || !data.coverLetter?.id) {
+        let errMsg = data.error || (isAr ? "فشل حفظ خطاب التغطية في الحساب" : "Failed to save cover letter to your account");
+        if (data.details?.fieldErrors) {
+          const fieldMsgs = Object.entries(data.details.fieldErrors)
+            .map(([field, errs]) => `${field}: ${(errs as string[]).join(", ")}`)
+            .join("; ");
+          if (fieldMsgs) {
+            errMsg = `${errMsg} (${fieldMsgs})`;
+          }
+        }
+        throw new Error(errMsg);
       }
 
+      setSaveStatus("saved");
+      setSavedCoverLetterId(data.coverLetter.id);
+      setIsSaving(false);
+
+      // Smoothly navigate to the cover letter detail page where the PDF is viewable
       router.push(`/${locale}/dashboard/cover-letters/${data.coverLetter.id}`);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error saving cover letter");
+      const msg = err instanceof Error ? err.message : (isAr ? "حدث خطأ غير متوقع أثناء الحفظ" : "An error occurred while saving the cover letter");
+      setSaveError(msg);
+      setSaveStatus("error");
       setIsSaving(false);
     }
   };
@@ -397,7 +430,7 @@ export default function CoverLetterGeneratorClient({
                 <select
                   value={tone}
                   onChange={(e) => setTone(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:border-blue-500 focus:outline-hidden"
+                  className="w-full px-3 pe-8 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:border-blue-500 focus:outline-hidden"
                 >
                   <option value="professional">{isAr ? "رسمي كلاسيكي (Professionell)" : "Professional"}</option>
                   <option value="modern">{isAr ? "عصري وديناميكي (Modern)" : "Modern & Active"}</option>
@@ -410,7 +443,7 @@ export default function CoverLetterGeneratorClient({
                 <select
                   value={language}
                   onChange={(e) => setLanguage(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:border-blue-500 focus:outline-hidden"
+                  className="w-full px-3 pe-8 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:border-blue-500 focus:outline-hidden"
                 >
                   <option value="de">Deutsch (الألمانية)</option>
                   <option value="en">English (الإنجليزية)</option>
@@ -424,6 +457,7 @@ export default function CoverLetterGeneratorClient({
                 {isAr ? "نص إعلان الوظيفة (Job Description) *" : isDe ? "Stellenanzeige Text *" : "Job Description *"}
               </label>
               <textarea
+                dir="auto"
                 required
                 rows={6}
                 value={jobDescriptionRaw}
@@ -432,7 +466,7 @@ export default function CoverLetterGeneratorClient({
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:border-blue-500 focus:outline-hidden font-mono"
               />
               <p className="text-[11px] text-slate-500 text-end">
-                {jobDescriptionRaw.length} / 4000
+                <bdi dir="ltr">{jobDescriptionRaw.length} / 4000</bdi>
               </p>
             </div>
 
@@ -471,7 +505,18 @@ export default function CoverLetterGeneratorClient({
               </div>
 
               {generatedText && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {savedCoverLetterId && (
+                    <a
+                      href={`/api/cover-letters/${savedCoverLetterId}/pdf`}
+                      download
+                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>📥</span>
+                      <span>{isAr ? "تحميل PDF (DIN 5008)" : isDe ? "DIN 5008 PDF" : "Download PDF"}</span>
+                    </a>
+                  )}
+
                   <button
                     type="button"
                     onClick={handleCopy}
@@ -485,13 +530,77 @@ export default function CoverLetterGeneratorClient({
                     type="button"
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-md cursor-pointer disabled:opacity-50"
+                    className={`px-4 py-1.5 rounded-xl text-white font-bold text-xs transition-all shadow-md cursor-pointer disabled:opacity-50 flex items-center gap-1.5 ${
+                      saveStatus === "error"
+                        ? "bg-rose-600 hover:bg-rose-500"
+                        : saveStatus === "saved"
+                        ? "bg-emerald-600 hover:bg-emerald-500"
+                        : "bg-blue-600 hover:bg-blue-500"
+                    }`}
                   >
-                    {isSaving ? (isAr ? "جاري الحفظ..." : "Saving...") : isAr ? "💾 حفظ في حسابي" : "💾 Save Cover Letter"}
+                    {isSaving ? (
+                      <>
+                        <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                        </svg>
+                        <span>{isAr ? "جاري الحفظ..." : isDe ? "Wird gespeichert..." : "Saving..."}</span>
+                      </>
+                    ) : saveStatus === "saved" ? (
+                      <span>{isAr ? "✓ تم الحفظ بنجاح" : isDe ? "✓ Gespeichert" : "✓ Saved"}</span>
+                    ) : saveStatus === "error" ? (
+                      <span>{isAr ? "⚠️ إعادة المحاولة" : isDe ? "⚠️ Wiederholen" : "⚠️ Retry Save"}</span>
+                    ) : (
+                      <span>{isAr ? "💾 حفظ في حسابي" : isDe ? "💾 Im Konto speichern" : "💾 Save Cover Letter"}</span>
+                    )}
                   </button>
                 </div>
               )}
             </div>
+
+            {/* Inline Save Error Banner */}
+            {saveError && (
+              <div className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-semibold flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="shrink-0">⚠️</span>
+                  <span className="truncate">{saveError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSaveError(null)}
+                  className="text-slate-400 hover:text-white text-xs shrink-0 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {/* Success Banner with direct PDF button */}
+            {savedCoverLetterId && (
+              <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="shrink-0 text-base">🎉</span>
+                  <span>{isAr ? "تم حفظ خطاب التغطية بنجاح في حسابك! يمكنك تحميله مباشرة أو فتحه في المحرر." : "Cover letter saved successfully! You can download PDF now."}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`/api/cover-letters/${savedCoverLetterId}/pdf`}
+                    download
+                    className="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1"
+                  >
+                    <span>📥</span>
+                    <span>{isAr ? "تحميل PDF" : "Download PDF"}</span>
+                  </a>
+                  <Link
+                    href={`/${locale}/dashboard/cover-letters/${savedCoverLetterId}`}
+                    className="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all flex items-center gap-1"
+                  >
+                    <span>✏️</span>
+                    <span>{isAr ? "فتح في المحرر" : "Open Editor"}</span>
+                  </Link>
+                </div>
+              </div>
+            )}
 
             {generatedText ? (
               <div className="space-y-4">
@@ -513,7 +622,12 @@ export default function CoverLetterGeneratorClient({
                   dir="ltr"
                   rows={20}
                   value={generatedText}
-                  onChange={(e) => setGeneratedText(e.target.value)}
+                  onChange={(e) => {
+                    setGeneratedText(e.target.value);
+                    if (saveStatus === "saved") {
+                      setSaveStatus("idle");
+                    }
+                  }}
                   className="w-full p-4 rounded-2xl bg-slate-950 border border-slate-800 text-slate-100 text-sm font-sans leading-relaxed focus:border-blue-500 focus:outline-hidden text-left"
                 />
                 <p className="text-xs text-slate-400 italic text-center">

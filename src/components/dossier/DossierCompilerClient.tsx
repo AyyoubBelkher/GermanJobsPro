@@ -401,13 +401,17 @@ export default function DossierCompilerClient({
                     <select
                       value={selectedCvId}
                       onChange={(e) => handleCvChange(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden"
+                      dir="auto"
+                      className="w-full max-w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden truncate"
                     >
-                      {userCvs.map((cv) => (
-                        <option key={cv.id} value={cv.id}>
-                          {cv.title} ({cv.language.toUpperCase()})
-                        </option>
-                      ))}
+                      {userCvs.map((cv) => {
+                        const cvLabel = cv.title.length > 55 ? `${cv.title.slice(0, 52)}...` : cv.title;
+                        return (
+                          <option key={cv.id} value={cv.id} className="bg-slate-900 text-white">
+                            {cvLabel} ({cv.language.toUpperCase()})
+                          </option>
+                        );
+                      })}
                     </select>
                   ) : (
                     <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 text-center space-y-3">
@@ -550,16 +554,25 @@ export default function DossierCompilerClient({
               <select
                 value={selectedCoverLetterId}
                 onChange={(e) => handleCoverLetterChange(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden"
+                dir="auto"
+                className="w-full max-w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden truncate"
               >
-                <option value="none">
+                <option value="none" className="bg-slate-900 text-white">
                   {isAr ? "-- بدون خطاب تغطية (CV فقط) --" : "-- No Cover Letter (CV only) --"}
                 </option>
-                {userCoverLetters.map((cl) => (
-                  <option key={cl.id} value={cl.id}>
-                    🏢 {cl.companyName} - {cl.jobTitle} ({cl.title})
-                  </option>
-                ))}
+                {userCoverLetters.map((cl) => {
+                  const company = cl.companyName?.trim() || "";
+                  const role = cl.jobTitle?.trim() || "";
+                  let rawLabel = company && role ? `${company} — ${role}` : role || company || cl.title;
+                  if (rawLabel.length > 60) {
+                    rawLabel = `${rawLabel.slice(0, 57)}...`;
+                  }
+                  return (
+                    <option key={cl.id} value={cl.id} className="bg-slate-900 text-white">
+                      🏢 {rawLabel}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 

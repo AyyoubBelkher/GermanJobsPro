@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import FieldTooltip from "@/components/cv/FieldTooltip";
+import { stripMarkdownAsterisks } from "@/lib/cover-letter";
 
 export interface CoverLetterData {
   id: string;
@@ -54,6 +55,7 @@ export default function CoverLetterEditorClient({
     setErrorMsg(null);
 
     try {
+      const cleanedBody = stripMarkdownAsterisks(coverLetter.generatedContent);
       const res = await fetch(`/api/cover-letters/${coverLetter.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -65,7 +67,7 @@ export default function CoverLetterEditorClient({
           jobDescriptionRaw: coverLetter.jobDescriptionRaw || null,
           language: coverLetter.language,
           tone: coverLetter.tone,
-          generatedContent: coverLetter.generatedContent,
+          generatedContent: cleanedBody,
           cvId: coverLetter.cvId || null,
         }),
       });
@@ -112,30 +114,31 @@ export default function CoverLetterEditorClient({
     <div className="space-y-6">
       {/* Top Action Bar */}
       <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 sm:p-6 backdrop-blur-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <Link
             href={`/${locale}/dashboard/cover-letters`}
-            className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+            className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors shrink-0"
           >
-            ←
+            {isAr ? "→" : "←"}
           </Link>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center flex-wrap gap-2 min-w-0">
               <input
                 type="text"
+                dir="auto"
                 value={coverLetter.title}
                 onChange={(e) => {
                   setCoverLetter({ ...coverLetter, title: e.target.value });
                   markUnsaved();
                 }}
-                className="bg-transparent text-white font-extrabold text-lg sm:text-xl border-b border-transparent hover:border-slate-700 focus:border-blue-500 focus:outline-hidden px-1"
+                className="bg-transparent text-white font-extrabold text-lg sm:text-xl border-b border-transparent hover:border-slate-700 focus:border-blue-500 focus:outline-hidden px-1 min-w-0 max-w-full truncate"
               />
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase">
+              <span className="shrink-0 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase">
                 {coverLetter.tone}
               </span>
             </div>
-            <p className="text-xs text-slate-400">
-              🏢 {coverLetter.companyName} • {coverLetter.jobTitle}
+            <p className="text-xs text-slate-400 truncate mt-0.5" dir="auto">
+              🏢 <bdi>{coverLetter.companyName}</bdi> • <bdi>{coverLetter.jobTitle}</bdi>
             </p>
           </div>
         </div>

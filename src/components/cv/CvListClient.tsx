@@ -197,10 +197,10 @@ export default function CvListClient({ initialCvs, locale }: CvListClientProps) 
               <div className="space-y-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1 min-w-0">
-                    <h3 className="font-extrabold text-white text-lg truncate group-hover:text-blue-400 transition-colors">
+                    <h3 className="font-extrabold text-white text-lg truncate group-hover:text-blue-400 transition-colors" dir="auto">
                       {cv.title}
                     </h3>
-                    <p className="text-xs text-slate-400 font-medium truncate">
+                    <p className="text-xs text-slate-400 font-medium truncate" dir="auto">
                       {cv.personalInfo?.targetJobTitle || (isAr ? "بدون مسمى وظيفي" : "No target title")}
                     </p>
                   </div>
@@ -222,7 +222,7 @@ export default function CvListClient({ initialCvs, locale }: CvListClientProps) 
                   <span>•</span>
                   <span>DIN 5008</span>
                   <span>•</span>
-                  <span>{new Date(cv.updatedAt).toLocaleDateString(locale)}</span>
+                  <span><bdi dir="ltr">{new Date(cv.updatedAt).toLocaleDateString(locale)}</bdi></span>
                 </div>
               </div>
 

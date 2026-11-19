@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { stripMarkdownAsterisks } from "@/lib/cover-letter";
 
 interface CoverLetterSummary {
   id: string;
@@ -109,19 +110,19 @@ export default function CoverLetterListClient({
                       {letter.tone}
                     </span>
                     <span className="text-xs text-slate-500 font-mono">
-                      {new Date(letter.updatedAt).toLocaleDateString(locale)}
+                      <bdi dir="ltr">{new Date(letter.updatedAt).toLocaleDateString(locale)}</bdi>
                     </span>
                   </div>
-                  <h3 className="font-extrabold text-white text-lg truncate group-hover:text-blue-400 transition-colors pt-1">
+                  <h3 className="font-extrabold text-white text-lg truncate group-hover:text-blue-400 transition-colors pt-1" dir="auto">
                     {letter.jobTitle}
                   </h3>
-                  <p className="text-xs font-semibold text-slate-400 truncate">
+                  <p className="text-xs font-semibold text-slate-400 truncate" dir="auto">
                     🏢 {letter.companyName}
                   </p>
                 </div>
 
                 <p className="text-xs text-slate-500 line-clamp-3 leading-relaxed font-mono bg-slate-950/60 p-3 rounded-xl border border-slate-800/60">
-                  {letter.generatedContent}
+                  {stripMarkdownAsterisks(letter.generatedContent)}
                 </p>
               </div>
 

@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { verifyUserSession } from "@/lib/user-session";
 import { coverLetterUpdateSchema } from "@/lib/validations/cover-letter";
-import { extractGermanJobTitle } from "@/lib/cover-letter";
+import { extractGermanJobTitle, stripMarkdownAsterisks } from "@/lib/cover-letter";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -116,22 +116,19 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const data = parseResult.data;
 
     // If updating cvId, ensure referenced CV belongs to the authenticated user
-    if (data.cvId) {
-      const referencedCv = await prisma.cv.findFirst({
-        where: {
-          id: data.cvId,
-          userId: authResult.user.id,
-        },
-      });
-
-      if (!referencedCv) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Referenced CV not found or does not belong to you",
+    let validCvId: string | null | undefined = undefined;
+    if (data.cvId !== undefined) {
+      const requestedCvId = typeof data.cvId === "string" ? data.cvId.trim() : null;
+      if (requestedCvId) {
+        const referencedCv = await prisma.cv.findFirst({
+          where: {
+            id: requestedCvId,
+            userId: authResult.user.id,
           },
-          { status: 400 }
-        );
+        });
+        validCvId = referencedCv ? referencedCv.id : null;
+      } else {
+        validCvId = null;
       }
     }
 
@@ -145,8 +142,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         jobDescriptionRaw: data.jobDescriptionRaw !== undefined ? (data.jobDescriptionRaw || null) : undefined,
         language: data.language,
         tone: data.tone,
-        generatedContent: data.generatedContent,
-        cvId: data.cvId !== undefined ? (data.cvId || null) : undefined,
+        generatedContent: data.generatedContent !== undefined ? stripMarkdownAsterisks(data.generatedContent) : undefined,
+        cvId: validCvId !== undefined ? validCvId : undefined,
       },
       include: {
         cv: {

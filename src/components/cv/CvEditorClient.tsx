@@ -117,6 +117,21 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
 
   const executeSave = async (silent = false) => {
     const currentCv = cvRef.current;
+
+    // In silent background auto-save, avoid firing failing requests if required fields are currently empty/incomplete
+    if (silent) {
+      const hasIncompleteExp = currentCv.experiences.some(
+        (exp) => (!exp.company?.trim() && exp.position?.trim()) || (exp.company?.trim() && !exp.position?.trim())
+      );
+      const hasIncompleteEdu = currentCv.educations.some(
+        (edu) => (!edu.institution?.trim() && edu.degree?.trim()) || (edu.institution?.trim() && !edu.degree?.trim())
+      );
+      if (hasIncompleteExp || hasIncompleteEdu) {
+        // Keep in unsaved state while user is filling in draft fields
+        return;
+      }
+    }
+
     if (!silent) {
       setSaveStatus("saving");
       setErrorMsg(null);
@@ -145,30 +160,34 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
               summary: currentCv.personalInfo.summary || null,
             }
           : undefined,
-        experiences: currentCv.experiences.map((exp, idx) => ({
-          company: exp.company,
-          position: exp.position,
-          city: exp.city || null,
-          country: exp.country || "Germany",
-          startDate: new Date(exp.startDate || new Date()).toISOString(),
-          endDate: exp.isCurrent || !exp.endDate ? null : new Date(exp.endDate).toISOString(),
-          isCurrent: exp.isCurrent,
-          description: exp.description || null,
-          order: idx,
-        })),
-        educations: currentCv.educations.map((edu, idx) => ({
-          institution: edu.institution,
-          degree: edu.degree,
-          fieldOfStudy: edu.fieldOfStudy || null,
-          city: edu.city || null,
-          country: edu.country || null,
-          startDate: new Date(edu.startDate || new Date()).toISOString(),
-          endDate: edu.isCurrent || !edu.endDate ? null : new Date(edu.endDate).toISOString(),
-          isCurrent: edu.isCurrent,
-          grade: edu.grade || null,
-          description: edu.description || null,
-          order: idx,
-        })),
+        experiences: currentCv.experiences
+          .filter((exp) => (silent ? Boolean(exp.company?.trim() || exp.position?.trim()) : true))
+          .map((exp, idx) => ({
+            company: exp.company,
+            position: exp.position,
+            city: exp.city || null,
+            country: exp.country || "Germany",
+            startDate: new Date(exp.startDate || new Date()).toISOString(),
+            endDate: exp.isCurrent || !exp.endDate ? null : new Date(exp.endDate).toISOString(),
+            isCurrent: exp.isCurrent,
+            description: exp.description || null,
+            order: idx,
+          })),
+        educations: currentCv.educations
+          .filter((edu) => (silent ? Boolean(edu.institution?.trim() || edu.degree?.trim()) : true))
+          .map((edu, idx) => ({
+            institution: edu.institution,
+            degree: edu.degree,
+            fieldOfStudy: edu.fieldOfStudy || null,
+            city: edu.city || null,
+            country: edu.country || null,
+            startDate: new Date(edu.startDate || new Date()).toISOString(),
+            endDate: edu.isCurrent || !edu.endDate ? null : new Date(edu.endDate).toISOString(),
+            isCurrent: edu.isCurrent,
+            grade: edu.grade || null,
+            description: edu.description || null,
+            order: idx,
+          })),
         skills: currentCv.skills.map((skill, idx) => ({
           name: skill.name,
           category: skill.category || null,
@@ -296,7 +315,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
             href={`/${locale}/dashboard/cv`}
             className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
           >
-            ←
+            {isAr ? "→" : "←"}
           </Link>
           <div>
             <div className="flex items-center gap-2">
@@ -339,7 +358,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                 </svg>
-                <span>{isAr ? "تم الحفظ في السحابة ✓" : isDe ? "In der Cloud gespeichert ✓" : "Saved to cloud ✓"}</span>
+                <span>{isAr ? "تم الحفظ في السحابة" : isDe ? "In der Cloud gespeichert" : "Saved to cloud"}</span>
               </div>
             )}
             {saveStatus === "unsaved" && (
@@ -361,7 +380,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
             onClick={() => setIsImportModalOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-blue-600/25 border border-blue-400/30 transition-all cursor-pointer"
           >
-            <span>{isAr ? "تحويل فوري (1-Click PDF)" : isDe ? "1-Klick PDF zu DIN 5008" : "1-Click PDF to DIN 5008"}</span>
+            <span>{isAr ? <>تحويل فوري <bdi dir="ltr">(1-Click PDF)</bdi></> : isDe ? "1-Klick PDF zu DIN 5008" : "1-Click PDF to DIN 5008"}</span>
           </button>
 
           <a
@@ -403,6 +422,8 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
               <span>{isAr ? "جاري الحفظ..." : "Saving..."}</span>
             ) : saveStatus === "unsaved" ? (
               <span>{isAr ? "💾 حفظ الآن" : "💾 Save Now"}</span>
+            ) : saveStatus === "error" ? (
+              <span>{isAr ? "⚠️ خطأ في المزامنة" : isDe ? "⚠️ Fehler beim Speichern" : "⚠️ Sync error"}</span>
             ) : (
               <span>{isAr ? "✓ محفوظ" : "✓ Saved"}</span>
             )}
@@ -479,6 +500,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
               </label>
               <input
                 type="email"
+                dir="ltr"
                 value={cv.personalInfo?.email || ""}
                 onChange={(e) => {
                   setCv({
@@ -488,7 +510,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                   markUnsaved();
                 }}
                 placeholder="max.mustermann@example.de"
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden text-left"
               />
             </div>
 
@@ -518,7 +540,8 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                 <FieldTooltip fieldKey="phone" locale={locale} />
               </label>
               <input
-                type="text"
+                type="tel"
+                dir="ltr"
                 value={cv.personalInfo?.phone || ""}
                 onChange={(e) => {
                   setCv({
@@ -528,7 +551,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                   markUnsaved();
                 }}
                 placeholder="+49 170 1234567"
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden text-left"
               />
             </div>
 
@@ -567,7 +590,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                   });
                   markUnsaved();
                 }}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden [color-scheme:dark]"
               />
             </div>
 
@@ -598,6 +621,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
               </label>
               <input
                 type="url"
+                dir="ltr"
                 value={cv.personalInfo?.linkedinUrl || ""}
                 onChange={(e) => {
                   setCv({
@@ -607,7 +631,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                   markUnsaved();
                 }}
                 placeholder="https://linkedin.com/in/..."
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden text-left"
               />
             </div>
 
@@ -618,6 +642,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
               </label>
               <input
                 type="url"
+                dir="ltr"
                 value={cv.personalInfo?.xingUrl || ""}
                 onChange={(e) => {
                   setCv({
@@ -627,7 +652,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                   markUnsaved();
                 }}
                 placeholder="https://xing.com/profile/..."
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden text-left"
               />
             </div>
 
@@ -654,6 +679,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                 <FieldTooltip fieldKey="summary" locale={locale} />
               </label>
               <textarea
+                dir={cv.language === "ar" ? "rtl" : "ltr"}
                 rows={3}
                 value={cv.personalInfo?.summary || ""}
                 onChange={(e) => {
@@ -664,7 +690,9 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                   markUnsaved();
                 }}
                 placeholder={isAr ? "مهندس برمجيات ذو خبرة 5 سنوات في بناء الأنظمة الموزعة..." : "Erfahrener Softwareentwickler mit 5 Jahren Erfahrung..."}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden"
+                className={`w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden ${
+                  cv.language === "ar" ? "text-right" : "text-left"
+                }`}
               />
             </div>
           </div>
@@ -788,7 +816,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                           setCv({ ...cv, experiences: next });
                           markUnsaved();
                         }}
-                        className="w-full px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs focus:border-blue-500 focus:outline-hidden"
+                        className="w-full px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs focus:border-blue-500 focus:outline-hidden [color-scheme:dark]"
                       />
                     </div>
 
@@ -822,7 +850,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                           setCv({ ...cv, experiences: next });
                           markUnsaved();
                         }}
-                        className="w-full px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs focus:border-blue-500 focus:outline-hidden disabled:opacity-40"
+                        className="w-full px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs focus:border-blue-500 focus:outline-hidden disabled:opacity-40 [color-scheme:dark]"
                       />
                     </div>
 
@@ -846,6 +874,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                         </button>
                       </div>
                       <textarea
+                        dir={cv.language === "ar" ? "rtl" : "ltr"}
                         rows={3}
                         value={exp.description || ""}
                         onChange={(e) => {
@@ -855,7 +884,9 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                           markUnsaved();
                         }}
                         placeholder="• Entwicklung von skalierbaren Microservices..."
-                        className="w-full px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs focus:border-blue-500 focus:outline-hidden font-mono"
+                        className={`w-full px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs focus:border-blue-500 focus:outline-hidden font-mono ${
+                          cv.language === "ar" ? "text-right" : "text-left"
+                        }`}
                       />
                     </div>
                   </div>
@@ -1023,7 +1054,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                           setCv({ ...cv, educations: next });
                           markUnsaved();
                         }}
-                        className="w-full px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs focus:border-blue-500 focus:outline-hidden"
+                        className="w-full px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs focus:border-blue-500 focus:outline-hidden [color-scheme:dark]"
                       />
                     </div>
 
@@ -1041,7 +1072,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                           setCv({ ...cv, educations: next });
                           markUnsaved();
                         }}
-                        className="w-full px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs focus:border-blue-500 focus:outline-hidden"
+                        className="w-full px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs focus:border-blue-500 focus:outline-hidden [color-scheme:dark]"
                       />
                     </div>
                   </div>
@@ -1329,6 +1360,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                     className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-white text-xs"
                   />
                   <textarea
+                    dir={cv.language === "ar" ? "rtl" : "ltr"}
                     rows={2}
                     value={proj.description || ""}
                     onChange={(e) => {
@@ -1338,7 +1370,9 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                       markUnsaved();
                     }}
                     placeholder="Description / Technologies..."
-                    className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-white text-xs font-mono"
+                    className={`w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-white text-xs font-mono ${
+                      cv.language === "ar" ? "text-right" : "text-left"
+                    }`}
                   />
                 </div>
               ))}
