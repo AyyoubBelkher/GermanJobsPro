@@ -380,7 +380,18 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
             onClick={() => setIsImportModalOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-blue-600/25 border border-blue-400/30 transition-all cursor-pointer"
           >
-            <span>{isAr ? <>تحويل فوري <bdi dir="ltr">(1-Click PDF)</bdi></> : isDe ? "1-Klick PDF zu DIN 5008" : "1-Click PDF to DIN 5008"}</span>
+            {isAr ? (
+              <>
+                <span>تحويل فوري</span>{" "}
+                <span dir="ltr" className="inline-block font-mono text-xs bg-white/15 px-1.5 py-0.5 rounded">
+                  1-Click PDF
+                </span>
+              </>
+            ) : isDe ? (
+              <span>1-Klick PDF zu DIN 5008</span>
+            ) : (
+              <span>1-Click PDF to DIN 5008</span>
+            )}
           </button>
 
           <a

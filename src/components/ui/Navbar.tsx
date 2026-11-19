@@ -126,7 +126,7 @@ function LanguageSwitcherDesktop({ activeLocale, isAr }: { activeLocale: Locale;
       {langDropdownOpen && (
         <div
           dir={isAr ? "rtl" : "ltr"}
-          className="absolute top-full mt-2 w-48 rounded-2xl bg-white dark:bg-[#0A1936] border border-slate-200 dark:border-white/15 text-slate-800 dark:text-slate-100 shadow-2xl p-2 z-50 space-y-1 text-xs animate-fadeIn right-0"
+          className="absolute top-full mt-2 w-48 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 shadow-2xl p-2 z-50 space-y-1 text-xs animate-fadeIn ltr:right-0 rtl:left-0"
         >
           {ORDERED_LOCALES.map((loc) => {
             const meta = LOCALE_METADATA[loc];
@@ -247,7 +247,7 @@ function LanguageSwitcherHeaderMobile({
       {langDropdownOpen && (
         <div
           dir={isAr ? "rtl" : "ltr"}
-          className="absolute top-full mt-2 w-48 rounded-2xl bg-white dark:bg-[#0A1936] border border-slate-200 dark:border-white/15 text-slate-800 dark:text-slate-100 shadow-2xl p-2 z-50 space-y-1 text-xs animate-fadeIn right-0"
+          className="absolute top-full mt-2 w-48 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 shadow-2xl p-2 z-50 space-y-1 text-xs animate-fadeIn ltr:right-0 rtl:left-0"
         >
           {ORDERED_LOCALES.map((loc) => {
             const meta = LOCALE_METADATA[loc];
@@ -484,7 +484,7 @@ function DesktopNav({
     "border-b-2 border-transparent pb-1 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-[#FACC15] font-bold transition-colors whitespace-nowrap text-sm";
 
   return (
-    <nav className={`hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-semibold ${isAr ? "flex-row-reverse" : ""}`}>
+    <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-semibold">
       <Link href={homeLink} dir={isAr ? "rtl" : "ltr"} className={isHome ? activeLinkClass : inactiveLinkClass}>
         {dict.nav.home}
       </Link>
@@ -538,7 +538,7 @@ function DesktopNavFallback({
     "border-b-2 border-transparent pb-1 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-[#FACC15] font-bold transition-colors whitespace-nowrap text-sm";
 
   return (
-    <nav className={`hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-semibold ${isAr ? "flex-row-reverse" : ""}`}>
+    <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-semibold">
       <Link href={homeLink} dir={isAr ? "rtl" : "ltr"} className={activeLinkClass}>
         {dict.nav.home}
       </Link>
@@ -802,6 +802,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
 
   const isAr = activeLocale === "ar";
   const dir = currentLocaleMeta.dir;
+  const isRtl = isAr || dir === "rtl";
 
   // Sync when initialUser changes
   useEffect(() => {
@@ -925,10 +926,10 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
   const signupLink = `/${activeLocale}/auth/signup`;
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 dark:bg-[#061838]/95 backdrop-blur-md border-b border-slate-200 dark:border-white/10 shadow-sm transition-colors">
+    <header className="sticky top-0 z-50 bg-white/95 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800/80 shadow-sm transition-colors">
       <div
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-1.5 sm:gap-4"
-        dir="ltr"
+        dir={isRtl ? "rtl" : "ltr"}
       >
         {/* Brand Logo: Graduation-cap & German-colors brand identity */}
         <Link href={homeLink} className="flex items-center gap-1.5 sm:gap-3 group shrink-0">
@@ -1050,7 +1051,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                   {userDropdownOpen && (
                     <div
                       dir={isAr ? "rtl" : "ltr"}
-                      className="absolute right-0 top-full mt-2.5 w-80 rounded-3xl bg-[#131722] border border-slate-800/90 shadow-2xl p-4 z-50 space-y-3 text-xs animate-fadeIn"
+                      className="absolute ltr:right-0 rtl:left-0 top-full mt-2.5 w-80 rounded-3xl bg-[#131722] border border-slate-800/90 shadow-2xl p-4 z-50 space-y-3 text-xs animate-fadeIn"
                     >
                       {/* Google Account Popup Top Header */}
                       <div className="text-center py-2 px-1 border-b border-slate-800/80 pb-4">
@@ -1239,7 +1240,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
       {mobileMenuOpen && (
         <div
           dir={dir}
-          className="lg:hidden bg-white/98 dark:bg-[#061838]/98 border-b border-slate-200 dark:border-white/10 px-4 py-6 space-y-4 shadow-xl backdrop-blur-md animate-fadeIn max-h-[85vh] overflow-y-auto"
+          className="lg:hidden bg-white/98 dark:bg-slate-950/98 border-b border-slate-200 dark:border-slate-800/80 px-4 py-6 space-y-4 shadow-xl backdrop-blur-md animate-fadeIn max-h-[85vh] overflow-y-auto"
         >
           {/* User Status in Mobile */}
           {user && (

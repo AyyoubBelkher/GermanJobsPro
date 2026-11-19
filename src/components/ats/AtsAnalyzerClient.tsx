@@ -1121,9 +1121,9 @@ export default function AtsAnalyzerClient({
                 {analysis.actionPlan.map((step, idx) => (
                   <div
                     key={idx}
-                    className="p-4 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-start gap-3"
+                    className="p-4 rounded-2xl bg-slate-950 border border-slate-800/80 hover:border-slate-700/80 transition-colors flex items-start gap-3"
                   >
-                    <div className="w-6 h-6 rounded-lg bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
+                    <div className="w-6 h-6 rounded-lg bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                       {idx + 1}
                     </div>
                     <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
@@ -1135,10 +1135,10 @@ export default function AtsAnalyzerClient({
             )}
 
             {!hasPassingScores && selectedCvId && inputMode === "saved" && (
-              <div className="pt-4 flex justify-end">
+              <div className="mt-6 pt-5 border-t border-slate-800/80 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-start gap-3">
                 <Link
                   href={`/${locale}/dashboard/cv/${selectedCvId}`}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-md bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/20"
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-600/25 px-5 py-2.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2 text-xs sm:text-sm transition-all"
                 >
                   <span>✏️</span>
                   <span>
@@ -1153,26 +1153,12 @@ export default function AtsAnalyzerClient({
             )}
 
             {!hasPassingScores && (inputMode === "upload" || inputMode === "paste") && cvText.trim().length > 0 && (
-              <div className="pt-4 flex flex-wrap items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={openTextEditor}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 hover:text-white font-bold text-xs sm:text-sm transition-all cursor-pointer"
-                >
-                  <span>✏️</span>
-                  <span>
-                    {isAr
-                      ? "✏️ تعديل نص السيرة وتصحيح الأخطاء يدوياً"
-                      : isDe
-                      ? "✏️ Text manuell korrigieren"
-                      : "✏️ Edit CV Text Manually"}
-                  </span>
-                </button>
+              <div className="mt-6 pt-5 border-t border-slate-800/80 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-start gap-3">
                 <button
                   type="button"
                   onClick={handleMagicImport}
                   disabled={isMagicImporting}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-600/25 px-5 py-2.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2 text-xs sm:text-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
                 >
                   {isMagicImporting ? (
                     <>
@@ -1182,7 +1168,7 @@ export default function AtsAnalyzerClient({
                       </svg>
                       <span>
                         {isAr
-                          ? "جاري إصلاح وترجمة السيرة وفق DIN 5008..."
+                          ? <>جاري إصلاح وترجمة السيرة وفق <bdi dir="ltr">DIN 5008</bdi>...</>
                           : isDe
                           ? "Lebenslauf wird nach DIN 5008 optimiert..."
                           : "Optimizing and translating CV to DIN 5008..."}
@@ -1191,12 +1177,26 @@ export default function AtsAnalyzerClient({
                   ) : (
                     <span>
                       {isAr
-                        ? "إصلاح وتنسيق السيرة الذاتية تلقائياً (DIN 5008)"
+                        ? <>إصلاح وتنسيق السيرة الذاتية تلقائياً (<bdi dir="ltr">DIN 5008</bdi>)</>
                         : isDe
                         ? "Lebenslauf automatisch nach DIN 5008 optimieren"
                         : "Auto-Optimize CV to DIN 5008 Standard"}
                     </span>
                   )}
+                </button>
+                <button
+                  type="button"
+                  onClick={openTextEditor}
+                  className="bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-slate-200 px-5 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 text-xs sm:text-sm transition-all cursor-pointer"
+                >
+                  <span>✏️</span>
+                  <span>
+                    {isAr
+                      ? "تعديل نص السيرة وتصحيح الأخطاء يدوياً"
+                      : isDe
+                      ? "Text manuell korrigieren"
+                      : "Edit CV Text Manually"}
+                  </span>
                 </button>
               </div>
             )}
