@@ -468,6 +468,22 @@ export async function POST(request: NextRequest) {
     const utf8Filename = `Bewerbungsmappe_${safeName}.pdf`;
     const encodedUtf8Filename = encodeURIComponent(utf8Filename);
 
+    // Telemetry: Ensure DOSSIER_COMPILE is logged for isPro users without blocking or deducting credits
+    if (isPro) {
+      try {
+        await prisma.aiUsage.create({
+          data: {
+            userId: authResult.user.id,
+            operation: "DOSSIER_COMPILE",
+            model: "dossier-compiler",
+            success: true,
+          },
+        });
+      } catch (telemetryErr) {
+        console.warn("[Dossier isPro Telemetry Warning]:", telemetryErr);
+      }
+    }
+
     return new NextResponse(compiledPdfBytes as unknown as BodyInit, {
       status: 200,
       headers: {

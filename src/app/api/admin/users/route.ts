@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const [totalUsers, proUsers, totalAiCreditsAgg, totalJobs, totalCvs, totalCoverLetters, users] = await Promise.all([
+    const [totalUsers, proUsers, totalAiCreditsAgg, totalJobs, totalCvs, totalCoverLetters, users, aiUsageStats] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({
         where: {
@@ -96,9 +96,110 @@ export async function GET(request: NextRequest) {
           createdAt: "desc",
         },
       }),
+      prisma.aiUsage.groupBy({
+        by: ["userId", "operation"],
+        _count: { _all: true },
+        _max: { createdAt: true },
+      }).catch((err) => {
+        console.warn("[AiUsage GroupBy Warning]:", err instanceof Error ? err.message : err);
+        return [];
+      }),
     ]);
 
     const totalAiCredits = totalAiCreditsAgg._sum.aiCredits ?? 0;
+
+    // Single pass: aggregate operations per user without N+1 queries
+    const userActivityMap = new Map<string, {
+      operations: Record<string, number>;
+      latestAiUsageAt: Date | null;
+    }>();
+
+    for (const stat of aiUsageStats) {
+      if (!stat.userId) continue;
+      let entry = userActivityMap.get(stat.userId);
+      if (!entry) {
+        entry = { operations: {}, latestAiUsageAt: null };
+        userActivityMap.set(stat.userId, entry);
+      }
+      const count = stat._count?._all ?? 0;
+      entry.operations[stat.operation] = (entry.operations[stat.operation] ?? 0) + count;
+      if (stat._max?.createdAt) {
+        if (!entry.latestAiUsageAt || stat._max.createdAt > entry.latestAiUsageAt) {
+          entry.latestAiUsageAt = stat._max.createdAt;
+        }
+      }
+    }
+
+    let totalAtsRuns = 0;
+    let totalDossierRuns = 0;
+    let activatedUsersCount = 0;
+    let hotLeadsCount = 0;
+
+    const enrichedUsers = users.map((user) => {
+      const userStats = userActivityMap.get(user.id);
+      const ops = userStats?.operations ?? {};
+
+      const cvCount = user._count?.cvs ?? 0;
+      const coverLetterCount = user._count?.coverLetters ?? 0;
+
+      const atsRuns = (ops["ATS_ANALYSIS"] ?? 0) + (ops["ATS_TOOL"] ?? 0);
+      const dossierRuns = ops["DOSSIER_COMPILE"] ?? 0;
+      const aiAssistRuns =
+        (ops["CV_MAGIC_IMPORT"] ?? 0) +
+        (ops["CV_AUTO_FIX"] ?? 0) +
+        (ops["BULLET_OPTIMIZE"] ?? 0) +
+        (ops["COVER_LETTER_GEN"] ?? 0);
+
+      // Latest active date
+      let latestDate = new Date(user.createdAt);
+      if (userStats?.latestAiUsageAt && userStats.latestAiUsageAt > latestDate) {
+        latestDate = userStats.latestAiUsageAt;
+      }
+      if (user.cvs && user.cvs.length > 0) {
+        for (const cv of user.cvs) {
+          const cvDate = new Date(cv.updatedAt);
+          if (cvDate > latestDate) latestDate = cvDate;
+        }
+      }
+      if (user.coverLetters && user.coverLetters.length > 0) {
+        for (const cl of user.coverLetters) {
+          const clDate = new Date(cl.updatedAt);
+          if (clDate > latestDate) latestDate = clDate;
+        }
+      }
+
+      const hasUsedAnyTool = cvCount > 0 || coverLetterCount > 0 || atsRuns > 0 || dossierRuns > 0 || aiAssistRuns > 0;
+      const isFreePlan = user.plan === "FREE";
+      const hasDepletedOrLowCredits = (user.aiCredits ?? 0) <= 1;
+      const hasHighIntentAction = atsRuns > 0 || cvCount > 0 || dossierRuns > 0;
+      const isHotLead = isFreePlan && hasDepletedOrLowCredits && hasHighIntentAction;
+
+      totalAtsRuns += atsRuns;
+      totalDossierRuns += dossierRuns;
+      if (hasUsedAnyTool) activatedUsersCount++;
+      if (isHotLead) hotLeadsCount++;
+
+      return {
+        ...user,
+        activity: {
+          cvCount,
+          coverLetterCount,
+          atsRuns,
+          dossierRuns,
+          aiAssistRuns,
+          lastActiveAt: latestDate.toISOString(),
+          hasUsedAnyTool,
+          isHotLead,
+        },
+      };
+    });
+
+    const activitySummary = {
+      totalAtsRuns,
+      totalDossierRuns,
+      activatedUsersCount,
+      hotLeadsCount,
+    };
 
     return NextResponse.json({
       success: true,
@@ -110,7 +211,8 @@ export async function GET(request: NextRequest) {
         totalCvs,
         totalCoverLetters,
       },
-      users,
+      activitySummary,
+      users: enrichedUsers,
     });
   } catch (error: unknown) {
     console.error("[Admin Users GET Error]:", error instanceof Error ? error.message : error);

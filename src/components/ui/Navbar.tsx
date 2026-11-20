@@ -87,11 +87,11 @@ function LanguageSwitcherDesktop({ activeLocale, isAr }: { activeLocale: Locale;
   }, []);
 
   return (
-    <div className="relative" ref={langDropdownRef}>
+    <div className="relative shrink-0" ref={langDropdownRef}>
       <button
         type="button"
         onClick={() => setLangDropdownOpen(!langDropdownOpen)}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0A2552] hover:bg-[#0E3572] text-white text-xs font-bold transition-all cursor-pointer focus:outline-none shadow-xs"
+        className="flex items-center gap-1.5 px-2.5 xl:px-3 py-2 rounded-xl bg-[#0A2552] hover:bg-[#0E3572] text-white text-xs font-bold transition-all cursor-pointer focus:outline-none shadow-xs shrink-0"
         aria-expanded={langDropdownOpen}
         aria-label="Language selector"
       >
@@ -110,7 +110,7 @@ function LanguageSwitcherDesktop({ activeLocale, isAr }: { activeLocale: Locale;
           <path d="M2 12h20" />
         </svg>
         <svg
-          className={`w-3.5 h-3.5 text-slate-200 transition-transform duration-200 ${
+          className={`w-3.5 h-3.5 text-slate-200 transition-transform duration-200 shrink-0 ${
             langDropdownOpen ? "rotate-180" : ""
           }`}
           fill="none"
@@ -306,7 +306,7 @@ function LanguageSwitcherHeaderMobileFallback({ activeLocale }: { activeLocale?:
 
 function LanguageSwitcherFallback({ activeLocale }: { activeLocale?: Locale }) {
   return (
-    <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0A2552] text-white text-xs font-bold opacity-90">
+    <div className="flex items-center gap-1.5 px-2.5 xl:px-3 py-2 rounded-xl bg-[#0A2552] text-white text-xs font-bold opacity-90 shrink-0">
       <svg
         className="w-4 h-4 text-white shrink-0"
         fill="none"
@@ -321,7 +321,7 @@ function LanguageSwitcherFallback({ activeLocale }: { activeLocale?: Locale }) {
         <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
         <path d="M2 12h20" />
       </svg>
-      <svg className="w-3.5 h-3.5 text-slate-200" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <svg className="w-3.5 h-3.5 text-slate-200 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
       </svg>
     </div>
@@ -377,13 +377,14 @@ interface DesktopNavProps {
   jobsLink: string;
   blogLink: string;
   germanA1Link: string;
-  atsLink: string;
-  dossierLink: string;
-  dashboardLink: string;
-  pricingLink: string;
+  atsLink?: string;
+  dossierLink?: string;
+  dashboardLink?: string;
+  pricingLink?: string;
   dict: any;
-  user: NavbarUser | null;
+  user?: NavbarUser | null;
   activeLocale: Locale;
+  isDarkPage?: boolean;
 }
 
 interface MobileNavProps {
@@ -401,6 +402,7 @@ interface MobileNavProps {
   user: NavbarUser | null;
   activeLocale: Locale;
   onClose: () => void;
+  isDarkPage?: boolean;
 }
 
 function useNavActive(
@@ -451,13 +453,14 @@ function DesktopNav({
   jobsLink,
   blogLink,
   germanA1Link,
-  atsLink,
-  dossierLink,
-  dashboardLink,
+  atsLink = "",
+  dossierLink = "",
+  dashboardLink = "",
   pricingLink,
   dict,
   user,
   activeLocale,
+  isDarkPage = false,
 }: DesktopNavProps) {
   const isAr = activeLocale === "ar";
   const {
@@ -478,13 +481,17 @@ function DesktopNav({
     activeLocale
   );
 
-  const activeLinkClass =
-    "border-b-2 border-amber-400 pb-1 text-slate-950 dark:text-white font-black transition-all whitespace-nowrap text-sm";
-  const inactiveLinkClass =
-    "border-b-2 border-transparent pb-1 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-[#FACC15] font-bold transition-colors whitespace-nowrap text-sm";
+  const activeLinkClass = `border-b-2 border-amber-400 pb-1 ${
+    isDarkPage ? "text-white" : "text-slate-950 dark:text-white"
+  } font-black transition-all whitespace-nowrap text-xs xl:text-sm`;
+  const inactiveLinkClass = `border-b-2 border-transparent pb-1 ${
+    isDarkPage
+      ? "text-slate-200 hover:text-[#FACC15]"
+      : "text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-[#FACC15]"
+  } font-bold transition-colors whitespace-nowrap text-xs xl:text-sm`;
 
   return (
-    <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-semibold">
+    <nav className="hidden lg:flex items-center gap-2 xl:gap-4 min-w-0 text-xs xl:text-sm font-semibold">
       <Link href={homeLink} dir={isAr ? "rtl" : "ltr"} className={isHome ? activeLinkClass : inactiveLinkClass}>
         {dict.nav.home}
       </Link>
@@ -530,15 +537,20 @@ function DesktopNavFallback({
   germanA1Link,
   dict,
   activeLocale,
+  isDarkPage = false,
 }: DesktopNavProps) {
   const isAr = activeLocale === "ar";
-  const activeLinkClass =
-    "border-b-2 border-amber-400 pb-1 text-slate-950 dark:text-white font-black transition-all whitespace-nowrap text-sm";
-  const inactiveLinkClass =
-    "border-b-2 border-transparent pb-1 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-[#FACC15] font-bold transition-colors whitespace-nowrap text-sm";
+  const activeLinkClass = `border-b-2 border-amber-400 pb-1 ${
+    isDarkPage ? "text-white" : "text-slate-950 dark:text-white"
+  } font-black transition-all whitespace-nowrap text-xs xl:text-sm`;
+  const inactiveLinkClass = `border-b-2 border-transparent pb-1 ${
+    isDarkPage
+      ? "text-slate-200 hover:text-[#FACC15]"
+      : "text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-[#FACC15]"
+  } font-bold transition-colors whitespace-nowrap text-xs xl:text-sm`;
 
   return (
-    <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-semibold">
+    <nav className="hidden lg:flex items-center gap-2 xl:gap-4 min-w-0 text-xs xl:text-sm font-semibold">
       <Link href={homeLink} dir={isAr ? "rtl" : "ltr"} className={activeLinkClass}>
         {dict.nav.home}
       </Link>
@@ -573,6 +585,7 @@ function MobileNav({
   user,
   activeLocale,
   onClose,
+  isDarkPage = false,
 }: MobileNavProps) {
   const isAr = activeLocale === "ar";
   const {
@@ -595,10 +608,12 @@ function MobileNav({
     cvLink
   );
 
-  const mobileActiveClass =
-    "px-3.5 py-2.5 rounded-xl bg-blue-50 dark:bg-amber-400/15 border border-blue-200 dark:border-amber-400/30 text-blue-700 dark:text-[#FACC15] font-bold transition-all whitespace-nowrap";
-  const mobileInactiveClass =
-    "px-3.5 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 hover:text-blue-600 dark:hover:text-[#FACC15] transition-colors text-slate-700 dark:text-slate-200 font-bold whitespace-nowrap";
+  const mobileActiveClass = isDarkPage
+    ? "px-3.5 py-2.5 rounded-xl bg-amber-400/15 border border-amber-400/30 text-[#FACC15] font-bold transition-all whitespace-nowrap"
+    : "px-3.5 py-2.5 rounded-xl bg-blue-50 dark:bg-amber-400/15 border border-blue-200 dark:border-amber-400/30 text-blue-700 dark:text-[#FACC15] font-bold transition-all whitespace-nowrap";
+  const mobileInactiveClass = isDarkPage
+    ? "px-3.5 py-2.5 rounded-xl hover:bg-white/10 hover:text-[#FACC15] transition-colors text-slate-200 font-bold whitespace-nowrap"
+    : "px-3.5 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 hover:text-blue-600 dark:hover:text-[#FACC15] transition-colors text-slate-700 dark:text-slate-200 font-bold whitespace-nowrap";
 
   return (
     <nav className="flex flex-col space-y-1 text-sm font-semibold">
@@ -724,10 +739,12 @@ function MobileNavFallback({
   user,
   activeLocale,
   onClose,
+  isDarkPage = false,
 }: MobileNavProps) {
   const isAr = activeLocale === "ar";
-  const mobileInactiveClass =
-    "px-3.5 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 hover:text-blue-600 dark:hover:text-[#FACC15] transition-colors text-slate-700 dark:text-slate-200 font-bold whitespace-nowrap";
+  const mobileInactiveClass = isDarkPage
+    ? "px-3.5 py-2.5 rounded-xl hover:bg-white/10 hover:text-[#FACC15] transition-colors text-slate-200 font-bold whitespace-nowrap"
+    : "px-3.5 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 hover:text-blue-600 dark:hover:text-[#FACC15] transition-colors text-slate-700 dark:text-slate-200 font-bold whitespace-nowrap";
 
   return (
     <nav className="flex flex-col space-y-1 text-sm font-semibold">
@@ -788,6 +805,7 @@ function MobileNavFallback({
 
 export default function Navbar({ locale = "ar", initialUser = null }: NavbarProps) {
   const router = useRouter();
+  const pathname = usePathname();
 
   const activeLocale: Locale = isValidLocale(locale) ? locale : DEFAULT_LOCALE;
   const dict = getDictionary(activeLocale);
@@ -803,6 +821,14 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
   const isAr = activeLocale === "ar";
   const dir = currentLocaleMeta.dir;
   const isRtl = isAr || dir === "rtl";
+
+  const isDarkPage = Boolean(
+    pathname && (
+      pathname.includes("/dashboard/ats-analyzer") ||
+      pathname.includes("/dashboard/dossier") ||
+      pathname.includes("/dashboard")
+    )
+  );
 
   // Sync when initialUser changes
   useEffect(() => {
@@ -926,13 +952,19 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
   const signupLink = `/${activeLocale}/auth/signup`;
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800/80 shadow-sm transition-colors">
+    <header
+      className={`sticky top-0 z-50 w-full backdrop-blur-md shadow-sm transition-colors ${
+        isDarkPage
+          ? "bg-slate-950/90 border-b border-slate-800/80"
+          : "bg-white/95 dark:bg-slate-950/90 border-b border-slate-200 dark:border-slate-800/80"
+      }`}
+    >
       <div
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-1.5 sm:gap-4"
+        className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 h-16 flex items-center justify-between gap-2 min-w-0"
         dir={isRtl ? "rtl" : "ltr"}
       >
         {/* Brand Logo: Graduation-cap & German-colors brand identity */}
-        <Link href={homeLink} className="flex items-center gap-1.5 sm:gap-3 group shrink-0">
+        <Link href={homeLink} className="flex items-center gap-1.5 sm:gap-2.5 group shrink-0">
           <div className="relative flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#061838] border border-amber-400/40 group-hover:border-amber-400 shadow-xs group-hover:scale-105 transition-all overflow-hidden shrink-0">
             {/* German flag ribbon on top edge */}
             <div className="absolute top-0 inset-x-0 h-1 flex">
@@ -943,7 +975,11 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
             <span className="text-base sm:text-xl transform group-hover:rotate-6 transition-transform">🎓</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-sm sm:text-lg font-black tracking-tight text-[#061838] dark:text-white group-hover:text-blue-700 dark:group-hover:text-[#FACC15] transition-colors leading-tight">
+            <span
+              className={`text-sm sm:text-base xl:text-lg font-black tracking-tight ${
+                isDarkPage ? "text-white" : "text-[#061838] dark:text-white"
+              } group-hover:text-blue-700 dark:group-hover:text-[#FACC15] transition-colors leading-tight whitespace-nowrap`}
+            >
               GermanJobs<span className="text-amber-500 dark:text-[#FACC15]">Pro</span>
             </span>
           </div>
@@ -964,6 +1000,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
               dict={dict}
               user={user}
               activeLocale={activeLocale}
+              isDarkPage={isDarkPage}
             />
           }
         >
@@ -979,20 +1016,21 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
             dict={dict}
             user={user}
             activeLocale={activeLocale}
+            isDarkPage={isDarkPage}
           />
         </Suspense>
 
         {/* Desktop Actions Area */}
-        <div className="hidden sm:flex items-center gap-3">
+        <div className="hidden sm:flex items-center gap-1.5 xl:gap-2 shrink-0">
           {authChecked ? (
             user ? (
               /* AUTHENTICATED STATE */
-              <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="flex items-center gap-1.5 xl:gap-2 shrink-0">
                 {/* Plan Badge */}
                 {!isPro && (
                   <Link
                     href={pricingLink}
-                    className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-extrabold border transition-all bg-slate-900 border-slate-700 text-amber-400 hover:bg-slate-800 shadow-sm shrink-0"
+                    className="flex items-center gap-1 px-2 xl:px-2.5 py-1 xl:py-1.5 rounded-full text-xs font-extrabold border transition-all bg-slate-900 border-slate-700 text-amber-400 hover:bg-slate-800 shadow-sm shrink-0 whitespace-nowrap"
                     title={isAr ? "رصيد الذكاء الاصطناعي (اضغط للترقية)" : "AI Credits (Click to Upgrade)"}
                   >
                     <span>{`⚡ ${user.aiCredits}`}</span>
@@ -1003,21 +1041,25 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                 <Link
                   href={dashboardLink}
                   dir={isAr ? "rtl" : "ltr"}
-                  className="inline-flex items-center gap-1.5 bg-[#FACC15] hover:bg-amber-300 text-slate-950 font-black rounded-full px-5 py-2.5 shadow-sm text-xs transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 bg-[#FACC15] hover:bg-amber-300 text-slate-950 font-black rounded-full px-2.5 xl:px-4 py-1.5 text-xs xl:text-sm shadow-sm transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap shrink-0"
                 >
                   <span>{isAr ? "لوحة التحكم" : dict.nav.dashboard}</span>
                 </Link>
 
                 {/* User Profile Dropdown */}
-                <div className="relative" ref={dropdownRef}>
+                <div className="relative shrink-0" ref={dropdownRef}>
                   <button
                     type="button"
                     onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                    className="flex items-center gap-2 p-1 rounded-full bg-slate-50 dark:bg-[#0A2552] border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-[#0E3572] text-slate-800 dark:text-slate-100 transition-all cursor-pointer focus:outline-none shadow-2xs"
+                    className={`flex items-center gap-1.5 xl:gap-2 px-2 xl:px-3 py-1 max-w-[130px] xl:max-w-[180px] rounded-full border transition-all cursor-pointer focus:outline-none shadow-2xs shrink-0 ${
+                      isDarkPage
+                        ? "bg-[#0A2552] border-white/10 hover:bg-[#0E3572] text-slate-100"
+                        : "bg-slate-50 dark:bg-[#0A2552] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-[#0E3572] text-slate-800 dark:text-slate-100"
+                    }`}
                     aria-expanded={userDropdownOpen}
                   >
                     <div
-                      className={`w-8 h-8 rounded-full p-[2px] flex items-center justify-center shrink-0 ${
+                      className={`w-7 h-7 xl:w-8 xl:h-8 rounded-full p-[2px] flex items-center justify-center shrink-0 ${
                         isPro
                           ? "bg-gradient-to-tr from-blue-500 via-indigo-400 to-purple-400"
                           : "bg-slate-300"
@@ -1032,17 +1074,17 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 hidden md:flex">
-                      <span className="text-xs font-bold max-w-[100px] truncate">
+                    <div className="flex items-center gap-1 min-w-0 hidden md:flex">
+                      <span className="text-xs font-bold truncate">
                         {displayName}
                       </span>
                       {isPro && (
-                        <span className="px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-300 text-[10px] font-bold">
+                        <span className="px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 border border-blue-300 dark:border-blue-700 text-[10px] font-bold shrink-0">
                           Pro
                         </span>
                       )}
                     </div>
-                    <svg className="w-3.5 h-3.5 text-slate-500 dark:text-slate-300 ltr:mr-1 rtl:ml-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5 text-slate-500 dark:text-slate-300 ltr:mr-0.5 rtl:ml-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                     </svg>
                   </button>
@@ -1145,13 +1187,13 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
               </div>
             ) : (
               /* GUEST STATE */
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 xl:gap-2 shrink-0">
                 <Link
                   href={signupLink}
-                  className="inline-flex items-center gap-2 bg-[#FACC15] hover:bg-amber-300 text-[#061838] font-bold rounded-full px-5 py-2.5 shadow-sm text-xs sm:text-sm transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 xl:gap-2 bg-[#FACC15] hover:bg-amber-300 text-[#061838] font-bold rounded-full px-3 xl:px-5 py-1.5 xl:py-2.5 shadow-sm text-xs sm:text-sm transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap shrink-0"
                 >
-                  <div className="w-5 h-5 rounded-full bg-[#061838] text-[#FACC15] flex items-center justify-center shrink-0 shadow-2xs">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                  <div className="w-4 h-4 xl:w-5 xl:h-5 rounded-full bg-[#061838] text-[#FACC15] flex items-center justify-center shrink-0 shadow-2xs">
+                    <svg className="w-2.5 h-2.5 xl:w-3 xl:h-3" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                     </svg>
                   </div>
@@ -1171,24 +1213,28 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
             )
           ) : (
             /* Subtle Skeleton to prevent flash */
-            <div className="w-32 h-8 rounded-full bg-slate-100 dark:bg-white/10 animate-pulse border border-slate-200 dark:border-white/10" />
+            <div className="w-24 xl:w-32 h-8 rounded-full bg-slate-100 dark:bg-white/10 animate-pulse border border-slate-200 dark:border-white/10 shrink-0" />
           )}
 
           {/* Theme Toggle (Desktop) */}
-          <ThemeToggle />
+          <div className="shrink-0 flex items-center justify-center">
+            <ThemeToggle />
+          </div>
 
           {/* Language Switcher Dropdown (Desktop) */}
-          <Suspense fallback={<LanguageSwitcherFallback activeLocale={activeLocale} />}>
-            <LanguageSwitcherDesktop activeLocale={activeLocale} isAr={isAr} />
-          </Suspense>
+          <div className="shrink-0">
+            <Suspense fallback={<LanguageSwitcherFallback activeLocale={activeLocale} />}>
+              <LanguageSwitcherDesktop activeLocale={activeLocale} isAr={isAr} />
+            </Suspense>
+          </div>
         </div>
 
         {/* Mobile Header Right (Quick Language Switcher, Theme Toggle & Menu Toggle) */}
-        <div className="lg:hidden flex items-center gap-1.5 sm:gap-2">
+        <div className="lg:hidden flex items-center gap-1.5 sm:gap-2 shrink-0">
           {authChecked && !user && (
             <Link
               href={signupLink}
-              className="sm:hidden inline-flex items-center gap-1 bg-[#FACC15] hover:bg-amber-300 text-[#061838] font-bold rounded-full px-3 py-1.5 text-[11px] shadow-xs whitespace-nowrap"
+              className="sm:hidden inline-flex items-center gap-1 bg-[#FACC15] hover:bg-amber-300 text-[#061838] font-bold rounded-full px-3 py-1.5 text-[11px] shadow-xs whitespace-nowrap shrink-0"
             >
               <span className="text-[#061838] font-bold">
                 {dict?.nav?.register ||
@@ -1205,10 +1251,12 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
           )}
 
           {/* Theme Toggle (Mobile) */}
-          <ThemeToggle compact />
+          <div className="shrink-0 flex items-center justify-center">
+            <ThemeToggle compact />
+          </div>
 
           {/* Quick Language Switcher (visible on mobile viewport < sm) */}
-          <div className="sm:hidden">
+          <div className="sm:hidden shrink-0">
             <Suspense fallback={<LanguageSwitcherHeaderMobileFallback activeLocale={activeLocale} />}>
               <LanguageSwitcherHeaderMobile
                 activeLocale={activeLocale}
@@ -1222,7 +1270,11 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-xl bg-slate-50 dark:bg-[#0A2552] text-slate-700 dark:text-white hover:text-slate-900 border border-slate-200 dark:border-white/10 focus:outline-none cursor-pointer shadow-2xs"
+            className={`p-2 rounded-xl border focus:outline-none cursor-pointer shadow-2xs shrink-0 ${
+              isDarkPage
+                ? "bg-[#0A2552] text-white border-white/10"
+                : "bg-slate-50 dark:bg-[#0A2552] text-slate-700 dark:text-white hover:text-slate-900 border-slate-200 dark:border-white/10"
+            }`}
             aria-label="Toggle Navigation Menu"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -1240,7 +1292,11 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
       {mobileMenuOpen && (
         <div
           dir={dir}
-          className="lg:hidden bg-white/98 dark:bg-slate-950/98 border-b border-slate-200 dark:border-slate-800/80 px-4 py-6 space-y-4 shadow-xl backdrop-blur-md animate-fadeIn max-h-[85vh] overflow-y-auto"
+          className={`lg:hidden border-b px-4 py-6 space-y-4 shadow-xl backdrop-blur-md animate-fadeIn max-h-[85vh] overflow-y-auto ${
+            isDarkPage
+              ? "bg-slate-950/98 border-slate-800/80"
+              : "bg-white/98 dark:bg-slate-950/98 border-slate-200 dark:border-slate-800/80"
+          }`}
         >
           {/* User Status in Mobile */}
           {user && (
@@ -1310,6 +1366,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                 user={user}
                 activeLocale={activeLocale}
                 onClose={() => setMobileMenuOpen(false)}
+                isDarkPage={isDarkPage}
               />
             }
           >
@@ -1328,6 +1385,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
               user={user}
               activeLocale={activeLocale}
               onClose={() => setMobileMenuOpen(false)}
+              isDarkPage={isDarkPage}
             />
           </Suspense>
 

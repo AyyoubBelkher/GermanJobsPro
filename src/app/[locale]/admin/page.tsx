@@ -28,6 +28,17 @@ interface CoverLetterItem {
   updatedAt: string;
 }
 
+interface UserActivity {
+  cvCount: number;
+  coverLetterCount: number;
+  atsRuns: number;
+  dossierRuns: number;
+  aiAssistRuns: number;
+  lastActiveAt: string;
+  hasUsedAnyTool: boolean;
+  isHotLead: boolean;
+}
+
 interface UserItem {
   id: string;
   email: string;
@@ -47,6 +58,14 @@ interface UserItem {
   };
   cvs?: CvItem[];
   coverLetters?: CoverLetterItem[];
+  activity?: UserActivity;
+}
+
+interface ActivitySummary {
+  totalAtsRuns: number;
+  totalDossierRuns: number;
+  activatedUsersCount: number;
+  hotLeadsCount: number;
 }
 
 interface PlatformStats {
@@ -56,6 +75,7 @@ interface PlatformStats {
   totalJobs?: number;
   totalCvs?: number;
   totalCoverLetters?: number;
+  activitySummary?: ActivitySummary;
 }
 
 interface PromoCodeItem {
@@ -69,6 +89,168 @@ interface PromoCodeItem {
   expiresAt: string | null;
   isActive: boolean;
   createdAt: string;
+}
+
+type FilterType =
+  | "ALL"
+  | "PRO"
+  | "SPRINT"
+  | "FREE"
+  | "TRIAL"
+  | "HOT_LEADS"
+  | "HAS_ATS"
+  | "HAS_CV"
+  | "HAS_DOSSIER"
+  | "INACTIVE";
+
+type SortType = "newest" | "newest_active" | "most_used" | "most_docs" | "lowest_credits";
+type OutreachTemplateKey = "hot_lead" | "cv_no_ats" | "new_signup" | "power_user";
+type OutreachLanguage = "ar" | "fr" | "en";
+
+function formatTimeAgo(isoString: string, isAr: boolean): string {
+  try {
+    const diffMs = Date.now() - new Date(isoString).getTime();
+    const diffSecs = Math.floor(diffMs / 1000);
+    const diffMins = Math.floor(diffSecs / 60);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffSecs < 60) return isAr ? "الآن" : "Just now";
+    if (diffMins < 60) return isAr ? `منذ ${diffMins} د` : `${diffMins}m ago`;
+    if (diffHours < 24) return isAr ? `منذ ${diffHours} س` : `${diffHours}h ago`;
+    if (diffDays === 1) return isAr ? "أمس" : "Yesterday";
+    if (diffDays < 30) return isAr ? `منذ ${diffDays} يوم` : `${diffDays}d ago`;
+    return new Date(isoString).toLocaleDateString(isAr ? "ar-MA" : "en-US", { month: "short", day: "numeric" });
+  } catch {
+    return isAr ? "غير معروف" : "Unknown";
+  }
+}
+
+function buildOutreachContent(
+  template: OutreachTemplateKey,
+  lang: OutreachLanguage,
+  user: UserItem
+): { subject: string; body: string } {
+  const userName =
+    user.name?.trim() ||
+    user.email.split("@")[0] ||
+    (lang === "ar" ? "عزيزي العضو" : lang === "fr" ? "Cher membre" : "Valued Member");
+
+  const cvs = user.activity?.cvCount ?? user._count?.cvs ?? 0;
+  const ats = user.activity?.atsRuns ?? 0;
+  const cls = user.activity?.coverLetterCount ?? user._count?.coverLetters ?? 0;
+  const dossier = user.activity?.dossierRuns ?? 0;
+
+  let activityDesc = "";
+  if (lang === "ar") {
+    const parts: string[] = [];
+    if (cvs > 0) parts.push(`أنشأت ${cvs} سيرة ذاتية`);
+    if (ats > 0) parts.push(`فحصت ATS ${ats} مرات`);
+    if (cls > 0) parts.push(`أنشأت ${cls} خطاب دافع`);
+    if (dossier > 0) parts.push(`جمعت ${dossier} ملف ترشح`);
+    activityDesc = parts.length > 0 ? parts.join(" • ") : "سجلت مؤخراً";
+  } else if (lang === "fr") {
+    const parts: string[] = [];
+    if (cvs > 0) parts.push(`${cvs} CV créé(s)`);
+    if (ats > 0) parts.push(`${ats} analyse(s) ATS`);
+    if (cls > 0) parts.push(`${cls} lettre(s) de motivation`);
+    if (dossier > 0) parts.push(`${dossier} dossier(s) compilé(s)`);
+    activityDesc = parts.length > 0 ? parts.join(" • ") : "inscription récente";
+  } else {
+    const parts: string[] = [];
+    if (cvs > 0) parts.push(`${cvs} CV(s) created`);
+    if (ats > 0) parts.push(`${ats} ATS run(s)`);
+    if (cls > 0) parts.push(`${cls} Cover Letter(s)`);
+    if (dossier > 0) parts.push(`${dossier} Dossier(s) compiled`);
+    activityDesc = parts.length > 0 ? parts.join(" • ") : "recent signup";
+  }
+
+  switch (template) {
+    case "hot_lead":
+      if (lang === "fr") {
+        return {
+          subject: "Offre spéciale pour finaliser votre dossier en Allemagne 🇩🇪",
+          body: `Bonjour ${userName},\n\nJ'ai remarqué votre progression active sur GermanJobsPro (${activityDesc}).\nPostuler auprès des employeurs allemands exige un dossier complet conforme aux normes DIN 5008.\n\nComme vous avez utilisé vos crédits d'essai, nous vous offrons une remise exclusive de 40% sur le pass PRO ou SPRINT avec le code : SPECIAL40\n\nN'hésitez pas à répondre directement à cet email si vous avez la moindre question concernant vos démarches en Allemagne.\n\nCordialement,\nL'équipe GermanJobsPro\nhttps://www.germanjobspro.com`,
+        };
+      }
+      if (lang === "en") {
+        return {
+          subject: "Exclusive offer to complete your German job application 🇩🇪",
+          body: `Hello ${userName},\n\nI noticed your great progress on GermanJobsPro (${activityDesc}).\nApplying for jobs or Ausbildung in Germany requires an ATS-optimized DIN 5008 CV and full application dossier.\n\nTo help you reach German employers faster, here is a 40% discount on our PRO pass:\nPromo Code: SPECIAL40\n\nFeel free to reply directly to this email if you need any guidance.\n\nBest regards,\nGermanJobsPro Team\nhttps://www.germanjobspro.com`,
+        };
+      }
+      return {
+        subject: "فرصة خاصة لإكمال ملف ترشيحك في ألمانيا 🇩🇪 [GermanJobsPro]",
+        body: `مرحباً ${userName}،\n\nلاحظت اهتمامك الكبير وبدايتك الموفقة في إعداد ملفك المهني عبر المنصة (${activityDesc}).\nنعلم أن التقديم على الوظائف أو التدريب المهني (Ausbildung) في ألمانيا يتطلب دقة واكتمالاً في السيرة الذاتية وخطاب الدافع وملف الترشح.\n\nلتسهيل وصولك لأصحاب العمل الألمان وإكمال ملفك بدون قيود، يسعدنا تقديم كود خصم خاص بنسبة 40% على باقة PRO أو SPRINT:\nكود الخصم: SPECIAL40\n\nأو إذا واجهتك أي صعوبة أو كان لديك استفسار حول معايير DIN 5008 أو ترجمة المسميات، يمكنك الرد مباشرة على هذا البريد وسأساعدك شخصياً.\n\nمع تحياتي وتمنياتي لك بالتوفيق،\nفريق GermanJobsPro\nhttps://www.germanjobspro.com`,
+      };
+
+    case "cv_no_ats":
+      if (lang === "fr") {
+        return {
+          subject: "Analysez votre CV avec notre ATS et créez votre Bewerbungsmappe 🇩🇪",
+          body: `Bonjour ${userName},\n\nFélicitations pour la création de votre CV sur GermanJobsPro (${activityDesc}) !\n\nPour maximiser vos chances d'entretien en Allemagne, deux étapes cruciales vous attendent :\n1. Analyser votre CV avec notre scanner ATS DIN 5008 pour éliminer les erreurs de format.\n2. Compiler votre Bewerbungsmappe (CV + lettre de motivation + diplômes) en un seul PDF professionnel.\n\nTestez l'analyseur ATS dès maintenant sur votre tableau de bord :\nhttps://www.germanjobspro.com/fr/dashboard/ats-analyzer\n\nBesoin d'aide ? Répondez simplement à ce message.\n\nL'équipe GermanJobsPro`,
+        };
+      }
+      if (lang === "en") {
+        return {
+          subject: "Run an ATS check and compile your German Bewerbungsmappe 🇩🇪",
+          body: `Hello ${userName},\n\nCongrats on creating your CV on GermanJobsPro (${activityDesc})!\n\nTo stand out to German recruiters, make sure to take the next key steps:\n1. Test your CV with our DIN 5008 ATS Analyzer to ensure it passes automated screening.\n2. Compile a complete Bewerbungsmappe (CV, Cover Letter, and Certificates in a single unified PDF).\n\nAccess the ATS Analyzer here:\nhttps://www.germanjobspro.com/en/dashboard/ats-analyzer\n\nLet us know if you need any assistance!\n\nGermanJobsPro Team`,
+        };
+      }
+      return {
+        subject: "هل ترغب في فحص سيرتك الذاتية وتجهيز ملف الترشح الكامل؟ 🇩🇪",
+        body: `مرحباً ${userName}،\n\nتهانينا على إنشاء سيرتك الذاتية على GermanJobsPro (${activityDesc})! 📄\n\nالخطوة الحاسمة التالية لقبول ملفك لدى الشركات الألمانية هي:\n1. فحص السيرة والتأكد من توافقها مع أنظمة الفرز الآلي (ATS DIN 5008).\n2. تجميع ملف ترشح كامل (Bewerbungsmappe) يضم السيرة وخطاب الدافع والشهادات في ملف PDF واحد منسق.\n\nيمكنك تجربة فاحص ATS واستوديو تجميع الملف مجاناً من لوحة تحكمك:\nhttps://www.germanjobspro.com/ar/dashboard/ats-analyzer\n\nإذا احتجت أي مساعدة أو مراجعة، تواصل معنا في أي وقت!\n\nفريق GermanJobsPro`,
+      };
+
+    case "new_signup":
+      if (lang === "fr") {
+        return {
+          subject: "Bienvenue sur GermanJobsPro ! Comment pouvons-nous vous aider ? 🇩🇪",
+          body: `Bonjour ${userName},\n\nBienvenue parmi nous sur GermanJobsPro ! 🎓\n\nQuel poste, domaine ou formation (Ausbildung) visez-vous en Allemagne ?\nRépondez simplement à cet email en nous précisant votre profil et votre niveau d'allemand, nous serons ravis de vous orienter gratuitement pour créer votre premier CV aux normes DIN 5008.\n\nBienvenue et plein succès,\nFondateur de GermanJobsPro\nhttps://www.germanjobspro.com`,
+        };
+      }
+      if (lang === "en") {
+        return {
+          subject: "Welcome to GermanJobsPro! How can we help you work in Germany? 🇩🇪",
+          body: `Hello ${userName},\n\nWelcome to GermanJobsPro! 🎓\n\nWhether you are targeting a direct job contract or vocational training (Ausbildung) in Germany, we are here to guide you step-by-step.\n\nWhich job title and industry are you aiming for? Do you need help formatting your CV to German DIN 5008 standards?\nReply directly to this email with your background and German language level, and we will happily assist you for free.\n\nWarm regards,\nFounder, GermanJobsPro\nhttps://www.germanjobspro.com`,
+        };
+      }
+      return {
+        subject: "أهلاً بك في GermanJobsPro! كيف يمكننا مساعدتك للعمل في ألمانيا؟ 🇩🇪",
+        body: `مرحباً ${userName}،\n\nيسعدنا انضمامك إلى GermanJobsPro! 🎓\nسواء كنت تبحث عن وظيفة مهنية، عقد عمل، أو تدريب مهني (Ausbildung) في ألمانيا، نحن هنا لنرشدك خطوة بخطوة.\n\nهل حددت المجال أو التخصص الذي تستهدفه؟ أو هل تواجه صعوبة في صياغة السيرة الذاتية باللغة الألمانية؟\nرد مباشرة على هذه الرسالة وأخبرنا باختصاصك ومستواك اللغوي، وسيسعدنا تقديم التوجيه المناسب لك مجاناً لمساعدتك في إنشاء أول سيرة ذاتية متوافقة.\n\nمرحباً بك مجدداً وتمنياتنا لك بالتوفيق،\nمؤسس GermanJobsPro\nhttps://www.germanjobspro.com`,
+      };
+
+    case "power_user":
+      if (lang === "fr") {
+        return {
+          subject: "Merci pour votre fidélité sur GermanJobsPro — Votre avis nous intéresse ! 🇩🇪",
+          body: `Bonjour ${userName},\n\nNous constatons votre utilisation active de nos outils pour votre candidature en Allemagne (${activityDesc}).\n\nVotre avis est précieux pour nous : comment se déroulent vos candidatures ? Avez-vous des suggestions d'améliorations ou des besoins pour vos prochains entretiens ?\n\nRépondez simplement à cet email, nous lisons chaque retour avec attention.\n\nMerci de votre confiance,\nL'équipe GermanJobsPro`,
+        };
+      }
+      if (lang === "en") {
+        return {
+          subject: "Thank you for being a power user of GermanJobsPro — We'd love your feedback! 🇩🇪",
+          body: `Hello ${userName},\n\nWe noticed your extensive activity on GermanJobsPro (${activityDesc}) and wanted to reach out personally.\n\nHow is your application journey going? Do you have any feedback or features you would love to see to help you in your interviews or visa process?\n\nFeel free to reply directly to this email.\n\nThank you for your trust and best of luck!\nGermanJobsPro Team`,
+        };
+      }
+      return {
+        subject: "شكراً لاستخدامك المكثف لـ GermanJobsPro — رأيك يهمنا جداً 🇩🇪",
+        body: `مرحباً ${userName}،\n\nنتابع بفخر نشاطك المميز على المنصة واستخدامك لمختلف أدوات تجهيز ملفات التقديم في ألمانيا (${activityDesc}).\n\nنسعى دائماً لتطوير المنصة لخدمتكم بأفضل صورة؛ كيف تسير تقديماتك مع أصحاب العمل الألمان؟ وهل لديك أي اقتراح لميزات إضافية تفيدك في مرحلة المقابلات أو التأشيرة؟\n\nإذا كانت تجربتك إيجابية، سيسعدنا أيضاً سماع رأيك. شكراً جزيلاً لثقتك بنا وبالتوفيق الدائم!\n\nفريق GermanJobsPro\nhttps://www.germanjobspro.com`,
+      };
+  }
+}
+
+function detectBestTemplate(user: UserItem): OutreachTemplateKey {
+  if (user.activity?.isHotLead) return "hot_lead";
+  const cvs = user.activity?.cvCount ?? user._count?.cvs ?? 0;
+  const ats = user.activity?.atsRuns ?? 0;
+  const dossier = user.activity?.dossierRuns ?? 0;
+  const isPaid = user.plan === "PRO" || user.plan === "SPRINT";
+
+  if (isPaid || cvs >= 3 || ats >= 3) return "power_user";
+  if (cvs > 0 && ats === 0 && dossier === 0) return "cv_no_ats";
+  if (!user.activity?.hasUsedAnyTool) return "new_signup";
+  return "hot_lead";
 }
 
 function UserAvatar({
@@ -149,8 +331,8 @@ export default function AdminDashboardPage() {
 
   // Search, Filter & Sort State
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [planFilter, setPlanFilter] = useState<"ALL" | "PRO" | "SPRINT" | "FREE" | "TRIAL" | "HOT_LEADS">("ALL");
-  const [sortBy, setSortBy] = useState<"newest" | "most_docs" | "lowest_credits">("newest");
+  const [planFilter, setPlanFilter] = useState<FilterType>("ALL");
+  const [sortBy, setSortBy] = useState<SortType>("newest");
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
@@ -177,11 +359,14 @@ export default function AdminDashboardPage() {
   // User Dossier Inspector Modal State
   const [selectedUserForDossier, setSelectedUserForDossier] = useState<UserItem | null>(null);
 
-  // Direct Resend Email Modal State
+  // Smart Contextual Outreach Modal State
   const [selectedUserForEmail, setSelectedUserForEmail] = useState<UserItem | null>(null);
   const [emailSubject, setEmailSubject] = useState<string>("");
   const [emailMessage, setEmailMessage] = useState<string>("");
   const [sendingEmail, setSendingEmail] = useState<boolean>(false);
+  const [activeTemplate, setActiveTemplate] = useState<OutreachTemplateKey>("hot_lead");
+  const [activeLang, setActiveLang] = useState<OutreachLanguage>("ar");
+  const [copiedToast, setCopiedToast] = useState<boolean>(false);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -201,14 +386,19 @@ export default function AdminDashboardPage() {
 
       const data = await res.json();
       setStats(
-        data.stats || {
-          totalUsers: 0,
-          proUsers: 0,
-          totalAiCredits: 0,
-          totalJobs: 0,
-          totalCvs: 0,
-          totalCoverLetters: 0,
-        }
+        data.stats
+          ? {
+              ...data.stats,
+              activitySummary: data.activitySummary,
+            }
+          : {
+              totalUsers: 0,
+              proUsers: 0,
+              totalAiCredits: 0,
+              totalJobs: 0,
+              totalCvs: 0,
+              totalCoverLetters: 0,
+            }
       );
       setUsers(data.users || []);
     } catch (err: unknown) {
@@ -575,39 +765,42 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Direct Resend Email Templates
-  const applyEmailTemplate = (templateType: "hot_lead" | "bonus_credits" | "cv_help") => {
-    const userName = selectedUserForEmail?.name || selectedUserForEmail?.email.split("@")[0] || "عزيزي المستخدم";
-
-    switch (templateType) {
-      case "hot_lead":
-        setEmailSubject("عرض ترقية استثنائي على باقة PRO في GermanJobsPro 🇩🇪");
-        setEmailMessage(
-          `مرحباً ${userName}،\n\nنلاحظ اهتمامك بتجهيز ملف ترشيحك والتقديم على الوظائف في ألمانيا.\nيسعدنا تقديم خصم حصري بنسبة 40% على باقة PRO أو SPRINT لتفعيل فحص ATS وتوليد خطابات الدافع Anschreiben بدون قيود.\n\nاستخدم كود الخصم: SPECIAL40 عند الترقية، أو تواصل معنا مباشرة لتفعيل حسابك.\n\nنتمنى لك كل التوفيق في مسيرتك المهنية!\nفريق GermanJobsPro`
-        );
-        break;
-      case "bonus_credits":
-        setEmailSubject("هدية رصيد إضافي مجاني لحسابك في GermanJobsPro 🎁");
-        setEmailMessage(
-          `مرحباً ${userName}،\n\nتقديراً لاستخدامك منصة GermanJobsPro، قمنا بإضافة رصيد إضافي مجاني لحسابك لتجربة أدوات الذكاء الاصطناعي وصياغة سيرتك الذاتية الألمانية DIN 5008.\n\nيمكنك تسجيل الدخول الآن ومتابعة بناء ملفك المهني.\n\nبالتوفيق!\nفريق GermanJobsPro`
-        );
-        break;
-      case "cv_help":
-        setEmailSubject("هل تحتاج مساعدة في إكمال سيرتك الذاتية الألمانية؟ 🇩🇪");
-        setEmailMessage(
-          `مرحباً ${userName}،\n\nلاحظنا أنك بدأت إعداد ملفك في GermanJobsPro ولم تكمله بعد.\nهل واجهت أي صعوبة في ترجمة المسميات أو تنسيق معايير DIN 5008 أو إرفاق شهادات اللغة؟\n\nنحن هنا لمساعدتك! يمكنك الرد مباشرة على هذا البريد لأي استفسار وسيسعدنا تقديم الدعم الكامل لك.\n\nمع خالص التحيات،\nفريق دعم GermanJobsPro`
-        );
-        break;
-    }
-  };
-
   const handleOpenEmailModal = (user: UserItem) => {
     setSelectedUserForEmail(user);
-    const userName = user.name || user.email.split("@")[0] || "عزيزي المستخدم";
-    setEmailSubject("عرض ترقية استثنائي على باقة PRO في GermanJobsPro 🇩🇪");
-    setEmailMessage(
-      `مرحباً ${userName}،\n\nنلاحظ اهتمامك بتجهيز ملف ترشيحك والتقديم على الوظائف في ألمانيا.\nيسعدنا تقديم خصم حصري بنسبة 40% على باقة PRO أو SPRINT لتفعيل فحص ATS وتوليد خطابات الدافع Anschreiben بدون قيود.\n\nاستخدم كود الخصم: SPECIAL40 عند الترقية، أو تواصل معنا مباشرة لتفعيل حسابك.\n\nنتمنى لك كل التوفيق في مسيرتك المهنية!\nفريق GermanJobsPro`
-    );
+    const bestTemplate = detectBestTemplate(user);
+    setActiveTemplate(bestTemplate);
+    const initialLang: OutreachLanguage = "ar";
+    setActiveLang(initialLang);
+    const content = buildOutreachContent(bestTemplate, initialLang, user);
+    setEmailSubject(content.subject);
+    setEmailMessage(content.body);
+  };
+
+  const handleSwitchTemplate = (template: OutreachTemplateKey) => {
+    if (!selectedUserForEmail) return;
+    setActiveTemplate(template);
+    const content = buildOutreachContent(template, activeLang, selectedUserForEmail);
+    setEmailSubject(content.subject);
+    setEmailMessage(content.body);
+  };
+
+  const handleSwitchLang = (lang: OutreachLanguage) => {
+    if (!selectedUserForEmail) return;
+    setActiveLang(lang);
+    const content = buildOutreachContent(activeTemplate, lang, selectedUserForEmail);
+    setEmailSubject(content.subject);
+    setEmailMessage(content.body);
+  };
+
+  const handleCopyMessage = async () => {
+    try {
+      const fullText = `${isAr ? "الموضوع: " : "Subject: "}${emailSubject}\n\n${emailMessage}`;
+      await navigator.clipboard.writeText(fullText);
+      setCopiedToast(true);
+      setTimeout(() => setCopiedToast(false), 2500);
+    } catch (err) {
+      console.error("Copy error:", err);
+    }
   };
 
   const handleSendEmail = async (e: React.FormEvent) => {
@@ -662,6 +855,10 @@ export default function AdminDashboardPage() {
     let free = 0;
     let trial = 0;
     let hotLeads = 0;
+    let hasAts = 0;
+    let hasCv = 0;
+    let hasDossier = 0;
+    let inactive = 0;
 
     for (const u of users) {
       const isPaidActive =
@@ -670,18 +867,24 @@ export default function AdminDashboardPage() {
 
       if (u.plan === "PRO" && isPaidActive) pro++;
       if (u.plan === "SPRINT" && isPaidActive) sprint++;
-      if (u.plan === "FREE") {
-        free++;
-        const hasSpentCredits = u.aiCredits === 0;
-        const hasCreatedDocs = ((u._count?.cvs || 0) > 0) || ((u._count?.coverLetters || 0) > 0);
-        if (hasSpentCredits || hasCreatedDocs) {
-          hotLeads++;
-        }
-      }
+      if (u.plan === "FREE") free++;
       if (u.plan === "TRIAL") trial++;
+
+      const cvs = u.activity?.cvCount ?? u._count?.cvs ?? 0;
+      const ats = u.activity?.atsRuns ?? 0;
+      const dossier = u.activity?.dossierRuns ?? 0;
+      const hasUsedAny = u.activity?.hasUsedAnyTool ?? (cvs > 0 || (u._count?.coverLetters ?? 0) > 0);
+
+      if (u.activity?.isHotLead || (u.plan === "FREE" && (u.aiCredits <= 1) && (cvs > 0 || ats > 0 || dossier > 0))) {
+        hotLeads++;
+      }
+      if (ats > 0) hasAts++;
+      if (cvs > 0) hasCv++;
+      if (dossier > 0) hasDossier++;
+      if (!hasUsedAny) inactive++;
     }
 
-    return { all, pro, sprint, free, trial, hotLeads };
+    return { all, pro, sprint, free, trial, hotLeads, hasAts, hasCv, hasDossier, inactive };
   }, [users]);
 
   // Filtered & Sorted Users List
@@ -700,29 +903,48 @@ export default function AdminDashboardPage() {
         (u.plan === "PRO" || u.plan === "SPRINT") &&
         (!u.planExpiresAt || new Date(u.planExpiresAt) > new Date());
 
-      if (planFilter === "PRO") {
-        return u.plan === "PRO" && isPaidActive;
-      }
-      if (planFilter === "SPRINT") {
-        return u.plan === "SPRINT" && isPaidActive;
-      }
-      if (planFilter === "FREE") {
-        return u.plan === "FREE";
-      }
-      if (planFilter === "TRIAL") {
-        return u.plan === "TRIAL";
-      }
+      if (planFilter === "PRO") return u.plan === "PRO" && isPaidActive;
+      if (planFilter === "SPRINT") return u.plan === "SPRINT" && isPaidActive;
+      if (planFilter === "FREE") return u.plan === "FREE";
+      if (planFilter === "TRIAL") return u.plan === "TRIAL";
+
+      const cvs = u.activity?.cvCount ?? u._count?.cvs ?? 0;
+      const ats = u.activity?.atsRuns ?? 0;
+      const dossier = u.activity?.dossierRuns ?? 0;
+      const hasUsedAny = u.activity?.hasUsedAnyTool ?? (cvs > 0 || (u._count?.coverLetters ?? 0) > 0);
+
       if (planFilter === "HOT_LEADS") {
-        const isFree = u.plan === "FREE";
-        const hasSpentCredits = u.aiCredits === 0;
-        const hasCreatedDocs = ((u._count?.cvs || 0) > 0) || ((u._count?.coverLetters || 0) > 0);
-        return isFree && (hasSpentCredits || hasCreatedDocs);
+        return Boolean(u.activity?.isHotLead || (u.plan === "FREE" && (u.aiCredits <= 1) && (cvs > 0 || ats > 0 || dossier > 0)));
       }
+      if (planFilter === "HAS_ATS") return ats > 0;
+      if (planFilter === "HAS_CV") return cvs > 0;
+      if (planFilter === "HAS_DOSSIER") return dossier > 0;
+      if (planFilter === "INACTIVE") return !hasUsedAny;
 
       return true;
     });
 
     list.sort((a, b) => {
+      if (sortBy === "newest_active") {
+        const dateA = new Date(a.activity?.lastActiveAt || a.createdAt).getTime();
+        const dateB = new Date(b.activity?.lastActiveAt || b.createdAt).getTime();
+        return dateB - dateA;
+      }
+      if (sortBy === "most_used") {
+        const totalA =
+          (a.activity?.atsRuns ?? 0) +
+          (a.activity?.dossierRuns ?? 0) +
+          (a.activity?.cvCount ?? a._count?.cvs ?? 0) +
+          (a.activity?.coverLetterCount ?? a._count?.coverLetters ?? 0) +
+          (a.activity?.aiAssistRuns ?? 0);
+        const totalB =
+          (b.activity?.atsRuns ?? 0) +
+          (b.activity?.dossierRuns ?? 0) +
+          (b.activity?.cvCount ?? b._count?.cvs ?? 0) +
+          (b.activity?.coverLetterCount ?? b._count?.coverLetters ?? 0) +
+          (b.activity?.aiAssistRuns ?? 0);
+        return totalB - totalA;
+      }
       if (sortBy === "most_docs") {
         const docsA = (a._count?.cvs || 0) + (a._count?.coverLetters || 0);
         const docsB = (b._count?.cvs || 0) + (b._count?.coverLetters || 0);
@@ -731,7 +953,7 @@ export default function AdminDashboardPage() {
       if (sortBy === "lowest_credits") {
         return a.aiCredits - b.aiCredits;
       }
-      // default: newest
+      // default: newest joined
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
@@ -919,9 +1141,22 @@ export default function AdminDashboardPage() {
                 {isAr ? "عضو" : "users"}
               </span>
             </div>
-            <div className="mt-3 flex items-center gap-1.5 text-[11px] text-slate-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>{isAr ? "قاعدة بيانات المستخدمين الحية" : "Live database"}</span>
+            <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>{isAr ? "قاعدة بيانات حية" : "Live DB"}</span>
+              </div>
+              <span className="font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                {stats.totalUsers > 0
+                  ? Math.round(
+                      ((stats.activitySummary?.activatedUsersCount ??
+                        users.filter((u) => u.activity?.hasUsedAnyTool).length) /
+                        stats.totalUsers) *
+                        100
+                    )
+                  : 0}
+                % {isAr ? "مفعّلون" : "activated"}
+              </span>
             </div>
           </div>
 
@@ -996,10 +1231,21 @@ export default function AdminDashboardPage() {
                 {isAr ? "وظيفة نشطة" : "active jobs"}
               </span>
             </div>
-            <div className="mt-3 text-[11px] text-slate-300 font-medium truncate">
-              {isAr
-                ? `إجمالي الملفات المنشأة: ${stats.totalCvs ?? 0} سيرة ذاتية • ${stats.totalCoverLetters ?? 0} خطاب دافع`
-                : `Created Docs: ${stats.totalCvs ?? 0} CVs • ${stats.totalCoverLetters ?? 0} Cover Letters`}
+            <div className="mt-3 text-[11px] space-y-1">
+              <div className="text-slate-300 font-medium truncate">
+                {isAr
+                  ? `📄 ${stats.totalCvs ?? 0} سيرة ذاتية • ✉️ ${stats.totalCoverLetters ?? 0} خطاب دافع`
+                  : `📄 ${stats.totalCvs ?? 0} CVs • ✉️ ${stats.totalCoverLetters ?? 0} CLs`}
+              </div>
+              <div className="text-slate-400 truncate flex items-center gap-2">
+                <span className="text-violet-400 font-semibold">
+                  🎯 {stats.activitySummary?.totalAtsRuns ?? 0} {isAr ? "تحليل ATS" : "ATS"}
+                </span>
+                <span>•</span>
+                <span className="text-teal-400 font-semibold">
+                  📁 {stats.activitySummary?.totalDossierRuns ?? 0} {isAr ? "ملف ترشح" : "Dossiers"}
+                </span>
+              </div>
             </div>
           </div>
         </section>
@@ -1032,61 +1278,97 @@ export default function AdminDashboardPage() {
               )}
             </div>
 
-            {/* Smart Sorting Dropdown & Plan Filter Pills with Dynamic Counts */}
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Sort By Dropdown */}
-              <div className="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
-                <span className="text-xs text-slate-400 font-semibold">
-                  {isAr ? "ترتيب:" : "Sort:"}
-                </span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as "newest" | "most_docs" | "lowest_credits")}
-                  className="bg-transparent text-xs font-bold text-slate-200 focus:outline-none cursor-pointer"
-                >
-                  <option value="newest" className="bg-slate-900 text-white">
-                    {isAr ? "الأحدث تسجيلاً" : "Newest Joined"}
-                  </option>
-                  <option value="most_docs" className="bg-slate-900 text-white">
-                    {isAr ? "الأكثر إنشاءً للملفات" : "Most Documents"}
-                  </option>
-                  <option value="lowest_credits" className="bg-slate-900 text-white">
-                    {isAr ? "الأقل رصيداً" : "Lowest Credits"}
-                  </option>
-                </select>
-              </div>
+            {/* Smart Sorting Dropdown */}
+            <div className="flex items-center gap-1.5 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 shrink-0">
+              <span className="text-xs text-slate-400 font-semibold">
+                {isAr ? "ترتيب:" : "Sort:"}
+              </span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortType)}
+                className="bg-transparent text-xs font-bold text-slate-200 focus:outline-none cursor-pointer"
+              >
+                <option value="newest_active" className="bg-slate-900 text-white">
+                  {isAr ? "⚡ الأحدث نشاطاً" : "⚡ Recently Active"}
+                </option>
+                <option value="most_used" className="bg-slate-900 text-white">
+                  {isAr ? "🔥 الأكثر استخداماً" : "🔥 Most Active Usage"}
+                </option>
+                <option value="newest" className="bg-slate-900 text-white">
+                  {isAr ? "الأحدث تسجيلاً" : "Newest Joined"}
+                </option>
+                <option value="most_docs" className="bg-slate-900 text-white">
+                  {isAr ? "الأكثر إنشاءً للملفات" : "Most Documents"}
+                </option>
+                <option value="lowest_credits" className="bg-slate-900 text-white">
+                  {isAr ? "الأقل رصيداً" : "Lowest Credits"}
+                </option>
+              </select>
+            </div>
+          </div>
 
-              {/* Filter Pills with Live Counts */}
-              <div className="flex flex-wrap items-center gap-1.5">
-                {[
-                  { id: "ALL", label: isAr ? `الكل (${filterCounts.all})` : `All (${filterCounts.all})` },
-                  { id: "PRO", label: `PRO ⭐ (${filterCounts.pro})` },
-                  { id: "SPRINT", label: `⚡ SPRINT (${filterCounts.sprint})` },
-                  { id: "FREE", label: isAr ? `مجاني (${filterCounts.free})` : `Free (${filterCounts.free})` },
-                  { id: "TRIAL", label: isAr ? `تجريبي (${filterCounts.trial})` : `Trial (${filterCounts.trial})` },
-                  { id: "HOT_LEADS", label: isAr ? `🔥 استنفدوا الرصيد (${filterCounts.hotLeads})` : `🔥 Hot Leads (${filterCounts.hotLeads})` },
-                ].map((filterOption) => {
-                  const isActive = planFilter === filterOption.id;
+          {/* Filter Pills: Row 1 (Plans & Hot Leads) & Row 2 (Behavioral CRM) */}
+          <div className="space-y-2 pt-2 border-t border-slate-800/40">
+            {/* Row 1: Plan & Intent Filters */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-slate-500 ml-1">
+                {isAr ? "الخطة:" : "Plan:"}
+              </span>
+              {[
+                { id: "ALL" as FilterType, label: isAr ? `الكل (${filterCounts.all})` : `All (${filterCounts.all})` },
+                { id: "PRO" as FilterType, label: `PRO ⭐ (${filterCounts.pro})` },
+                { id: "SPRINT" as FilterType, label: `⚡ SPRINT (${filterCounts.sprint})` },
+                { id: "FREE" as FilterType, label: isAr ? `مجاني (${filterCounts.free})` : `Free (${filterCounts.free})` },
+                { id: "TRIAL" as FilterType, label: isAr ? `تجريبي (${filterCounts.trial})` : `Trial (${filterCounts.trial})` },
+                { id: "HOT_LEADS" as FilterType, label: isAr ? `🔥 عملاء محتملون (${filterCounts.hotLeads})` : `🔥 Hot Leads (${filterCounts.hotLeads})` },
+              ].map((f) => {
+                const isActive = planFilter === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => setPlanFilter(f.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                      isActive
+                        ? f.id === "HOT_LEADS"
+                          ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 border border-amber-400 font-extrabold"
+                          : "bg-blue-600 text-white shadow-md shadow-blue-600/30 border border-blue-500"
+                        : f.id === "HOT_LEADS"
+                        ? "bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 border border-amber-500/30"
+                        : "bg-slate-950 text-slate-400 hover:text-white border border-slate-800 hover:border-slate-700"
+                    }`}
+                  >
+                    <span>{f.label}</span>
+                  </button>
+                );
+              })}
+            </div>
 
-                  return (
-                    <button
-                      key={filterOption.id}
-                      onClick={() => setPlanFilter(filterOption.id as any)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                        isActive
-                          ? filterOption.id === "HOT_LEADS"
-                            ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 border border-amber-400"
-                            : "bg-blue-600 text-white shadow-md shadow-blue-600/30 border border-blue-500"
-                          : filterOption.id === "HOT_LEADS"
-                          ? "bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 border border-amber-500/30"
-                          : "bg-slate-950 text-slate-400 hover:text-white border border-slate-800 hover:border-slate-700"
-                      }`}
-                    >
-                      <span>{filterOption.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+            {/* Row 2: Behavioral CRM Filters */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-slate-500 ml-1">
+                {isAr ? "السلوك:" : "Behavior:"}
+              </span>
+              {[
+                { id: "HAS_ATS" as FilterType, label: isAr ? `🎯 فحصوا ATS (${filterCounts.hasAts})` : `🎯 ATS Checked (${filterCounts.hasAts})` },
+                { id: "HAS_CV" as FilterType, label: isAr ? `📄 أنشأوا CV (${filterCounts.hasCv})` : `📄 Created CV (${filterCounts.hasCv})` },
+                { id: "HAS_DOSSIER" as FilterType, label: isAr ? `📁 أنشأوا ملف ترشح (${filterCounts.hasDossier})` : `📁 Dossier Built (${filterCounts.hasDossier})` },
+                { id: "INACTIVE" as FilterType, label: isAr ? `💤 لم يبدؤوا بعد (${filterCounts.inactive})` : `💤 Inactive (${filterCounts.inactive})` },
+              ].map((f) => {
+                const isActive = planFilter === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => setPlanFilter(f.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                      isActive
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-600/30 border border-blue-500"
+                        : "bg-slate-950/70 text-slate-400 hover:text-white border border-slate-800 hover:border-slate-700"
+                    }`}
+                  >
+                    <span>{f.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -1144,8 +1426,8 @@ export default function AdminDashboardPage() {
                     <th className="py-4 px-6">{isAr ? "المستخدم" : "User"}</th>
                     <th className="py-4 px-6">{isAr ? "الخطة والحالة" : "Plan & Status"}</th>
                     <th className="py-4 px-6">{isAr ? "رصيد AI" : "AI Credits"}</th>
-                    <th className="py-4 px-6">{isAr ? "الملفات المنشأة" : "Generated Docs"}</th>
-                    <th className="py-4 px-6">{isAr ? "تاريخ التسجيل" : "Joined"}</th>
+                    <th className="py-4 px-6">{isAr ? "مسار المستخدم (النشاط)" : "User Journey & Activity"}</th>
+                    <th className="py-4 px-6">{isAr ? "تاريخ التسجيل والنشاط" : "Joined & Activity"}</th>
                     <th className="py-4 px-6 text-center">{isAr ? "إجراءات سريعة" : "Quick Actions"}</th>
                   </tr>
                 </thead>
@@ -1205,6 +1487,12 @@ export default function AdminDashboardPage() {
                                     SPRINT
                                   </span>
                                 )}
+                                {user.activity?.isHotLead && (
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold animate-pulse inline-flex items-center gap-1">
+                                    <span>🔥</span>
+                                    <span>Hot Lead</span>
+                                  </span>
+                                )}
 
                                 {targetProfession && (
                                   <span
@@ -1218,19 +1506,19 @@ export default function AdminDashboardPage() {
                               </div>
 
                               <div className="flex items-center gap-2.5 flex-wrap">
-                                <span className="text-xs text-slate-400 font-mono truncate">
+                                <bdi dir="ltr" className="text-xs text-slate-400 font-mono truncate">
                                   {user.email}
-                                </span>
+                                </bdi>
                                 
-                                {/* In-App Direct Resend Email Trigger */}
+                                {/* Smart Outreach Trigger */}
                                 <button
                                   type="button"
                                   onClick={() => handleOpenEmailModal(user)}
                                   className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 hover:text-amber-300 hover:underline transition cursor-pointer"
-                                  title="إرسال رسالة رسمية أو عرض خاص للمستخدم عبر Resend"
+                                  title="فتح نافذة التواصل الذكي وإرسال رسالة مخصصة لهذا المستخدم"
                                 >
-                                  <span>✉️</span>
-                                  <span>{isAr ? "عرض خاص" : "Send Email"}</span>
+                                  <span>💬</span>
+                                  <span>{isAr ? "تواصل ذكي" : "Smart Outreach"}</span>
                                 </button>
                               </div>
                             </div>
@@ -1311,31 +1599,106 @@ export default function AdminDashboardPage() {
                         <td className="py-4 px-6">
                           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-300 font-mono font-bold text-xs">
                             <span>⚡</span>
-                            <span>{user.aiCredits}</span>
+                            <bdi dir="ltr">{user.aiCredits}</bdi>
                             <span className="text-[10px] text-blue-400/70 font-sans">{isAr ? "رصيد" : "credits"}</span>
                           </div>
                         </td>
 
-                        {/* Clickable Created Documents badges -> Opens Dossier Inspector */}
+                        {/* 4-Step User Journey Matrix (CV, ATS, CL, Dossier) */}
                         <td className="py-4 px-6">
                           <button
                             type="button"
                             onClick={() => setSelectedUserForDossier(user)}
-                            className="flex items-center gap-2 text-xs text-slate-400 hover:text-white transition cursor-pointer group"
-                            title="اضغط لمعاينة السير الذاتية وخطابات الدافع لهذا المستخدم"
+                            className="flex items-center gap-1.5 flex-wrap text-xs cursor-pointer group"
+                            title={isAr ? "اضغط لمعاينة تفاصيل الملفات والأنشطة لهذا المستخدم" : "Click to inspect user dossier & documents"}
                           >
-                            <span className="px-2 py-0.5 rounded bg-slate-950 group-hover:bg-blue-600/20 border border-slate-800 group-hover:border-blue-500/40 font-mono text-slate-300 transition">
-                              📄 {user._count?.cvs ?? 0} CV
-                            </span>
-                            <span className="px-2 py-0.5 rounded bg-slate-950 group-hover:bg-purple-600/20 border border-slate-800 group-hover:border-purple-500/40 font-mono text-slate-300 transition">
-                              ✉️ {user._count?.coverLetters ?? 0} CL
-                            </span>
+                            {/* CV (n) */}
+                            {(() => {
+                              const cvCount = user.activity?.cvCount ?? user._count?.cvs ?? 0;
+                              return (
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg font-mono text-[11px] font-semibold transition border ${
+                                    cvCount > 0
+                                      ? "bg-blue-500/15 text-blue-300 border-blue-500/30 group-hover:border-blue-400/60"
+                                      : "bg-slate-950/60 text-slate-500 border-slate-800/80"
+                                  }`}
+                                >
+                                  <span>📄</span>
+                                  <span>CV</span>
+                                  <bdi dir="ltr">({cvCount})</bdi>
+                                </span>
+                              );
+                            })()}
+
+                            {/* ATS (n) */}
+                            {(() => {
+                              const atsCount = user.activity?.atsRuns ?? 0;
+                              return (
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg font-mono text-[11px] font-semibold transition border ${
+                                    atsCount > 0
+                                      ? "bg-violet-500/15 text-violet-300 border-violet-500/30 group-hover:border-violet-400/60"
+                                      : "bg-slate-950/60 text-slate-500 border-slate-800/80"
+                                  }`}
+                                >
+                                  <span>🎯</span>
+                                  <span>ATS</span>
+                                  <bdi dir="ltr">({atsCount})</bdi>
+                                </span>
+                              );
+                            })()}
+
+                            {/* CL (n) */}
+                            {(() => {
+                              const clCount = user.activity?.coverLetterCount ?? user._count?.coverLetters ?? 0;
+                              return (
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg font-mono text-[11px] font-semibold transition border ${
+                                    clCount > 0
+                                      ? "bg-amber-500/15 text-amber-300 border-amber-500/30 group-hover:border-amber-400/60"
+                                      : "bg-slate-950/60 text-slate-500 border-slate-800/80"
+                                  }`}
+                                >
+                                  <span>✉️</span>
+                                  <span>CL</span>
+                                  <bdi dir="ltr">({clCount})</bdi>
+                                </span>
+                              );
+                            })()}
+
+                            {/* Dossier (n) */}
+                            {(() => {
+                              const dossierCount = user.activity?.dossierRuns ?? 0;
+                              return (
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg font-mono text-[11px] font-semibold transition border ${
+                                    dossierCount > 0
+                                      ? "bg-teal-500/15 text-teal-300 border-teal-500/30 group-hover:border-teal-400/60"
+                                      : "bg-slate-950/60 text-slate-500 border-slate-800/80"
+                                  }`}
+                                >
+                                  <span>📁</span>
+                                  <span>Dossier</span>
+                                  <bdi dir="ltr">({dossierCount})</bdi>
+                                </span>
+                              );
+                            })()}
                           </button>
                         </td>
 
-                        {/* Joined Date */}
-                        <td className="py-4 px-6 text-xs text-slate-400 font-mono">
-                          {formattedDate}
+                        {/* Joined Date & Relative Last Active */}
+                        <td className="py-4 px-6 text-xs text-slate-400">
+                          <div className="space-y-1">
+                            <div className="font-mono text-slate-300">
+                              <bdi dir="ltr">{formattedDate}</bdi>
+                            </div>
+                            {user.activity?.lastActiveAt && (
+                              <div className="text-[11px] text-slate-500 flex items-center gap-1">
+                                <span>⚡</span>
+                                <span>{formatTimeAgo(user.activity.lastActiveAt, isAr)}</span>
+                              </div>
+                            )}
+                          </div>
                         </td>
 
                         {/* High-Impact Actions */}
@@ -1645,19 +2008,22 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* MODAL 2: DIRECT RESEND EMAIL MODAL WITH 3 TEMPLATES */}
+      {/* MODAL 2: SMART CONTEXTUAL OUTREACH MODAL (BEHAVIORAL CRM) */}
       {selectedUserForEmail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 sm:p-8 space-y-6 text-slate-100">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 sm:p-8 space-y-5 text-slate-100">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <div className="space-y-1">
                 <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
-                  <span>✉️</span>
-                  <span>{isAr ? "إرسال رسالة رسمية عبر Resend" : "Send Official Email via Resend"}</span>
+                  <span>💬</span>
+                  <span>{isAr ? "التواصل الذكي مع المستخدم (Outreach CRM)" : "Smart Outreach CRM"}</span>
                 </h3>
                 <p className="text-xs text-slate-400">
-                  {isAr ? `المستلم: ${selectedUserForEmail.name || ""} (${selectedUserForEmail.email})` : `Recipient: ${selectedUserForEmail.email}`}
+                  {isAr ? "المستلم: " : "Recipient: "}
+                  <span className="text-slate-200 font-semibold">{selectedUserForEmail.name || (isAr ? "بدون اسم" : "Unnamed")}</span>
+                  {" "}
+                  <bdi dir="ltr" className="text-slate-400 font-mono">({selectedUserForEmail.email})</bdi>
                 </p>
               </div>
 
@@ -1669,38 +2035,144 @@ export default function AdminDashboardPage() {
               </button>
             </div>
 
-            {/* Quick 1-Click Templates */}
+            {/* Behavioral Activity Summary Banner */}
+            {(() => {
+              const cvs = selectedUserForEmail.activity?.cvCount ?? selectedUserForEmail._count?.cvs ?? 0;
+              const ats = selectedUserForEmail.activity?.atsRuns ?? 0;
+              const cls = selectedUserForEmail.activity?.coverLetterCount ?? selectedUserForEmail._count?.coverLetters ?? 0;
+              const dossiers = selectedUserForEmail.activity?.dossierRuns ?? 0;
+              const credits = selectedUserForEmail.aiCredits;
+              const plan = selectedUserForEmail.plan;
+
+              return (
+                <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="space-y-1">
+                    <div className="text-[11px] font-semibold text-slate-400">
+                      {isAr ? "سجل نشاط المستخدم في المنصة:" : "User Platform Summary:"}
+                    </div>
+                    <div className="text-slate-200 font-medium flex items-center gap-2 flex-wrap">
+                      <span className="text-blue-300 font-mono">📄 {cvs} CV</span>
+                      <span>•</span>
+                      <span className="text-violet-300 font-mono">🎯 {ats} ATS</span>
+                      <span>•</span>
+                      <span className="text-amber-300 font-mono">✉️ {cls} CL</span>
+                      <span>•</span>
+                      <span className="text-teal-300 font-mono">📁 {dossiers} Dossier</span>
+                      <span>•</span>
+                      <span className="text-cyan-300 font-mono">⚡ {credits} {isAr ? "رصيد" : "credits"}</span>
+                      <span>•</span>
+                      <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold">
+                        {plan}
+                      </span>
+                    </div>
+                  </div>
+                  {selectedUserForEmail.activity?.isHotLead && (
+                    <div className="shrink-0">
+                      <span className="px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-bold animate-pulse inline-flex items-center gap-1">
+                        <span>🔥</span>
+                        <span>Hot Lead</span>
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Language Switcher */}
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="text-xs font-bold text-slate-300">
+                {isAr ? "لغة الرسالة:" : "Message Language:"}
+              </div>
+              <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                {[
+                  { id: "ar" as OutreachLanguage, label: "العربية" },
+                  { id: "fr" as OutreachLanguage, label: "Français" },
+                  { id: "en" as OutreachLanguage, label: "English" },
+                ].map((lang) => (
+                  <button
+                    key={lang.id}
+                    type="button"
+                    onClick={() => handleSwitchLang(lang.id)}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      activeLang === lang.id
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {lang.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 4 Contextual Templates Selector */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-300 block">
-                {isAr ? "⚡ قوالب جاهزة بضغطة واحدة:" : "⚡ 1-Click Quick Templates:"}
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => applyEmailTemplate("hot_lead")}
-                  className="p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold text-right transition cursor-pointer flex flex-col gap-1"
-                >
-                  <span>🔥 عرض ترقية خاص</span>
-                  <span className="text-[10px] text-amber-400/70 font-normal">عرض 40% على PRO / SPRINT</span>
-                </button>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-300">
+                  {isAr ? "⚡ اختيار القالب الذكي المخصص:" : "⚡ Personalized Outreach Templates:"}
+                </label>
+                <span className="text-[11px] text-slate-500">
+                  {isAr ? "تم تحديد الأنسب تلقائياً" : "Auto-detected based on activity"}
+                </span>
+              </div>
 
-                <button
-                  type="button"
-                  onClick={() => applyEmailTemplate("bonus_credits")}
-                  className="p-2.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs font-bold text-right transition cursor-pointer flex flex-col gap-1"
-                >
-                  <span>🎁 هدية رصيد إضافي</span>
-                  <span className="text-[10px] text-blue-400/70 font-normal">رصيد مجاني لتجربة الأدوات</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => applyEmailTemplate("cv_help")}
-                  className="p-2.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 text-xs font-bold text-right transition cursor-pointer flex flex-col gap-1"
-                >
-                  <span>👋 مساعدة في إكمال السيرة</span>
-                  <span className="text-[10px] text-purple-400/70 font-normal">مساعدة في ترجمة وتنسيق DIN</span>
-                </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[
+                  {
+                    key: "hot_lead" as OutreachTemplateKey,
+                    icon: "🔥",
+                    title: isAr ? "عميل محتمل (استنفد الرصيد)" : "Hot Lead (0 credits left)",
+                    desc: isAr ? "عرض ترقية وخصم 40% لإتمام التقديم" : "Special discount & bonus credits",
+                  },
+                  {
+                    key: "cv_no_ats" as OutreachTemplateKey,
+                    icon: "🎯",
+                    title: isAr ? "أنشأ CV بدون فحص ATS" : "Created CV, No ATS Yet",
+                    desc: isAr ? "دعوة لفحص DIN 5008 وإنشاء ملف ترشح" : "Invite to DIN 5008 & Dossier",
+                  },
+                  {
+                    key: "new_signup" as OutreachTemplateKey,
+                    icon: "👋",
+                    title: isAr ? "مستخدم جديد لم يبدأ بعد" : "New / Inactive Signup",
+                    desc: isAr ? "ترحيب ودليل سريع لإنشاء أول CV ألماني" : "Welcome & quick onboarding guide",
+                  },
+                  {
+                    key: "power_user" as OutreachTemplateKey,
+                    icon: "⭐",
+                    title: isAr ? "مستخدم نشط (ملف ترشح جاهز)" : "Power User (Dossier Ready)",
+                    desc: isAr ? "متابعة التقديم على وكالة العمل BA" : "Follow-up on BA German jobs",
+                  },
+                ].map((tpl) => {
+                  const isSelected = activeTemplate === tpl.key;
+                  const isRecommended = detectBestTemplate(selectedUserForEmail) === tpl.key;
+                  return (
+                    <button
+                      key={tpl.key}
+                      type="button"
+                      onClick={() => handleSwitchTemplate(tpl.key)}
+                      className={`p-3 rounded-2xl border text-right transition cursor-pointer flex items-start gap-2.5 ${
+                        isSelected
+                          ? "bg-blue-600/15 border-blue-500 text-white shadow-md shadow-blue-500/10"
+                          : "bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
+                      }`}
+                    >
+                      <span className="text-base shrink-0">{tpl.icon}</span>
+                      <div className="space-y-0.5 min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className={`text-xs font-bold truncate ${isSelected ? "text-blue-300" : "text-slate-200"}`}>
+                            {tpl.title}
+                          </span>
+                          {isRecommended && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold shrink-0">
+                              {isAr ? "مقترح" : "Suggested"}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 truncate">{tpl.desc}</p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -1720,11 +2192,16 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-400 block">
-                  {isAr ? "نص الرسالة (Message Content):" : "Message Body:"}
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-400 block">
+                    {isAr ? "نص الرسالة (Message Content):" : "Message Body:"}
+                  </label>
+                  <span className="text-[11px] text-slate-500">
+                    {isAr ? "يمكنك التعديل بحرية قبل الإرسال" : "Editable before sending"}
+                  </span>
+                </div>
                 <textarea
-                  rows={7}
+                  rows={8}
                   required
                   value={emailMessage}
                   onChange={(e) => setEmailMessage(e.target.value)}
@@ -1732,12 +2209,36 @@ export default function AdminDashboardPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-between pt-2">
-                <span className="text-[11px] text-slate-500">
-                  {isAr ? "يتم الإرسال رسمياً من: GermanJobsPro <support@germanjobspro.com>" : "Sent via Resend from GermanJobsPro"}
-                </span>
+              {/* Outreach Dispatch Toolbar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-800">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Copy Message button */}
+                  <button
+                    type="button"
+                    onClick={handleCopyMessage}
+                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                    title="نسخ الموضوع والنص إلى الحافظة"
+                  >
+                    <span>{copiedToast ? "✓" : "📋"}</span>
+                    <span>
+                      {copiedToast
+                        ? (isAr ? "تم النسخ بنجاح!" : "Copied!")
+                        : (isAr ? "نسخ الرسالة" : "Copy Message")}
+                    </span>
+                  </button>
 
-                <div className="flex items-center gap-2">
+                  {/* Mailto button */}
+                  <a
+                    href={`mailto:${selectedUserForEmail.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailMessage)}`}
+                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                    title="فتح في تطبيق البريد الخاص بك (Gmail/Outlook/Apple Mail)"
+                  >
+                    <span>✉️</span>
+                    <span>{isAr ? "فتح في البريد (mailto)" : "Open in Mail Client"}</span>
+                  </a>
+                </div>
+
+                <div className="flex items-center gap-2 justify-end">
                   <button
                     type="button"
                     onClick={() => setSelectedUserForEmail(null)}
@@ -1749,7 +2250,7 @@ export default function AdminDashboardPage() {
                   <button
                     type="submit"
                     disabled={sendingEmail}
-                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-md shadow-blue-600/30"
+                    className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-md shadow-blue-600/30"
                   >
                     {sendingEmail ? (
                       <>
@@ -1758,8 +2259,8 @@ export default function AdminDashboardPage() {
                       </>
                     ) : (
                       <>
-                        <span>✉️</span>
-                        <span>{isAr ? "إرسال الآن عبر Resend" : "Send Now via Resend"}</span>
+                        <span>🚀</span>
+                        <span>{isAr ? "إرسال الآن عبر Resend" : "Send via Resend"}</span>
                       </>
                     )}
                   </button>
