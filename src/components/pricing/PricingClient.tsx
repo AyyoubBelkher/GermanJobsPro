@@ -3,6 +3,42 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { GUMROAD_VARIANTS } from "@/lib/gumroad";
+import { formatBidiInlineText } from "@/lib/courseUtils";
+
+function PricingCheckIcon({ className }: { className: string }) {
+  return (
+    <svg
+      className={`w-4 h-4 shrink-0 mt-0.5 ${className}`}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
+function PricingXIcon({ className }: { className: string }) {
+  return (
+    <svg
+      className={`w-4 h-4 shrink-0 mt-0.5 ${className}`}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  );
+}
 
 interface PricingClientProps {
   user: {
@@ -207,7 +243,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                 onChange={(e) => setPromoCode(e.target.value)}
                 dir={isAr && !promoCode ? "rtl" : "ltr"}
                 placeholder={isAr ? "أدخل الكود هنا (مثال: GERMAN2026)" : "Enter code (e.g. GERMAN2026)"}
-                className="flex-1 px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs sm:text-sm font-sans uppercase placeholder:font-sans placeholder:normal-case placeholder:tracking-normal focus:border-blue-500 focus:outline-hidden"
+                className="flex-1 px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder:text-slate-400 text-xs sm:text-sm font-sans uppercase placeholder:font-sans placeholder:normal-case placeholder:tracking-normal focus:border-blue-500 focus:outline-hidden"
               />
               <button
                 type="submit"
@@ -219,14 +255,16 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
             </div>
 
             {promoSuccess && (
-              <p className="text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl">
-                ✓ {promoSuccess}
+              <p className="text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl flex items-center gap-1.5">
+                <PricingCheckIcon className="text-emerald-400 mt-0!" />
+                <span>{promoSuccess}</span>
               </p>
             )}
 
             {promoError && (
-              <p className="text-xs font-medium text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-xl">
-                ✕ {promoError}
+              <p className="text-xs font-medium text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-xl flex items-center gap-1.5">
+                <PricingXIcon className="text-rose-400 mt-0!" />
+                <span>{promoError}</span>
               </p>
             )}
           </form>
@@ -267,19 +305,22 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
 
             <ul className="space-y-3.5 text-xs text-slate-300 pt-5 border-t border-slate-800">
               <li className="flex items-start gap-2.5">
-                <span className="text-emerald-400 font-bold text-sm">✓</span>
+                <PricingCheckIcon className="text-emerald-400" />
                 <span>
-                  {isAr
-                    ? "إنشاء سيرة ذاتية أساسية (1 سيرة بمعايير DIN 5008)"
-                    : isDe
-                    ? "Basis-Lebenslauf (1 DIN 5008 Lebenslauf)"
-                    : isFr
-                    ? "Création de CV standard (1 CV conforme DIN 5008)"
-                    : "Basic resume creation (1 CV DIN 5008)"}
+                  {formatBidiInlineText(
+                    isAr
+                      ? "إنشاء سيرة ذاتية أساسية (1 سيرة بمعايير DIN 5008)"
+                      : isDe
+                      ? "Basis-Lebenslauf (1 DIN 5008 Lebenslauf)"
+                      : isFr
+                      ? "Création de CV standard (1 CV conforme DIN 5008)"
+                      : "Basic resume creation (1 CV DIN 5008)",
+                    isAr
+                  )}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-emerald-400 font-bold text-sm">✓</span>
+                <PricingCheckIcon className="text-emerald-400" />
                 <span>
                   {isAr
                     ? "البحث في الوظائف وحفظ الفرص المفضلة"
@@ -291,7 +332,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-emerald-400 font-bold text-sm">✓</span>
+                <PricingCheckIcon className="text-emerald-400" />
                 <span>
                   {isAr
                     ? "3 أرصدة ذكاء اصطناعي أولية للبدء (3 محاولات تجريبية)"
@@ -303,39 +344,48 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                 </span>
               </li>
               <li className="flex items-start gap-2.5 text-slate-300">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <PricingCheckIcon className="text-blue-400" />
                 <span>
-                  {isAr
-                    ? "تجميع ملف الترشيح الكامل (Bewerbungsmappe) — تجريبي (1 رصيد)"
-                    : isDe
-                    ? "Vollständige Bewerbungsmappe — Test (1 Credit)"
-                    : isFr
-                    ? "Compilateur Bewerbungsmappe — Essai (1 crédit)"
-                    : "Full Bewerbungsmappe Dossier Compiler — Trial (1 Credit)"}
+                  {formatBidiInlineText(
+                    isAr
+                      ? "تجميع ملف الترشيح الكامل (Bewerbungsmappe) — تجريبي (1 رصيد)"
+                      : isDe
+                      ? "Vollständige Bewerbungsmappe — Test (1 Credit)"
+                      : isFr
+                      ? "Compilateur Bewerbungsmappe — Essai (1 crédit)"
+                      : "Full Bewerbungsmappe Dossier Compiler — Trial (1 Credit)",
+                    isAr
+                  )}
                 </span>
               </li>
-              <li className="flex items-start gap-2.5 text-slate-500">
-                <span className="text-slate-600 font-bold text-sm">✕</span>
+              <li className="flex items-start gap-2.5 text-slate-400">
+                <PricingXIcon className="text-slate-500" />
                 <span>
-                  {isAr
-                    ? "خطابات Anschreiben متقدمة يومياً"
-                    : isDe
-                    ? "Tägliche erweiterte Anschreiben"
-                    : isFr
-                    ? "Lettres de motivation Anschreiben avancées quotidiennes"
-                    : "Daily advanced AI Cover Letters"}
+                  {formatBidiInlineText(
+                    isAr
+                      ? "خطابات Anschreiben متقدمة يومياً"
+                      : isDe
+                      ? "Tägliche erweiterte Anschreiben"
+                      : isFr
+                      ? "Lettres de motivation Anschreiben avancées quotidiennes"
+                      : "Daily advanced AI Cover Letters",
+                    isAr
+                  )}
                 </span>
               </li>
-              <li className="flex items-start gap-2.5 text-slate-500">
-                <span className="text-slate-600 font-bold text-sm">✕</span>
+              <li className="flex items-start gap-2.5 text-slate-400">
+                <PricingXIcon className="text-slate-500" />
                 <span>
-                  {isAr
-                    ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
-                    : isDe
-                    ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
-                    : isFr
-                    ? "Conversion instantanée 1-Click PDF vers DIN 5008"
-                    : "1-Click PDF to DIN 5008 Auto-Adapt"}
+                  {formatBidiInlineText(
+                    isAr
+                      ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
+                      : isDe
+                      ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
+                      : isFr
+                      ? "Conversion instantanée 1-Click PDF vers DIN 5008"
+                      : "1-Click PDF to DIN 5008 Auto-Adapt",
+                    isAr
+                  )}
                 </span>
               </li>
             </ul>
@@ -387,7 +437,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
 
             <ul className="space-y-3.5 text-xs text-slate-200 pt-5 border-t border-slate-800">
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <PricingCheckIcon className="text-blue-400" />
                 <span className="font-semibold text-white">
                   {isAr
                     ? "صلاحية 30 يوماً للتقديم السريع على الوظائف"
@@ -399,67 +449,82 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <PricingCheckIcon className="text-blue-400" />
                 <span className="font-semibold text-white">
-                  {isAr
-                    ? "20 عملية ذكاء اصطناعي يومياً (وفق سياسة الاستخدام العادل)"
-                    : isDe
-                    ? "Bis zu 20 tägliche KI-Operationen (Fair-Use-Richtlinie)"
-                    : isFr
-                    ? "Jusqu'à 20 opérations IA par jour (utilisation équitable)"
-                    : "Up to 20 daily AI operations (Fair Use)"}
+                  {formatBidiInlineText(
+                    isAr
+                      ? "20 عملية ذكاء اصطناعي يومياً (وفق سياسة الاستخدام العادل)"
+                      : isDe
+                      ? "Bis zu 20 tägliche KI-Operationen (Fair-Use-Richtlinie)"
+                      : isFr
+                      ? "Jusqu'à 20 opérations IA par jour (utilisation équitable)"
+                      : "Up to 20 daily AI operations (Fair Use)",
+                    isAr
+                  )}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <PricingCheckIcon className="text-blue-400" />
                 <span className="font-semibold text-white">
-                  {isAr
-                    ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
-                    : isDe
-                    ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
-                    : isFr
-                    ? "Conversion instantanée 1-Click PDF vers DIN 5008"
-                    : "1-Click PDF to DIN 5008 Auto-Adapt"}
+                  {formatBidiInlineText(
+                    isAr
+                      ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
+                      : isDe
+                      ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
+                      : isFr
+                      ? "Conversion instantanée 1-Click PDF vers DIN 5008"
+                      : "1-Click PDF to DIN 5008 Auto-Adapt",
+                    isAr
+                  )}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <PricingCheckIcon className="text-blue-400" />
                 <span className="font-semibold text-white">
-                  {isAr
-                    ? "تجميع ملف الترشيح الكامل (Bewerbungsmappe) — ✓ متاح (30 يوماً)"
-                    : isDe
-                    ? "Vollständige Bewerbungsmappe — ✓ Inklusive (30 Tage)"
-                    : isFr
-                    ? "Compilateur Bewerbungsmappe — ✓ Inclus (30 jours)"
-                    : "Full Bewerbungsmappe Dossier Compiler — ✓ Included (30 days)"}
+                  {formatBidiInlineText(
+                    isAr
+                      ? "تجميع ملف الترشيح الكامل (Bewerbungsmappe) — متاح (30 يوماً)"
+                      : isDe
+                      ? "Vollständige Bewerbungsmappe — Inklusive (30 Tage)"
+                      : isFr
+                      ? "Compilateur Bewerbungsmappe — Inclus (30 jours)"
+                      : "Full Bewerbungsmappe Dossier Compiler — Included (30 days)",
+                    isAr
+                  )}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <PricingCheckIcon className="text-blue-400" />
                 <span>
-                  {isAr
-                    ? "منشئ السير الذاتية DIN 5008 وفحص الـ ATS"
-                    : isDe
-                    ? "DIN 5008 CV-Builder & ATS-Checks"
-                    : isFr
-                    ? "Créateur de CV DIN 5008 et audits ATS"
-                    : "DIN 5008 CV builder & ATS checks"}
+                  {formatBidiInlineText(
+                    isAr
+                      ? "منشئ السير الذاتية DIN 5008 وفحص الـ ATS"
+                      : isDe
+                      ? "DIN 5008 CV-Builder & ATS-Checks"
+                      : isFr
+                      ? "Créateur de CV DIN 5008 et audits ATS"
+                      : "DIN 5008 CV builder & ATS checks",
+                    isAr
+                  )}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <PricingCheckIcon className="text-blue-400" />
                 <span>
-                  {isAr
-                    ? "مولد خطابات دافع (Anschreiben) مخصص لكل وظيفة"
-                    : isDe
-                    ? "Maßgeschneiderte KI-Anschreiben für jede Stelle"
-                    : isFr
-                    ? "Lettres de motivation personnalisées par IA"
-                    : "Job-Tailored AI Cover Letters"}
+                  {formatBidiInlineText(
+                    isAr
+                      ? "مولد خطابات دافع (Anschreiben) مخصص لكل وظيفة"
+                      : isDe
+                      ? "Maßgeschneiderte KI-Anschreiben für jede Stelle"
+                      : isFr
+                      ? "Lettres de motivation personnalisées par IA"
+                      : "Job-Tailored AI Cover Letters",
+                    isAr
+                  )}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <PricingCheckIcon className="text-blue-400" />
                 <span>
                   {isAr
                     ? "تصدير غير محدود لسير ذاتية بصيغة PDF رسمية"
@@ -471,7 +536,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <PricingCheckIcon className="text-blue-400" />
                 <span>
                   {isAr
                     ? "دفع آمن ورابط مباشر عبر Gumroad"
@@ -547,7 +612,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
 
             <ul className="space-y-3.5 text-xs text-slate-200 pt-5 border-t border-slate-800">
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <PricingCheckIcon className="text-blue-400" />
                 <span className="font-semibold text-white">
                   {isAr
                     ? "90 يوماً كاملة تغطي دورة التوظيف الألمانية بالكامل"
@@ -559,43 +624,52 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <PricingCheckIcon className="text-blue-400" />
                 <span className="font-semibold text-white">
-                  {isAr
-                    ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
-                    : isDe
-                    ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
-                    : isFr
-                    ? "Conversion instantanée 1-Click PDF vers DIN 5008"
-                    : "1-Click PDF to DIN 5008 Auto-Adapt"}
+                  {formatBidiInlineText(
+                    isAr
+                      ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
+                      : isDe
+                      ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
+                      : isFr
+                      ? "Conversion instantanée 1-Click PDF vers DIN 5008"
+                      : "1-Click PDF to DIN 5008 Auto-Adapt",
+                    isAr
+                  )}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <PricingCheckIcon className="text-blue-400" />
                 <span className="font-semibold text-white">
-                  {isAr
-                    ? "تجميع ملف الترشيح الكامل (Bewerbungsmappe: غلاف + سيرة + خطاب)"
-                    : isDe
-                    ? "Bewerbungsmappe-Dossier-Studio (Deckblatt + CV + Anschreiben)"
-                    : isFr
-                    ? "Studio Bewerbungsmappe complet (Page de garde + CV + Lettre)"
-                    : "Bewerbungsmappe full dossier compiler (Cover + CV + Anschreiben)"}
+                  {formatBidiInlineText(
+                    isAr
+                      ? "تجميع ملف الترشيح الكامل (Bewerbungsmappe: غلاف + سيرة + خطاب)"
+                      : isDe
+                      ? "Bewerbungsmappe-Dossier-Studio (Deckblatt + CV + Anschreiben)"
+                      : isFr
+                      ? "Studio Bewerbungsmappe complet (Page de garde + CV + Lettre)"
+                      : "Bewerbungsmappe full dossier compiler (Cover + CV + Anschreiben)",
+                    isAr
+                  )}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <PricingCheckIcon className="text-blue-400" />
                 <span className="font-semibold text-white">
-                  {isAr
-                    ? "20 عملية ذكاء اصطناعي يومياً (وفق سياسة الاستخدام العادل)"
-                    : isDe
-                    ? "20 tägliche KI-Operationen (Fair Use)"
-                    : isFr
-                    ? "20 opérations IA quotidiennes (utilisation équitable)"
-                    : "Up to 20 daily AI operations (Fair Use)"}
+                  {formatBidiInlineText(
+                    isAr
+                      ? "20 عملية ذكاء اصطناعي يومياً (وفق سياسة الاستخدام العادل)"
+                      : isDe
+                      ? "20 tägliche KI-Operationen (Fair Use)"
+                      : isFr
+                      ? "20 opérations IA quotidiennes (utilisation équitable)"
+                      : "Up to 20 daily AI operations (Fair Use)",
+                    isAr
+                  )}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <PricingCheckIcon className="text-blue-400" />
                 <span>
                   {isAr
                     ? "فحص عميق للـ ATS ومطابقة الكلمات المفتاحية"
@@ -607,7 +681,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-blue-400 font-bold text-sm">✓</span>
+                <PricingCheckIcon className="text-blue-400" />
                 <span>
                   {isAr
                     ? "دفع آمن ورابط مباشر عبر Gumroad"

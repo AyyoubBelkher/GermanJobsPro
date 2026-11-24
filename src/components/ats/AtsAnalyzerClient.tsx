@@ -304,14 +304,20 @@ export default function AtsAnalyzerClient({
       <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl backdrop-blur-xl">
         <form onSubmit={handleAnalyze} className="space-y-6">
           {/* Mode Switcher (3 Tabs) */}
-          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-950 border border-slate-800 flex-wrap sm:flex-nowrap">
+          <div
+            role="tablist"
+            aria-label={isAr ? "طريقة إدخال السيرة الذاتية" : "CV input mode"}
+            className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-950 border border-slate-800 flex-wrap sm:flex-nowrap"
+          >
             <button
               type="button"
+              role="tab"
+              aria-selected={inputMode === "upload"}
               onClick={() => setInputMode("upload")}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 ${
                 inputMode === "upload"
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/25 border border-blue-500/40"
+                  : "bg-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 border border-transparent"
               }`}
             >
               <span>📄</span>
@@ -321,11 +327,13 @@ export default function AtsAnalyzerClient({
             {userCvs.length > 0 && (
               <button
                 type="button"
+                role="tab"
+                aria-selected={inputMode === "saved"}
                 onClick={() => setInputMode("saved")}
-                className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 ${
                   inputMode === "saved"
-                    ? "bg-blue-600 text-white shadow-md"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/25 border border-blue-500/40"
+                    : "bg-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 border border-transparent"
                 }`}
               >
                 <span>💾</span>
@@ -335,11 +343,13 @@ export default function AtsAnalyzerClient({
 
             <button
               type="button"
+              role="tab"
+              aria-selected={inputMode === "paste"}
               onClick={() => setInputMode("paste")}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 ${
                 inputMode === "paste"
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/25 border border-blue-500/40"
+                  : "bg-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 border border-transparent"
               }`}
             >
               <span>✍️</span>
@@ -485,7 +495,7 @@ export default function AtsAnalyzerClient({
                     ? "الصق هنا نص سيرتك الذاتية (الخبرات، التعليم، المهارات، اللغات)..."
                     : "Fügen Sie hier Ihren Lebenslauf-Text ein..."
                 }
-                className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-mono focus:border-blue-500 focus:outline-hidden"
+                className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder:text-slate-400 text-xs font-mono focus:border-blue-500 focus:outline-hidden"
               />
             </div>
           )}
@@ -498,7 +508,7 @@ export default function AtsAnalyzerClient({
                   ? "إعلان الوظيفة المستهدفة (اختياري - لمطابقة الكلمات المفتاحية)"
                   : "Target Job Description (Optional for Keyword Match)"}
               </span>
-              <span className="text-[11px] text-slate-500 font-normal">
+              <span className="text-[11px] text-slate-400 font-normal">
                 {isAr ? "اختياري" : isFr ? "Optionnel" : "Optional"}
               </span>
             </label>
@@ -511,7 +521,7 @@ export default function AtsAnalyzerClient({
                   ? "الصق متطلبات الوظيفة المعنية للحصول على نسبة مطابقة الكلمات المفتاحية..."
                   : "Stellenanzeige für Keyword-Matching einfügen..."
               }
-              className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-mono focus:border-blue-500 focus:outline-hidden"
+              className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder:text-slate-400 text-xs font-mono focus:border-blue-500 focus:outline-hidden"
             />
           </div>
 
@@ -604,7 +614,7 @@ export default function AtsAnalyzerClient({
                   rows={10}
                   value={cvText}
                   onChange={(e) => setCvText(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white text-xs font-mono focus:border-blue-500 focus:outline-hidden"
+                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white placeholder:text-slate-400 text-xs font-mono focus:border-blue-500 focus:outline-hidden"
                   placeholder="CV text..."
                 />
 

@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { stripMarkdownAsterisks } from "@/lib/cover-letter";
+import { formatNumericDateUTC } from "@/lib/cv-date-utils";
+import { formatBidiInlineText } from "@/lib/courseUtils";
 
 interface CoverLetterSummary {
   id: string;
@@ -109,21 +111,35 @@ export default function CoverLetterListClient({
                     <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-950 text-blue-400 border border-blue-800/60 uppercase">
                       {letter.tone}
                     </span>
-                    <span className="text-xs text-slate-500 font-mono">
-                      <bdi dir="ltr">{new Date(letter.updatedAt).toLocaleDateString(locale)}</bdi>
+                    <span className="text-xs text-slate-400 font-mono">
+                      <time
+                        dateTime={new Date(letter.updatedAt).toISOString()}
+                        dir="ltr"
+                        className="inline-block [unicode-bidi:isolate]"
+                      >
+                        {formatNumericDateUTC(letter.updatedAt, locale)}
+                      </time>
                     </span>
                   </div>
-                  <h3 className="font-extrabold text-white text-lg truncate group-hover:text-blue-400 transition-colors pt-1" dir="auto">
-                    {letter.jobTitle}
+                  <h3
+                    className="font-extrabold text-white text-lg line-clamp-2 leading-snug group-hover:text-blue-400 transition-colors pt-1"
+                    dir="auto"
+                  >
+                    {formatBidiInlineText(letter.jobTitle, isAr)}
                   </h3>
                   <p className="text-xs font-semibold text-slate-400 truncate" dir="auto">
                     🏢 {letter.companyName}
                   </p>
                 </div>
 
-                <p className="text-xs text-slate-500 line-clamp-3 leading-relaxed font-mono bg-slate-950/60 p-3 rounded-xl border border-slate-800/60">
-                  {stripMarkdownAsterisks(letter.generatedContent)}
-                </p>
+                <div className="bg-slate-950/60 px-3.5 py-3 rounded-xl border border-slate-800/60">
+                  <p
+                    dir="auto"
+                    className="text-xs text-slate-400 line-clamp-3 leading-relaxed font-mono [unicode-bidi:isolate]"
+                  >
+                    {stripMarkdownAsterisks(letter.generatedContent)}
+                  </p>
+                </div>
               </div>
 
               <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between gap-2">

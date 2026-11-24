@@ -401,7 +401,7 @@ export default function DossierCompilerClient({
                     <select
                       value={selectedCvId}
                       onChange={(e) => handleCvChange(e.target.value)}
-                      dir="auto"
+                      dir={isAr ? "rtl" : "ltr"}
                       className="w-full max-w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden truncate"
                     >
                       {userCvs.map((cv) => {
@@ -554,7 +554,7 @@ export default function DossierCompilerClient({
               <select
                 value={selectedCoverLetterId}
                 onChange={(e) => handleCoverLetterChange(e.target.value)}
-                dir="auto"
+                dir={isAr ? "rtl" : "ltr"}
                 className="w-full max-w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden truncate"
               >
                 <option value="none" className="bg-slate-900 text-white">
@@ -578,27 +578,32 @@ export default function DossierCompilerClient({
 
             {/* Step 3: Deckblatt Configuration & Photo Controls */}
             <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-5">
-              <div className="flex items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-white">
-                      {isAr
-                        ? "📑 صفحة الغلاف الألمانية (Deckblatt)"
-                        : isDe
-                        ? "📑 Bewerbungsdeckblatt (A4)"
-                        : "📑 Application Cover Page (Deckblatt)"}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                      Executive
-                    </span>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold text-sm flex items-center justify-center shrink-0 mt-0.5">
+                    3
                   </div>
-                  <p className="text-xs text-slate-400">
-                    {isAr
-                      ? "صفحة غلاف رسمية تتصدر ملف الترشيح وتضم المسمى الوظيفي، اسم الشركة، الصورة، وبيانات الاتصال وفهرس المرفقات."
-                      : isDe
-                      ? "Prestigeträchtiges Deckblatt mit Zielposition, Unternehmen, Foto, Kontaktdaten und Anlagenverzeichnis."
-                      : "Prepend an executive cover page with target position, company, photo, contacts and attachments index."}
-                  </p>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-base font-bold text-white">
+                        {isAr
+                          ? "صفحة الغلاف الألمانية (Deckblatt)"
+                          : isDe
+                          ? "Bewerbungsdeckblatt (A4)"
+                          : "Application Cover Page (Deckblatt)"}
+                      </h3>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                        Executive
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      {isAr
+                        ? "صفحة غلاف رسمية تتصدر ملف الترشيح وتضم المسمى الوظيفي، اسم الشركة، الصورة، وبيانات الاتصال وفهرس المرفقات."
+                        : isDe
+                        ? "Prestigeträchtiges Deckblatt mit Zielposition, Unternehmen, Foto, Kontaktdaten und Anlagenverzeichnis."
+                        : "Prepend an executive cover page with target position, company, photo, contacts and attachments index."}
+                    </p>
+                  </div>
                 </div>
 
                 <label className="relative inline-flex items-center cursor-pointer shrink-0">
@@ -629,7 +634,7 @@ export default function DossierCompilerClient({
                         value={customJobTitle}
                         onChange={(e) => setCustomJobTitle(e.target.value)}
                         placeholder={isAr ? "مثال: Frontend Entwickler" : "z. B. Frontend Entwickler"}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:border-blue-500 focus:outline-hidden"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-400 focus:border-blue-500 focus:outline-hidden"
                       />
                     </div>
 
@@ -646,7 +651,7 @@ export default function DossierCompilerClient({
                         value={customCompanyName}
                         onChange={(e) => setCustomCompanyName(e.target.value)}
                         placeholder={isAr ? "مثال: Siemens AG" : "z. B. Siemens AG"}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:border-blue-500 focus:outline-hidden"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-400 focus:border-blue-500 focus:outline-hidden"
                       />
                     </div>
                   </div>
@@ -956,7 +961,7 @@ export default function DossierCompilerClient({
             {/* Authentic A4 Paper Preview */}
             <div
               dir="ltr"
-              className={`cv-print-area relative w-full aspect-[1/1.414] bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col justify-between p-4 sm:p-5 select-none transition-all duration-300 ${
+              className={`cv-print-area relative w-full aspect-[1/1.414] bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col justify-between px-5 pt-5 pb-7 sm:px-6 sm:pt-6 sm:pb-8 select-none transition-all duration-300 ${
                 !includeDeckblatt ? "opacity-30 grayscale" : ""
               }`}
             >
@@ -1065,7 +1070,7 @@ export default function DossierCompilerClient({
                 </div>
 
                 {/* Footer */}
-                <div className="mt-1.5 pt-1 border-t border-slate-200 flex items-center justify-between text-[6.5px] sm:text-[7.5px] text-slate-400">
+                <div className="mt-2 pt-1.5 border-t border-slate-200 flex items-center justify-between text-[6.5px] sm:text-[7.5px] text-slate-500">
                   <span className="truncate">Bewerbungsdossier • {candidateFullName}</span>
                   <span className="shrink-0">{candidateCity ? `${candidateCity}, ` : ""}{todayFormatted}</span>
                 </div>

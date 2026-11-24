@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { formatBidiInlineText } from "@/lib/courseUtils";
 
 interface CvMagicImportModalProps {
   isOpen: boolean;
@@ -173,11 +174,14 @@ export default function CvMagicImportModal({
             <span className="text-2xl">📄</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-white">
-            {isAr
-              ? "تحويل فوري (1-Click PDF) وتكييف ذكي (DIN 5008)"
-              : isDe
-              ? "Sofort-Konvertierung (1-Klick) & DIN 5008 Anpassung"
-              : "1-Click PDF Converter & DIN 5008 Smart Adapt"}
+            {formatBidiInlineText(
+              isAr
+                ? "تحويل فوري (1-Click PDF) وتكييف ذكي (DIN 5008)"
+                : isDe
+                ? "Sofort-Konvertierung (1-Klick) & DIN 5008 Anpassung"
+                : "1-Click PDF Converter & DIN 5008 Smart Adapt",
+              isAr
+            )}
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
             {isAr
@@ -284,7 +288,7 @@ export default function CvMagicImportModal({
                     ? "z.B. Softwareentwickler oder Pflegefachkraft"
                     : "e.g., Software Engineer or Nurse"
                 }
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-xs sm:text-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder:text-slate-400 focus:outline-none focus:border-blue-500 text-xs sm:text-sm transition-all"
               />
             </div>
 
@@ -365,7 +369,7 @@ export default function CvMagicImportModal({
                       ? "Fügen Sie den vollständigen Text Ihres Lebenslaufs ein..."
                       : "Paste the full text of your existing resume in any language..."
                   }
-                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-xs sm:text-sm font-sans transition-all resize-none"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder:text-slate-400 focus:outline-none focus:border-blue-500 text-xs sm:text-sm font-sans transition-all resize-none"
                 />
               </div>
             )}
@@ -397,11 +401,14 @@ export default function CvMagicImportModal({
                   className="flex-1 py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-blue-600/30 active:scale-98 cursor-pointer flex items-center justify-center gap-2"
                 >
                   <span>
-                    {isAr
-                      ? "تحويل فوري (1-Click PDF)"
-                      : isDe
-                      ? "Sofort-Konvertierung starten"
-                      : "Start 1-Click Conversion"}
+                    {formatBidiInlineText(
+                      isAr
+                        ? "تحويل فوري (1-Click PDF)"
+                        : isDe
+                        ? "Sofort-Konvertierung starten"
+                        : "Start 1-Click Conversion",
+                      isAr
+                    )}
                   </span>
                 </button>
               </div>

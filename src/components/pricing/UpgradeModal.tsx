@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GUMROAD_VARIANTS } from "@/lib/gumroad";
+import { formatBidiInlineText } from "@/lib/courseUtils";
 
 export interface UpgradeModalProps {
   isOpen: boolean;
@@ -444,7 +445,7 @@ export default function UpgradeModal({
                 {t.quickSprint.features.map((feat, idx) => (
                   <li key={idx} className="flex items-start gap-2">
                     <span className="text-blue-400 font-bold">✓</span>
-                    <span>{feat}</span>
+                    <span>{formatBidiInlineText(feat, isAr)}</span>
                   </li>
                 ))}
               </ul>
@@ -496,7 +497,7 @@ export default function UpgradeModal({
                 {t.proJobPass.features.map((feat, idx) => (
                   <li key={idx} className="flex items-start gap-2">
                     <span className="text-blue-400 font-bold">✓</span>
-                    <span className="font-semibold">{feat}</span>
+                    <span className="font-semibold">{formatBidiInlineText(feat, isAr)}</span>
                   </li>
                 ))}
               </ul>
@@ -527,7 +528,7 @@ export default function UpgradeModal({
               onChange={(e) => setPromoCode(e.target.value)}
               dir={locale === "ar" && !promoCode ? "rtl" : "ltr"}
               placeholder={t.promo.placeholder}
-              className="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700/80 text-white text-xs font-sans uppercase placeholder:font-sans placeholder:normal-case placeholder:tracking-normal focus:outline-none focus:border-blue-500 placeholder:text-slate-500"
+              className="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700/80 text-white text-xs font-sans uppercase placeholder:font-sans placeholder:normal-case placeholder:tracking-normal focus:outline-none focus:border-blue-500 placeholder:text-slate-400"
             />
             <button
               type="submit"

@@ -178,10 +178,11 @@ function ResetPasswordForm({ locale }: { locale: string }) {
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
+              dir="ltr"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-3 ltr:pr-11 rtl:pl-11 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#061838] text-sm dir-ltr transition-all"
+              className="w-full px-4 py-3 ltr:pr-11 rtl:pl-11 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#061838] text-sm text-left transition-all"
               required
             />
             <button
@@ -224,10 +225,11 @@ function ResetPasswordForm({ locale }: { locale: string }) {
           <div className="relative">
             <input
               type={showConfirmPassword ? "text" : "password"}
+              dir="ltr"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-3 ltr:pr-11 rtl:pl-11 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#061838] text-sm dir-ltr transition-all"
+              className="w-full px-4 py-3 ltr:pr-11 rtl:pl-11 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#061838] text-sm text-left transition-all"
               required
             />
             <button

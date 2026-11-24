@@ -14,6 +14,14 @@ const {
   isolateBidiText,
   extractCleanExcerpt,
 }: typeof import("../src/lib/courseUtils") = require("../src/lib/courseUtils.ts");
+const {
+  formatNumericDateUTC,
+}: typeof import("../src/lib/cv-date-utils") = require("../src/lib/cv-date-utils.ts");
+const {
+  CV_LIST_PAGE_SIZE,
+  filterCvSummaries,
+  paginateItems,
+}: typeof import("../src/lib/cv-list-utils") = require("../src/lib/cv-list-utils.ts");
 
 function flattenReactText(node: React.ReactNode): string {
   if (node === null || node === undefined || typeof node === "boolean") return "";
@@ -149,5 +157,109 @@ describe("BiDi Isolation for Blog Titles & Homepage Comparison Bullets", () => {
     const excerpt = extractCleanExcerpt(text, undefined, 45);
     assert.ok(excerpt.endsWith("..."));
     assert.ok(!excerpt.endsWith("ا..."));
+  });
+});
+
+describe("BiDi Isolation for Digit-Prefixed Latin Phrases (1-Click PDF)", () => {
+  it("isolates parenthesized (1-Click PDF) and (1-Click PDF to DIN 5008) in RTL Arabic", () => {
+    const samples = [
+      {
+        input: "تحويل فوري (1-Click PDF)",
+        token: "(1-Click PDF)",
+      },
+      {
+        input: "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)",
+        token: "(1-Click PDF to DIN 5008)",
+      },
+    ];
+
+    for (const { input, token } of samples) {
+      const isolated = isolateBidiText(input, true);
+      assert.ok(isolated.includes(`\u2066${token}\u2069`), `Expected LRI/PDI around ${token}`);
+
+      const rendered = formatBidiInlineText(input, true);
+      const children = React.Children.toArray(rendered);
+      const hasBdi = children.some(
+        (c: any) => c?.type === "bdi" && c?.props?.dir === "ltr" && c?.props?.children === token
+      );
+      assert.ok(hasBdi, `Expected <bdi dir="ltr">${token}</bdi>`);
+      assert.equal(flattenReactText(rendered), input);
+    }
+  });
+
+  it("isolates unparenthesized 1-Click PDF and 1-Click PDF to DIN 5008 inside Arabic copy", () => {
+    const phrase1 = "ميزة 1-Click PDF لتحويل السيرة الذاتية";
+    assert.ok(isolateBidiText(phrase1, true).includes("\u20661-Click PDF\u2069"));
+    const rendered1 = formatBidiInlineText(phrase1, true);
+    const bdi1 = React.Children.toArray(rendered1).find(
+      (c: any) => c?.type === "bdi" && c?.props?.dir === "ltr" && c?.props?.children === "1-Click PDF"
+    );
+    assert.ok(bdi1, "Expected <bdi dir='ltr'>1-Click PDF</bdi>");
+
+    const phrase2 = "خدمة 1-Click PDF to DIN 5008 المتقدمة.";
+    assert.ok(isolateBidiText(phrase2, true).includes("\u20661-Click PDF to DIN 5008\u2069"));
+    const rendered2 = formatBidiInlineText(phrase2, true);
+    assert.equal(flattenReactText(rendered2).replace(/\u200F/g, ""), phrase2);
+
+    const phrase3 = "استخدم ميزة 1-Click PDF to DIN 5008.";
+    assert.ok(isolateBidiText(phrase3, true).includes("\u20661-Click PDF to DIN 5008\u2069\u200F."));
+  });
+});
+
+describe("UTC Numeric Date Formatting for RTL Isolation", () => {
+  it("formats dates deterministically in UTC without Unicode RTL marks", () => {
+    const iso = "2026-11-19T23:30:00.000Z";
+    const arDate = formatNumericDateUTC(iso, "ar");
+    const frDate = formatNumericDateUTC(iso, "fr");
+    const deDate = formatNumericDateUTC(iso, "de");
+    const enDate = formatNumericDateUTC(iso, "en");
+
+    assert.equal(arDate, "19/11/2026");
+    assert.equal(frDate, "19/11/2026");
+    assert.equal(deDate, "19.11.2026");
+    assert.equal(enDate, "11/19/2026");
+
+    assert.equal(arDate.includes("\u200F"), false);
+    assert.equal(arDate.includes("\u200E"), false);
+    assert.equal(formatNumericDateUTC(null, "ar"), "");
+    assert.equal(formatNumericDateUTC("not-a-date", "ar"), "");
+  });
+});
+
+describe("CV List Search & Pagination Helpers", () => {
+  const sampleCvs = Array.from({ length: 30 }, (_, idx) => ({
+    id: `cv-${idx + 1}`,
+    title: idx === 0 ? "Backend Engineer CV" : `Lebenslauf #${idx + 1}`,
+    personalInfo: {
+      targetJobTitle: idx === 5 ? "Automation Specialist" : "Software Developer",
+    },
+  }));
+
+  it("filters CV summaries by title or targetJobTitle case-insensitively", () => {
+    assert.equal(filterCvSummaries(sampleCvs, "").length, 30);
+    assert.equal(filterCvSummaries(sampleCvs, "  backend  ").map((c) => c.id).join(","), "cv-1");
+    assert.equal(filterCvSummaries(sampleCvs, "automation").map((c) => c.id).join(","), "cv-6");
+    assert.equal(filterCvSummaries(sampleCvs, "nonexistent").length, 0);
+  });
+
+  it("paginates 12 items per page and clamps out-of-range page numbers", () => {
+    assert.equal(CV_LIST_PAGE_SIZE, 12);
+
+    const page1 = paginateItems(sampleCvs, 1, CV_LIST_PAGE_SIZE);
+    assert.equal(page1.items.length, 12);
+    assert.equal(page1.currentPage, 1);
+    assert.equal(page1.totalPages, 3);
+    assert.equal(page1.items[0].id, "cv-1");
+
+    const page3 = paginateItems(sampleCvs, 3, CV_LIST_PAGE_SIZE);
+    assert.equal(page3.items.length, 6);
+    assert.equal(page3.currentPage, 3);
+    assert.equal(page3.items[0].id, "cv-25");
+
+    const clampedHigh = paginateItems(sampleCvs, 99, CV_LIST_PAGE_SIZE);
+    assert.equal(clampedHigh.currentPage, 3);
+
+    const clampedLow = paginateItems(sampleCvs, 0, CV_LIST_PAGE_SIZE);
+    assert.equal(clampedLow.currentPage, 1);
   });
 });

@@ -418,3 +418,23 @@ export function formatFullDate(dateVal: Date | string | null | undefined): strin
   const year = d.getUTCFullYear();
   return `${day}.${month}.${year}`;
 }
+
+/**
+ * Formats a numeric date deterministically in UTC using pure ASCII digits and separators
+ * (no Unicode RTL marks), preventing BiDi digit scrambling in RTL locales and SSR/CSR drift.
+ */
+export function formatNumericDateUTC(
+  dateVal: Date | string | null | undefined,
+  locale: string = "ar"
+): string {
+  if (!dateVal) return "";
+  const d = typeof dateVal === "string" ? new Date(dateVal) : dateVal;
+  if (isNaN(d.getTime())) return "";
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const year = d.getUTCFullYear();
+
+  if (locale === "de") return `${day}.${month}.${year}`;
+  if (locale === "en") return `${month}/${day}/${year}`;
+  return `${day}/${month}/${year}`;
+}

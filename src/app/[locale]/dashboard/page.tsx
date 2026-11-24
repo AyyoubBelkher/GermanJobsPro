@@ -7,6 +7,8 @@ import Footer from "@/components/ui/Footer";
 import UserProfileCard from "@/components/dashboard/UserProfileCard";
 import { verifyUserSession } from "@/lib/user-session";
 import { prisma, withDbRetry } from "@/lib/prisma";
+import { formatNumericDateUTC } from "@/lib/cv-date-utils";
+import { formatBidiInlineText } from "@/lib/courseUtils";
 
 export default async function DashboardPage({
   params,
@@ -105,7 +107,7 @@ export default async function DashboardPage({
                 {isAr ? "فاحص التوافق" : isDe ? "ATS & DIN 5008" : "ATS & DIN 5008"}
               </span>
               <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-emerald-300 transition-colors">
-                {isAr ? "🎯 فحص ATS" : isDe ? "🎯 ATS-Audit" : "🎯 ATS Resume Audit"}
+                {isAr ? "فحص ATS" : isDe ? "ATS-Audit" : "ATS Resume Audit"}
               </h3>
               <p className="text-xs text-slate-400">
                 {isAr ? "مطابقة الكلمات والمواصفات" : isDe ? "DIN 5008 Prüfung" : "DIN 5008 & Keyword check"}
@@ -125,7 +127,7 @@ export default async function DashboardPage({
                 {isAr ? "تجميع المستندات" : isDe ? "Dossier Compiler" : "Dossier Compiler"}
               </span>
               <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-amber-300 transition-colors">
-                {isAr ? "📁 ملف الترشيح الكامل" : isDe ? "📁 Bewerbungsmappe" : "📁 Complete Dossier"}
+                {isAr ? "ملف الترشيح الكامل" : isDe ? "Bewerbungsmappe" : "Complete Dossier"}
               </h3>
               <p className="text-xs text-slate-400">
                 {isAr ? "غلاف + خطاب + سيرة في PDF" : isDe ? "Deckblatt + CV + Anschreiben" : "Cover + CV + Letter"}
@@ -207,9 +209,11 @@ export default async function DashboardPage({
                     >
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-white text-sm truncate" dir="auto">{cv.title}</h4>
+                          <h4 className="font-bold text-white text-sm line-clamp-2 leading-snug" dir="auto">
+                            {formatBidiInlineText(cv.title, isAr)}
+                          </h4>
                           <span
-                            className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${
                               cv.isDraft
                                 ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                                 : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
@@ -219,7 +223,14 @@ export default async function DashboardPage({
                           </span>
                         </div>
                         <p className="text-xs text-slate-400 truncate">
-                          <bdi dir="auto">{cv.personalInfo?.fullName || "Unbekannt"}</bdi> • <bdi dir="ltr">{new Date(cv.updatedAt).toLocaleDateString(locale)}</bdi>
+                          <bdi dir="auto">{cv.personalInfo?.fullName || "Unbekannt"}</bdi> •{" "}
+                          <time
+                            dateTime={new Date(cv.updatedAt).toISOString()}
+                            dir="ltr"
+                            className="inline-block [unicode-bidi:isolate]"
+                          >
+                            {formatNumericDateUTC(cv.updatedAt, locale)}
+                          </time>
                         </p>
                       </div>
                       <Link
@@ -314,9 +325,18 @@ export default async function DashboardPage({
                       className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 transition-all flex items-center justify-between gap-4"
                     >
                       <div className="space-y-1 min-w-0">
-                        <h4 className="font-bold text-white text-sm truncate" dir="auto">{cl.jobTitle}</h4>
+                        <h4 className="font-bold text-white text-sm line-clamp-2 leading-snug" dir="auto">
+                          {formatBidiInlineText(cl.jobTitle, isAr)}
+                        </h4>
                         <p className="text-xs text-slate-400 truncate">
-                          🏢 <bdi dir="auto">{cl.companyName}</bdi> • <bdi dir="ltr">{new Date(cl.updatedAt).toLocaleDateString(locale)}</bdi>
+                          🏢 <bdi dir="auto">{cl.companyName}</bdi> •{" "}
+                          <time
+                            dateTime={new Date(cl.updatedAt).toISOString()}
+                            dir="ltr"
+                            className="inline-block [unicode-bidi:isolate]"
+                          >
+                            {formatNumericDateUTC(cl.updatedAt, locale)}
+                          </time>
                         </p>
                       </div>
                       <Link

@@ -383,6 +383,7 @@ interface DesktopNavProps {
   pricingLink?: string;
   dict: any;
   user?: NavbarUser | null;
+  authChecked?: boolean;
   activeLocale: Locale;
   isDarkPage?: boolean;
 }
@@ -400,6 +401,7 @@ interface MobileNavProps {
   loginLink: string;
   dict: any;
   user: NavbarUser | null;
+  authChecked?: boolean;
   activeLocale: Locale;
   onClose: () => void;
   isDarkPage?: boolean;
@@ -460,6 +462,7 @@ function DesktopNav({
   pricingLink,
   dict,
   user,
+  authChecked = true,
   activeLocale,
   isDarkPage = false,
 }: DesktopNavProps) {
@@ -526,6 +529,21 @@ function DesktopNav({
             {dict.nav.dossier}
           </Link>
         </>
+      ) : !authChecked ? (
+        <>
+          <span
+            aria-hidden="true"
+            className={`w-16 h-4 rounded-md animate-pulse ${
+              isDarkPage ? "bg-white/10" : "bg-slate-200 dark:bg-white/10"
+            }`}
+          />
+          <span
+            aria-hidden="true"
+            className={`w-20 h-4 rounded-md animate-pulse ${
+              isDarkPage ? "bg-white/10" : "bg-slate-200 dark:bg-white/10"
+            }`}
+          />
+        </>
       ) : null}
     </nav>
   );
@@ -584,6 +602,7 @@ function MobileNav({
   loginLink,
   dict,
   user,
+  authChecked = true,
   activeLocale,
   onClose,
   isDarkPage = false,
@@ -709,6 +728,11 @@ function MobileNav({
             <span>{dict.nav.completeDossier}</span>
           </Link>
         </>
+      ) : !authChecked ? (
+        <div className="space-y-2 py-1" aria-hidden="true">
+          <div className={`h-9 rounded-xl animate-pulse ${isDarkPage ? "bg-white/10" : "bg-slate-100 dark:bg-white/10"}`} />
+          <div className={`h-9 rounded-xl animate-pulse ${isDarkPage ? "bg-white/10" : "bg-slate-100 dark:bg-white/10"}`} />
+        </div>
       ) : (
         <>
           <Link
@@ -812,10 +836,13 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
   const dict = getDictionary(activeLocale);
   const currentLocaleMeta = LOCALE_METADATA[activeLocale];
 
+  const isDashboardRoute = Boolean(pathname?.includes("/dashboard"));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [user, setUser] = useState<NavbarUser | null>(initialUser);
-  const [authChecked, setAuthChecked] = useState(true);
+  const [authChecked, setAuthChecked] = useState<boolean>(
+    () => Boolean(initialUser) || !isDashboardRoute
+  );
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -835,6 +862,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
   useEffect(() => {
     if (initialUser) {
       setUser(initialUser);
+      setAuthChecked(true);
     }
   }, [initialUser]);
 
@@ -1016,6 +1044,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
             pricingLink={pricingLink}
             dict={dict}
             user={user}
+            authChecked={authChecked}
             activeLocale={activeLocale}
             isDarkPage={isDarkPage}
           />
@@ -1214,7 +1243,14 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
             )
           ) : (
             /* Subtle Skeleton to prevent flash */
-            <div className="w-24 xl:w-32 h-8 rounded-full bg-slate-100 dark:bg-white/10 animate-pulse border border-slate-200 dark:border-white/10 shrink-0" />
+            <div
+              aria-hidden="true"
+              className={`w-28 xl:w-36 h-8 rounded-full animate-pulse border shrink-0 ${
+                isDarkPage
+                  ? "bg-white/10 border-white/10"
+                  : "bg-slate-100 dark:bg-white/10 border-slate-200 dark:border-white/10"
+              }`}
+            />
           )}
 
           {/* Theme Toggle (Desktop) */}
@@ -1232,23 +1268,34 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
 
         {/* Mobile Header Right (Quick Language Switcher, Theme Toggle & Menu Toggle) */}
         <div className="lg:hidden flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {!user && (
-            <Link
-              href={signupLink}
-              className="sm:hidden inline-flex items-center gap-1 bg-[#FACC15] hover:bg-amber-300 text-[#061838] font-bold rounded-full px-3 py-1.5 text-[11px] shadow-xs whitespace-nowrap shrink-0"
-            >
-              <span className="text-[#061838] font-bold">
-                {dict?.nav?.register ||
-                  dict?.nav?.createCv ||
-                  (activeLocale === "ar"
-                    ? "إنشاء حساب"
-                    : activeLocale === "de"
-                    ? "Konto erstellen"
-                    : activeLocale === "fr"
-                    ? "Créer un compte"
-                    : "Get Started Free")}
-              </span>
-            </Link>
+          {authChecked ? (
+            !user && (
+              <Link
+                href={signupLink}
+                className="sm:hidden inline-flex items-center gap-1 bg-[#FACC15] hover:bg-amber-300 text-[#061838] font-bold rounded-full px-3 py-1.5 text-[11px] shadow-xs whitespace-nowrap shrink-0"
+              >
+                <span className="text-[#061838] font-bold">
+                  {dict?.nav?.register ||
+                    dict?.nav?.createCv ||
+                    (activeLocale === "ar"
+                      ? "إنشاء حساب"
+                      : activeLocale === "de"
+                      ? "Konto erstellen"
+                      : activeLocale === "fr"
+                      ? "Créer un compte"
+                      : "Get Started Free")}
+                </span>
+              </Link>
+            )
+          ) : (
+            <div
+              aria-hidden="true"
+              className={`sm:hidden w-20 h-7 rounded-full animate-pulse border shrink-0 ${
+                isDarkPage
+                  ? "bg-white/10 border-white/10"
+                  : "bg-slate-100 dark:bg-white/10 border-slate-200 dark:border-white/10"
+              }`}
+            />
           )}
 
           {/* Theme Toggle (Mobile) */}
@@ -1384,6 +1431,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
               loginLink={loginLink}
               dict={dict}
               user={user}
+              authChecked={authChecked}
               activeLocale={activeLocale}
               onClose={() => setMobileMenuOpen(false)}
               isDarkPage={isDarkPage}
@@ -1392,7 +1440,16 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
 
           {/* Action CTAs in Mobile */}
           <div className="pt-3 border-t border-slate-200 dark:border-white/10 space-y-2">
-            {user ? (
+            {!authChecked ? (
+              <div
+                aria-hidden="true"
+                className={`w-full h-10 rounded-full animate-pulse border ${
+                  isDarkPage
+                    ? "bg-white/10 border-white/10"
+                    : "bg-slate-100 dark:bg-white/10 border-slate-200 dark:border-white/10"
+                }`}
+              />
+            ) : user ? (
               <>
                 <Link
                   href={dashboardLink}

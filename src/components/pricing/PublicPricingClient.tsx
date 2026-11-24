@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import LandingFaqAccordion from "@/components/landing/LandingFaqAccordion";
 import { GUMROAD_VARIANTS } from "@/lib/gumroad";
+import { formatBidiInlineText } from "@/lib/courseUtils";
 
 export interface PricingUser {
   id: string;
@@ -308,27 +309,57 @@ export default function PublicPricingClient({
                 </span>
               </li>
               <li className="flex items-start gap-2.5 text-slate-400 line-through">
-                <span className="text-slate-400 font-bold text-sm">✕</span>
+                <svg
+                  className="w-4 h-4 text-slate-400 shrink-0 mt-0.5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
                 <span>
-                  {isAr
-                    ? "خطابات Anschreiben متقدمة يومياً"
-                    : isDe
-                    ? "Tägliche erweiterte Anschreiben"
-                    : isFr
-                    ? "Lettres de motivation Anschreiben avancées quotidiennes"
-                    : "Daily advanced AI Cover Letters"}
+                  {formatBidiInlineText(
+                    isAr
+                      ? "خطابات Anschreiben متقدمة يومياً"
+                      : isDe
+                      ? "Tägliche erweiterte Anschreiben"
+                      : isFr
+                      ? "Lettres de motivation Anschreiben avancées quotidiennes"
+                      : "Daily advanced AI Cover Letters",
+                    isAr
+                  )}
                 </span>
               </li>
               <li className="flex items-start gap-2.5 text-slate-400 line-through">
-                <span className="text-slate-400 font-bold text-sm">✕</span>
+                <svg
+                  className="w-4 h-4 text-slate-400 shrink-0 mt-0.5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
                 <span>
-                  {isAr
-                    ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
-                    : isDe
-                    ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
-                    : isFr
-                    ? "Conversion instantanée 1-Click PDF vers DIN 5008"
-                    : "1-Click PDF to DIN 5008 Auto-Adapt"}
+                  {formatBidiInlineText(
+                    isAr
+                      ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
+                      : isDe
+                      ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
+                      : isFr
+                      ? "Conversion instantanée 1-Click PDF vers DIN 5008"
+                      : "1-Click PDF to DIN 5008 Auto-Adapt",
+                    isAr
+                  )}
                 </span>
               </li>
             </ul>
@@ -417,25 +448,31 @@ export default function PublicPricingClient({
               <li className="flex items-start gap-2.5">
                 <span className="text-blue-600 font-bold text-sm">✓</span>
                 <span className="font-semibold text-[#061838]">
-                  {isAr
-                    ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
-                    : isDe
-                    ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
-                    : isFr
-                    ? "Conversion instantanée 1-Click PDF vers DIN 5008"
-                    : "1-Click PDF to DIN 5008 Auto-Adapt"}
+                  {formatBidiInlineText(
+                    isAr
+                      ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
+                      : isDe
+                      ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
+                      : isFr
+                      ? "Conversion instantanée 1-Click PDF vers DIN 5008"
+                      : "1-Click PDF to DIN 5008 Auto-Adapt",
+                    isAr
+                  )}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
                 <span className="text-blue-600 font-bold text-sm">✓</span>
                 <span className="font-semibold text-[#061838]">
-                  {isAr
-                    ? "تجميع ملف الترشيح الكامل (Bewerbungsmappe) — ✓ متاح (30 يوماً)"
-                    : isDe
-                    ? "Vollständige Bewerbungsmappe — ✓ Inklusive (30 Tage)"
-                    : isFr
-                    ? "Compilateur Bewerbungsmappe — ✓ Inclus (30 jours)"
-                    : "Full Bewerbungsmappe Dossier Compiler — ✓ Included (30 days)"}
+                  {formatBidiInlineText(
+                    isAr
+                      ? "تجميع ملف الترشيح الكامل (Bewerbungsmappe) — متاح (30 يوماً)"
+                      : isDe
+                      ? "Vollständige Bewerbungsmappe — Inklusive (30 Tage)"
+                      : isFr
+                      ? "Compilateur Bewerbungsmappe — Inclus (30 jours)"
+                      : "Full Bewerbungsmappe Dossier Compiler — Included (30 days)",
+                    isAr
+                  )}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
@@ -568,13 +605,16 @@ export default function PublicPricingClient({
               <li className="flex items-start gap-2.5">
                 <span className="text-[#FACC15] font-bold text-sm">✓</span>
                 <span className="font-semibold text-white">
-                  {isAr
-                    ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
-                    : isDe
-                    ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
-                    : isFr
-                    ? "Conversion instantanée 1-Click PDF vers DIN 5008"
-                    : "1-Click PDF to DIN 5008 Auto-Adapt"}
+                  {formatBidiInlineText(
+                    isAr
+                      ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
+                      : isDe
+                      ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
+                      : isFr
+                      ? "Conversion instantanée 1-Click PDF vers DIN 5008"
+                      : "1-Click PDF to DIN 5008 Auto-Adapt",
+                    isAr
+                  )}
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
@@ -781,7 +821,7 @@ export default function PublicPricingClient({
                 <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">✓ {isAr ? "مضمّن بالكامل (غلاف + سيرة + خطاب)" : isDe ? "Inklusive (Deckblatt + CV + Anschreiben)" : isFr ? "Inclus (Page de garde + CV + Lettre)" : "Included (Cover + CV + Anschreiben)"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{isAr ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)" : isDe ? "1-Klick PDF zu DIN 5008 Auto-Adapt" : "1-Click PDF to DIN 5008 Auto-Adapt"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{formatBidiInlineText(isAr ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)" : isDe ? "1-Klick PDF zu DIN 5008 Auto-Adapt" : "1-Click PDF to DIN 5008 Auto-Adapt", isAr)}</td>
                 <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">{isAr ? "تجريبي" : isDe ? "1 Test" : "1 Trial"}</td>
                 <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
                 <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>

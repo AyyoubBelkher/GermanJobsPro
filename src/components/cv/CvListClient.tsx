@@ -1,9 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CvMagicImportModal from "@/components/cv/CvMagicImportModal";
+import { formatNumericDateUTC } from "@/lib/cv-date-utils";
+import { formatBidiInlineText } from "@/lib/courseUtils";
+import {
+  CV_LIST_PAGE_SIZE,
+  filterCvSummaries,
+  paginateItems,
+} from "@/lib/cv-list-utils";
 
 interface CvSummary {
   id: string;
@@ -35,9 +42,27 @@ export default function CvListClient({ initialCvs, locale }: CvListClientProps) 
   const [isDeleting, setIsDeleting] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const isAr = locale === "ar";
   const isDe = locale === "de";
+  const isFr = locale === "fr";
+
+  const filteredCvs = useMemo(
+    () => filterCvSummaries(cvs, searchQuery),
+    [cvs, searchQuery]
+  );
+
+  const pagination = useMemo(
+    () => paginateItems(filteredCvs, currentPage, CV_LIST_PAGE_SIZE),
+    [filteredCvs, currentPage]
+  );
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
 
   const handleDelete = async (id: string) => {
     setIsDeleting(true);
@@ -126,21 +151,27 @@ export default function CvListClient({ initialCvs, locale }: CvListClientProps) 
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-extrabold uppercase tracking-wider">
-              <span>{isAr ? "تكييف ذكي (DIN 5008)" : "1-Click PDF to DIN 5008 Auto-Adapt"}</span>
+              <span>{formatBidiInlineText(isAr ? "تكييف ذكي (DIN 5008)" : "1-Click PDF to DIN 5008 Auto-Adapt", isAr)}</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white">
-              {isAr
-                ? "لديك سيرة ذاتية جاهزة؟ حولها فوراً إلى المعايير الألمانية DIN 5008"
-                : isDe
-                ? "Bestehenden Lebenslauf im Handumdrehen nach DIN 5008 optimieren"
-                : "Already have a CV? Convert it instantly to German DIN 5008 standard"}
+              {formatBidiInlineText(
+                isAr
+                  ? "لديك سيرة ذاتية جاهزة؟ حولها فوراً إلى المعايير الألمانية DIN 5008"
+                  : isDe
+                  ? "Bestehenden Lebenslauf im Handumdrehen nach DIN 5008 optimieren"
+                  : "Already have a CV? Convert it instantly to German DIN 5008 standard",
+                isAr
+              )}
             </h2>
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              {isAr
-                ? "ارفع ملف PDF بأي لغة، وسيقوم الذكاء الاصطناعي باستخراج بياناتك وترجمتها وصياغتها بأسلوب ألماني احترافي (Substantivstil) متوافق تماماً مع أنظمة ATS."
-                : isDe
-                ? "PDF hochladen, Daten automatisch extrahieren und mit 1-Klick einen DIN 5008 konformen Lebenslauf im perfekten Substantivstil generieren."
-                : "Upload your existing PDF in any language to auto-extract, translate, and reformat into an ATS-friendly German resume."}
+              {formatBidiInlineText(
+                isAr
+                  ? "ارفع ملف PDF بأي لغة، وسيقوم الذكاء الاصطناعي باستخراج بياناتك وترجمتها وصياغتها بأسلوب ألماني احترافي (Substantivstil) متوافق تماماً مع أنظمة ATS."
+                  : isDe
+                  ? "PDF hochladen, Daten automatisch extrahieren und mit 1-Klick einen DIN 5008 konformen Lebenslauf im perfekten Substantivstil generieren."
+                  : "Upload your existing PDF in any language to auto-extract, translate, and reformat into an ATS-friendly German resume.",
+                isAr
+              )}
             </p>
           </div>
 
@@ -149,7 +180,12 @@ export default function CvListClient({ initialCvs, locale }: CvListClientProps) 
             onClick={() => setIsImportModalOpen(true)}
             className="shrink-0 px-6 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm shadow-xl shadow-blue-600/30 active:scale-95 transition-all cursor-pointer flex items-center gap-2.5 border border-blue-400/30"
           >
-            <span>{isAr ? "تحويل فوري (1-Click PDF)" : isDe ? "1-Klick PDF zu DIN 5008" : "Instant Convert (1-Click PDF)"}</span>
+            <span>
+              {formatBidiInlineText(
+                isAr ? "تحويل فوري (1-Click PDF)" : isDe ? "1-Klick PDF zu DIN 5008" : "Instant Convert (1-Click PDF)",
+                isAr
+              )}
+            </span>
           </button>
         </div>
       </div>
@@ -177,7 +213,7 @@ export default function CvListClient({ initialCvs, locale }: CvListClientProps) 
               onClick={() => setIsImportModalOpen(true)}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-600/20 cursor-pointer"
             >
-              <span>{isAr ? "تكييف ذكي (DIN 5008)" : isDe ? "Bestehende PDF anpassen" : "1-Click PDF (DIN 5008)"}</span>
+              <span>{formatBidiInlineText(isAr ? "تكييف ذكي (DIN 5008)" : isDe ? "Bestehende PDF anpassen" : "1-Click PDF (DIN 5008)", isAr)}</span>
             </button>
             <Link
               href={`/${locale}/dashboard/cv/new`}
@@ -188,87 +224,231 @@ export default function CvListClient({ initialCvs, locale }: CvListClientProps) 
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {cvs.map((cv) => (
-            <div
-              key={cv.id}
-              className="bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-3xl p-6 transition-all shadow-xl flex flex-col justify-between space-y-6 group"
-            >
-              <div className="space-y-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1 min-w-0">
-                    <h3 className="font-extrabold text-white text-lg truncate group-hover:text-blue-400 transition-colors" dir="auto">
-                      {cv.title}
-                    </h3>
-                    <p className="text-xs text-slate-400 font-medium truncate" dir="auto">
-                      {cv.personalInfo?.targetJobTitle || (isAr ? "بدون مسمى وظيفي" : "No target title")}
-                    </p>
-                  </div>
-                  <span
-                    className={`px-2.5 py-1 rounded-full text-xs font-bold shrink-0 ${
-                      cv.isDraft
-                        ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                        : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                    }`}
-                  >
-                    {cv.isDraft ? (isAr ? "مسودة" : isDe ? "Entwurf" : "Draft") : isAr ? "مكتمل" : isDe ? "Fertig" : "Completed"}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2 text-xs text-slate-400">
-                  <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 font-mono uppercase font-bold">
-                    {cv.language}
-                  </span>
-                  <span>•</span>
-                  <span>DIN 5008</span>
-                  <span>•</span>
-                  <span><bdi dir="ltr">{new Date(cv.updatedAt).toLocaleDateString(locale)}</bdi></span>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between gap-2">
-                <Link
-                  href={`/${locale}/dashboard/cv/${cv.id}`}
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/20 font-bold text-xs text-center transition-all"
-                >
-                  {isAr ? "تعديل السيرة" : isDe ? "Bearbeiten" : "Edit CV"}
-                </Link>
-
-                <a
-                  href={`/api/cv/${cv.id}/pdf`}
-                  download
-                  title={isAr ? "تحميل PDF رسمي (DIN 5008)" : isDe ? "DIN 5008 PDF herunterladen" : "Download PDF"}
-                  className="p-2.5 rounded-xl bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 transition-all cursor-pointer"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.5V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                  </svg>
-                </a>
-
+        <div className="space-y-6">
+          {/* Client-side Search & Summary Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/70 border border-slate-800 rounded-2xl p-3 sm:p-4">
+            <div className="relative flex-1">
+              <svg
+                className="w-4 h-4 text-slate-400 absolute top-1/2 -translate-y-1/2 ltr:left-3.5 rtl:right-3.5 pointer-events-none"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                aria-label={isAr ? "البحث في السير الذاتية" : isDe ? "Lebensläufe durchsuchen" : isFr ? "Rechercher dans vos CV" : "Search resumes"}
+                placeholder={
+                  isAr
+                    ? "ابحث بعنوان السيرة الذاتية أو المسمى الوظيفي..."
+                    : isDe
+                    ? "Nach Lebenslauftitel oder Zielposition suchen..."
+                    : isFr
+                    ? "Rechercher par titre ou poste ciblé..."
+                    : "Search by CV title or target job title..."
+                }
+                className="w-full py-2.5 ltr:pl-10 ltr:pr-9 rtl:pr-10 rtl:pl-9 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder:text-slate-400 text-xs sm:text-sm focus:border-blue-500 focus:outline-none"
+              />
+              {searchQuery && (
                 <button
                   type="button"
-                  onClick={() => handleDuplicate(cv)}
-                  title={isAr ? "نسخ السيرة" : isDe ? "Duplizieren" : "Duplicate"}
-                  className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all cursor-pointer"
+                  onClick={() => handleSearchChange("")}
+                  aria-label={isAr ? "مسح البحث" : isDe ? "Suche löschen" : "Clear search"}
+                  className="absolute top-1/2 -translate-y-1/2 ltr:right-2.5 rtl:left-2.5 p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v2.25A2.25 2.25 0 0 1 13.5 21.75h-7.5A2.25 2.25 0 0 1 3.75 19.5V7.5a2.25 2.25 0 0 1 2.25-2.25h2.25m3 0h7.5A2.25 2.25 0 0 1 21 7.5v12a2.25 2.25 0 0 1-2.25 2.25h-7.5" />
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
                   </svg>
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => setDeletingId(cv.id)}
-                  title={isAr ? "حذف" : isDe ? "Löschen" : "Delete"}
-                  className="p-2.5 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white transition-all cursor-pointer"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                  </svg>
-                </button>
-              </div>
+              )}
             </div>
-          ))}
+
+            <div className="text-xs font-semibold text-slate-300 shrink-0 px-1">
+              {isAr
+                ? `عرض ${pagination.items.length} من ${pagination.totalItems} سيرة`
+                : isDe
+                ? `${pagination.items.length} von ${pagination.totalItems} Lebensläufen`
+                : isFr
+                ? `${pagination.items.length} sur ${pagination.totalItems} CV`
+                : `Showing ${pagination.items.length} of ${pagination.totalItems} CVs`}
+            </div>
+          </div>
+
+          {pagination.totalItems === 0 ? (
+            <div className="text-center py-12 px-4 rounded-3xl bg-slate-900/60 border border-dashed border-slate-800 space-y-3">
+              <p className="text-base font-bold text-white">
+                {isAr
+                  ? "لا توجد سير ذاتية مطابقة لبحثك"
+                  : isDe
+                  ? "Keine passenden Lebensläufe gefunden"
+                  : isFr
+                  ? "Aucun CV correspondant trouvé"
+                  : "No matching CVs found"}
+              </p>
+              <button
+                type="button"
+                onClick={() => handleSearchChange("")}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors cursor-pointer"
+              >
+                {isAr ? "إظهار جميع السير الذاتية" : isDe ? "Alle anzeigen" : isFr ? "Tout afficher" : "Reset search"}
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pagination.items.map((cv) => (
+                <div
+                  key={cv.id}
+                  className="bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-3xl p-6 transition-all shadow-xl flex flex-col justify-between space-y-6 group"
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1 min-w-0">
+                        <h3 className="font-extrabold text-white text-lg line-clamp-2 leading-snug group-hover:text-blue-400 transition-colors" dir="auto">
+                          {formatBidiInlineText(cv.title, isAr)}
+                        </h3>
+                        <p className="text-xs text-slate-400 font-medium truncate" dir="auto">
+                          {cv.personalInfo?.targetJobTitle || (isAr ? "بدون مسمى وظيفي" : "No target title")}
+                        </p>
+                      </div>
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-bold shrink-0 ${
+                          cv.isDraft
+                            ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                            : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                        }`}
+                      >
+                        {cv.isDraft ? (isAr ? "مسودة" : isDe ? "Entwurf" : "Draft") : isAr ? "مكتمل" : isDe ? "Fertig" : "Completed"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 font-mono uppercase font-bold">
+                        {cv.language}
+                      </span>
+                      <span>•</span>
+                      <span>DIN 5008</span>
+                      <span>•</span>
+                      <time
+                        dateTime={new Date(cv.updatedAt).toISOString()}
+                        dir="ltr"
+                        className="inline-block [unicode-bidi:isolate]"
+                      >
+                        {formatNumericDateUTC(cv.updatedAt, locale)}
+                      </time>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                    <Link
+                      href={`/${locale}/dashboard/cv/${cv.id}`}
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/20 font-bold text-xs text-center transition-all"
+                    >
+                      {isAr ? "تعديل السيرة" : isDe ? "Bearbeiten" : "Edit CV"}
+                    </Link>
+
+                    <a
+                      href={`/api/cv/${cv.id}/pdf`}
+                      download
+                      title={isAr ? "تحميل PDF رسمي (DIN 5008)" : isDe ? "DIN 5008 PDF herunterladen" : "Download PDF"}
+                      className="p-2.5 rounded-xl bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 transition-all cursor-pointer"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.5V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                      </svg>
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDuplicate(cv)}
+                      title={isAr ? "نسخ السيرة" : isDe ? "Duplizieren" : "Duplicate"}
+                      className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all cursor-pointer"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v2.25A2.25 2.25 0 0 1 13.5 21.75h-7.5A2.25 2.25 0 0 1 3.75 19.5V7.5a2.25 2.25 0 0 1 2.25-2.25h2.25m3 0h7.5A2.25 2.25 0 0 1 21 7.5v12a2.25 2.25 0 0 1-2.25 2.25h-7.5" />
+                      </svg>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDeletingId(cv.id)}
+                      title={isAr ? "حذف" : isDe ? "Löschen" : "Delete"}
+                      className="p-2.5 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white transition-all cursor-pointer"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Pagination Controls (WCAG AA high-contrast in light & dark modes) */}
+          {pagination.totalPages > 1 && (
+            <nav
+              aria-label={isAr ? "ترقيم صفحات السير الذاتية" : isDe ? "Lebenslauf-Seitennavigation" : "CV list pagination"}
+              className="flex flex-wrap items-center justify-between gap-4 pt-2"
+            >
+              <p className="text-xs font-semibold text-slate-300">
+                {isAr
+                  ? `صفحة ${pagination.currentPage} من ${pagination.totalPages}`
+                  : isDe
+                  ? `Seite ${pagination.currentPage} von ${pagination.totalPages}`
+                  : isFr
+                  ? `Page ${pagination.currentPage} sur ${pagination.totalPages}`
+                  : `Page ${pagination.currentPage} of ${pagination.totalPages}`}
+              </p>
+
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(Math.max(1, pagination.currentPage - 1))}
+                  disabled={pagination.currentPage <= 1}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer bg-slate-900 dark:bg-slate-900 text-slate-100 border-slate-700 hover:bg-slate-800 hover:text-white disabled:bg-slate-900/50 disabled:text-slate-500 disabled:border-slate-800 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                >
+                  {isAr ? "السابق" : isDe ? "Zurück" : isFr ? "Précédent" : "Previous"}
+                </button>
+
+                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((pageNum) => {
+                  const isActive = pageNum === pagination.currentPage;
+                  return (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => setCurrentPage(pageNum)}
+                      aria-current={isActive ? "page" : undefined}
+                      className={`min-w-[36px] h-9 px-2.5 rounded-xl text-xs font-extrabold border transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
+                        isActive
+                          ? "bg-blue-600 text-white border-blue-400 shadow-md shadow-blue-600/25"
+                          : "bg-slate-900 dark:bg-slate-900 text-slate-100 border-slate-700 hover:bg-slate-800 hover:text-white"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(Math.min(pagination.totalPages, pagination.currentPage + 1))}
+                  disabled={pagination.currentPage >= pagination.totalPages}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer bg-slate-900 dark:bg-slate-900 text-slate-100 border-slate-700 hover:bg-slate-800 hover:text-white disabled:bg-slate-900/50 disabled:text-slate-500 disabled:border-slate-800 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                >
+                  {isAr ? "التالي" : isDe ? "Weiter" : isFr ? "Suivant" : "Next"}
+                </button>
+              </div>
+            </nav>
+          )}
         </div>
       )}
 

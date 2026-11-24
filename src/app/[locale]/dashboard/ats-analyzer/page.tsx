@@ -46,7 +46,7 @@ export default async function AtsAnalyzerPage({
 
   return (
     <div dir={dir} className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between">
-      <Navbar locale={locale} />
+      <Navbar locale={locale} initialUser={authResult.user} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1 space-y-8">
         {/* Header Breadcrumbs */}

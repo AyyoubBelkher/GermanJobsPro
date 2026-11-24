@@ -173,7 +173,12 @@ export default function Footer({ locale = "ar", className }: FooterProps) {
 
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <p>© {new Date().getFullYear()} GermanJobsPro. {dict.footer.allRightsReserved}</p>
+          <p>
+            <span dir="ltr" className="inline-block [unicode-bidi:isolate]">
+              © {new Date().getFullYear()} GermanJobsPro.
+            </span>{" "}
+            {dict.footer.allRightsReserved}
+          </p>
           
           <div className="flex items-center gap-4 text-xs">
             <Link href={termsLink} className="hover:text-white transition-colors">
