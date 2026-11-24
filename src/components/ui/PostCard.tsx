@@ -282,14 +282,14 @@ export default function PostCard({
                 ) : null}
               </div>
             ) : (
-              <h3 className="text-xl font-bold text-[#061838] group-hover:text-blue-600 transition-colors duration-300 line-clamp-2 text-start">
+              <h3 className="text-lg sm:text-xl font-bold text-[#061838] group-hover:text-blue-600 transition-colors duration-300 line-clamp-3 leading-snug text-start">
                 {formatBidiInlineText(title, isArabicLocale)}
               </h3>
             )}
 
             {/* Excerpt */}
             <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed text-start">
-              {excerpt}
+              {formatBidiInlineText(excerpt, isArabicLocale)}
             </p>
           </div>
 

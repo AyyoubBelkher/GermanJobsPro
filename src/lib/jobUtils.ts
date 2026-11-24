@@ -894,3 +894,122 @@ export function getAnerkennungDetails(category?: string | null, isAr = false, is
     };
   }
 }
+
+/**
+ * Formats an Arabic relative day count following strict Arabic pluralization rules:
+ * - 0 -> اليوم
+ * - 1 -> منذ يوم
+ * - 2 -> منذ يومين
+ * - 3–10 -> منذ {n} أيام
+ * - 11+ -> منذ {n} يوماً
+ */
+export function formatArabicRelativeDays(days: number): string {
+  const n = Math.floor(days);
+  if (!Number.isFinite(n) || n <= 0) {
+    return "اليوم";
+  }
+  if (n === 1) {
+    return "منذ يوم";
+  }
+  if (n === 2) {
+    return "منذ يومين";
+  }
+  if (n >= 3 && n <= 10) {
+    return `منذ ${n} أيام`;
+  }
+  return `منذ ${n} يوماً`;
+}
+
+/**
+ * Formats a job publication date into a localized relative string (up to 29 days)
+ * or a formatted calendar date for older listings.
+ */
+export function formatRelativeJobDate(
+  dateInput?: string | Date | null,
+  locale: string = "ar",
+  nowDate: Date = new Date()
+): string {
+  const isAr = locale === "ar";
+  const isDe = locale === "de";
+  const isFr = locale === "fr";
+  const fallback = isAr
+    ? "محدث حديثاً"
+    : isDe
+    ? "Kürzlich aktualisiert"
+    : isFr
+    ? "Récemment mis à jour"
+    : "Recently updated";
+
+  if (!dateInput) return fallback;
+
+  try {
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return fallback;
+
+    const diffMs = Math.max(0, nowDate.getTime() - d.getTime());
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+
+    if (diffHours < 24) {
+      return isAr ? "اليوم" : isDe ? "Heute" : isFr ? "Aujourd'hui" : "Today";
+    }
+
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 30) {
+      if (isAr) {
+        return formatArabicRelativeDays(diffDays);
+      }
+      if (diffDays === 1) {
+        return isDe ? "Gestern" : isFr ? "Hier" : "1 day ago";
+      }
+      return isDe
+        ? `Vor ${diffDays} Tagen`
+        : isFr
+        ? `Il y a ${diffDays} jours`
+        : `${diffDays} days ago`;
+    }
+
+    const localeCode = isAr ? "ar-MA" : isDe ? "de-DE" : isFr ? "fr-FR" : "en-GB";
+    return d.toLocaleDateString(localeCode, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return fallback;
+  }
+}
+
+export interface SalaryBidiSegment {
+  text: string;
+  isLtr: boolean;
+}
+
+/**
+ * Splits a salary string into LTR-isolated numeric/currency segments
+ * (e.g. "€ 90.000 - € 130.000") and surrounding text segments (e.g. " سنوياً")
+ * so min-to-max ranges never visually reverse in RTL locales.
+ */
+export function splitSalaryBidiSegments(salary?: string | null): SalaryBidiSegment[] {
+  if (!salary || typeof salary !== "string") return [];
+
+  const rangeRegex =
+    /(?:(?:€|\$|£|CHF|EUR|USD)\s*)?\d[\d.,]*(?:\s*(?:€|\$|£|CHF|EUR|USD|k|K))?(?:\s*[-–—~]\s*(?:(?:€|\$|£|CHF|EUR|USD)\s*)?\d[\d.,]*(?:\s*(?:€|\$|£|CHF|EUR|USD|k|K))?)?/g;
+
+  const segments: SalaryBidiSegment[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = rangeRegex.exec(salary)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({ text: salary.slice(lastIndex, match.index), isLtr: false });
+    }
+    segments.push({ text: match[0], isLtr: true });
+    lastIndex = rangeRegex.lastIndex;
+  }
+
+  if (lastIndex < salary.length) {
+    segments.push({ text: salary.slice(lastIndex), isLtr: false });
+  }
+
+  return segments.length > 0 ? segments : [{ text: salary, isLtr: false }];
+}

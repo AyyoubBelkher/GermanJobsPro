@@ -7,6 +7,7 @@ import Footer from "@/components/ui/Footer";
 import { prisma } from "@/lib/prisma";
 import { getUserSession } from "@/lib/user-session";
 import JobDetailClient from "@/components/jobs/JobDetailClient";
+import BidiSalary from "@/components/jobs/BidiSalary";
 import { JobDetailData, extractCleanHrEmail, splitBilingualTitle, cleanJobDescription } from "@/lib/jobUtils";
 import { sanitizeJobPayload } from "@/lib/jobSanitizer";
 import { stripHtml } from "@/lib/cover-letter";
@@ -408,17 +409,17 @@ export default async function JobDetailPage({
                         </span>
                         {relJob.salary && (
                           <span className="px-2 py-0.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-medium">
-                            💰 {relJob.salary}
+                            💰 <BidiSalary salary={relJob.salary} />
                           </span>
                         )}
                       </div>
 
                       <div>
                         <h3
-                          className="font-extrabold text-[#061838] text-base leading-snug group-hover:text-blue-600 transition-colors line-clamp-2 text-start"
+                          className="font-extrabold text-[#061838] text-base leading-snug group-hover:text-blue-600 transition-colors line-clamp-2 text-start [unicode-bidi:isolate]"
                           dir="auto"
                         >
-                          <span>{primaryTitle}</span>
+                          <bdi dir="auto" className="block break-words">{primaryTitle}</bdi>
                           {latinSubtitle && (
                             <span
                               dir="ltr"
@@ -428,14 +429,14 @@ export default async function JobDetailPage({
                             </span>
                           )}
                         </h3>
-                        <p className="text-xs text-slate-600 mt-1" dir="auto">
-                          🏢 {relJob.company}
+                        <p className="text-xs text-slate-600 mt-1 text-start" dir="auto">
+                          🏢 <bdi dir="auto">{relJob.company}</bdi>
                         </p>
                       </div>
 
                       <div className="flex items-center gap-2 flex-wrap text-xs pt-1">
                         <span className="px-2 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 font-medium">
-                          📍 {relJob.city || (isAr ? "ألمانيا" : isDe ? "Deutschland" : "Germany")}
+                          📍 <bdi dir="auto">{relJob.city || (isAr ? "ألمانيا" : isDe ? "Deutschland" : "Germany")}</bdi>
                         </span>
                         <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-medium">
                           🇩🇪 {relJob.languageReq || "B1/B2"}

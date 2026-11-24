@@ -476,7 +476,10 @@ export function extractCleanExcerpt(
     return text;
   }
 
-  return text.substring(0, maxLength).trim() + "...";
+  const sliced = text.substring(0, maxLength);
+  const lastSpace = sliced.lastIndexOf(" ");
+  const cleanCut = lastSpace > Math.floor(maxLength * 0.6) ? sliced.substring(0, lastSpace) : sliced;
+  return cleanCut.trim() + "...";
 }
 
 /**
@@ -629,12 +632,64 @@ export function localizeCategoryLabel(
   return trimmed;
 }
 
+const NESTED_PAREN_REGEX =
+  /\(([A-Za-z0-9\s]+?)\s*\(([A-Za-zäöüÄÖÜß0-9\s\-/]+?)(?:\)+|(\s*)(?=[\u0600-\u06FF]|$))/g;
+
+const BIDI_TOKEN_REGEX =
+  /(\([A-Za-zäöüÄÖÜß0-9][^()]*\))(\s*(?:\.{3}|[:؟،.;!]))?|(?<=^|[\s،,.:;!؟])(H\+\/-|H\+|H\-)([:؟،.;])?(?=[\s،,.:;!؟]|$)|(?<=^|[\s،,.:;!؟])((?:DIN\s*\d+|(?:[A-Z]{2,}(?:\/[A-Z]{2,})*(?:-[A-Z0-9]+)?)|(?:[A-Za-zäöüÄÖÜß][A-Za-zäöüÄÖÜß0-9-]*)(?=\s*(?:\.{3}|[:؟،.;!]))))(\s*(?:\.{3}|[:؟،.;!]))?(?=[\s،,.:;!؟]|$)/g;
+
+/**
+ * Pure-string BiDi isolation helper for Arabic RTL strings:
+ * Isolates parenthesized Latin/German terms (e.g. "(Arbeitskultur):"),
+ * status tokens (H+, H-, H+/-), and standalone Latin acronyms/codes (e.g. "ATS.", "DIN 5008")
+ * using Unicode Left-to-Right Isolate (\u2066...\u2069) and Right-to-Left Mark (\u200F)
+ * before trailing punctuation.
+ */
+export function isolateBidiText(
+  text: string | null | undefined,
+  isAr: boolean = true
+): string {
+  if (!text || typeof text !== "string") return text ?? "";
+  if (!isAr) return text;
+
+  const normalized = text.replace(
+    NESTED_PAREN_REGEX,
+    (_m, p1, p2, space) => `(${p1.trim()} - ${p2.trim()})${space || ""}`
+  );
+
+  BIDI_TOKEN_REGEX.lastIndex = 0;
+  return normalized.replace(
+    BIDI_TOKEN_REGEX,
+    (
+      _full,
+      parenSegment?: string,
+      parenPunct?: string,
+      statusToken?: string,
+      statusPunct?: string,
+      latinToken?: string,
+      latinPunct?: string
+    ) => {
+      if (parenSegment) {
+        return `\u2066${parenSegment}\u2069${parenPunct ? `\u200F${parenPunct}` : ""}`;
+      }
+      if (statusToken) {
+        return `\u2066${statusToken}\u2069${statusPunct ? `\u200F${statusPunct}` : "\u200F"}`;
+      }
+      if (latinToken) {
+        return `\u2066${latinToken}\u2069${latinPunct ? `\u200F${latinPunct}` : ""}`;
+      }
+      return _full;
+    }
+  );
+}
+
 /**
  * BiDi-safe inline formatter that processes string nodes in Arabic mode:
  * 1. Normalizes nested / unbalanced parentheses such as (ZAB (Zentralstelle...) -> (ZAB - Zentralstelle...)
  * 2. Wraps parenthetical segments containing Latin/German characters inside <bdi dir="ltr">...</bdi>
  *    followed by an explicit Right-to-Left Mark (\u200F) when followed by punctuation (:, ؟, ،, ., ;)
- * 3. Wraps standalone technical/status tokens like H+, H-, H+/- inside <bdi dir="ltr">...</bdi>\u200F
+ * 3. Wraps standalone technical/status tokens like H+, H-, H+/- and Latin acronyms/codes like ATS, DIN 5008
+ *    inside <bdi dir="ltr">...</bdi>\u200F
  */
 export function formatBidiInlineText(
   text: string | null | undefined,
@@ -646,28 +701,24 @@ export function formatBidiInlineText(
   // 1. Fix nested / unbalanced parentheses:
   // e.g. "(ZAB (Zentralstelle für ausländisches Bildungswesen" -> "(ZAB - Zentralstelle für ausländisches Bildungswesen)"
   const normalized = text.replace(
-    /\(([A-Za-z0-9\s]+?)\s*\(([A-Za-zäöüÄÖÜß0-9\s\-/]+?)(?:\)+|(\s*)(?=[\u0600-\u06FF]|$))/g,
+    NESTED_PAREN_REGEX,
     (_m, p1, p2, space) => `(${p1.trim()} - ${p2.trim()})${space || ""}`
   );
 
-  // 2. Tokenize parenthetical Latin/German segments and standalone status tokens
-  // Group 1 & 2: Parenthetical segment and trailing punctuation
-  // Group 3 & 4: Standalone H+, H-, H+/- and trailing punctuation
-  const tokenRegex =
-    /(\([A-Za-zäöüÄÖÜß0-9][^()]*\))([:؟،.;])?|(?<=^|[\s،,.:;!؟])(H\+\/-|H\+|H\-)([:؟،.;])?(?=[\s،,.:;!؟]|$)/g;
-
-  if (!tokenRegex.test(normalized)) {
+  // 2. Tokenize parenthetical Latin/German segments, standalone status tokens, and Latin acronyms/codes
+  BIDI_TOKEN_REGEX.lastIndex = 0;
+  if (!BIDI_TOKEN_REGEX.test(normalized)) {
     return normalized;
   }
-  tokenRegex.lastIndex = 0;
+  BIDI_TOKEN_REGEX.lastIndex = 0;
 
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = tokenRegex.exec(normalized)) !== null) {
+  while ((match = BIDI_TOKEN_REGEX.exec(normalized)) !== null) {
     const matchStart = match.index;
-    const matchEnd = tokenRegex.lastIndex;
+    const matchEnd = BIDI_TOKEN_REGEX.lastIndex;
 
     if (matchStart > lastIndex) {
       parts.push(normalized.substring(lastIndex, matchStart));
@@ -677,6 +728,8 @@ export function formatBidiInlineText(
     const parenPunct = match[2];
     const statusToken = match[3];
     const statusPunct = match[4];
+    const latinToken = match[5];
+    const latinPunct = match[6];
 
     if (parenSegment) {
       const isShort = parenSegment.length <= 14 && !/\s/.test(parenSegment);
@@ -721,6 +774,31 @@ export function formatBidiInlineText(
           statusPunct ? "\u200F" + statusPunct : "\u200F"
         )
       );
+    } else if (latinToken) {
+      const isShort =
+        latinToken.length <= 14 && (!/\s/.test(latinToken) || /^DIN\s*\d+$/i.test(latinToken));
+      const bdiEl = React.createElement(
+        "bdi",
+        {
+          key: `bdi-l-${matchStart}`,
+          dir: "ltr",
+          className: isShort ? "inline-block whitespace-nowrap" : "inline break-words",
+        },
+        latinToken
+      );
+
+      if (latinPunct) {
+        parts.push(
+          React.createElement(
+            React.Fragment,
+            { key: `frag-l-${matchStart}` },
+            bdiEl,
+            "\u200F" + latinPunct
+          )
+        );
+      } else {
+        parts.push(bdiEl);
+      }
     }
 
     lastIndex = matchEnd;

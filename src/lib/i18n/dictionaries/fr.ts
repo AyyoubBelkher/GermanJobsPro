@@ -62,7 +62,7 @@ export const fr: Dictionary = {
     title: '💼 Emplois et formations (Ausbildung) en Allemagne',
     subtitle:
       'Explorez des opportunités vérifiées en Allemagne avec générateur de lettre de motivation par IA et audit de CV ATS en un clic.',
-    searchPlaceholder: '🔍 Rechercher par poste, entreprise ou ville...',
+    searchPlaceholder: 'Rechercher par poste, entreprise ou ville...',
     allLanguages: 'Toutes les langues',
     categories: {
       all: 'Toutes les catégories',

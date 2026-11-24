@@ -11,7 +11,9 @@ import {
   cleanJobDescription,
   inferDisplayLanguageReq,
   inferDisplayCategory,
+  formatRelativeJobDate,
 } from "@/lib/jobUtils";
+import BidiSalary from "@/components/jobs/BidiSalary";
 
 export { stripHtml };
 
@@ -226,34 +228,8 @@ export default function JobBoardClient({
       ? "✕ Effacer les filtres"
       : "✕ Clear filters";
 
-  const formatDate = (dateVal: string | Date) => {
-    const d = new Date(dateVal);
-    const now = new Date();
-    const diffHours = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60));
-
-    if (diffHours < 24) {
-      return dict.jobs.dateToday;
-    }
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffDays === 1) {
-      return dict.jobs.dateYesterday;
-    }
-    if (diffDays < 7) {
-      return dict.jobs.dateDaysAgo.replace("{days}", String(diffDays));
-    }
-    const localeCode =
-      activeLocale === "ar"
-        ? "ar-MA"
-        : activeLocale === "de"
-        ? "de-DE"
-        : activeLocale === "fr"
-        ? "fr-FR"
-        : "en-US";
-    return d.toLocaleDateString(localeCode, {
-      month: "short",
-      day: "numeric",
-    });
-  };
+  const formatDate = (dateVal: string | Date) =>
+    formatRelativeJobDate(dateVal, activeLocale);
 
   return (
     <div className="space-y-8" dir={dir}>
@@ -283,9 +259,22 @@ export default function JobBoardClient({
                 setPage(1);
               }}
               placeholder={dict.jobs.searchPlaceholder}
-              className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white border border-slate-200 text-slate-900 text-sm placeholder:text-slate-400 focus:border-blue-500 focus:outline-hidden transition-all shadow-xs"
+              className="w-full ps-11 pe-4 py-3.5 rounded-2xl bg-white border border-slate-200 text-slate-900 text-sm placeholder:text-slate-400 focus:border-blue-500 focus:outline-hidden transition-all shadow-xs"
             />
-            <span className="absolute left-4 top-4 text-slate-400 text-base">🔍</span>
+            <svg
+              className="w-4 h-4 text-slate-400 absolute start-4 top-1/2 -translate-y-1/2 pointer-events-none"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="m21 21-4.35-4.35m1.85-5.15a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"
+              />
+            </svg>
           </div>
 
           <div className="sm:col-span-1 md:col-span-3">
@@ -490,14 +479,16 @@ export default function JobBoardClient({
                         </span>
                       )}
                     </div>
-                    <span className="text-[11px] text-slate-500">{formatDate(job.publishedAt)}</span>
+                    <span className="text-[11px] text-slate-500" suppressHydrationWarning>{formatDate(job.publishedAt)}</span>
                   </div>
 
-                  <div dir="auto" className="text-start">
+                  <div dir="auto" className="text-start [unicode-bidi:isolate]">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 dir="auto" className="font-extrabold text-[#061838] text-base leading-snug hover:text-blue-600 transition-colors text-start flex-1">
-                        <Link href={`/${activeLocale}/jobs/${job.id}`} className="block text-start" dir="auto">
-                          <span>{primaryTitle}</span>
+                      <h3 dir="auto" className="font-extrabold text-[#061838] text-base leading-snug hover:text-blue-600 transition-colors text-start flex-1 min-w-0">
+                        <Link href={`/${activeLocale}/jobs/${job.id}`} className="block text-start [unicode-bidi:isolate]" dir="auto">
+                          <bdi dir="auto" className="block break-words">
+                            {primaryTitle}
+                          </bdi>
                           {latinSubtitle && (
                             <span
                               dir="ltr"
@@ -514,25 +505,25 @@ export default function JobBoardClient({
                         variant="blue"
                       />
                     </div>
-                    <p dir="auto" className="text-xs text-slate-600 mt-1.5 text-start">🏢 <bdi dir="ltr">{job.company}</bdi></p>
+                    <p dir="auto" className="text-xs text-slate-600 mt-1.5 text-start">🏢 <bdi dir="auto">{job.company}</bdi></p>
                   </div>
 
                 <div className="flex items-center gap-2 flex-wrap text-xs">
                   <span className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 font-medium">
-                    📍 <bdi dir="ltr">{job.city || dict.jobs.details.germany}</bdi>
+                    📍 <bdi dir="auto">{job.city || dict.jobs.details.germany}</bdi>
                   </span>
                   <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-medium">
                     {langBadge.startsWith("EN") ? `🇬🇧 ${langBadge}` : `🇩🇪 ${formatLangLevel(langBadge)}`}
                   </span>
                   {job.salary && (
                     <span className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 font-medium">
-                      💰 {job.salary}
+                      💰 <BidiSalary salary={job.salary} />
                     </span>
                   )}
                 </div>
 
                 {job.descriptionRaw && (
-                  <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed text-start" dir="auto">
+                  <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed text-start [unicode-bidi:isolate] break-words" dir="auto">
                     {cleanJobDescription(job.descriptionRaw)}
                   </p>
                 )}
@@ -583,7 +574,7 @@ export default function JobBoardClient({
             type="button"
             onClick={() => handlePageChange(activePage - 1)}
             disabled={activePage <= 1}
-            className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-30 text-xs font-bold transition-all cursor-pointer shadow-sm"
+            className="px-4 py-2 rounded-xl bg-white dark:bg-[#0A1936] border border-slate-300/90 dark:border-slate-500 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-[#132B59] hover:text-slate-950 dark:hover:text-white disabled:bg-slate-100 dark:disabled:bg-slate-900 disabled:text-slate-600 dark:disabled:text-slate-400 disabled:border-slate-300/90 dark:disabled:border-slate-700 disabled:hover:bg-slate-100 dark:disabled:hover:bg-slate-900 disabled:cursor-not-allowed text-xs font-bold transition-all cursor-pointer shadow-sm"
           >
             {dict.jobs.previous}
           </button>
@@ -596,10 +587,11 @@ export default function JobBoardClient({
                   key={p}
                   type="button"
                   onClick={() => handlePageChange(p)}
-                  className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  aria-current={activePage === p ? "page" : undefined}
+                  className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     activePage === p
-                      ? "bg-[#061838] text-white shadow-sm"
-                      : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 shadow-xs"
+                      ? "bg-[#061838] text-white border-[#061838] dark:bg-blue-600 dark:text-white dark:border-blue-400 shadow-sm"
+                      : "bg-white dark:bg-[#0A1936] text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-[#132B59] hover:text-slate-950 dark:hover:text-white border-slate-300/90 dark:border-slate-500 shadow-xs"
                   }`}
                 >
                   {p}
@@ -612,7 +604,7 @@ export default function JobBoardClient({
             type="button"
             onClick={() => handlePageChange(activePage + 1)}
             disabled={activePage >= totalPages}
-            className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-30 text-xs font-bold transition-all cursor-pointer shadow-sm"
+            className="px-4 py-2 rounded-xl bg-white dark:bg-[#0A1936] border border-slate-300/90 dark:border-slate-500 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-[#132B59] hover:text-slate-950 dark:hover:text-white disabled:bg-slate-100 dark:disabled:bg-slate-900 disabled:text-slate-600 dark:disabled:text-slate-400 disabled:border-slate-300/90 dark:disabled:border-slate-700 disabled:hover:bg-slate-100 dark:disabled:hover:bg-slate-900 disabled:cursor-not-allowed text-xs font-bold transition-all cursor-pointer shadow-sm"
           >
             {dict.jobs.next}
           </button>

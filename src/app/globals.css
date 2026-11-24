@@ -48,6 +48,22 @@ body {
   display: none;
 }
 
+/* Scoped dark autofill override for admin login inputs */
+input.admin-dark-input {
+  color-scheme: dark;
+}
+
+input.admin-dark-input:-webkit-autofill,
+input.admin-dark-input:-webkit-autofill:hover,
+input.admin-dark-input:-webkit-autofill:focus,
+input.admin-dark-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #020617 inset !important;
+  box-shadow: 0 0 0 1000px #020617 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
 @utility bg-gradient-to-e {
   background-image: linear-gradient(to right, var(--tw-gradient-stops));
   &:where([dir="rtl"], [dir="rtl"] *) {

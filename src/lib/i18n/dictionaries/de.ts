@@ -62,7 +62,7 @@ export const de: Dictionary = {
     title: '💼 Jobs & Ausbildungsplätze in Deutschland',
     subtitle:
       'Finden Sie aktuelle Jobs in Deutschland mit 1-Klick Anschreiben-Generator und ATS-Lebenslauf-Check.',
-    searchPlaceholder: '🔍 Jobtitel, Unternehmen oder Stadt suchen...',
+    searchPlaceholder: 'Jobtitel, Unternehmen oder Stadt suchen...',
     allLanguages: 'Alle Sprachen',
     categories: {
       all: 'Alle Kategorien',

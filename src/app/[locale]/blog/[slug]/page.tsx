@@ -1056,7 +1056,7 @@ export default async function SinglePostPage({
                         <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
                           {relIsA1 && relParsed?.lessonNumber ? `🇩🇪 ${ui.lessonWord} ${relParsed.lessonNumber}` : localizeCategoryLabel(relLocalized.category, locale)}
                         </span>
-                        <h3 className="text-lg font-bold text-[#061838] group-hover:text-blue-600 line-clamp-2 leading-snug transition-colors">
+                        <h3 className="text-lg font-bold text-[#061838] group-hover:text-blue-600 line-clamp-3 leading-snug transition-colors">
                           {formatBidiInlineText(relTitle, isAr)}
                         </h3>
                       </div>

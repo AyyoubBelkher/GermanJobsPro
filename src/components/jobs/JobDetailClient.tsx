@@ -20,7 +20,9 @@ import {
   isValidHrEmail,
   extractCleanHrEmail,
   getAnerkennungDetails,
+  formatRelativeJobDate,
 } from "@/lib/jobUtils";
+import BidiSalary from "@/components/jobs/BidiSalary";
 
 const formatLangLevel = (lvl?: string | null) => (!lvl || lvl.toLowerCase() === "none") ? "Deutsch (B1/B2)" : lvl;
 
@@ -197,33 +199,8 @@ function parseRequirementsSections(
   };
 }
 
-function formatJobDate(dateInput?: string | Date | null, isAr = false, isDe = false): string {
-  if (!dateInput) return isAr ? "محدث حديثاً" : isDe ? "Kürzlich aktualisiert" : "Recently updated";
-  try {
-    const d = new Date(dateInput);
-    if (isNaN(d.getTime())) return isAr ? "محدث حديثاً" : isDe ? "Kürzlich aktualisiert" : "Recently updated";
-    const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffDays <= 0) {
-      return isAr ? "اليوم" : isDe ? "Heute" : "Today";
-    }
-    if (diffDays === 1) {
-      return isAr ? "منذ يوم واحد" : isDe ? "Gestern" : "Yesterday";
-    }
-    if (diffDays < 7) {
-      return isAr ? `منذ ${diffDays} أيام` : isDe ? `Vor ${diffDays} Tagen` : `${diffDays} days ago`;
-    }
-    return d.toLocaleDateString(isAr ? "ar-MA" : isDe ? "de-DE" : "en-GB", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return isAr ? "محدث حديثاً" : "Recently updated";
-  }
+function formatJobDate(dateInput?: string | Date | null, locale: string = "ar"): string {
+  return formatRelativeJobDate(dateInput, locale);
 }
 
 function toSafeIsoString(val: unknown): string {
@@ -311,7 +288,7 @@ export default function JobDetailClient({
   const cefrLevel = formatLangLevel(extractCefrLevel(job.languageLevel || job.languageReq, job.requirements));
   const portalInfo = detectPortalInfo(job.applyUrl);
   const anerkennung = getAnerkennungDetails(job.category, isAr, isDe);
-  const formattedDate = formatJobDate(job.publishedAt, isAr, isDe);
+  const formattedDate = formatJobDate(job.publishedAt, activeLocale);
 
   const parsedDescription = parseDescriptionSections(job.descriptionRaw);
   const parsedRequirements = parseRequirementsSections(job.requirements, job.languageLevel || job.languageReq);
@@ -925,7 +902,7 @@ export default function JobDetailClient({
           <div className="flex justify-between py-1 border-b border-slate-100 gap-2">
             <span className="text-slate-500 shrink-0">{dict?.jobs?.details?.salary || (isAr ? "الراتب" : "Gehalt")}</span>
             <span className="font-semibold text-emerald-700 text-end break-words">
-              {job.salary}
+              <BidiSalary salary={job.salary} />
             </span>
           </div>
         )}
@@ -1067,7 +1044,7 @@ export default function JobDetailClient({
               {job.salary && (
                 <span className="px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold flex items-center gap-1.5 break-words">
                   <span>💰</span>
-                  <span>{job.salary}</span>
+                  <span><BidiSalary salary={job.salary} /></span>
                 </span>
               )}
             </div>

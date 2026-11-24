@@ -62,7 +62,7 @@ export const en: Dictionary = {
     title: '💼 Jobs & Apprenticeships in Germany',
     subtitle:
       'Browse verified jobs in Germany with 1-click AI cover letter generator and ATS resume audit.',
-    searchPlaceholder: '🔍 Search by job title, company, or city...',
+    searchPlaceholder: 'Search by job title, company, or city...',
     allLanguages: 'All Languages',
     categories: {
       all: 'All Categories',

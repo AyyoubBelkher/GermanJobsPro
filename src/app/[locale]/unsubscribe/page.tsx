@@ -290,14 +290,16 @@ function UnsubscribeFormContent() {
             </>
           )}
 
-          <div className="pt-4 border-t border-slate-800">
-            <Link
-              href={`/${locale}`}
-              className="text-xs text-slate-400 hover:text-slate-200 transition-colors"
-            >
-              {t.backToHomeFooter}
-            </Link>
-          </div>
+          {hasToken && (
+            <div className="pt-4 border-t border-slate-800">
+              <Link
+                href={`/${locale}`}
+                className="text-xs text-slate-400 hover:text-slate-200 transition-colors"
+              >
+                {t.backToHomeFooter}
+              </Link>
+            </div>
+          )}
         </div>
       </main>
 
