@@ -6,12 +6,14 @@ import { extractGermanJobTitle, stripHtml } from "@/lib/cover-letter";
 import GermanTtsButton from "@/components/blog/GermanTtsButton";
 import { getDictionary, isValidLocale, DEFAULT_LOCALE, LOCALE_METADATA, type Locale } from "@/lib/i18n";
 import {
-  splitBilingualTitle,
+  extractGermanCity,
   extractCleanHrEmail,
-  cleanJobDescription,
   inferDisplayLanguageReq,
   inferDisplayCategory,
   formatRelativeJobDate,
+  localizeJobTitle,
+  localizeJobDescription,
+  localizeLanguageBadge,
 } from "@/lib/jobUtils";
 import BidiSalary from "@/components/jobs/BidiSalary";
 
@@ -20,6 +22,9 @@ export { stripHtml };
 export interface JobItem {
   id: string;
   title: string;
+  titleAr?: string | null;
+  titleDe?: string | null;
+  titleEn?: string | null;
   company: string;
   city: string | null;
   category: string;
@@ -31,10 +36,11 @@ export interface JobItem {
   contactEmail?: string | null;
   requirements?: string | null;
   descriptionRaw: string | null;
+  descriptionAr?: string | null;
+  descriptionDe?: string | null;
+  descriptionEn?: string | null;
   publishedAt: string | Date;
 }
-
-const formatLangLevel = (lvl?: string | null) => (!lvl || lvl.toLowerCase() === "none") ? "Deutsch (B1/B2)" : lvl;
 
 interface JobBoardClientProps {
   initialJobs: JobItem[];
@@ -56,6 +62,7 @@ export default function JobBoardClient({
   const currentMeta = LOCALE_METADATA[activeLocale];
   const isAr = activeLocale === "ar";
   const isDe = activeLocale === "de";
+  const isFr = activeLocale === "fr";
   const dir = currentMeta.dir;
 
   const categories = [
@@ -69,14 +76,32 @@ export default function JobBoardClient({
 
   const languages = [
     { id: "all", label: dict.jobs.allLanguages },
-    { id: "English", label: "🇬🇧 English" },
-    { id: "B1", label: "🇩🇪 Deutsch B1" },
-    { id: "B2", label: "🇩🇪 Deutsch B2" },
-    { id: "C1", label: "🇩🇪 Deutsch C1" },
+    {
+      id: "English",
+      label: isAr
+        ? "🇬🇧 الإنجليزية"
+        : isDe
+        ? "🇬🇧 Englisch"
+        : isFr
+        ? "🇬🇧 Anglais"
+        : "🇬🇧 English",
+    },
+    { id: "B1", label: `🇩🇪 ${localizeLanguageBadge("B1", activeLocale)}` },
+    { id: "B2", label: `🇩🇪 ${localizeLanguageBadge("B2", activeLocale)}` },
+    { id: "C1", label: `🇩🇪 ${localizeLanguageBadge("C1", activeLocale)}` },
   ];
 
   const topGermanCities = [
-    { id: "all", label: isAr ? "📍 كل المدن" : isDe ? "📍 Alle Städte" : "📍 All Cities" },
+    {
+      id: "all",
+      label: isAr
+        ? "📍 كل المدن"
+        : isDe
+        ? "📍 Alle Städte"
+        : isFr
+        ? "📍 Toutes les villes"
+        : "📍 All Cities",
+    },
     { id: "Berlin", label: "Berlin" },
     { id: "München", label: "München" },
     { id: "Hamburg", label: "Hamburg" },
@@ -332,6 +357,8 @@ export default function JobBoardClient({
                 ? "تقديم مباشر بالإيميل"
                 : isDe
                 ? "Direkte E-Mail-Bewerbung"
+                : isFr
+                ? "Candidature directe par e-mail"
                 : "Direct HR Email"}
             </span>
             {directEmailOnly && (
@@ -436,13 +463,19 @@ export default function JobBoardClient({
           {paginatedJobs.map((job) => {
             const cleanEmail = extractCleanHrEmail(job);
             const hasDirectEmail = Boolean(cleanEmail);
-            const { primaryTitle, latinSubtitle } = splitBilingualTitle(job.title);
-            const spokenGermanTitle = latinSubtitle || extractGermanJobTitle(job.title) || job.title;
+            const { primaryTitle, latinSubtitle } = localizeJobTitle(job, activeLocale);
+            const spokenGermanTitle = latinSubtitle || extractGermanJobTitle(job.title) || primaryTitle;
             const effectiveCategory = inferDisplayCategory(job);
             const categoryBadgeLabel =
               categories.find((c) => c.id.toLowerCase() === effectiveCategory.toLowerCase())?.label ||
               effectiveCategory;
             const langBadge = inferDisplayLanguageReq(job);
+            const isEnglishJob = langBadge.startsWith("EN") || langBadge.toLowerCase().includes("english");
+            const langBadgeLabel = localizeLanguageBadge(langBadge, activeLocale);
+            const localizedCity = isAr
+              ? job.city || dict.jobs.details.germany
+              : extractGermanCity(job.city || dict.jobs.details.germany);
+            const localizedDescription = localizeJobDescription(job, activeLocale);
 
             return (
               <div
@@ -463,6 +496,8 @@ export default function JobBoardClient({
                               ? "تقديم مباشر عبر البريد الإلكتروني"
                               : isDe
                               ? "Direkte E-Mail-Bewerbung"
+                              : isFr
+                              ? "Candidature directe par e-mail"
                               : "Direct Email Application"}
                           </span>
                         </span>
@@ -474,6 +509,8 @@ export default function JobBoardClient({
                               ? "تقديم مباشر عبر الموقع الرسمي للشركة"
                               : isDe
                               ? "Offizielles Unternehmensportal"
+                              : isFr
+                              ? "Portail officiel de l'entreprise"
                               : "Official Company Portal"}
                           </span>
                         </span>
@@ -510,21 +547,21 @@ export default function JobBoardClient({
 
                 <div className="flex items-center gap-2 flex-wrap text-xs">
                   <span className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 font-medium">
-                    📍 <bdi dir="auto">{job.city || dict.jobs.details.germany}</bdi>
+                    📍 <bdi dir="auto">{localizedCity}</bdi>
                   </span>
                   <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-medium">
-                    {langBadge.startsWith("EN") ? `🇬🇧 ${langBadge}` : `🇩🇪 ${formatLangLevel(langBadge)}`}
+                    {isEnglishJob ? `🇬🇧 ${langBadgeLabel}` : `🇩🇪 ${langBadgeLabel}`}
                   </span>
                   {job.salary && (
                     <span className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 font-medium">
-                      💰 <BidiSalary salary={job.salary} />
+                      💰 <BidiSalary salary={job.salary} locale={activeLocale} />
                     </span>
                   )}
                 </div>
 
-                {job.descriptionRaw && (
+                {localizedDescription && (
                   <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed text-start [unicode-bidi:isolate] break-words" dir="auto">
-                    {cleanJobDescription(job.descriptionRaw)}
+                    {localizedDescription}
                   </p>
                 )}
               </div>

@@ -70,7 +70,17 @@ export default function PublicPricingClient({
       const redirectUrl = `${baseUrl}?${params.toString()}`;
       window.location.href = redirectUrl;
     } catch (err: unknown) {
-      setCheckoutError(err instanceof Error ? err.message : "Payment error");
+      setCheckoutError(
+        err instanceof Error
+          ? err.message
+          : isAr
+          ? "حدث خطأ أثناء تحويل الدفع"
+          : isDe
+          ? "Zahlungsfehler aufgetreten"
+          : isFr
+          ? "Erreur lors du paiement"
+          : "Payment error"
+      );
       setIsCheckingOut(null);
     }
   };
@@ -85,6 +95,8 @@ export default function PublicPricingClient({
           ? "يجب تسجيل الدخول أولاً لتفعيل الكود الترويجي."
           : isDe
           ? "Bitte melden Sie sich zuerst an, um den Rabattcode einzulösen."
+          : isFr
+          ? "Veuillez vous connecter d'abord pour activer un code promo."
           : "Please sign in first to redeem a promo code."
       );
       return;
@@ -106,7 +118,13 @@ export default function PublicPricingClient({
       if (!res.ok || !data.success) {
         throw new Error(
           data.error ||
-            (isAr ? "الكود الترويجي غير صالح أو منتهي الصلاحية." : "Invalid or expired promo code.")
+            (isAr
+              ? "الكود الترويجي غير صالح أو منتهي الصلاحية."
+              : isDe
+              ? "Ungültiger oder abgelaufener Gutscheincode."
+              : isFr
+              ? "Code promo invalide ou expiré."
+              : "Invalid or expired promo code.")
         );
       }
 
@@ -122,7 +140,17 @@ export default function PublicPricingClient({
       }
       router.refresh();
     } catch (err: unknown) {
-      setPromoError(err instanceof Error ? err.message : "Error redeeming promo code");
+      setPromoError(
+        err instanceof Error
+          ? err.message
+          : isAr
+          ? "تعذر تفعيل الكود الترويجي"
+          : isDe
+          ? "Fehler beim Einlösen des Gutscheincodes"
+          : isFr
+          ? "Erreur lors de l'activation du code promo"
+          : "Error redeeming promo code"
+      );
     } finally {
       setIsRedeeming(false);
     }
@@ -134,11 +162,15 @@ export default function PublicPricingClient({
         ? "ما هي طرق الدفع المتاحة والمدعومة؟"
         : isDe
         ? "Welche Zahlungsmethoden werden unterstützt?"
+        : isFr
+        ? "Quels moyens de paiement sont acceptés ?"
         : "What payment methods are supported?",
       answer: isAr
         ? "نوفر الدفع الآمن والمشفر بنسبة 100% عبر بوابة Gumroad العالمية. يمكنك الدفع باستخدام البطاقات الائتمانية والبنكية (Visa, Mastercard, American Express)، بالإضافة إلى Apple Pay و Google Pay و PayPal."
         : isDe
         ? "Wir unterstützen alle gängigen Kreditkarten (Visa, Mastercard, Amex), Apple Pay, Google Pay sowie PayPal über unsere sichere Gumroad Zahlungsabwicklung."
+        : isFr
+        ? "Nous acceptons toutes les cartes bancaires (Visa, Mastercard, Amex), Apple Pay, Google Pay et PayPal via notre passerelle sécurisée Gumroad."
         : "We support all major credit/debit cards (Visa, MasterCard, Amex), Apple Pay, Google Pay, and PayPal with 100% bank-grade encryption via Gumroad.",
     },
     {
@@ -146,11 +178,15 @@ export default function PublicPricingClient({
         ? "هل الدفع اشتراك متجدد أم دفعة لمرة واحدة؟"
         : isDe
         ? "Handelt es sich um ein Abonnement oder eine Einmalzahlung?"
+        : isFr
+        ? "S'agit-il d'un abonnement récurrent ou d'un paiement unique ?"
         : "Is this a recurring subscription or a one-time pass?",
       answer: isAr
         ? "كلا الخيارين (Quick Sprint بـ $9.99 لـ 30 يوماً، أو PRO Job Pass بـ $19.99 لـ 90 يوماً) يعتمدان نظام الدفع لمرة واحدة فقط (One-Time Payment). لا توجد أي اشتراكات دورية تلقائية أو رسوم خفية إطلاقاً."
         : isDe
         ? "Sowohl der Quick Sprint (9,99 USD für 30 Tage) als auch der PRO Job Pass (19,99 USD für 90 Tage) sind reine Einmalzahlungen ohne automatische Verlängerung oder versteckte Gebühren."
+        : isFr
+        ? "Les deux formules (Quick Sprint à 9,99 $ pour 30 jours ou PRO Job Pass à 19,99 $ pour 90 jours) sont des paiements strictement uniques, sans renouvellement automatique ni frais cachés."
         : "Both options (Quick Sprint at $9.99 for 30 days, or PRO Job Pass at $19.99 for 90 days) are strictly one-time payments. There are no recurring auto-renewals or hidden charges.",
     },
     {
@@ -158,11 +194,15 @@ export default function PublicPricingClient({
         ? "ماذا يحدث بعد ترقية حسابي إلى باقة PRO؟"
         : isDe
         ? "Was passiert sofort nach dem Kauf von PRO?"
+        : isFr
+        ? "Que se passe-t-il juste après le passage au pass PRO ?"
         : "What happens immediately after upgrading to PRO?",
       answer: isAr
         ? "يتم تفعيل كافة ميزات باقة المحترفين فورياً وتلقائياً على حسابك بمجرد إتمام الدفع، بما في ذلك زيادة رصيد الذكاء الاصطناعي اليومي، وتفعيل استيراد وتوليد ملفات الترشيح (Bewerbungsmappe) الكاملة."
         : isDe
         ? "Ihr Konto wird sofort nach der erfolgreichen Zahlung automatisch auf PRO hochgestuft. Alle Premium-Funktionen stehen Ihnen ohne Wartezeit zur Verfügung."
+        : isFr
+        ? "Votre compte est activé automatiquement en mode PRO dès la validation du paiement. Tous les générateurs IA, la conversion DIN 5008 et le studio Bewerbungsmappe sont débloqués immédiatement."
         : "Your account is upgraded to PRO instantly upon successful checkout. All premium AI generators, 1-Click PDF to DIN 5008 adaptation, and PDF export tools become active immediately.",
     },
     {
@@ -170,11 +210,15 @@ export default function PublicPricingClient({
         ? "هل يوجد ضمان استرجاع الأموال؟"
         : isDe
         ? "Gibt es eine Geld-zurück-Garantie?"
+        : isFr
+        ? "Proposez-vous une garantie satisfait ou remboursé ?"
         : "Is there a money-back guarantee?",
       answer: isAr
         ? "نعم! نحن واثقون تماماً من جودة ملفاتنا وتوافقها الصارم مع المعايير الألمانية. نوفر ضمان استرجاع الأموال لمدة 14 يوماً إذا واجهت أي مشكلة فنية لم نتمكن من حلها لك."
         : isDe
         ? "Ja, wir bieten eine 14-tägige Zufriedenheitsgarantie. Bei technischen Problemen steht Ihnen unser Support jederzeit zur Seite."
+        : isFr
+        ? "Oui ! Nous offrons une garantie satisfaction de 14 jours. En cas de problème technique que notre équipe ne parvient pas à résoudre, nous procédons au remboursement."
         : "Yes! We offer a 14-day satisfaction guarantee. If you encounter any technical issues our team cannot resolve, we provide a prompt refund.",
     },
   ];
@@ -210,9 +254,17 @@ export default function PublicPricingClient({
                 {isPro
                   ? isAr
                     ? "اشتراكك نشط مع حد استخدام يومي متجدد (20 طلب/يوم)"
+                    : isDe
+                    ? "Aktiver PRO-Zugang mit täglichem Fair-Use-Kontingent (20 Anfragen/Tag)"
+                    : isFr
+                    ? "Accès PRO actif avec quota quotidien équitable (20 requêtes/jour)"
                     : "Active PRO membership with daily fair-use quota (20 requests/day)"
                   : isAr
                   ? `رصيد الذكاء الاصطناعي المتبقي لديك: ${user.aiCredits} طلب`
+                  : isDe
+                  ? `Verbleibendes KI-Guthaben: ${user.aiCredits} Anfragen`
+                  : isFr
+                  ? `Crédits IA restants : ${user.aiCredits} requêtes`
                   : `Remaining AI credits: ${user.aiCredits} requests`}
               </p>
             </div>
@@ -223,7 +275,13 @@ export default function PublicPricingClient({
               href={`/${locale}/dashboard/cv`}
               className="w-full sm:w-auto text-center px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 hover:text-[#061838] font-bold text-xs transition-colors border border-slate-200"
             >
-              {isAr ? "الانتقال إلى لوحة التحكم ←" : isDe ? "Zum Dashboard ←" : "Go to Dashboard ←"}
+              {isAr
+                ? "الانتقال إلى لوحة التحكم ←"
+                : isDe
+                ? "Zum Dashboard →"
+                : isFr
+                ? "Accéder au tableau de bord →"
+                : "Go to Dashboard →"}
             </Link>
           </div>
         </div>
@@ -237,16 +295,24 @@ export default function PublicPricingClient({
           <div className="space-y-5">
             <div className="space-y-1.5">
               <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 font-bold text-xs uppercase tracking-wider inline-block">
-                {isAr ? "البداية المجانية" : isDe ? "Kostenloser Einstieg" : "Free Starter"}
+                {isAr
+                  ? "البداية المجانية"
+                  : isDe
+                  ? "Kostenloser Einstieg"
+                  : isFr
+                  ? "Accès gratuit"
+                  : "Free Starter"}
               </span>
               <h3 className="text-2xl font-black text-[#061838]">
-                {isAr ? "Starter" : isDe ? "Starter" : "Starter"}
+                Starter
               </h3>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                 {isAr
                   ? "مثالية للتعرف على المنصة وإنشاء سيرتك الذاتية وتجربة أدوات الفحص مجاناً."
                   : isDe
                   ? "Ideal zum Kennenlernen der Plattform und Erstellen Ihres ersten Lebenslaufs."
+                  : isFr
+                  ? "Idéal pour découvrir la plateforme et créer votre premier CV DIN 5008 gratuitement."
                   : "Perfect for exploring the platform and creating your initial DIN 5008 CV."}
               </p>
             </div>
@@ -254,7 +320,7 @@ export default function PublicPricingClient({
             <div className="flex items-baseline gap-2">
               <span className="text-4xl sm:text-5xl font-black text-[#061838]">$0</span>
               <span className="text-xs text-slate-500 font-medium">
-                {isAr ? "/ دائماً" : isDe ? "/ dauerhaft" : "/ forever"}
+                {isAr ? "/ دائماً" : isDe ? "/ dauerhaft" : isFr ? "/ pour toujours" : "/ forever"}
               </span>
             </div>
 
@@ -371,14 +437,26 @@ export default function PublicPricingClient({
                 href={`/${locale}/dashboard/cv`}
                 className="w-full block py-3.5 px-6 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 hover:text-[#061838] font-bold text-xs sm:text-sm text-center transition-all border border-slate-300"
               >
-                {isAr ? "متابعة استخدام الباقة الحالية" : isDe ? "Aktuellen Plan nutzen" : "Continue with Free Plan"}
+                {isAr
+                  ? "متابعة استخدام الباقة الحالية"
+                  : isDe
+                  ? "Aktuellen Plan nutzen"
+                  : isFr
+                  ? "Continuer avec la formule gratuite"
+                  : "Continue with Free Plan"}
               </Link>
             ) : (
               <Link
                 href={`/${locale}/auth/signup`}
                 className="w-full block py-3.5 px-6 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 hover:text-[#061838] font-bold text-xs sm:text-sm text-center transition-all border border-slate-300"
               >
-                {isAr ? "إنشاء حساب مجاني الآن 🚀" : isDe ? "Kostenlos starten 🚀" : "Start Free Account 🚀"}
+                {isAr
+                  ? "إنشاء حساب مجاني الآن 🚀"
+                  : isDe
+                  ? "Kostenlos starten 🚀"
+                  : isFr
+                  ? "Créer un compte gratuit 🚀"
+                  : "Start Free Account 🚀"}
               </Link>
             )}
           </div>
@@ -390,7 +468,13 @@ export default function PublicPricingClient({
           <div className="space-y-5">
             <div className="space-y-1.5">
               <span className="px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 font-bold text-xs uppercase tracking-wider inline-block">
-                {isAr ? "تصريح الـ 30 يوماً" : isDe ? "30-Tage-Pass" : "30-Day Sprint Pass"}
+                {isAr
+                  ? "تصريح الـ 30 يوماً"
+                  : isDe
+                  ? "30-Tage-Pass"
+                  : isFr
+                  ? "Pass Sprint 30 jours"
+                  : "30-Day Sprint Pass"}
               </span>
               <h3 className="text-2xl font-black text-[#061838] flex items-center gap-2">
                 <span>Quick Sprint</span>
@@ -401,6 +485,8 @@ export default function PublicPricingClient({
                   ? "صلاحية 30 يوماً للتقديمات السريعة والمكثفة على فرص العمل المتاحة."
                   : isDe
                   ? "30 Tage Gültigkeit für schnelle und zielgerichtete Bewerbungen."
+                  : isFr
+                  ? "Validité de 30 jours pour des candidatures rapides et ciblées en Allemagne."
                   : "30 days validity for fast applications to active German job openings."}
               </p>
             </div>
@@ -411,11 +497,17 @@ export default function PublicPricingClient({
                   $9.99
                 </span>
                 <span className="text-xs text-slate-500 font-medium">
-                  {isAr ? "/ 30 يوماً" : isDe ? "/ 30 Tage" : "/ 30 days"}
+                  {isAr ? "/ 30 يوماً" : isDe ? "/ 30 Tage" : isFr ? "/ 30 jours" : "/ 30 days"}
                 </span>
               </div>
               <p className="text-[11px] text-emerald-700 font-semibold">
-                {isAr ? "✓ دفع لمرة واحدة • بدون اشتراك متكرر • تفعيل فوري" : isDe ? "✓ Einmalzahlung • Keine Abofalle • Sofortfreischaltung" : "✓ One-time payment • No recurring fees • Instant activation"}
+                {isAr
+                  ? "✓ دفع لمرة واحدة • بدون اشتراك متكرر • تفعيل فوري"
+                  : isDe
+                  ? "✓ Einmalzahlung • Keine Abofalle • Sofortfreischaltung"
+                  : isFr
+                  ? "✓ Paiement unique • Sans abonnement • Activation immédiate"
+                  : "✓ One-time payment • No recurring fees • Instant activation"}
               </p>
             </div>
 
@@ -534,15 +626,46 @@ export default function PublicPricingClient({
               className="w-full py-3.5 px-6 rounded-2xl bg-[#061838] hover:bg-[#0A2552] text-white font-extrabold text-xs sm:text-sm shadow-md hover:scale-[1.02] active:scale-98 transition-all disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
             >
               {isCheckingOut === GUMROAD_VARIANTS.SPRINT_30D ? (
-                <span>{isAr ? "جاري تحويلك إلى الدفع الآمن..." : isDe ? "Weiterleitung..." : "Redirecting to Checkout..."}</span>
+                <span>
+                  {isAr
+                    ? "جاري تحويلك إلى الدفع الآمن..."
+                    : isDe
+                    ? "Weiterleitung..."
+                    : isFr
+                    ? "Redirection vers le paiement..."
+                    : "Redirecting to Checkout..."}
+                </span>
               ) : isPro ? (
-                <span>{isAr ? "تمديد 30 يوماً (Quick Sprint) ⚡" : isDe ? "30 Tage verlängern ⚡" : "Extend 30 Days (Quick Sprint) ⚡"}</span>
+                <span>
+                  {isAr
+                    ? "تمديد 30 يوماً (Quick Sprint) ⚡"
+                    : isDe
+                    ? "30 Tage verlängern ⚡"
+                    : isFr
+                    ? "Prolonger 30 jours (Quick Sprint) ⚡"
+                    : "Extend 30 Days (Quick Sprint) ⚡"}
+                </span>
               ) : (
-                <span>{isAr ? "اختيار Quick Sprint (30 يوماً) ⚡" : isDe ? "Quick Sprint wählen (30 Tage) ⚡" : "Choose Quick Sprint (30 Days) ⚡"}</span>
+                <span>
+                  {isAr
+                    ? "اختيار Quick Sprint (30 يوماً) ⚡"
+                    : isDe
+                    ? "Quick Sprint wählen (30 Tage) ⚡"
+                    : isFr
+                    ? "Choisir Quick Sprint (30 jours) ⚡"
+                    : "Choose Quick Sprint (30 Days) ⚡"}
+                </span>
               )}
             </button>
             <p className="text-[11px] text-center text-slate-500">
-              🔒 {isAr ? "رابط مباشر عبر Gumroad • تفعيل فوري" : isDe ? "Direkter Gumroad-Link • Sofortaktivierung" : "Direct Gumroad link • Instant Access"}
+              🔒{" "}
+              {isAr
+                ? "رابط مباشر عبر Gumroad • تفعيل فوري"
+                : isDe
+                ? "Direkter Gumroad-Link • Sofortaktivierung"
+                : isFr
+                ? "Lien direct Gumroad • Accès immédiat"
+                : "Direct Gumroad link • Instant Access"}
             </p>
           </div>
         </div>
@@ -553,13 +676,27 @@ export default function PublicPricingClient({
           {/* Popular Badge */}
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-[#FACC15] text-[#061838] font-black text-xs shadow-lg uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap">
             <span>⭐</span>
-            <span>{isAr ? "الأكثر طلباً • وفر 35%" : isDe ? "Bestseller • 35% Sparen" : "Most Popular • Save 35%"}</span>
+            <span>
+              {isAr
+                ? "الأكثر طلباً • وفر 35%"
+                : isDe
+                ? "Bestseller • 35% Sparen"
+                : isFr
+                ? "Le plus populaire • -35 %"
+                : "Most Popular • Save 35%"}
+            </span>
           </div>
 
           <div className="space-y-5 pt-2">
             <div className="space-y-1.5">
               <span className="px-3 py-1 rounded-full bg-[#0A2552] border border-[#FACC15]/40 text-[#FACC15] font-bold text-xs uppercase tracking-wider inline-block">
-                {isAr ? "تصريح المحترفين الشامل" : isDe ? "Komplettpaket" : "All-Inclusive Pass"}
+                {isAr
+                  ? "تصريح المحترفين الشامل"
+                  : isDe
+                  ? "Komplettpaket"
+                  : isFr
+                  ? "Pass Carrière Complet"
+                  : "All-Inclusive Pass"}
               </span>
               <h3 className="text-2xl font-black text-white flex items-center gap-2">
                 <span>PRO Job Pass</span>
@@ -570,6 +707,8 @@ export default function PublicPricingClient({
                   ? "90 يوماً كاملة تغطي دورة التوظيف بالكامل مع إمكانية تصدير الدوسيه الكامل وتكييف السيرة الذاتية."
                   : isDe
                   ? "Volle 90 Tage für den gesamten Bewerbungszyklus mit vollständiger Bewerbungsmappe und Auto-Adapt."
+                  : isFr
+                  ? "90 jours complets couvrant tout le cycle de recrutement avec studio Bewerbungsmappe et adaptation automatique."
                   : "90 full days covering the entire German hiring cycle with full Bewerbungsmappe compiler."}
               </p>
             </div>
@@ -580,11 +719,17 @@ export default function PublicPricingClient({
                   $19.99
                 </span>
                 <span className="text-xs text-slate-300 font-medium">
-                  {isAr ? "/ 90 يوماً" : isDe ? "/ 90 Tage" : "/ 90 days"}
+                  {isAr ? "/ 90 يوماً" : isDe ? "/ 90 Tage" : isFr ? "/ 90 jours" : "/ 90 days"}
                 </span>
               </div>
               <p className="text-[11px] text-amber-300 font-medium">
-                {isAr ? "✓ دفع لمرة واحدة لدورة التقديم • بدون اشتراك متكرر" : isDe ? "✓ Einmalzahlung für Ihren Bewerbungszyklus • Keine Abofalle" : "✓ One-time payment for your application cycle • No recurring fees"}
+                {isAr
+                  ? "✓ دفع لمرة واحدة لدورة التقديم • بدون اشتراك متكرر"
+                  : isDe
+                  ? "✓ Einmalzahlung für Ihren Bewerbungszyklus • Keine Abofalle"
+                  : isFr
+                  ? "✓ Paiement unique pour votre recherche • Sans abonnement"
+                  : "✓ One-time payment for your application cycle • No recurring fees"}
               </p>
             </div>
 
@@ -676,15 +821,46 @@ export default function PublicPricingClient({
               className="w-full py-4 px-8 rounded-2xl bg-[#FACC15] hover:bg-amber-300 text-[#061838] font-black text-sm sm:text-base shadow-xl shadow-amber-400/20 hover:scale-[1.02] active:scale-98 transition-all disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
             >
               {isCheckingOut === GUMROAD_VARIANTS.PRO_90D ? (
-                <span>{isAr ? "جاري تحويلك إلى الدفع الآمن..." : isDe ? "Weiterleitung..." : "Redirecting to Checkout..."}</span>
+                <span>
+                  {isAr
+                    ? "جاري تحويلك إلى الدفع الآمن..."
+                    : isDe
+                    ? "Weiterleitung..."
+                    : isFr
+                    ? "Redirection vers le paiement..."
+                    : "Redirecting to Checkout..."}
+                </span>
               ) : isPro ? (
-                <span>{isAr ? "تمديد اشتراك PRO (90 يوماً) 🚀" : isDe ? "90 Tage verlängern 🚀" : "Extend PRO Pass (90 Days) 🚀"}</span>
+                <span>
+                  {isAr
+                    ? "تمديد اشتراك PRO (90 يوماً) 🚀"
+                    : isDe
+                    ? "90 Tage verlängern 🚀"
+                    : isFr
+                    ? "Prolonger le Pass PRO (90 jours) 🚀"
+                    : "Extend PRO Pass (90 Days) 🚀"}
+                </span>
               ) : (
-                <span>{isAr ? "احصل على PRO Job Pass الآن 🚀" : isDe ? "PRO Job Pass jetzt sichern 🚀" : "Get PRO Job Pass Now 🚀"}</span>
+                <span>
+                  {isAr
+                    ? "احصل على PRO Job Pass الآن 🚀"
+                    : isDe
+                    ? "PRO Job Pass jetzt sichern 🚀"
+                    : isFr
+                    ? "Obtenir le PRO Job Pass 🚀"
+                    : "Get PRO Job Pass Now 🚀"}
+                </span>
               )}
             </button>
             <p className="text-[11px] text-center text-slate-300">
-              🔒 {isAr ? "رابط مباشر عبر Gumroad • تفعيل فوري" : isDe ? "Direkter Gumroad-Link • Sofortaktivierung" : "Direct Gumroad link • Instant Access"}
+              🔒{" "}
+              {isAr
+                ? "رابط مباشر عبر Gumroad • تفعيل فوري"
+                : isDe
+                ? "Direkter Gumroad-Link • Sofortaktivierung"
+                : isFr
+                ? "Lien direct Gumroad • Accès immédiat"
+                : "Direct Gumroad link • Instant Access"}
             </p>
           </div>
         </div>
@@ -699,16 +875,32 @@ export default function PublicPricingClient({
         <div className="space-y-1.5">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold uppercase">
             <span>🎁</span>
-            <span>{isAr ? "كوبون أو كود خصم ترويجي" : isDe ? "Gutscheincode" : "Voucher or Promo Code"}</span>
+            <span>
+              {isAr
+                ? "كوبون أو كود خصم ترويجي"
+                : isDe
+                ? "Gutscheincode"
+                : isFr
+                ? "Code promo ou bon de réduction"
+                : "Voucher or Promo Code"}
+            </span>
           </div>
           <h3 className="text-xl sm:text-2xl font-bold text-[#061838]">
-            {isAr ? "هل تملك كوداً ترويجياً أو كوبون خصم؟" : isDe ? "Haben Sie einen Gutscheincode?" : "Have a Promo Code or Voucher?"}
+            {isAr
+              ? "هل تملك كوداً ترويجياً أو كوبون خصم؟"
+              : isDe
+              ? "Haben Sie einen Gutscheincode?"
+              : isFr
+              ? "Vous avez un code promo ou un bon ?"
+              : "Have a Promo Code or Voucher?"}
           </h3>
           <p className="text-xs sm:text-sm text-slate-600">
             {isAr
               ? "أدخل كود التخفيض أو المنحة لتفعيل باقة PRO أو شحن رصيد إضافي فوراً على حسابك."
               : isDe
               ? "Geben Sie Ihren Aktionscode ein, um Ihr Guthaben sofort aufzuladen."
+              : isFr
+              ? "Saisissez votre code promotionnel pour débloquer le Pass PRO ou recharger vos crédits IA."
               : "Enter your promotional code to upgrade or top up your AI credits immediately."}
           </p>
         </div>
@@ -731,7 +923,15 @@ export default function PublicPricingClient({
             value={promoCode}
             onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
             dir={isAr && !promoCode ? "rtl" : "ltr"}
-            placeholder={isAr ? "أدخل الكود هنا (مثال: GERMAN2026)" : "e.g. GERMAN2026"}
+            placeholder={
+              isAr
+                ? "أدخل الكود هنا (مثال: GERMAN2026)"
+                : isDe
+                ? "z. B. GERMAN2026"
+                : isFr
+                ? "ex. GERMAN2026"
+                : "e.g. GERMAN2026"
+            }
             className="flex-1 w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 font-sans placeholder:font-sans placeholder:normal-case placeholder:tracking-normal text-center sm:text-start text-sm uppercase focus:outline-none focus:bg-white focus:border-[#061838] transition-all"
             required
           />
@@ -740,7 +940,21 @@ export default function PublicPricingClient({
             disabled={isRedeeming || !promoCode.trim()}
             className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#061838] hover:bg-[#0A2552] text-white font-bold text-sm shadow-md active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
           >
-            {isRedeeming ? (isAr ? "جاري التحقق..." : "Verifying...") : isAr ? "تفعيل الكود" : "Apply Code"}
+            {isRedeeming
+              ? isAr
+                ? "جاري التحقق..."
+                : isDe
+                ? "Wird geprüft..."
+                : isFr
+                ? "Vérification..."
+                : "Verifying..."
+              : isAr
+              ? "تفعيل الكود"
+              : isDe
+              ? "Code einlösen"
+              : isFr
+              ? "Appliquer le code"
+              : "Apply Code"}
           </button>
         </form>
       </div>
@@ -752,13 +966,21 @@ export default function PublicPricingClient({
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="text-center space-y-2">
           <h3 className="text-2xl sm:text-3xl font-black text-[#061838]">
-            {isAr ? "مقارنة تفصيلية بين الباقات" : isDe ? "Detaillierter Funktionsvergleich" : "Detailed Feature Comparison"}
+            {isAr
+              ? "مقارنة تفصيلية بين الباقات"
+              : isDe
+              ? "Detaillierter Funktionsvergleich"
+              : isFr
+              ? "Comparatif détaillé des formules"
+              : "Detailed Feature Comparison"}
           </h3>
           <p className="text-xs sm:text-sm text-slate-600">
             {isAr
               ? "تعرف على كافة الأدوات والخدمات المتاحة في كل خطة"
               : isDe
               ? "Alle Werkzeuge und Leistungen im direkten Vergleich"
+              : isFr
+              ? "Comparez tous les outils et avantages inclus dans chaque formule"
               : "Compare all included features across plans"}
           </p>
         </div>
@@ -767,52 +989,98 @@ export default function PublicPricingClient({
           <table className="w-full text-start text-xs sm:text-sm text-slate-700 dark:text-slate-300">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 text-[#061838] dark:text-white">
-                <th className="py-4 px-6 text-start font-bold">{isAr ? "الميزة / الأداة" : isDe ? "Funktion / Werkzeug" : "Feature / Tool"}</th>
-                <th className="py-4 px-6 text-center font-bold text-slate-600 dark:text-slate-400">{isAr ? "المجانية ($0)" : isDe ? "Starter ($0)" : "Starter ($0)"}</th>
+                <th className="py-4 px-6 text-start font-bold">
+                  {isAr ? "الميزة / الأداة" : isDe ? "Funktion / Werkzeug" : isFr ? "Fonctionnalité / Outil" : "Feature / Tool"}
+                </th>
+                <th className="py-4 px-6 text-center font-bold text-slate-600 dark:text-slate-400">
+                  {isAr ? "المجانية ($0)" : "Starter ($0)"}
+                </th>
                 <th className="py-4 px-6 text-center font-bold text-slate-700 dark:text-slate-200 bg-slate-100/60 dark:bg-slate-800/60">
-                  {isAr ? "Quick Sprint ($9.99)" : isDe ? "Quick Sprint ($9.99)" : "Quick Sprint ($9.99)"}
+                  Quick Sprint ($9.99)
                 </th>
                 <th className="py-4 px-6 text-center font-bold text-[#061838] dark:text-amber-300 bg-amber-50/60 dark:bg-amber-950/40 border-x border-amber-200 dark:border-amber-900/50">
-                  {isAr ? "PRO Job Pass ($19.99) ⭐" : isDe ? "PRO Job Pass ($19.99) ⭐" : "PRO Job Pass ($19.99) ⭐"}
+                  PRO Job Pass ($19.99) ⭐
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{isAr ? "صلاحية الاستخدام" : isDe ? "Gültigkeitsdauer" : "Validity Duration"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">{isAr ? "دائماً" : isDe ? "Dauerhaft" : "Forever"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/40">{isAr ? "30 يوماً" : isDe ? "30 Tage" : "30 Days"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">{isAr ? "90 يوماً (دورة توظيف كاملة)" : isDe ? "90 Tage (voller Zyklus)" : "90 Days (Full Cycle)"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">
+                  {isAr ? "صلاحية الاستخدام" : isDe ? "Gültigkeitsdauer" : isFr ? "Durée de validité" : "Validity Duration"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">
+                  {isAr ? "دائماً" : isDe ? "Dauerhaft" : isFr ? "Illimitée" : "Forever"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/40">
+                  {isAr ? "30 يوماً" : isDe ? "30 Tage" : isFr ? "30 jours" : "30 Days"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">
+                  {isAr ? "90 يوماً (دورة توظيف كاملة)" : isDe ? "90 Tage (voller Zyklus)" : isFr ? "90 jours (cycle complet)" : "90 Days (Full Cycle)"}
+                </td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{isAr ? "بناء سيرة DIN 5008 وتصدير PDF" : isDe ? "DIN 5008 Builder & PDF-Export" : "DIN 5008 Builder & PDF Export"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">{isAr ? "1 سيرة ذاتية" : isDe ? "1 Lebenslauf" : "1 Resume"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">
+                  {isAr ? "بناء سيرة DIN 5008 وتصدير PDF" : isDe ? "DIN 5008 Builder & PDF-Export" : isFr ? "Créateur de CV DIN 5008 & Export PDF" : "DIN 5008 Builder & PDF Export"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">
+                  {isAr ? "1 سيرة ذاتية" : isDe ? "1 Lebenslauf" : isFr ? "1 CV" : "1 Resume"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40">
+                  ✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : isFr ? "Illimité" : "Unlimited"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">
+                  ✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : isFr ? "Illimité" : "Unlimited"}
+                </td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{isAr ? "البحث في الوظائف وحفظ الفرص المفضلة" : isDe ? "Jobsuche & Lesezeichen" : "Job Search & Bookmarks"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">
+                  {isAr ? "البحث في الوظائف وحفظ الفرص المفضلة" : isDe ? "Jobsuche & Lesezeichen" : isFr ? "Recherche d'emploi et favoris" : "Job Search & Bookmarks"}
+                </td>
                 <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400">✓</td>
                 <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40">✓</td>
                 <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">✓</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{isAr ? "طلبات الذكاء الاصطناعي اليومية" : isDe ? "Tägliche KI-Anfragen" : "Daily AI Requests"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">{isAr ? "3 أرصدة أولية" : isDe ? "3 anfängliche Guthaben" : "3 Initial Credits"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40">{isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">{isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">
+                  {isAr ? "طلبات الذكاء الاصطناعي اليومية" : isDe ? "Tägliche KI-Anfragen" : isFr ? "Requêtes IA quotidiennes" : "Daily AI Requests"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">
+                  {isAr ? "3 أرصدة أولية" : isDe ? "3 anfängliche Guthaben" : isFr ? "3 crédits initiaux" : "3 Initial Credits"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40">
+                  {isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : isFr ? "20 par jour" : "20 Daily Requests"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">
+                  {isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : isFr ? "20 par jour" : "20 Daily Requests"}
+                </td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{isAr ? "فاحص الـ ATS وتحليل الكلمات المفتاحية" : isDe ? "ATS-Check & Keyword-Analyse" : "ATS Audit & Keyword Analysis"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">{isAr ? "فحص أساسي" : isDe ? "Basis-Check" : "Basic Audit"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40">✓ {isAr ? "فحص ATS كامل" : isDe ? "Vollständiger ATS-Check" : "Full ATS Audit"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">✓ {isAr ? "فحص عميق وخطة كلمات مفتاحية" : isDe ? "Tiefer Audit & Keyword-Plan" : "Deep Audit & Keyword Plan"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">
+                  {isAr ? "فاحص الـ ATS وتحليل الكلمات المفتاحية" : isDe ? "ATS-Check & Keyword-Analyse" : isFr ? "Audit ATS & Analyse des mots-clés" : "ATS Audit & Keyword Analysis"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">
+                  {isAr ? "فحص أساسي" : isDe ? "Basis-Check" : isFr ? "Audit de base" : "Basic Audit"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40">
+                  ✓ {isAr ? "فحص ATS كامل" : isDe ? "Vollständiger ATS-Check" : isFr ? "Audit ATS complet" : "Full ATS Audit"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">
+                  ✓ {isAr ? "فحص عميق وخطة كلمات مفتاحية" : isDe ? "Tiefer Audit & Keyword-Plan" : isFr ? "Audit approfondi & plan mots-clés" : "Deep Audit & Keyword Plan"}
+                </td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{isAr ? "مولد خطابات الدافع المخصص (Anschreiben)" : isDe ? "KI-Anschreiben Generator" : "AI Cover Letter Generator"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">{isAr ? "تجريبي" : isDe ? "1 Test" : "1 Trial"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40">✓ {isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">✓ {isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">
+                  {isAr ? "مولد خطابات الدافع المخصص (Anschreiben)" : isDe ? "KI-Anschreiben Generator" : isFr ? "Générateur d'Anschreiben IA" : "AI Cover Letter Generator"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">
+                  {isAr ? "تجريبي" : isDe ? "1 Test" : isFr ? "1 essai" : "1 Trial"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40">
+                  ✓ {isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : isFr ? "20 par jour" : "20 Daily Requests"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">
+                  ✓ {isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : isFr ? "20 par jour" : "20 Daily Requests"}
+                </td>
               </tr>
               <tr>
                 <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{isAr ? "استوديو ملف الترشيح الكامل (Bewerbungsmappe)" : isDe ? "Vollständige Bewerbungsmappe" : isFr ? "Studio Bewerbungsmappe complet" : "Complete Bewerbungsmappe Studio"}</td>
@@ -821,16 +1089,41 @@ export default function PublicPricingClient({
                 <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">✓ {isAr ? "مضمّن بالكامل (غلاف + سيرة + خطاب)" : isDe ? "Inklusive (Deckblatt + CV + Anschreiben)" : isFr ? "Inclus (Page de garde + CV + Lettre)" : "Included (Cover + CV + Anschreiben)"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{formatBidiInlineText(isAr ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)" : isDe ? "1-Klick PDF zu DIN 5008 Auto-Adapt" : "1-Click PDF to DIN 5008 Auto-Adapt", isAr)}</td>
-                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">{isAr ? "تجريبي" : isDe ? "1 Test" : "1 Trial"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">
+                  {formatBidiInlineText(
+                    isAr
+                      ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)"
+                      : isDe
+                      ? "1-Klick PDF zu DIN 5008 Auto-Adapt"
+                      : isFr
+                      ? "Conversion 1-Click PDF vers DIN 5008"
+                      : "1-Click PDF to DIN 5008 Auto-Adapt",
+                    isAr
+                  )}
+                </td>
+                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">
+                  {isAr ? "تجريبي" : isDe ? "1 Test" : isFr ? "1 essai" : "1 Trial"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40">
+                  ✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : isFr ? "Illimité" : "Unlimited"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">
+                  ✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : isFr ? "Illimité" : "Unlimited"}
+                </td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{isAr ? "طريقة الدفع والتفعيل" : isDe ? "Zahlungsmodell & Support" : "Payment & Support"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">{isAr ? "مجاناً $0" : isDe ? "Kostenlos $0" : "Free $0"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/40">{isAr ? "دفع لمرة واحدة ($9.99)" : isDe ? "Einmalzahlung ($9.99)" : "One-Time ($9.99)"}</td>
-                <td className="py-3.5 px-6 text-center text-amber-700 dark:text-amber-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">⚡ {isAr ? "دفع لمرة واحدة ($19.99) • أولوية 24/7" : isDe ? "Einmalzahlung ($19.99) • Priorität 24/7" : "One-Time ($19.99) • Priority 24/7"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">
+                  {isAr ? "طريقة الدفع والتفعيل" : isDe ? "Zahlungsmodell & Support" : isFr ? "Paiement & Assistance" : "Payment & Support"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">
+                  {isAr ? "مجاناً $0" : isDe ? "Kostenlos $0" : isFr ? "Gratuit 0 $" : "Free $0"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/40">
+                  {isAr ? "دفع لمرة واحدة ($9.99)" : isDe ? "Einmalzahlung ($9.99)" : isFr ? "Paiement unique (9,99 $)" : "One-Time ($9.99)"}
+                </td>
+                <td className="py-3.5 px-6 text-center text-amber-700 dark:text-amber-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">
+                  ⚡ {isAr ? "دفع لمرة واحدة ($19.99) • أولوية 24/7" : isDe ? "Einmalzahlung ($19.99) • Priorität 24/7" : isFr ? "Paiement unique (19,99 $) • Priorité 24/7" : "One-Time ($19.99) • Priority 24/7"}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -844,23 +1137,39 @@ export default function PublicPricingClient({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto text-center">
         <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-2 shadow-sm">
           <div className="text-2xl">🔒</div>
-          <h4 className="font-bold text-[#061838] text-xs sm:text-sm">{isAr ? "دفع آمن 100%" : "100% Secure Checkout"}</h4>
-          <p className="text-[11px] text-slate-600">{isAr ? "تشفير بنكي عبر Gumroad" : "Bank-grade 256-bit encryption via Gumroad"}</p>
+          <h4 className="font-bold text-[#061838] text-xs sm:text-sm">
+            {isAr ? "دفع آمن 100%" : isDe ? "100% Sichere Zahlung" : isFr ? "Paiement 100 % sécurisé" : "100% Secure Checkout"}
+          </h4>
+          <p className="text-[11px] text-slate-600">
+            {isAr ? "تشفير بنكي عبر Gumroad" : isDe ? "256-Bit-Verschlüsselung via Gumroad" : isFr ? "Chiffrement bancaire 256 bits via Gumroad" : "Bank-grade 256-bit encryption via Gumroad"}
+          </p>
         </div>
         <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-2 shadow-sm">
           <div className="text-2xl">⚡</div>
-          <h4 className="font-bold text-[#061838] text-xs sm:text-sm">{isAr ? "تفعيل فوري" : "Instant Activation"}</h4>
-          <p className="text-[11px] text-slate-600">{isAr ? "وصول فوري لجميع الأدوات" : "Zero waiting time"}</p>
+          <h4 className="font-bold text-[#061838] text-xs sm:text-sm">
+            {isAr ? "تفعيل فوري" : isDe ? "Sofortaktivierung" : isFr ? "Activation instantanée" : "Instant Activation"}
+          </h4>
+          <p className="text-[11px] text-slate-600">
+            {isAr ? "وصول فوري لجميع الأدوات" : isDe ? "Ohne Wartezeit sofort nutzbar" : isFr ? "Accès immédiat à tous les outils" : "Zero waiting time"}
+          </p>
         </div>
         <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-2 shadow-sm">
           <div className="text-2xl">🛡️</div>
-          <h4 className="font-bold text-[#061838] text-xs sm:text-sm">{isAr ? "ضمان الرضا" : "Satisfaction Guarantee"}</h4>
-          <p className="text-[11px] text-slate-600">{isAr ? "ضمان استرجاع لمدة 14 يوماً" : "14-day money back guarantee"}</p>
+          <h4 className="font-bold text-[#061838] text-xs sm:text-sm">
+            {isAr ? "ضمان الرضا" : isDe ? "Zufriedenheitsgarantie" : isFr ? "Garantie satisfaction" : "Satisfaction Guarantee"}
+          </h4>
+          <p className="text-[11px] text-slate-600">
+            {isAr ? "ضمان استرجاع لمدة 14 يوماً" : isDe ? "14 Tage Geld-zurück-Garantie" : isFr ? "Remboursement garanti sous 14 jours" : "14-day money back guarantee"}
+          </p>
         </div>
         <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-2 shadow-sm">
           <div className="text-2xl">🇩🇪</div>
-          <h4 className="font-bold text-[#061838] text-xs sm:text-sm">{isAr ? "معايير رسمية" : "German Standard"}</h4>
-          <p className="text-[11px] text-slate-600">{isAr ? "مطابق لتأشيرة وبطاقة الفرصة" : "DIN 5008 & Visa compliant"}</p>
+          <h4 className="font-bold text-[#061838] text-xs sm:text-sm">
+            {isAr ? "معايير رسمية" : isDe ? "Deutscher Standard" : isFr ? "Normes allemandes" : "German Standard"}
+          </h4>
+          <p className="text-[11px] text-slate-600">
+            {isAr ? "مطابق لتأشيرة وبطاقة الفرصة" : isDe ? "DIN 5008 & Visum-konform" : isFr ? "Conforme DIN 5008 & Visas" : "DIN 5008 & Visa compliant"}
+          </p>
         </div>
       </div>
 
@@ -871,10 +1180,22 @@ export default function PublicPricingClient({
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="text-center space-y-2">
           <h3 className="text-2xl sm:text-3xl font-black text-[#061838]">
-            {isAr ? "الأسئلة الشائعة حول الخطط والاشتراك" : isDe ? "Häufige Fragen zu Preisen" : "Frequently Asked Questions About Pricing"}
+            {isAr
+              ? "الأسئلة الشائعة حول الخطط والاشتراك"
+              : isDe
+              ? "Häufige Fragen zu Preisen"
+              : isFr
+              ? "Questions fréquentes sur les tarifs"
+              : "Frequently Asked Questions About Pricing"}
           </h3>
           <p className="text-xs sm:text-sm text-slate-600">
-            {isAr ? "إجابات واضحة وشفافة حول عمليات الدفع والتفعيل" : "Clear answers about payment and activation"}
+            {isAr
+              ? "إجابات واضحة وشفافة حول عمليات الدفع والتفعيل"
+              : isDe
+              ? "Klare Antworten zu Zahlung und Sofortaktivierung"
+              : isFr
+              ? "Des réponses claires et transparentes sur le paiement et l'activation"
+              : "Clear answers about payment and activation"}
           </p>
         </div>
 

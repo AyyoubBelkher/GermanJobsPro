@@ -39,7 +39,14 @@ export async function generateMetadata({
       description: t.meta.description,
       url: `https://www.germanjobspro.com/${locale}`,
       siteName: "GermanJobsPro",
-      locale: locale === "ar" ? "ar_AR" : locale === "de" ? "de_DE" : "en_US",
+      locale:
+        locale === "ar"
+          ? "ar_AR"
+          : locale === "de"
+          ? "de_DE"
+          : locale === "fr"
+          ? "fr_FR"
+          : "en_US",
       type: "website",
       images: [
         {
@@ -170,7 +177,13 @@ export default async function LandingPage({
                 >
                   <span>
                     {user
-                      ? (isAr ? "لوحة التحكم ←" : "Go to Dashboard →")
+                      ? isAr
+                        ? "لوحة التحكم ←"
+                        : locale === "de"
+                        ? "Zum Dashboard →"
+                        : locale === "fr"
+                        ? "Accéder au tableau de bord →"
+                        : "Go to Dashboard →"
                       : (isAr ? "ابدأ مجانا ←" : t.hero.primaryCta.replace(/🚀\s*/g, ""))}
                   </span>
                 </Link>

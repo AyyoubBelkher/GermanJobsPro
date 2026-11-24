@@ -19,16 +19,23 @@ export async function generateMetadata({
   const { locale } = await params;
   const isAr = locale === "ar";
   const isDe = locale === "de";
+  const isFr = locale === "fr";
 
   return {
     title: isAr
       ? "فرص العمل وعقود التدريب في ألمانيا 🇩🇪 | GermanJobsPro"
       : isDe
       ? "Jobs & Stellenangebote in Deutschland 🇩🇪 | GermanJobsPro"
+      : isFr
+      ? "Emplois et formations en Allemagne 🇩🇪 | GermanJobsPro"
       : "Jobs & Careers in Germany 🇩🇪 | GermanJobsPro",
     description: isAr
       ? "تصفح أحدث الوظائف وعقود الأوسبيلدونغ في ألمانيا مع أدوات التقديم المباشر وتوليد خطاب الدافع Anschreiben بالذكاء الاصطناعي."
-      : "Finden Sie aktuelle Jobs in Deutschland mit 1-Klick Anschreiben-Generator und ATS-Lebenslauf-Check.",
+      : isDe
+      ? "Finden Sie aktuelle Jobs in Deutschland mit 1-Klick Anschreiben-Generator und ATS-Lebenslauf-Check."
+      : isFr
+      ? "Découvrez les offres d'emploi vérifiées en Allemagne avec générateur de lettre de motivation DIN 5008 et audit ATS."
+      : "Browse verified jobs in Germany with 1-click AI cover letter generator and ATS resume audit.",
     alternates: {
       canonical: `https://www.germanjobspro.com/${locale}/jobs`,
       languages: {

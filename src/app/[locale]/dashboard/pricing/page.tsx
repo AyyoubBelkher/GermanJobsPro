@@ -16,6 +16,7 @@ export default async function PricingPage({
   const { locale } = await params;
   const isAr = locale === "ar";
   const isDe = locale === "de";
+  const isFr = locale === "fr";
   const dir = isAr ? "rtl" : "ltr";
 
   const cookieStore = await cookies();
@@ -61,11 +62,17 @@ export default async function PricingPage({
         {/* Header Breadcrumbs */}
         <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
           <Link href={`/${locale}/dashboard`} className="hover:text-blue-400 transition-colors">
-            {isAr ? "لوحة التحكم" : isDe ? "Dashboard" : "Dashboard"}
+            {isAr ? "لوحة التحكم" : isDe ? "Dashboard" : isFr ? "Tableau de bord" : "Dashboard"}
           </Link>
           <span>/</span>
           <span className="text-slate-200">
-            {isAr ? "الترقية والاشتراك (PRO Pass)" : isDe ? "Preise & Upgrades" : "Pricing & Upgrades"}
+            {isAr
+              ? "الترقية والاشتراك (PRO Pass)"
+              : isDe
+              ? "Preise & Upgrades"
+              : isFr
+              ? "Tarifs & Abonnements PRO"
+              : "Pricing & Upgrades"}
           </span>
         </div>
 

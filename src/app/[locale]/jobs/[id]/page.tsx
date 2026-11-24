@@ -8,7 +8,14 @@ import { prisma } from "@/lib/prisma";
 import { getUserSession } from "@/lib/user-session";
 import JobDetailClient from "@/components/jobs/JobDetailClient";
 import BidiSalary from "@/components/jobs/BidiSalary";
-import { JobDetailData, extractCleanHrEmail, splitBilingualTitle, cleanJobDescription } from "@/lib/jobUtils";
+import {
+  JobDetailData,
+  extractCleanHrEmail,
+  extractGermanCity,
+  localizeJobTitle,
+  localizeJobDescription,
+  localizeLanguageBadge,
+} from "@/lib/jobUtils";
 import { sanitizeJobPayload } from "@/lib/jobSanitizer";
 import { stripHtml } from "@/lib/cover-letter";
 
@@ -56,10 +63,17 @@ export async function generateMetadata({
     const { locale, id } = await params;
     const isAr = locale === "ar";
     const isDe = locale === "de";
+    const isFr = locale === "fr";
 
     if (!id) {
       return {
-        title: isAr ? "الوظيفة غير موجودة | GermanJobsPro 🇩🇪" : "Job not found | GermanJobsPro 🇩🇪",
+        title: isAr
+          ? "الوظيفة غير موجودة | GermanJobsPro 🇩🇪"
+          : isDe
+          ? "Stelle nicht gefunden | GermanJobsPro 🇩🇪"
+          : isFr
+          ? "Offre introuvable | GermanJobsPro 🇩🇪"
+          : "Job not found | GermanJobsPro 🇩🇪",
       };
     }
 
@@ -74,6 +88,8 @@ export async function generateMetadata({
           ? "فرص العمل في ألمانيا | GermanJobsPro 🇩🇪"
           : isDe
           ? "Stellenangebote in Deutschland | GermanJobsPro 🇩🇪"
+          : isFr
+          ? "Offres d'emploi en Allemagne | GermanJobsPro 🇩🇪"
           : "Jobs in Germany | GermanJobsPro 🇩🇪",
       };
     }
@@ -82,23 +98,35 @@ export async function generateMetadata({
       return {
         title: isAr
           ? "الوظيفة غير موجودة | GermanJobsPro 🇩🇪"
+          : isDe
+          ? "Stelle nicht gefunden | GermanJobsPro 🇩🇪"
+          : isFr
+          ? "Offre introuvable | GermanJobsPro 🇩🇪"
           : "Job not found | GermanJobsPro 🇩🇪",
       };
     }
 
-    const shortDesc = stripHtml(job.requirements || job.descriptionRaw || job.title || "").slice(0, 160);
+    const localizedTitle = localizeJobTitle(job.title, locale).primaryTitle;
+    const localizedCity = isAr ? job.city || "ألمانيا" : extractGermanCity(job.city || "Deutschland");
+    const shortDesc = localizeJobDescription(job, locale).slice(0, 160);
 
     return {
       title: isAr
-        ? `${job.title || "فرصة عمل"} في شركة ${job.company || "ألمانيا"} (${job.city || "ألمانيا"}) | GermanJobsPro 🇩🇪`
+        ? `${localizedTitle || "فرصة عمل"} في شركة ${job.company || "ألمانيا"} (${localizedCity}) | GermanJobsPro 🇩🇪`
         : isDe
-        ? `${job.title || "Stellenangebot"} bei ${job.company || "Deutschland"} in ${job.city || "Deutschland"} | GermanJobsPro 🇩🇪`
-        : `${job.title || "Job Offer"} at ${job.company || "Germany"} (${job.city || "Germany"}) | GermanJobsPro 🇩🇪`,
+        ? `${localizedTitle || "Stellenangebot"} bei ${job.company || "Deutschland"} in ${localizedCity} | GermanJobsPro 🇩🇪`
+        : isFr
+        ? `${localizedTitle || "Offre d'emploi"} chez ${job.company || "Allemagne"} (${localizedCity}) | GermanJobsPro 🇩🇪`
+        : `${localizedTitle || "Job Offer"} at ${job.company || "Germany"} (${localizedCity}) | GermanJobsPro 🇩🇪`,
       description:
         shortDesc ||
         (isAr
-          ? `تفاصيل وظيفة ${job.title || "شاغر وظيفي"} في شركة ${job.company || "ألمانيا"}. قدم الآن مع إمكانية توليد خطاب الدافع Anschreiben وفحص التوافق ATS.`
-          : `Stellenangebot für ${job.title || "Stelle"} bei ${job.company || "Deutschland"}. Jetzt mit KI-Anschreiben bewerben.`),
+          ? `تفاصيل وظيفة ${localizedTitle || "شاغر وظيفي"} في شركة ${job.company || "ألمانيا"}. قدم الآن مع إمكانية توليد خطاب الدافع Anschreiben وفحص التوافق ATS.`
+          : isDe
+          ? `Stellenangebot für ${localizedTitle || "Stelle"} bei ${job.company || "Deutschland"}. Jetzt mit KI-Anschreiben bewerben.`
+          : isFr
+          ? `Offre d'emploi ${localizedTitle || "Poste"} chez ${job.company || "Allemagne"}. Postulez avec lettre de motivation IA DIN 5008.`
+          : `Job offer for ${localizedTitle || "Position"} at ${job.company || "Germany"}. Apply now with AI DIN 5008 cover letter.`),
       alternates: {
         canonical: `https://www.germanjobspro.com/${locale}/jobs/${id}`,
         languages: {
@@ -129,6 +157,7 @@ export default async function JobDetailPage({
   const { locale, id } = await params;
   const isAr = locale === "ar";
   const isDe = locale === "de";
+  const isFr = locale === "fr";
   const dir = isAr ? "rtl" : "ltr";
 
   // Request correlation ID for safe, non-sensitive diagnostic logging
@@ -286,7 +315,7 @@ export default async function JobDetailPage({
     applyUrl: String(sanitizedJob.applyUrl || ""),
     contactEmail: cleanEmail ? String(cleanEmail) : null,
     requirements: sanitizedJob.requirements ? String(sanitizedJob.requirements) : null,
-    descriptionRaw: sanitizedJob.descriptionRaw ? cleanJobDescription(sanitizedJob.descriptionRaw) : null,
+    descriptionRaw: sanitizedJob.descriptionRaw ? localizeJobDescription(sanitizedJob, locale) : null,
     publishedAt: safePublishedAt,
     expiresAt: safeExpiresAt,
     createdAt: safeCreatedAt,
@@ -351,15 +380,15 @@ export default async function JobDetailPage({
         {/* Breadcrumb Navigation */}
         <div className="flex items-center gap-2 text-xs text-slate-500 font-medium flex-wrap">
           <Link href={`/${locale}`} className="hover:text-blue-600 transition-colors">
-            {isAr ? "الرئيسية" : isDe ? "Startseite" : "Home"}
+            {isAr ? "الرئيسية" : isDe ? "Startseite" : isFr ? "Accueil" : "Home"}
           </Link>
           <span>/</span>
           <Link href={`/${locale}/jobs`} className="hover:text-blue-600 transition-colors">
-            {isAr ? "فرص العمل في ألمانيا" : isDe ? "Jobs" : "Jobs"}
+            {isAr ? "فرص العمل في ألمانيا" : isDe ? "Jobs" : isFr ? "Emplois" : "Jobs"}
           </Link>
           <span>/</span>
           <span className="text-[#061838] truncate max-w-xs font-semibold" dir="auto">
-            {jobData.title}
+            {localizeJobTitle(jobData, locale).primaryTitle}
           </span>
         </div>
 
@@ -381,6 +410,8 @@ export default async function JobDetailPage({
                     ? "وظائف مشابهة في نفس المجال"
                     : isDe
                     ? "Ähnliche Stellenangebote"
+                    : isFr
+                    ? "Offres similaires"
                     : "Similar Jobs"}
                 </span>
               </h2>
@@ -388,14 +419,19 @@ export default async function JobDetailPage({
                 href={`/${locale}/jobs`}
                 className="text-xs text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1"
               >
-                <span>{isAr ? "عرض جميع الوظائف" : isDe ? "Alle Jobs ansehen" : "View all jobs"}</span>
+                <span>{isAr ? "عرض جميع الوظائف" : isDe ? "Alle Jobs ansehen" : isFr ? "Voir toutes les offres" : "View all jobs"}</span>
                 <span className={dir === "rtl" ? "rotate-180" : ""}>→</span>
               </Link>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {safeSimilarJobs.map((relJob) => {
-                const { primaryTitle, latinSubtitle } = splitBilingualTitle(relJob.title);
+                const { primaryTitle, latinSubtitle } = localizeJobTitle(relJob.title, locale);
+                const relCity = isAr
+                  ? relJob.city || "ألمانيا"
+                  : extractGermanCity(relJob.city || (isDe ? "Deutschland" : isFr ? "Allemagne" : "Germany"));
+                const relLangBadge = localizeLanguageBadge(relJob.languageReq || "B1/B2", locale);
+                const isRelEnglish = /^EN\b|English/i.test(relJob.languageReq || "");
                 return (
                   <Link
                     key={relJob.id}
@@ -409,7 +445,7 @@ export default async function JobDetailPage({
                         </span>
                         {relJob.salary && (
                           <span className="px-2 py-0.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-medium">
-                            💰 <BidiSalary salary={relJob.salary} />
+                            💰 <BidiSalary salary={relJob.salary} locale={locale} />
                           </span>
                         )}
                       </div>
@@ -436,16 +472,16 @@ export default async function JobDetailPage({
 
                       <div className="flex items-center gap-2 flex-wrap text-xs pt-1">
                         <span className="px-2 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 font-medium">
-                          📍 <bdi dir="auto">{relJob.city || (isAr ? "ألمانيا" : isDe ? "Deutschland" : "Germany")}</bdi>
+                          📍 <bdi dir="auto">{relCity}</bdi>
                         </span>
                         <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-medium">
-                          🇩🇪 {relJob.languageReq || "B1/B2"}
+                          {isRelEnglish ? `🇬🇧 ${relLangBadge}` : `🇩🇪 ${relLangBadge}`}
                         </span>
                       </div>
                     </div>
 
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-blue-600 group-hover:text-blue-700">
-                      <span>{isAr ? "عرض التفاصيل والتقديم" : isDe ? "Details ansehen" : "View Details"}</span>
+                      <span>{isAr ? "عرض التفاصيل والتقديم" : isDe ? "Details ansehen" : isFr ? "Voir les détails" : "View Details"}</span>
                       <span className={dir === "rtl" ? "rotate-180" : ""}>→</span>
                     </div>
                   </Link>

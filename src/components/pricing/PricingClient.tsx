@@ -87,14 +87,33 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.error || "فشل تفعيل الكود الترويجي");
+        throw new Error(
+          data.error ||
+            (isAr
+              ? "فشل تفعيل الكود الترويجي"
+              : isDe
+              ? "Gutscheincode konnte nicht eingelöst werden"
+              : isFr
+              ? "Échec de l'activation du code promo"
+              : "Failed to redeem promo code")
+        );
       }
 
       setPromoSuccess(data.message);
       setPromoCode("");
       router.refresh();
     } catch (err: unknown) {
-      setPromoError(err instanceof Error ? err.message : "Error redeeming promo code");
+      setPromoError(
+        err instanceof Error
+          ? err.message
+          : isAr
+          ? "حدث خطأ أثناء تفعيل الكود الترويجي"
+          : isDe
+          ? "Fehler beim Einlösen des Gutscheincodes"
+          : isFr
+          ? "Erreur lors de l'activation du code promo"
+          : "Error redeeming promo code"
+      );
     } finally {
       setIsRedeeming(false);
     }
@@ -126,7 +145,17 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
       const redirectUrl = `${baseUrl}?${params.toString()}`;
       window.location.href = redirectUrl;
     } catch (err: unknown) {
-      setCheckoutError(err instanceof Error ? err.message : "Payment error");
+      setCheckoutError(
+        err instanceof Error
+          ? err.message
+          : isAr
+          ? "حدث خطأ أثناء الدفع"
+          : isDe
+          ? "Zahlungsfehler"
+          : isFr
+          ? "Erreur de paiement"
+          : "Payment error"
+      );
       setIsCheckingOut(null);
     }
   };
@@ -134,7 +163,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
   const formatExpiry = (dateStr: string | null) => {
     if (!dateStr) return null;
     const d = new Date(dateStr);
-    return d.toLocaleDateString(isAr ? "ar-MA" : isDe ? "de-DE" : "en-US", {
+    return d.toLocaleDateString(isAr ? "ar-MA" : isDe ? "de-DE" : isFr ? "fr-FR" : "en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -147,13 +176,17 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
       <div className="text-center space-y-3 max-w-2xl mx-auto">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
           <span>💎</span>
-          <span>{isAr ? "الترقية والاشتراكات" : isDe ? "Pläne & Preise" : "Plans & Pricing"}</span>
+          <span>
+            {isAr ? "الترقية والاشتراكات" : isDe ? "Pläne & Preise" : isFr ? "Formules & Tarifs" : "Plans & Pricing"}
+          </span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
           {isAr
             ? "سرّع قبولك في سوق العمل الألماني 🇩🇪"
             : isDe
             ? "Beschleunigen Sie Ihre Karriere in Deutschland 🇩🇪"
+            : isFr
+            ? "Accélérez votre recrutement en Allemagne 🇩🇪"
             : "Accelerate your hiring in Germany 🇩🇪"}
         </h1>
         <p className="text-sm text-slate-400 leading-relaxed">
@@ -161,6 +194,8 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
             ? "احصل على ترخيص متكامل لتوليد خطابات الدافع، فحص الـ ATS، وتكييف سيرتك الذاتية للعمل في ألمانيا."
             : isDe
             ? "Komplettzugang zu DIN 5008 Anschreiben, ATS-Check und KI-Lebenslauf für Deutschland."
+            : isFr
+            ? "Accès complet aux lettres de motivation IA, audits ATS et adaptation DIN 5008 pour l'Allemagne."
             : "Get full access to AI cover letters, ATS resume audits, and DIN 5008 adaptation for the German job market."}
         </p>
       </div>
@@ -171,7 +206,13 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
         <div className="md:col-span-6 bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-7 space-y-4 shadow-xl flex flex-col justify-between">
           <div className="space-y-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              {isAr ? "حالة حسابك الحالية" : isDe ? "Aktueller Kontostatus" : "Current Account Status"}
+              {isAr
+                ? "حالة حسابك الحالية"
+                : isDe
+                ? "Aktueller Kontostatus"
+                : isFr
+                ? "Statut actuel du compte"
+                : "Current Account Status"}
             </span>
             <div className="flex items-center gap-3">
               <span className="text-2xl font-black text-white">
@@ -191,7 +232,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
             </div>
             {user.planExpiresAt && (
               <p className="text-xs text-slate-400">
-                {isAr ? "ينتهي في: " : isDe ? "Gültig bis: " : "Valid until: "}
+                {isAr ? "ينتهي في: " : isDe ? "Gültig bis: " : isFr ? "Valable jusqu'au : " : "Valid until: "}
                 <span className="text-slate-200 font-bold">{formatExpiry(user.planExpiresAt)}</span>
               </p>
             )}
@@ -201,7 +242,13 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
             <div className="flex items-center gap-2">
               <span className="text-lg">⚡</span>
               <span className="text-xs font-bold text-slate-300">
-                {isAr ? "رصيد الذكاء الاصطناعي (AI Credits):" : isDe ? "KI-Guthaben:" : "Remaining AI Credits:"}
+                {isAr
+                  ? "رصيد الذكاء الاصطناعي (AI Credits):"
+                  : isDe
+                  ? "KI-Guthaben:"
+                  : isFr
+                  ? "Crédits IA restants :"
+                  : "Remaining AI Credits:"}
               </span>
             </div>
             <span className="text-base font-black text-emerald-400">
@@ -210,8 +257,10 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                     ? "20 طلب يومياً (متجددة تلقائياً)"
                     : isDe
                     ? "20 täglich (automatisch erneuert)"
+                    : isFr
+                    ? "20 requêtes/jour (renouvelées)"
                     : "20 Daily Requests (auto-renewed)")
-                : `${user.aiCredits} ${isAr ? "رصيد" : isDe ? "Guthaben" : "Credits"}`}
+                : `${user.aiCredits} ${isAr ? "رصيد" : isDe ? "Guthaben" : isFr ? "Crédits" : "Credits"}`}
             </span>
           </div>
         </div>
@@ -221,16 +270,32 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
           <div className="space-y-1">
             <span className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1">
               <span>🎁</span>
-              <span>{isAr ? "هل لديك كود ترويجي أو تجريبي؟" : isDe ? "Haben Sie einen Gutscheincode?" : "Have a Promo or Trial Code?"}</span>
+              <span>
+                {isAr
+                  ? "هل لديك كود ترويجي أو تجريبي؟"
+                  : isDe
+                  ? "Haben Sie einen Gutscheincode?"
+                  : isFr
+                  ? "Vous avez un code promo ou d'essai ?"
+                  : "Have a Promo or Trial Code?"}
+              </span>
             </span>
             <h3 className="text-base font-bold text-white">
-              {isAr ? "تفعيل كود الهدية / التجربة" : isDe ? "Gutscheincode einlösen" : "Redeem Gift / Trial Code"}
+              {isAr
+                ? "تفعيل كود الهدية / التجربة"
+                : isDe
+                ? "Gutscheincode einlösen"
+                : isFr
+                ? "Activer un code cadeau / essai"
+                : "Redeem Gift / Trial Code"}
             </h3>
             <p className="text-xs text-slate-400">
               {isAr
                 ? "أدخل كود التخفيض أو المنحة الممنوحة من شركائنا لترقية حسابك فوراً."
                 : isDe
                 ? "Geben Sie Ihren Rabattcode ein, um Ihr Guthaben sofort aufzuladen."
+                : isFr
+                ? "Saisissez votre code promo pour activer instantanément vos crédits et votre accès."
                 : "Enter your promotional code to instantly grant credits and trial access."}
             </p>
           </div>
@@ -242,7 +307,15 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                 value={promoCode}
                 onChange={(e) => setPromoCode(e.target.value)}
                 dir={isAr && !promoCode ? "rtl" : "ltr"}
-                placeholder={isAr ? "أدخل الكود هنا (مثال: GERMAN2026)" : "Enter code (e.g. GERMAN2026)"}
+                placeholder={
+                  isAr
+                    ? "أدخل الكود هنا (مثال: GERMAN2026)"
+                    : isDe
+                    ? "Code eingeben (z. B. GERMAN2026)"
+                    : isFr
+                    ? "Entrez le code (ex. GERMAN2026)"
+                    : "Enter code (e.g. GERMAN2026)"
+                }
                 className="flex-1 px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder:text-slate-400 text-xs sm:text-sm font-sans uppercase placeholder:font-sans placeholder:normal-case placeholder:tracking-normal focus:border-blue-500 focus:outline-hidden"
               />
               <button
@@ -250,7 +323,21 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                 disabled={isRedeeming || !promoCode.trim()}
                 className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition-all disabled:opacity-50 shrink-0 cursor-pointer shadow-md shadow-blue-600/20"
               >
-                {isRedeeming ? (isAr ? "جاري التفعيل..." : isDe ? "Wird aktiviert..." : "Redeeming...") : isAr ? "تفعيل" : isDe ? "Einlösen" : "Redeem"}
+                {isRedeeming
+                  ? isAr
+                    ? "جاري التفعيل..."
+                    : isDe
+                    ? "Wird aktiviert..."
+                    : isFr
+                    ? "Activation..."
+                    : "Redeeming..."
+                  : isAr
+                  ? "تفعيل"
+                  : isDe
+                  ? "Einlösen"
+                  : isFr
+                  ? "Activer"
+                  : "Redeem"}
               </button>
             </div>
 
@@ -284,7 +371,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
           <div className="space-y-5">
             <div className="space-y-1.5">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                {isAr ? "المستوى المجاني" : isDe ? "Kostenlos" : "Free Plan"}
+                {isAr ? "المستوى المجاني" : isDe ? "Kostenlos" : isFr ? "Forfait gratuit" : "Free Plan"}
               </span>
               <h3 className="text-2xl font-black text-white">Starter</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
@@ -292,6 +379,8 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                   ? "لبناء سيرة ذاتية قياسية واستكشاف الوظائف في ألمانيا"
                   : isDe
                   ? "Für den Einstieg und die Jobsuche in Deutschland"
+                  : isFr
+                  ? "Pour créer votre CV DIN 5008 et explorer les emplois en Allemagne"
                   : "For building standard CVs and browsing German jobs"}
               </p>
             </div>
@@ -299,7 +388,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
             <div className="flex items-baseline gap-1.5">
               <span className="text-4xl sm:text-5xl font-black text-white">$0</span>
               <span className="text-xs text-slate-400 font-medium">
-                {isAr ? "/ دائماً" : isDe ? "/ dauerhaft" : "/ forever"}
+                {isAr ? "/ دائماً" : isDe ? "/ dauerhaft" : isFr ? "/ pour toujours" : "/ forever"}
               </span>
             </div>
 
@@ -397,8 +486,8 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
             className="w-full py-3.5 rounded-2xl bg-slate-800 text-slate-400 font-bold text-xs text-center cursor-not-allowed border border-slate-700/50"
           >
             {user.plan === "FREE"
-              ? (isAr ? "خطتك الحالية" : isDe ? "Aktueller Tarif" : "Current Plan")
-              : (isAr ? "مشمول مجاناً" : isDe ? "Im Starter enthalten" : "Included in Free")}
+              ? (isAr ? "خطتك الحالية" : isDe ? "Aktueller Tarif" : isFr ? "Forfait actuel" : "Current Plan")
+              : (isAr ? "مشمول مجاناً" : isDe ? "Im Starter enthalten" : isFr ? "Inclus gratuitement" : "Included in Free")}
           </button>
         </div>
 
@@ -407,7 +496,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
           <div className="space-y-5">
             <div className="space-y-1.5">
               <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
-                {isAr ? "تصريح الـ 30 يوماً" : isDe ? "30-Tage-Pass" : "30-Day Sprint Pass"}
+                {isAr ? "تصريح الـ 30 يوماً" : isDe ? "30-Tage-Pass" : isFr ? "Pass Sprint 30 jours" : "30-Day Sprint Pass"}
               </span>
               <h3 className="text-2xl font-black text-white">Quick Sprint</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
@@ -415,6 +504,8 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                   ? "صلاحية 30 يوماً للتقديمات السريعة والمكثفة على الوظائف"
                   : isDe
                   ? "30 Tage Gültigkeit für schnelle und zielgerichtete Bewerbungen"
+                  : isFr
+                  ? "Validité de 30 jours pour vos candidatures intensives en Allemagne"
                   : "30 days validity for fast applications"}
               </p>
             </div>
@@ -423,7 +514,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
               <div className="flex items-baseline gap-1.5">
                 <span className="text-4xl sm:text-5xl font-black text-white">$9.99</span>
                 <span className="text-xs text-slate-400 font-medium">
-                  {isAr ? "/ 30 يوماً" : isDe ? "/ 30 Tage" : "/ 30 days"}
+                  {isAr ? "/ 30 يوماً" : isDe ? "/ 30 Tage" : isFr ? "/ 30 jours" : "/ 30 days"}
                 </span>
               </div>
               <p className="text-[11px] text-emerald-400 font-semibold">
@@ -431,6 +522,8 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                   ? "دفع لمرة واحدة • تفعيل فوري"
                   : isDe
                   ? "Einmalzahlung • Sofortige Freischaltung"
+                  : isFr
+                  ? "Paiement unique • Activation immédiate"
                   : "One-time payment • Instant activation"}
               </p>
             </div>
@@ -557,11 +650,11 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
             className="w-full py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 border border-slate-700"
           >
             {isCheckingOut === GUMROAD_VARIANTS.SPRINT_30D ? (
-              <span>{isAr ? "جاري تحويلك لبوابة الدفع..." : isDe ? "Weiterleitung..." : "Redirecting..."}</span>
+              <span>{isAr ? "جاري تحويلك لبوابة الدفع..." : isDe ? "Weiterleitung..." : isFr ? "Redirection..." : "Redirecting..."}</span>
             ) : isPro ? (
-              <span>{isAr ? "تمديد 30 يوماً (Quick Sprint) ⚡" : isDe ? "30 Tage verlängern ⚡" : "Extend 30 Days (Quick Sprint) ⚡"}</span>
+              <span>{isAr ? "تمديد 30 يوماً (Quick Sprint) ⚡" : isDe ? "30 Tage verlängern ⚡" : isFr ? "Prolonger 30 jours (Quick Sprint) ⚡" : "Extend 30 Days (Quick Sprint) ⚡"}</span>
             ) : (
-              <span>{isAr ? "اختيار Quick Sprint ⚡" : isDe ? "Quick Sprint wählen ⚡" : "Choose Quick Sprint ⚡"}</span>
+              <span>{isAr ? "اختيار Quick Sprint ⚡" : isDe ? "Quick Sprint wählen ⚡" : isFr ? "Choisir Quick Sprint ⚡" : "Choose Quick Sprint ⚡"}</span>
             )}
           </button>
         </div>
@@ -571,13 +664,13 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
           {/* Badge */}
           <div className="absolute -top-3.5 start-6 px-3.5 py-1 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold text-[11px] shadow-lg shadow-blue-600/30 flex items-center gap-1.5">
             <span>⭐</span>
-            <span>{isAr ? "الأكثر طلباً • وفر 35%" : isDe ? "Bestseller • 35% Sparen" : "Most Popular • Save 35%"}</span>
+            <span>{isAr ? "الأكثر طلباً • وفر 35%" : isDe ? "Bestseller • 35% Sparen" : isFr ? "Le plus populaire • -35 %" : "Most Popular • Save 35%"}</span>
           </div>
 
           <div className="space-y-5 pt-1">
             <div className="space-y-1.5">
               <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
-                {isAr ? "جواز الباحث عن عمل" : isDe ? "Komplett-Pass" : "Full Career Pass"}
+                {isAr ? "جواز الباحث عن عمل" : isDe ? "Komplett-Pass" : isFr ? "Pass Carrière Complet" : "Full Career Pass"}
               </span>
               <h3 className="text-2xl font-black text-white flex items-center gap-2">
                 <span>PRO Job Pass</span>
@@ -588,6 +681,8 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                   ? "تغطية كاملة لدورة التوظيف الألمانية مع جميع الأدوات الاحترافية"
                   : isDe
                   ? "Deckt den gesamten deutschen Bewerbungszyklus mit allen Premium-Tools ab"
+                  : isFr
+                  ? "Couverture complète du cycle de recrutement allemand avec tous les outils PRO"
                   : "Complete coverage for the entire German hiring cycle"}
               </p>
             </div>
@@ -598,7 +693,7 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                   $19.99
                 </span>
                 <span className="text-xs text-slate-400 font-medium">
-                  {isAr ? "/ 90 يوماً" : isDe ? "/ 90 Tage" : "/ 90 days"}
+                  {isAr ? "/ 90 يوماً" : isDe ? "/ 90 Tage" : isFr ? "/ 90 jours" : "/ 90 days"}
                 </span>
               </div>
               <p className="text-[11px] text-emerald-400 font-semibold">
@@ -606,6 +701,8 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
                   ? "دفع لمرة واحدة • بدون اشتراك متكرر أو رسوم خفية"
                   : isDe
                   ? "Einmalzahlung • Keine wiederkehrenden Gebühren"
+                  : isFr
+                  ? "Paiement unique • Sans abonnement ni frais cachés"
                   : "One-time payment • No recurring fees"}
               </p>
             </div>
@@ -702,11 +799,11 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
             className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-sm sm:text-base transition-all shadow-xl shadow-blue-600/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {isCheckingOut === GUMROAD_VARIANTS.PRO_90D ? (
-              <span>{isAr ? "جاري تحويلك لبوابة الدفع..." : isDe ? "Weiterleitung..." : "Redirecting..."}</span>
+              <span>{isAr ? "جاري تحويلك لبوابة الدفع..." : isDe ? "Weiterleitung..." : isFr ? "Redirection..." : "Redirecting..."}</span>
             ) : isPro ? (
-              <span>{isAr ? "تمديد اشتراك PRO (90 يوماً) 🚀" : isDe ? "90 Tage verlängern 🚀" : "Extend PRO Pass (90 Days) 🚀"}</span>
+              <span>{isAr ? "تمديد اشتراك PRO (90 يوماً) 🚀" : isDe ? "90 Tage verlängern 🚀" : isFr ? "Prolonger le Pass PRO (90 jours) 🚀" : "Extend PRO Pass (90 Days) 🚀"}</span>
             ) : (
-              <span>{isAr ? "احصل على PRO Job Pass 🚀" : isDe ? "PRO Job Pass sichern 🚀" : "Get PRO Job Pass 🚀"}</span>
+              <span>{isAr ? "احصل على PRO Job Pass 🚀" : isDe ? "PRO Job Pass sichern 🚀" : isFr ? "Obtenir PRO Job Pass 🚀" : "Get PRO Job Pass 🚀"}</span>
             )}
           </button>
         </div>

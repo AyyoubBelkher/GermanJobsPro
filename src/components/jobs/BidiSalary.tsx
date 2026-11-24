@@ -1,12 +1,19 @@
 import React from "react";
-import { splitSalaryBidiSegments } from "@/lib/jobUtils";
+import { localizeSalary, splitSalaryBidiSegments } from "@/lib/jobUtils";
 
 /**
- * Renders salary ranges with LTR isolation on numeric/currency spans
- * so lower-to-upper bounds stay in proper order in RTL locales.
+ * Renders salary ranges with locale-appropriate period normalization and
+ * LTR isolation on numeric/currency spans so bounds stay ordered in RTL.
  */
-export default function BidiSalary({ salary }: { salary: string }) {
-  const segments = splitSalaryBidiSegments(salary);
+export default function BidiSalary({
+  salary,
+  locale = "ar",
+}: {
+  salary: string;
+  locale?: string;
+}) {
+  const localizedSalary = localizeSalary(salary, locale);
+  const segments = splitSalaryBidiSegments(localizedSalary);
   return (
     <>
       {segments.map((seg, idx) =>

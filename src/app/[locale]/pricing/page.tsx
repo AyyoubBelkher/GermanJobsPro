@@ -15,17 +15,22 @@ export async function generateMetadata({
   const { locale } = await params;
   const isAr = locale === "ar";
   const isDe = locale === "de";
+  const isFr = locale === "fr";
 
   return {
     title: isAr
       ? "الأسعار وباقات الاشتراك | GermanJobsPro 🇩🇪"
       : isDe
       ? "Preise & Tarife (PRO Pass) | GermanJobsPro 🇩🇪"
+      : isFr
+      ? "Tarifs & Formules (Pass PRO) | GermanJobsPro 🇩🇪"
       : "Pricing & Plans (PRO Pass) | GermanJobsPro 🇩🇪",
     description: isAr
       ? "احصل على ترخيص متكامل لتوليد خطابات الدافع، فحص الـ ATS، وتتبع تقديماتك للعمل في ألمانيا."
       : isDe
       ? "Komplettzugang zu DIN 5008 Anschreiben, ATS-Check und Bewerbungs-Tracker für Deutschland."
+      : isFr
+      ? "Accédez aux lettres de motivation IA DIN 5008, audits ATS et suivi des candidatures pour l'Allemagne."
       : "Get full access to AI cover letters, ATS resume audits, and application tracking for the German job market.",
     alternates: {
       canonical: `https://www.germanjobspro.com/${locale}/pricing`,
@@ -48,6 +53,7 @@ export default async function PublicPricingPage({
   const { locale } = await params;
   const isAr = locale === "ar";
   const isDe = locale === "de";
+  const isFr = locale === "fr";
   const dir = isAr ? "rtl" : "ltr";
 
   const cookieStore = await cookies();
@@ -73,18 +79,32 @@ export default async function PublicPricingPage({
         {/* Breadcrumb Navigation */}
         <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
           <Link href={`/${locale}`} className="hover:text-blue-600 transition-colors">
-            {isAr ? "الرئيسية" : isDe ? "Startseite" : "Home"}
+            {isAr ? "الرئيسية" : isDe ? "Startseite" : isFr ? "Accueil" : "Home"}
           </Link>
           <span>/</span>
           <span className="text-slate-800 font-semibold">
-            {isAr ? "الأسعار وباقة المحترفين (PRO Pass)" : isDe ? "Preise & Tarife" : "Pricing & PRO Pass"}
+            {isAr
+              ? "الأسعار وباقة المحترفين (PRO Pass)"
+              : isDe
+              ? "Preise & Tarife"
+              : isFr
+              ? "Tarifs & Pass PRO"
+              : "Pricing & PRO Pass"}
           </span>
         </div>
 
         {/* Page Header */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold uppercase tracking-wider">
-            <span>{isAr ? "استثمار مضمون في مستقبلك" : isDe ? "Transparente Preise" : "Transparent Pricing"}</span>
+            <span>
+              {isAr
+                ? "استثمار مضمون في مستقبلك"
+                : isDe
+                ? "Transparente Preise"
+                : isFr
+                ? "Tarification transparente"
+                : "Transparent Pricing"}
+            </span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black text-[#061838] tracking-tight">
@@ -92,6 +112,8 @@ export default async function PublicPricingPage({
               ? "خطط وباقات GermanJobsPro 🇩🇪"
               : isDe
               ? "Pläne & Preise von GermanJobsPro 🇩🇪"
+              : isFr
+              ? "Formules & Tarifs GermanJobsPro 🇩🇪"
               : "GermanJobsPro Plans & Pricing 🇩🇪"}
           </h1>
 
@@ -100,6 +122,8 @@ export default async function PublicPricingPage({
               ? "احصل على ترخيص متكامل لتوليد خطابات الدافع، فحص الـ ATS، وتتبع تقديماتك للعمل في ألمانيا."
               : isDe
               ? "Komplettzugang zu DIN 5008 Anschreiben, ATS-Check und Bewerbungs-Tracker für Deutschland."
+              : isFr
+              ? "Accès complet aux lettres de motivation IA DIN 5008, audits ATS et suivi des candidatures pour le marché allemand."
               : "Get full access to AI cover letters, ATS resume audits, and application tracking for the German job market."}
           </p>
         </div>

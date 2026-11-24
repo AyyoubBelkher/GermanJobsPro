@@ -9,22 +9,20 @@ import { getDictionary, isValidLocale, DEFAULT_LOCALE, LOCALE_METADATA, type Loc
 import {
   JobDetailData,
   extractGermanTitle,
-  splitBilingualTitle,
   GERMAN_CITIES_MAP,
   extractGermanCity,
   extractReferenceNumber,
   extractCefrLevel,
   detectPortalInfo,
-  FAKE_EMAIL_DOMAINS,
-  FAKE_EMAIL_EXACT,
-  isValidHrEmail,
   extractCleanHrEmail,
   getAnerkennungDetails,
   formatRelativeJobDate,
+  localizeJobTitle,
+  localizeJobDescription,
+  localizeLanguageBadge,
+  localizeJobType,
 } from "@/lib/jobUtils";
 import BidiSalary from "@/components/jobs/BidiSalary";
-
-const formatLangLevel = (lvl?: string | null) => (!lvl || lvl.toLowerCase() === "none") ? "Deutsch (B1/B2)" : lvl;
 
 interface JobDetailClientProps {
   job?: JobDetailData | null;
@@ -140,8 +138,12 @@ interface ParsedRequirements {
 
 function parseRequirementsSections(
   rawRequirements?: string | null,
-  languageReq?: string | null
+  languageReq?: string | null,
+  locale: string = "ar"
 ): ParsedRequirements {
+  const isAr = locale === "ar";
+  const isDe = locale === "de";
+  const isFr = locale === "fr";
   let list: string[] = [];
 
   if (rawRequirements && typeof rawRequirements === "string") {
@@ -158,6 +160,14 @@ function parseRequirementsSections(
         .map((r) => r.replace(/^[•\-\*\.،:\s]+/, "").trim())
         .filter((r) => r.length > 2);
     }
+  }
+
+  if (!isAr) {
+    list = list.filter((item) => {
+      const latinCount = (item.match(/[a-zA-ZäöüÄÖÜß]/g) || []).length;
+      const arabicCount = (item.match(/[\u0600-\u06FF]/g) || []).length;
+      return arabicCount === 0 || latinCount > arabicCount;
+    });
   }
 
   const safeLangReq = typeof languageReq === "string" ? languageReq : null;
@@ -186,13 +196,19 @@ function parseRequirementsSections(
     }
   }
 
-  const formattedLangReq = formatLangLevel(safeLangReq);
+  const formattedLangReq = localizeLanguageBadge(safeLangReq, locale);
 
   return {
     languageItem:
       languageItem ||
       (safeLangReq && safeLangReq.toLowerCase() !== "none"
-        ? `إتقان اللغة الألمانية / الإنجليزية بمستوى ${formattedLangReq}`
+        ? isAr
+          ? `إتقان اللغة بالمستوى المحدد (${formattedLangReq})`
+          : isDe
+          ? `Erforderliches Sprachniveau: ${formattedLangReq}`
+          : isFr
+          ? `Niveau linguistique requis : ${formattedLangReq}`
+          : `Required language proficiency: ${formattedLangReq}`
         : null),
     degreeItem,
     skillsItems,
@@ -246,13 +262,30 @@ export default function JobDetailClient({
   const currentMeta = LOCALE_METADATA[activeLocale];
   const isAr = activeLocale === "ar";
   const isDe = activeLocale === "de";
+  const isFr = activeLocale === "fr";
   const dir = currentMeta?.dir || (isAr ? "rtl" : "ltr");
 
   // Defensive fallback job object to prevent SSR crashes if job is null or undefined
   const job: JobDetailData = {
     id: initialJob?.id || "job-default",
-    title: initialJob?.title || (isAr ? "فرصة عمل في ألمانيا" : "Stelle in Deutschland"),
-    company: initialJob?.company || (isAr ? "جهة عمل معتمدة" : "Arbeitgeber"),
+    title:
+      initialJob?.title ||
+      (isAr
+        ? "فرصة عمل في ألمانيا"
+        : isDe
+        ? "Stelle in Deutschland"
+        : isFr
+        ? "Offre d'emploi en Allemagne"
+        : "Job in Germany"),
+    company:
+      initialJob?.company ||
+      (isAr
+        ? "جهة عمل معتمدة"
+        : isDe
+        ? "Arbeitgeber"
+        : isFr
+        ? "Employeur vérifié"
+        : "Verified Employer"),
     city: initialJob?.city || "Deutschland",
     category: initialJob?.category || "General",
     jobType: initialJob?.jobType || "Vollzeit",
@@ -277,21 +310,33 @@ export default function JobDetailClient({
   const [toast, setToast] = useState<string | null>(null);
 
   // Derived metadata & helpers
-  const { primaryTitle, latinSubtitle } = splitBilingualTitle(job.title);
+  const { primaryTitle, latinSubtitle } = localizeJobTitle(job, activeLocale);
   const germanTitle = latinSubtitle || extractGermanTitle(job.title);
   const germanCity = extractGermanCity(job.city);
+  const displayCity = isAr
+    ? job.city || dict?.jobs?.details?.germany || "ألمانيا"
+    : germanCity;
   const cleanCompany =
     (job.company || "").replace(/[\u0600-\u06FF]/g, "").trim() ||
     job.company ||
     "Arbeitgeber";
   const referenceNumber = extractReferenceNumber(job);
-  const cefrLevel = formatLangLevel(extractCefrLevel(job.languageLevel || job.languageReq, job.requirements));
-  const portalInfo = detectPortalInfo(job.applyUrl);
-  const anerkennung = getAnerkennungDetails(job.category, isAr, isDe);
+  const rawCefrLevel = extractCefrLevel(job.languageLevel || job.languageReq, job.requirements);
+  const cefrLevel = localizeLanguageBadge(rawCefrLevel, activeLocale);
+  const isEnglishReq = /^EN\b|English|Englisch|Anglais|إنجليز/i.test(rawCefrLevel);
+  const localizedJobType = localizeJobType(job.jobType, activeLocale);
+  const _portalInfo = detectPortalInfo(job.applyUrl);
+  void _portalInfo;
+  const anerkennung = getAnerkennungDetails(job.category, isAr, isDe, isFr);
   const formattedDate = formatJobDate(job.publishedAt, activeLocale);
 
-  const parsedDescription = parseDescriptionSections(job.descriptionRaw);
-  const parsedRequirements = parseRequirementsSections(job.requirements, job.languageLevel || job.languageReq);
+  const localizedDescription = localizeJobDescription(job, activeLocale);
+  const parsedDescription = parseDescriptionSections(localizedDescription);
+  const parsedRequirements = parseRequirementsSections(
+    job.requirements,
+    job.languageLevel || job.languageReq,
+    activeLocale
+  );
 
   // URLs for AI suites with safe URI encoding
   const coverLetterUrl = `/${activeLocale}/dashboard/cover-letters/new?jobTitle=${encodeURIComponent(
@@ -423,16 +468,24 @@ export default function JobDetailClient({
           ? "✉️ تقديم مباشر عبر البريد الإلكتروني"
           : isDe
           ? "✉️ Direkte E-Mail-Bewerbung"
+          : isFr
+          ? "✉️ Candidature directe par e-mail"
           : "✉️ Direct Email Application";
       }
       return isAr
         ? "🌐 تقديم مباشر عبر الموقع الرسمي للشركة"
         : isDe
         ? "🌐 Direkte Bewerbung über das Unternehmensportal"
+        : isFr
+        ? "🌐 Candidature via le portail officiel de l'entreprise"
         : "🌐 Direct Official Portal Application";
     } catch {
       return isAr
         ? "🌐 تقديم مباشر عبر الموقع الرسمي للشركة"
+        : isDe
+        ? "🌐 Direkte Bewerbung über das Unternehmensportal"
+        : isFr
+        ? "🌐 Candidature via le portail officiel de l'entreprise"
         : "🌐 Direct Official Portal Application";
     }
   };
@@ -441,6 +494,8 @@ export default function JobDetailClient({
     ? "جميع الوظائف من مصادر رسمية معتمدة في ألمانيا ولا توجد أي رسوم وساطة."
     : isDe
     ? "Alle Stellenangebote stammen aus offiziell verifizierten Quellen in Deutschland – 100% gebührenfrei ohne Vermittler."
+    : isFr
+    ? "Toutes les offres proviennent de sources allemandes officielles vérifiées — 100 % gratuit sans intermédiaire."
     : "All job openings are sourced from verified official German feeds with zero intermediary fees.";
 
   // Renders the Direct HR Email or Official Portal Application Card
@@ -465,12 +520,12 @@ export default function JobDetailClient({
             {hasEmail ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 border border-emerald-200 text-xs font-bold text-emerald-800">
                 <span>✉️</span>
-                <span>{isAr ? "تقديم مباشر عبر البريد الإلكتروني" : isDe ? "Direkte E-Mail-Bewerbung" : "Direct Email Application"}</span>
+                <span>{isAr ? "تقديم مباشر عبر البريد الإلكتروني" : isDe ? "Direkte E-Mail-Bewerbung" : isFr ? "Candidature directe par e-mail" : "Direct Email Application"}</span>
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 border border-blue-200 text-xs font-bold text-blue-800">
                 <span>🌐</span>
-                <span>{isAr ? "تقديم مباشر عبر الموقع الرسمي للشركة" : isDe ? "Offizielles Unternehmensportal" : "Official Company Portal"}</span>
+                <span>{isAr ? "تقديم مباشر عبر الموقع الرسمي للشركة" : isDe ? "Offizielles Unternehmensportal" : isFr ? "Portail officiel de l'entreprise" : "Official Company Portal"}</span>
               </span>
             )}
           </div>
@@ -481,11 +536,15 @@ export default function JobDetailClient({
                 ? "التقديم المباشر عبر البريد الإلكتروني"
                 : isDe
                 ? "Direkt per E-Mail bewerben"
+                : isFr
+                ? "Postuler directement par e-mail"
                 : "Direct Email Application"
               : isAr
               ? "التقديم عبر موقع الشركة الرسمي"
               : isDe
               ? "Bewerbung über das offizielle Portal"
+              : isFr
+              ? "Postuler via le portail officiel"
               : "Apply via Official Company Portal"}
           </h3>
 
@@ -493,9 +552,17 @@ export default function JobDetailClient({
             {hasEmail
               ? isAr
                 ? `يمكنك مراسلة قسم التوظيف لدى ${cleanCompany} مباشرة وإرسال سيرتك الذاتية دون أي وسيط.`
+                : isDe
+                ? `Direkter Kontakt zur Personalabteilung von ${cleanCompany}. Senden Sie Ihren Lebenslauf direkt per E-Mail.`
+                : isFr
+                ? `Contact direct du service recrutement de ${cleanCompany}. Envoyez votre CV sans intermédiaire.`
                 : `Direct recruiter contact for ${cleanCompany}. Send your CV directly to their hiring inbox.`
               : isAr
               ? `يتم التقديم لهذه الفرصة مباشرة عبر بوابة التوظيف الرسمية الخاصة بـ ${cleanCompany} بدون أي رسوم أو وسطاء.`
+              : isDe
+              ? `Bewerben Sie sich direkt über das offizielle Karriereportal von ${cleanCompany} ohne Vermittler.`
+              : isFr
+              ? `Postulez directement via le portail carrière officiel de ${cleanCompany} sans aucun frais.`
               : `Apply directly through ${cleanCompany}'s official careers portal with zero intermediary fees.`}
           </p>
         </div>
@@ -506,11 +573,11 @@ export default function JobDetailClient({
             <div className="p-4 rounded-2xl bg-white border border-emerald-200 space-y-2 shadow-sm">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-600 font-semibold">
-                  {isAr ? "البريد الإلكتروني للتوظيف:" : isDe ? "E-Mail für Bewerbungen:" : "Official Recruiter Email:"}
+                  {isAr ? "البريد الإلكتروني للتوظيف:" : isDe ? "E-Mail für Bewerbungen:" : isFr ? "E-mail de recrutement :" : "Official Recruiter Email:"}
                 </span>
                 <span className="text-emerald-700 font-bold flex items-center gap-1 text-[11px]">
                   <span>✉️</span>
-                  <span>{isAr ? "بريد رسمي مباشر" : isDe ? "Direktkontakt" : "Direct Email"}</span>
+                  <span>{isAr ? "بريد رسمي مباشر" : isDe ? "Direktkontakt" : isFr ? "Contact direct" : "Direct Email"}</span>
                 </span>
               </div>
 
@@ -534,6 +601,8 @@ export default function JobDetailClient({
                     ? "فتح في Gmail وإرسال السيرة ✉️"
                     : isDe
                     ? "In Gmail öffnen & senden ✉️"
+                    : isFr
+                    ? "Ouvrir dans Gmail et envoyer ✉️"
                     : "Open in Gmail & Send ✉️"}
                 </span>
               </button>
@@ -548,9 +617,17 @@ export default function JobDetailClient({
                   {copiedEmail
                     ? isAr
                       ? "✓ تم نسخ الإيميل!"
+                      : isDe
+                      ? "✓ Kopiert!"
+                      : isFr
+                      ? "✓ Copié !"
                       : "✓ Copied!"
                     : isAr
                     ? "نسخ الإيميل 📋"
+                    : isDe
+                    ? "E-Mail kopieren 📋"
+                    : isFr
+                    ? "Copier l'e-mail 📋"
                     : "Copy Email 📋"}
                 </span>
               </button>
@@ -566,6 +643,8 @@ export default function JobDetailClient({
                   ? "تجهيز خطاب الدافع (Anschreiben) لهذه الوظيفة"
                   : isDe
                   ? "Anschreiben für diese Stelle vorbereiten"
+                  : isFr
+                  ? "Préparer une lettre de motivation (Anschreiben)"
                   : "Prepare Tailored Cover Letter"}
               </span>
             </Link>
@@ -583,6 +662,8 @@ export default function JobDetailClient({
                     ? "عرض نموذج الإيميل بالألمانية (Muster-Vorlage)"
                     : isDe
                     ? "E-Mail-Vorlage anzeigen"
+                    : isFr
+                    ? "Afficher le modèle d'e-mail allemand"
                     : "Show German Email Template"}
                 </span>
               </button>
@@ -600,6 +681,8 @@ export default function JobDetailClient({
                       ? "زيارة إعلان الوظيفة بموقع الشركة ↗"
                       : isDe
                       ? "Unternehmensseite besuchen ↗"
+                      : isFr
+                      ? "Voir sur le site de l'entreprise ↗"
                       : "View on company site ↗"}
                   </span>
                 </a>
@@ -624,6 +707,8 @@ export default function JobDetailClient({
                   ? "التقديم الآن عبر موقع الشركة الرسمي ↗"
                   : isDe
                   ? "Jetzt über Unternehmensportal bewerben ↗"
+                  : isFr
+                  ? "Postuler sur le portail officiel ↗"
                   : "Apply Now on Company Portal ↗"}
               </span>
             </a>
@@ -638,6 +723,8 @@ export default function JobDetailClient({
                   ? "تجهيز خطاب الدافع (Anschreiben) لهذه الوظيفة"
                   : isDe
                   ? "Anschreiben für diese Stelle vorbereiten"
+                  : isFr
+                  ? "Préparer la lettre de motivation (Anschreiben)"
                   : "Prepare Tailored Cover Letter (Anschreiben)"}
               </span>
             </Link>
@@ -651,6 +738,8 @@ export default function JobDetailClient({
                     ? "دليل التقديم في استمارة الشركة الرسمية (Bewerbungsformular):"
                     : isDe
                     ? "Leitfaden für das offizielle Bewerbungsformular:"
+                    : isFr
+                    ? "Guide pour le formulaire de candidature officiel (Bewerbungsformular) :"
                     : "Guide for the Official Application Form (Bewerbungsformular):"}
                 </span>
               </div>
@@ -662,6 +751,8 @@ export default function JobDetailClient({
                       ? "جهّز ملف سيرتك الذاتية (Lebenslauf) وخطاب الدافع (Anschreiben) بصيغة PDF."
                       : isDe
                       ? "Bereiten Sie Lebenslauf & Anschreiben als PDF vor."
+                      : isFr
+                      ? "Préparez votre CV (Lebenslauf) et lettre (Anschreiben) en PDF."
                       : "Prepare your CV (Lebenslauf) and cover letter (Anschreiben) as PDF."}
                   </span>
                 </li>
@@ -672,6 +763,8 @@ export default function JobDetailClient({
                       ? "اضغط على زر التقديم الرسمي أعلاه لفتح استمارة جهة العمل المباشرة."
                       : isDe
                       ? "Klicken Sie oben auf den Button, um das Bewerbungsformular zu öffnen."
+                      : isFr
+                      ? "Cliquez sur le bouton officiel ci-dessus pour ouvrir le formulaire employeur."
                       : "Click the official button above to open the employer's form."}
                   </span>
                 </li>
@@ -682,6 +775,8 @@ export default function JobDetailClient({
                       ? "في استمارة الشركة: املأ اسمك وبريدك وارفع ملف PDF في خانة (Lebenslauf / Unterlagen) ثم اضغط (Bewerbung absenden)."
                       : isDe
                       ? "Im Formular: Name & E-Mail eintragen, PDF bei (Lebenslauf / Unterlagen) hochladen und absenden."
+                      : isFr
+                      ? "Dans le formulaire : saisissez nom & e-mail, téléversez votre PDF sous (Lebenslauf / Unterlagen) et envoyez."
                       : "In the form: enter your name and email, upload your PDF under (Lebenslauf / Unterlagen) and submit."}
                   </span>
                 </li>
@@ -697,7 +792,15 @@ export default function JobDetailClient({
               href={coverLetterUrl}
               className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-extrabold text-sm text-center shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>{isAr ? "تجهيز خطاب الدافع (Anschreiben) لهذه الوظيفة" : "Prepare Tailored Cover Letter"}</span>
+              <span>
+                {isAr
+                  ? "تجهيز خطاب الدافع (Anschreiben) لهذه الوظيفة"
+                  : isDe
+                  ? "Anschreiben für diese Stelle vorbereiten"
+                  : isFr
+                  ? "Préparer la lettre de motivation"
+                  : "Prepare Tailored Cover Letter"}
+              </span>
             </Link>
           </div>
         )}
@@ -729,7 +832,13 @@ export default function JobDetailClient({
         <div className="flex items-center gap-2">
           <span className="text-base">⚡</span>
           <h3 className="font-bold text-[#061838] text-xs sm:text-sm">
-            {isAr ? "أدوات الذكاء الاصطناعي التنافسية" : "AI Career Suite"}
+            {isAr
+              ? "أدوات الذكاء الاصطناعي التنافسية"
+              : isDe
+              ? "KI-Bewerbungstools"
+              : isFr
+              ? "Outils IA de candidature"
+              : "AI Career Suite"}
           </h3>
         </div>
 
@@ -745,13 +854,25 @@ export default function JobDetailClient({
       >
         <div className="flex items-center justify-between text-[#061838] font-bold text-xs group-hover:text-blue-600 transition-colors">
           <div className="flex items-center gap-2">
-            <span>{isAr ? "توليد خطاب الدافع (Anschreiben)" : "DIN 5008 Cover Letter Studio"}</span>
+            <span>
+              {isAr
+                ? "توليد خطاب الدافع (Anschreiben)"
+                : isDe
+                ? "DIN 5008 Anschreiben-Generator"
+                : isFr
+                ? "Lettre de motivation DIN 5008"
+                : "DIN 5008 Cover Letter Studio"}
+            </span>
           </div>
           <span className={dir === "rtl" ? "rotate-180" : ""}>→</span>
         </div>
         <p className="text-[11px] text-slate-600 leading-relaxed">
           {isAr
             ? `صياغة خطاب دافع ألماني مخصص لـ ${cleanCompany} طبقاً لمعايير DIN 5008 معبأ بمتطلبات الشاغر.`
+            : isDe
+            ? `Maßgeschneidertes DIN 5008 Anschreiben für ${cleanCompany} direkt generieren.`
+            : isFr
+            ? `Générez une lettre DIN 5008 personnalisée pour ${cleanCompany}.`
             : `Generate a tailored DIN 5008 cover letter pre-filled with ${cleanCompany} and role details.`}
         </p>
       </Link>
@@ -764,13 +885,25 @@ export default function JobDetailClient({
         <div className="flex items-center justify-between text-[#061838] font-bold text-xs group-hover:text-blue-600 transition-colors">
           <div className="flex items-center gap-2">
             <span className="text-base">🔍</span>
-            <span>{isAr ? "فاحص التوافق مع أنظمة الفرز (ATS)" : "ATS Job-Resume Matcher"}</span>
+            <span>
+              {isAr
+                ? "فاحص التوافق مع أنظمة الفرز (ATS)"
+                : isDe
+                ? "ATS-Lebenslauf-Abgleich"
+                : isFr
+                ? "Analyse de compatibilité ATS"
+                : "ATS Job-Resume Matcher"}
+            </span>
           </div>
           <span className={dir === "rtl" ? "rotate-180" : ""}>→</span>
         </div>
         <p className="text-[11px] text-slate-600 leading-relaxed">
           {isAr
             ? "فحص نسبة تطابق سيرتك الذاتية مع متطلبات هذا الإعلان واكتشاف الكلمات المفتاحية الناقصة فوراً."
+            : isDe
+            ? "Prüfen Sie Ihren Lebenslauf auf passende Keywords für diese Stellenanzeige."
+            : isFr
+            ? "Analysez la correspondance de votre CV avec les mots-clés de cette offre."
             : "Audit your CV against this job's keywords and score higher on recruiter ATS scans."}
         </p>
       </Link>
@@ -790,6 +923,8 @@ export default function JobDetailClient({
             ? "مسار الخطوات الثلاث لضمان القبول"
             : isDe
             ? "3-Schritte-Erfolgsplan zur Bewerbung"
+            : isFr
+            ? "Plan d'action en 3 étapes"
             : "3-Step Acceptance Roadmap"}
         </h3>
       </div>
@@ -804,11 +939,21 @@ export default function JobDetailClient({
           </div>
           <div className="space-y-0.5 flex-1">
             <h4 className="text-xs font-bold text-[#061838]">
-              {isAr ? "تجهيز السيرة الذاتية (DIN 5008)" : "Lebenslauf vorbereiten (DIN 5008)"}
+              {isAr
+                ? "تجهيز السيرة الذاتية (DIN 5008)"
+                : isDe
+                ? "Lebenslauf vorbereiten (DIN 5008)"
+                : isFr
+                ? "Préparer votre CV (DIN 5008)"
+                : "Prepare German CV (DIN 5008)"}
             </h4>
             <p className="text-[11px] text-slate-600 leading-relaxed">
               {isAr
                 ? "سيرة ذاتية بترتيب عكسي متوافقة أوروبياً مع خوارزميات الفرز الآلي."
+                : isDe
+                ? "ATS-optimierter tabellarischer Lebenslauf nach deutschem Standard."
+                : isFr
+                ? "CV tabulaire antichronologique optimisé pour les filtres ATS allemands."
                 : "ATS-optimized reverse chronological resume formatted to German standards."}
             </p>
           </div>
@@ -825,11 +970,19 @@ export default function JobDetailClient({
             <h4 className="text-xs font-bold text-[#061838]">
               {isAr
                 ? `صياغة خطاب الدافع المخصص لـ ${cleanCompany}`
-                : `Anschreiben für ${cleanCompany} erstellen`}
+                : isDe
+                ? `Anschreiben für ${cleanCompany} erstellen`
+                : isFr
+                ? `Rédiger l'Anschreiben pour ${cleanCompany}`
+                : `Draft Cover Letter for ${cleanCompany}`}
             </h4>
             <p className="text-[11px] text-slate-600 leading-relaxed">
               {isAr
                 ? "خطاب رسمي يستهدف مسمى الوظيفة ومتطلبات صاحب العمل بدقة."
+                : isDe
+                ? "Offizielles deutsches Anschreiben passend zu den Stellenanforderungen."
+                : isFr
+                ? "Lettre officielle adaptée aux critères du poste et de l'entreprise."
                 : "Official German Anschreiben addressing role specifications."}
             </p>
           </div>
@@ -843,11 +996,19 @@ export default function JobDetailClient({
             <h4 className="text-xs font-bold text-[#061838]">
               {isAr
                 ? "إرسال الملف الموحد (Bewerbungsmappe) مباشرة"
-                : "Bewerbungsmappe direkt einreichen"}
+                : isDe
+                ? "Bewerbungsmappe direkt einreichen"
+                : isFr
+                ? "Envoyer le dossier (Bewerbungsmappe)"
+                : "Submit Complete Bewerbungsmappe"}
             </h4>
             <p className="text-[11px] text-slate-600 leading-relaxed">
               {isAr
                 ? "إرسال الملف عبر البوابة الرسمية للشركة أو بريد الموارد البشرية."
+                : isDe
+                ? "Versand über das offizielle Bewerbungsportal oder direkt per E-Mail."
+                : isFr
+                ? "Envoi via le portail officiel ou directement par e-mail RH."
                 : "Submit via official ATS portal or directly to HR email."}
             </p>
           </div>
@@ -864,45 +1025,45 @@ export default function JobDetailClient({
     >
       <h3 className="font-bold text-[#061838] text-sm flex items-center gap-2">
         <span>ℹ️</span>
-        <span>{isAr ? "بيانات الاعتماد والشاغر" : dict?.jobs?.details?.overviewTitle || "Übersicht"}</span>
+        <span>{isAr ? "بيانات الاعتماد والشاغر" : dict?.jobs?.details?.overviewTitle || "Overview"}</span>
       </h3>
 
       <div className="space-y-2.5 text-slate-700">
         <div className="flex justify-between py-1 border-b border-slate-100 gap-2">
-          <span className="text-slate-500 shrink-0">{dict?.jobs?.details?.company || (isAr ? "الشركة" : "Unternehmen")}</span>
+          <span className="text-slate-500 shrink-0">{dict?.jobs?.details?.company || (isAr ? "الشركة" : isDe ? "Unternehmen" : isFr ? "Entreprise" : "Company")}</span>
           <span className="font-semibold text-[#061838] text-end break-words [overflow-wrap:anywhere]">{job.company}</span>
         </div>
 
         <div className="flex justify-between py-1 border-b border-slate-100 gap-2">
-          <span className="text-slate-500 shrink-0">{dict?.jobs?.details?.city || (isAr ? "المدينة" : "Standort")}</span>
-          <span className="font-semibold text-[#061838] text-end break-words">{job.city || dict?.jobs?.details?.germany || "Deutschland"}</span>
+          <span className="text-slate-500 shrink-0">{dict?.jobs?.details?.city || (isAr ? "المدينة" : isDe ? "Standort" : isFr ? "Ville" : "Location")}</span>
+          <span className="font-semibold text-[#061838] text-end break-words">{displayCity}</span>
         </div>
 
         <div className="flex justify-between py-1 border-b border-slate-100 gap-2">
-          <span className="text-slate-500 shrink-0">{dict?.jobs?.details?.jobType || (isAr ? "نوع العمل" : "Anstellungsart")}</span>
-          <span className="font-semibold text-[#061838] text-end">{job.jobType || dict?.jobs?.details?.fullTime || "Vollzeit"}</span>
+          <span className="text-slate-500 shrink-0">{dict?.jobs?.details?.jobType || (isAr ? "نوع العمل" : isDe ? "Anstellungsart" : isFr ? "Contrat" : "Job Type")}</span>
+          <span className="font-semibold text-[#061838] text-end">{localizedJobType}</span>
         </div>
 
         <div className="flex justify-between py-1 border-b border-slate-100 gap-2">
-          <span className="text-slate-500 shrink-0">{dict?.jobs?.details?.languageLevel || (isAr ? "مستوى اللغة" : "Sprachniveau")}</span>
-          <span className="font-semibold text-emerald-700 font-mono text-end">{formatLangLevel(cefrLevel)}</span>
+          <span className="text-slate-500 shrink-0">{dict?.jobs?.details?.languageLevel || (isAr ? "مستوى اللغة" : isDe ? "Sprachniveau" : isFr ? "Niveau d'allemand" : "Language Level")}</span>
+          <span className="font-semibold text-emerald-700 font-mono text-end">{cefrLevel}</span>
         </div>
 
         <div className="flex justify-between py-1 border-b border-slate-100 gap-2">
-          <span className="text-slate-500 shrink-0">{isAr ? "كود المرجع:" : "Ref-Nr:"}</span>
+          <span className="text-slate-500 shrink-0">{isAr ? "كود المرجع:" : isFr ? "Réf. :" : "Ref-Nr:"}</span>
           <span dir="ltr" className="font-mono text-slate-700 font-bold">{referenceNumber}</span>
         </div>
 
         <div className="flex justify-between py-1 border-b border-slate-100 gap-2">
-          <span className="text-slate-500 shrink-0">{isAr ? "معيار التقديم:" : "Standard:"}</span>
+          <span className="text-slate-500 shrink-0">{isAr ? "معيار التقديم:" : isFr ? "Norme :" : "Standard:"}</span>
           <span dir="ltr" className="font-mono text-blue-700 font-bold">DIN 5008</span>
         </div>
 
         {job.salary && (
           <div className="flex justify-between py-1 border-b border-slate-100 gap-2">
-            <span className="text-slate-500 shrink-0">{dict?.jobs?.details?.salary || (isAr ? "الراتب" : "Gehalt")}</span>
+            <span className="text-slate-500 shrink-0">{dict?.jobs?.details?.salary || (isAr ? "الراتب" : isDe ? "Gehalt" : isFr ? "Salaire" : "Salary")}</span>
             <span className="font-semibold text-emerald-700 text-end break-words">
-              <BidiSalary salary={job.salary} />
+              <BidiSalary salary={job.salary} locale={activeLocale} />
             </span>
           </div>
         )}
@@ -996,7 +1157,7 @@ export default function JobDetailClient({
                   text={latinSubtitle || germanTitle || "Stelle in Deutschland"}
                   size="sm"
                   variant="blue"
-                  label={isAr ? "نطق المسمى بالألمانية" : isDe ? "Aussprache" : "Pronounce"}
+                  label={isAr ? "نطق المسمى بالألمانية" : isDe ? "Aussprache" : isFr ? "Prononciation" : "Pronounce"}
                 />
               </div>
 
@@ -1007,7 +1168,7 @@ export default function JobDetailClient({
                 </span>
                 <span className="text-slate-600 flex items-center gap-1.5 break-words">
                   <span>📍</span>
-                  <span>{job.city || dict?.jobs?.details?.germany || "Deutschland"}</span>
+                  <span>{displayCity}</span>
                   {isAr && job.city && GERMAN_CITIES_MAP[job.city] && (
                     <span dir="ltr" className="text-xs text-slate-500 font-mono">
                       ({GERMAN_CITIES_MAP[job.city]})
@@ -1030,21 +1191,21 @@ export default function JobDetailClient({
 
               <span className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1.5">
                 <span>💼</span>
-                <span>{job.jobType || dict?.jobs?.details?.fullTime || "Vollzeit"}</span>
+                <span>{localizedJobType}</span>
               </span>
 
               <span className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-1.5">
-                <span>🇩🇪</span>
+                <span>{isEnglishReq ? "🇬🇧" : "🇩🇪"}</span>
                 <span>
-                  {isAr ? "المستوى اللغوي الإلزامي:" : "Language:"}{" "}
-                  <span dir="ltr" className="font-mono">{formatLangLevel(cefrLevel)}</span>
+                  {isAr ? "المستوى اللغوي الإلزامي:" : isDe ? "Sprache:" : isFr ? "Langue :" : "Language:"}{" "}
+                  <span dir="ltr" className="font-mono">{cefrLevel}</span>
                 </span>
               </span>
 
               {job.salary && (
                 <span className="px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold flex items-center gap-1.5 break-words">
                   <span>💰</span>
-                  <span><BidiSalary salary={job.salary} /></span>
+                  <span><BidiSalary salary={job.salary} locale={activeLocale} /></span>
                 </span>
               )}
             </div>
@@ -1068,11 +1229,15 @@ export default function JobDetailClient({
                   </span>
                   <div>
                     <h2 className="text-lg font-black text-[#061838]">
-                      {isAr ? "نبذة ومسؤوليات العمل" : isDe ? "Aufgaben & Verantwortung" : "Role & Responsibilities"}
+                      {isAr ? "نبذة ومسؤوليات العمل" : isDe ? "Aufgaben & Verantwortung" : isFr ? "Missions & Responsabilités" : "Role & Responsibilities"}
                     </h2>
                     <p className="text-xs text-slate-500">
                       {isAr
                         ? "نظرة شاملة على المهام التشغيلية اليومية والدور الوظيفي داخل المؤسسة"
+                        : isDe
+                        ? "Überblick über Ihre täglichen Aufgaben und Verantwortungsbereiche"
+                        : isFr
+                        ? "Aperçu complet des missions quotidiennes et responsabilités"
                         : "Operational overview of daily duties and corporate scope"}
                     </p>
                   </div>
@@ -1091,6 +1256,10 @@ export default function JobDetailClient({
                     <span>
                       {isAr
                         ? `سياق الدور في ${cleanCompany}:`
+                        : isDe
+                        ? `Einblick bei ${cleanCompany}:`
+                        : isFr
+                        ? `Contexte chez ${cleanCompany} :`
                         : `Context at ${cleanCompany}:`}
                     </span>
                   </div>
@@ -1110,6 +1279,8 @@ export default function JobDetailClient({
                         ? "المهام والمسؤوليات الأساسية (Kernaufgaben):"
                         : isDe
                         ? "Ihre Kernaufgaben im Überblick:"
+                        : isFr
+                        ? "Missions principales (Kernaufgaben) :"
                         : "Key Core Responsibilities:"}
                     </span>
                   </h3>
@@ -1171,11 +1342,15 @@ export default function JobDetailClient({
                   </span>
                   <div>
                     <h2 className="text-lg font-black text-[#061838]">
-                      {isAr ? "الشروط والمؤهلات المطلوبة" : isDe ? "Anforderungen & Anerkennung" : "Requirements & Recognition"}
+                      {isAr ? "الشروط والمؤهلات المطلوبة" : isDe ? "Anforderungen & Anerkennung" : isFr ? "Exigences & Reconnaissance" : "Requirements & Recognition"}
                     </h2>
                     <p className="text-xs text-slate-500">
                       {isAr
                         ? "المعايير المحددة لقبول طلب الترشيح وفق اشتراطات سوق العمل الألماني"
+                        : isDe
+                        ? "Offizielle Voraussetzungen und Qualifikationen für den deutschen Arbeitsmarkt"
+                        : isFr
+                        ? "Prérequis et critères officiels selon les standards du marché allemand"
                         : "Official prerequisites and criteria under German labor standards"}
                     </p>
                   </div>
@@ -1191,27 +1366,37 @@ export default function JobDetailClient({
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 border border-blue-200 flex items-center justify-center text-lg shrink-0">
-                      🇩🇪
+                      {isEnglishReq ? "🇬🇧" : "🇩🇪"}
                     </span>
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-[#061838]">
-                          {isAr ? "شرط الكفاءة اللغوية الأوروبي (CEFR Sprachniveau)" : "Mandatory CEFR Language Level"}
+                          {isAr
+                            ? "شرط الكفاءة اللغوية الأوروبي (CEFR Sprachniveau)"
+                            : isDe
+                            ? "Erforderliches Sprachniveau (GER)"
+                            : isFr
+                            ? "Niveau linguistique requis (CECRL)"
+                            : "Mandatory CEFR Language Level"}
                         </span>
                         <span className="px-2 py-0.5 rounded-md bg-emerald-100 border border-emerald-200 text-emerald-800 font-mono text-xs font-bold">
-                          {formatLangLevel(cefrLevel)}
+                          {cefrLevel}
                         </span>
                       </div>
                       <p className="text-xs text-slate-500">
                         {isAr
                           ? "وفق الإطار المرجعي الأوروبي المشترك للغات (Goethe / telc / TestDaF / ÖSD)"
+                          : isDe
+                          ? "Gemäß Gemeinsamem Europäischen Referenzrahmen (Goethe / telc / TestDaF)"
+                          : isFr
+                          ? "Selon le Cadre européen commun de référence pour les langues (Goethe / telc)"
                           : "Common European Framework of Reference for Languages standard"}
                       </p>
                     </div>
                   </div>
 
                   <span className="px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 font-mono text-xs font-semibold">
-                    Zertifikat: {formatLangLevel(cefrLevel)}
+                    {isFr ? "Certificat" : "Zertifikat"}: {cefrLevel}
                   </span>
                 </div>
 
@@ -1219,8 +1404,12 @@ export default function JobDetailClient({
                   {parsedRequirements.languageItem
                     ? parsedRequirements.languageItem
                     : isAr
-                    ? `يتطلب هذا الدور إتقان اللغة بالمستوى المحدد (${formatLangLevel(cefrLevel)}) لضمان التواصل المهني السلس، ويوصى بإرفاق شهادة لغة معتمدة ضمن ملف الترشيح.`
-                    : `This position requires proficiency at level ${formatLangLevel(cefrLevel)}. An accredited language certificate is strongly recommended.`}
+                    ? `يتطلب هذا الدور إتقان اللغة بالمستوى المحدد (${cefrLevel}) لضمان التواصل المهني السلس، ويوصى بإرفاق شهادة لغة معتمدة ضمن ملف الترشيح.`
+                    : isDe
+                    ? `Für diese Position ist das Sprachniveau ${cefrLevel} erforderlich. Ein anerkanntes Sprachzertifikat wird empfohlen.`
+                    : isFr
+                    ? `Ce poste requiert le niveau linguistique ${cefrLevel}. Un certificat officiel est fortement recommandé.`
+                    : `This position requires proficiency at level ${cefrLevel}. An accredited language certificate is strongly recommended.`}
                 </p>
               </div>
 
@@ -1264,6 +1453,8 @@ export default function JobDetailClient({
                         ? "المهارات والخبرات العملية المطلوبة:"
                         : isDe
                         ? "Fachliche & persönliche Anforderungen:"
+                        : isFr
+                        ? "Compétences techniques et pratiques :"
                         : "Technical & Practical Qualifications:"}
                     </span>
                   </h3>
@@ -1305,11 +1496,17 @@ export default function JobDetailClient({
                         ? "إرشادات التقديم وقبول الملف لدى صاحب العمل (Bewerbungstipps)"
                         : isDe
                         ? "Bewerbungstipps & DIN 5008 Standards"
+                        : isFr
+                        ? "Conseils de candidature & normes DIN 5008"
                         : "German Application Guidelines & DIN 5008"}
                     </h2>
                     <p className="text-xs text-slate-500">
                       {isAr
                         ? "المعايير المتبعة لدى إدارات الموارد البشرية الألمانية لضمان دعوة المقابلة"
+                        : isDe
+                        ? "Deutsche Personaler-Standards für maximale Erfolgschancen"
+                        : isFr
+                        ? "Standards des recruteurs allemands pour décrocher un entretien"
                         : "German HR recruiter standards to maximize interview invitation rates"}
                     </p>
                   </div>
@@ -1328,12 +1525,16 @@ export default function JobDetailClient({
                       1
                     </span>
                     <h3 className="text-xs font-bold text-[#061838]">
-                      {isAr ? "الترتيب الزمني العكسي" : "Antichronologischer Aufbau"}
+                      {isAr ? "الترتيب الزمني العكسي" : isDe ? "Antichronologischer Aufbau" : isFr ? "Ordre antichronologique" : "Reverse Chronological"}
                     </h3>
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed">
                     {isAr
                       ? "نسّق سيرتك الذاتية من الأحدث للأقدم طبقاً لمعايير DIN 5008 لتجتاز خوارزميات الفرز الآلي (ATS)."
+                      : isDe
+                      ? "Strukturieren Sie Ihren Lebenslauf nach DIN 5008 beginnend mit der aktuellsten Station."
+                      : isFr
+                      ? "Structurez votre CV de l'expérience la plus récente à la plus ancienne selon la norme DIN 5008."
                       : "Structure your CV starting with your most recent experience according to DIN 5008 rules."}
                   </p>
                 </div>
@@ -1345,12 +1546,16 @@ export default function JobDetailClient({
                       2
                     </span>
                     <h3 className="text-xs font-bold text-[#061838]">
-                      {isAr ? "خطاب دافع مخصص (Anschreiben)" : "Passgenaues Anschreiben"}
+                      {isAr ? "خطاب دافع مخصص (Anschreiben)" : isDe ? "Passgenaues Anschreiben" : isFr ? "Lettre de motivation ciblée" : "Tailored Anschreiben"}
                     </h3>
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed">
                     {isAr
                       ? `وجّه الخطاب لشركة ${cleanCompany} مباشرة مع ذكر الرمز المرجعي (${referenceNumber}) في سطر الموضوع.`
+                      : isDe
+                      ? `Richten Sie das Anschreiben direkt an ${cleanCompany} inklusive Referenznummer (${referenceNumber}).`
+                      : isFr
+                      ? `Adressez la lettre directement à ${cleanCompany} avec le numéro de référence (${referenceNumber}).`
                       : `Address the cover letter directly to ${cleanCompany} including the reference number (${referenceNumber}).`}
                   </p>
                 </div>
@@ -1362,12 +1567,16 @@ export default function JobDetailClient({
                       3
                     </span>
                     <h3 className="text-xs font-bold text-[#061838]">
-                      {isAr ? "ملف موحد (Bewerbungsmappe)" : "Vollständige Bewerbungsmappe"}
+                      {isAr ? "ملف موحد (Bewerbungsmappe)" : isDe ? "Vollständige Bewerbungsmappe" : isFr ? "Dossier complet (Bewerbungsmappe)" : "Complete Bewerbungsmappe"}
                     </h3>
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed">
                     {isAr
                       ? "اجمع سيرتك الذاتية وخطاب الدافع وشهادات الخبرة ومستوى اللغة في ملف PDF واحد لا يتجاوز 10 ميغابايت."
+                      : isDe
+                      ? "Bündeln Sie Lebenslauf, Anschreiben, Zeugnisse und Zertifikate in einer PDF-Datei unter 10 MB."
+                      : isFr
+                      ? "Rassemblez CV, lettre de motivation, diplômes et certificats dans un seul PDF (< 10 Mo)."
                       : "Bundle your resume, cover letter, diplomas, and language certificates into a single PDF under 10MB."}
                   </p>
                 </div>
@@ -1380,14 +1589,30 @@ export default function JobDetailClient({
                   className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold border border-slate-200 transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>📄</span>
-                  <span>{isAr ? "منشئ السيرة الذاتية (DIN 5008)" : "DIN 5008 CV Builder"}</span>
+                  <span>
+                    {isAr
+                      ? "منشئ السيرة الذاتية (DIN 5008)"
+                      : isDe
+                      ? "DIN 5008 Lebenslauf-Editor"
+                      : isFr
+                      ? "Créateur de CV DIN 5008"
+                      : "DIN 5008 CV Builder"}
+                  </span>
                 </Link>
 
                 <Link
                   href={coverLetterUrl}
                   className="px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
                 >
-                  <span>{isAr ? "صياغة خطاب الدافع للوظيفة" : "Draft Tailored Cover Letter"}</span>
+                  <span>
+                    {isAr
+                      ? "صياغة خطاب الدافع للوظيفة"
+                      : isDe
+                      ? "Passendes Anschreiben erstellen"
+                      : isFr
+                      ? "Rédiger la lettre de motivation"
+                      : "Draft Tailored Cover Letter"}
+                  </span>
                 </Link>
               </div>
             </div>
@@ -1427,7 +1652,7 @@ export default function JobDetailClient({
                   text={emailBody || ""}
                   size="sm"
                   variant="emerald"
-                  label={isAr ? "استمع لنص الرسالة" : isDe ? "Vorlesen" : "Listen"}
+                  label={isAr ? "استمع لنص الرسالة" : isDe ? "Vorlesen" : isFr ? "Écouter" : "Listen"}
                 />
               </div>
               <button
@@ -1516,6 +1741,8 @@ export default function JobDetailClient({
                 ? "✉️ إرسال السيرة مباشرة"
                 : isDe
                 ? "✉️ Per E-Mail bewerben"
+                : isFr
+                ? "✉️ Postuler par e-mail"
                 : "✉️ Apply via Email"}
             </span>
           </button>
@@ -1531,6 +1758,8 @@ export default function JobDetailClient({
                 ? "🌐 التقديم بموقع الشركة ↗"
                 : isDe
                 ? "🌐 Jetzt bewerben ↗"
+                : isFr
+                ? "🌐 Postuler sur le site ↗"
                 : "🌐 Apply on Portal ↗"}
             </span>
           </a>
@@ -1544,6 +1773,8 @@ export default function JobDetailClient({
                 ? "✍️ تجهيز خطاب الدافع"
                 : isDe
                 ? "✍️ Anschreiben erstellen"
+                : isFr
+                ? "✍️ Rédiger l'Anschreiben"
                 : "✍️ Apply with Anschreiben"}
             </span>
           </Link>

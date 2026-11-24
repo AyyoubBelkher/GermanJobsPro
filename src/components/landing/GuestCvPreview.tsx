@@ -8,14 +8,73 @@ interface GuestCvPreviewProps {
   locale: string;
 }
 
-const GERMAN_LEVELS = [
-  { value: "A1", label: "A1 (Anfänger / Beginner)" },
-  { value: "A2", label: "A2 (Grundkenntnisse / Elementary)" },
-  { value: "B1", label: "B1 (Fortgeschritten / Intermediate)" },
-  { value: "B2", label: "B2 (Fließend / Upper-Intermediate - Standard)" },
-  { value: "C1", label: "C1 (Fachkundig / Advanced)" },
-  { value: "C2", label: "C2 / Muttersprache (Native)" },
-];
+const getGermanLevels = (locale: string) => {
+  const isAr = locale === "ar";
+  const isDe = locale === "de";
+  const isFr = locale === "fr";
+  return [
+    {
+      value: "A1",
+      label: isAr
+        ? "A1 (مبتدئ)"
+        : isDe
+        ? "A1 (Anfänger)"
+        : isFr
+        ? "A1 (Débutant)"
+        : "A1 (Beginner)",
+    },
+    {
+      value: "A2",
+      label: isAr
+        ? "A2 (أساسي)"
+        : isDe
+        ? "A2 (Grundkenntnisse)"
+        : isFr
+        ? "A2 (Élémentaire)"
+        : "A2 (Elementary)",
+    },
+    {
+      value: "B1",
+      label: isAr
+        ? "B1 (متوسط)"
+        : isDe
+        ? "B1 (Mittelstufe)"
+        : isFr
+        ? "B1 (Intermédiaire)"
+        : "B1 (Intermediate)",
+    },
+    {
+      value: "B2",
+      label: isAr
+        ? "B2 (فوق المتوسط - المعيار القياسي)"
+        : isDe
+        ? "B2 (Fließend - Standard)"
+        : isFr
+        ? "B2 (Courant - Standard)"
+        : "B2 (Upper-Intermediate - Standard)",
+    },
+    {
+      value: "C1",
+      label: isAr
+        ? "C1 (متقدم)"
+        : isDe
+        ? "C1 (Verhandlungssicher)"
+        : isFr
+        ? "C1 (Avancé)"
+        : "C1 (Advanced)",
+    },
+    {
+      value: "C2",
+      label: isAr
+        ? "C2 / اللغة الأم"
+        : isDe
+        ? "C2 / Muttersprache"
+        : isFr
+        ? "C2 / Langue maternelle"
+        : "C2 / Native",
+    },
+  ];
+};
 
 export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
   const router = useRouter();
@@ -23,19 +82,30 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
   const isDe = locale === "de";
   const isFr = locale === "fr";
   const dir = isAr ? "rtl" : "ltr";
+  const germanLevels = getGermanLevels(locale);
 
   // Form state initialized with German demo defaults
   const [fullName, setFullName] = useState(isDe ? "Max Mustermann" : "Tariq Mansour");
   const [targetJobTitle, setTargetJobTitle] = useState(
-    isDe ? "Softwareentwickler (Frontend)" : "Software Engineer (Frontend)"
+    isDe
+      ? "Softwareentwickler (Frontend)"
+      : isFr
+      ? "Développeur Frontend (React)"
+      : "Software Engineer (Frontend)"
   );
   const [location, setLocation] = useState("Berlin, Deutschland");
   const [currentRole, setCurrentRole] = useState(
-    isDe ? "Frontend Entwickler" : "Frontend Web Developer"
+    isDe
+      ? "Frontend Entwickler"
+      : isFr
+      ? "Développeur Web Frontend"
+      : "Frontend Web Developer"
   );
   const [keyBullet, setKeyBullet] = useState(
     isDe
       ? "Entwicklung modularer Komponenten mit React & Optimierung der Ladezeiten um 35 %"
+      : isFr
+      ? "Développement de composants React/Next.js évolutifs et optimisation des performances web"
       : "Engineered scalable React/Next.js components and boosted core web vitals"
   );
   const [languageLevel, setLanguageLevel] = useState("B2");
@@ -136,17 +206,35 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
         >
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              {isAr ? "1. البيانات السريعة" : isDe ? "1. Schnelleingabe" : "1. Quick Fields"}
+              {isAr
+                ? "1. البيانات السريعة"
+                : isDe
+                ? "1. Schnelleingabe"
+                : isFr
+                ? "1. Champs rapides"
+                : "1. Quick Fields"}
             </span>
             <span className="text-[11px] text-amber-400 font-semibold">
-              {isAr ? "تحديث حي ومباشر ⚡" : "Live Real-Time Update ⚡"}
+              {isAr
+                ? "تحديث حي ومباشر ⚡"
+                : isDe
+                ? "Echtzeit-Vorschau ⚡"
+                : isFr
+                ? "Mise à jour en direct ⚡"
+                : "Live Real-Time Update ⚡"}
             </span>
           </div>
 
           {/* Full Name */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-200">
-              {isAr ? "الاسم الكامل (Full Name)" : isDe ? "Vollständiger Name" : "Full Name"}
+              {isAr
+                ? "الاسم الكامل (Full Name)"
+                : isDe
+                ? "Vollständiger Name"
+                : isFr
+                ? "Nom complet"
+                : "Full Name"}
             </label>
             <input
               type="text"
@@ -164,13 +252,21 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
                 ? "المسمى الوظيفي المستهدف في ألمانيا"
                 : isDe
                 ? "Angestrebte Position in Deutschland"
+                : isFr
+                ? "Poste visé en Allemagne"
                 : "Target Job Title in Germany"}
             </label>
             <input
               type="text"
               value={targetJobTitle}
               onChange={(e) => setTargetJobTitle(e.target.value)}
-              placeholder="z.B. Softwareentwickler / Pflegefachkraft"
+              placeholder={
+                isDe
+                  ? "z. B. Softwareentwickler / Pflegefachkraft"
+                  : isFr
+                  ? "ex. Développeur / Infirmier"
+                  : "e.g. Software Engineer / Nurse"
+              }
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm focus:border-blue-500 focus:outline-hidden transition-colors"
             />
           </div>
@@ -178,7 +274,13 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
           {/* City / Country */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-200">
-              {isAr ? "المدينة والدولة الحالية" : isDe ? "Wohnort / Land" : "City / Country"}
+              {isAr
+                ? "المدينة والدولة الحالية"
+                : isDe
+                ? "Wohnort / Land"
+                : isFr
+                ? "Ville / Pays"
+                : "City / Country"}
             </label>
             <input
               type="text"
@@ -196,13 +298,21 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
                 ? "الوظيفة الحالية أو الأخيرة (Role)"
                 : isDe
                 ? "Aktuelle / Letzte Position"
+                : isFr
+                ? "Poste actuel ou dernier poste"
                 : "Current / Last Role"}
             </label>
             <input
               type="text"
               value={currentRole}
               onChange={(e) => setCurrentRole(e.target.value)}
-              placeholder="Frontend Developer"
+              placeholder={
+                isDe
+                  ? "Frontend Entwickler"
+                  : isFr
+                  ? "Développeur Frontend"
+                  : "Frontend Developer"
+              }
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm focus:border-blue-500 focus:outline-hidden transition-colors"
             />
           </div>
@@ -214,13 +324,21 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
                 ? "أهم مهمة أو إنجاز مهني (Key Bullet)"
                 : isDe
                 ? "Wichtigste Aufgabe / Erfolg (Bullet Point)"
+                : isFr
+                ? "Réalisation clé / Mission principale"
                 : "Key Bullet Point / Achievement"}
             </label>
             <textarea
               rows={2}
               value={keyBullet}
               onChange={(e) => setKeyBullet(e.target.value)}
-              placeholder="Entwicklung von React-Komponenten & Optimierung der Performance"
+              placeholder={
+                isDe
+                  ? "Entwicklung von React-Komponenten & Optimierung der Performance"
+                  : isFr
+                  ? "Développement de composants React & optimisation des performances"
+                  : "Engineered React components & improved application performance"
+              }
               className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm focus:border-blue-500 focus:outline-hidden transition-colors resize-none"
             />
           </div>
@@ -228,14 +346,20 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
           {/* German Language Level */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-200">
-              {isAr ? "مستوى اللغة الألمانية (CEFR)" : isDe ? "Deutschkenntnisse (GER)" : "German Level (CEFR)"}
+              {isAr
+                ? "مستوى اللغة الألمانية (CEFR)"
+                : isDe
+                ? "Deutschkenntnisse (GER)"
+                : isFr
+                ? "Niveau d'allemand (CECRL)"
+                : "German Level (CEFR)"}
             </label>
             <select
               value={languageLevel}
               onChange={(e) => setLanguageLevel(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm focus:border-blue-500 focus:outline-hidden transition-colors cursor-pointer"
             >
-              {GERMAN_LEVELS.map((lvl) => (
+              {germanLevels.map((lvl) => (
                 <option key={lvl.value} value={lvl.value}>
                   {lvl.label}
                 </option>
@@ -246,6 +370,10 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
           <div className="pt-2 text-[11px] text-slate-400 leading-relaxed">
             {isAr
               ? "🔒 خصوصية 100%: تتم المعالجة بالكامل داخل متصفحك دون إرسال أي بيانات أو طلبات إلى السيرفر."
+              : isDe
+              ? "🔒 100% clientseitig: Verarbeitung erfolgt direkt im Browser – ohne Server-Übertragung bis zum Speichern."
+              : isFr
+              ? "🔒 100 % côté client : traitement entièrement dans votre navigateur sans aucun appel serveur avant sauvegarde."
               : "🔒 100% Client-Side: Processed entirely in your browser with zero server calls until you choose to save."}
           </div>
         </div>
@@ -260,11 +388,19 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
                   ? "معاينة بطاقة DIN 5008 الألمانية المعتمدة"
                   : isDe
                   ? "DIN 5008 Tabellarische Vorschau"
+                  : isFr
+                  ? "Aperçu du CV tabulaire DIN 5008"
                   : "DIN 5008 Tabular CV Preview"}
               </span>
             </div>
             <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 font-mono">
-              DIN 5008 • ATS-Compliant
+              {isAr
+                ? "DIN 5008 • متوافق مع ATS"
+                : isDe
+                ? "DIN 5008 • ATS-konform"
+                : isFr
+                ? "DIN 5008 • Compatible ATS"
+                : "DIN 5008 • ATS-Compliant"}
             </span>
           </div>
 
@@ -401,6 +537,10 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
               <p className="text-[11px] text-slate-300">
                 {isAr
                   ? "سيتم نقل بياناتك فوراً إلى محرر السيرة الذاتية بعد التسجيل."
+                  : isDe
+                  ? "Ihr Entwurf wartet nach der Registrierung sofort in Ihrem Dashboard."
+                  : isFr
+                  ? "Votre brouillon sera prêt à être personnalisé dans votre tableau de bord après inscription."
                   : "Your draft will be waiting in your dashboard ready to customize."}
               </p>
             </div>
@@ -414,7 +554,15 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
               {isSaving ? (
                 <>
                   <span className="inline-block animate-spin">⏳</span>
-                  <span>{isAr ? "جاري الحفظ..." : "Saving draft..."}</span>
+                  <span>
+                    {isAr
+                      ? "جاري الحفظ..."
+                      : isDe
+                      ? "Wird gespeichert..."
+                      : isFr
+                      ? "Enregistrement..."
+                      : "Saving draft..."}
+                  </span>
                 </>
               ) : (
                 <>

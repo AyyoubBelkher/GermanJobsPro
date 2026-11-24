@@ -104,8 +104,316 @@ export const NON_GERMANY_DESC_INDICATORS = [
   "jobs in united kingdom on arbeitnow",
 ] as const;
 
-export const formatLangLevel = (lvl?: string | null): string =>
-  !lvl || lvl.toLowerCase() === "none" ? "Deutsch (B1/B2)" : lvl;
+export const formatLangLevel = (lvl?: string | null, locale: string = "de"): string =>
+  localizeLanguageBadge(lvl, locale);
+
+export interface LocalizableJobTitleInput {
+  title?: string | null;
+  titleAr?: string | null;
+  titleDe?: string | null;
+  titleEn?: string | null;
+  titleFr?: string | null;
+}
+
+export interface LocalizableJobDescInput {
+  description?: string | null;
+  descriptionRaw?: string | null;
+  descriptionAr?: string | null;
+  descriptionDe?: string | null;
+  descriptionEn?: string | null;
+  descriptionFr?: string | null;
+  requirements?: string | null;
+}
+
+/**
+ * Unwraps a single balanced outer parenthesis pair, e.g. "(Pflegefachkraft (m/w/d))" -> "Pflegefachkraft (m/w/d)".
+ */
+function unwrapOuterParens(text: string): string {
+  const t = text.trim();
+  if (!t.startsWith("(") || !t.endsWith(")")) return t;
+  let depth = 0;
+  for (let i = 0; i < t.length; i++) {
+    if (t[i] === "(") depth++;
+    else if (t[i] === ")") {
+      depth--;
+      if (depth === 0 && i < t.length - 1) {
+        return t;
+      }
+    }
+  }
+  return depth === 0 ? t.slice(1, -1).trim() : t;
+}
+
+/**
+ * Resolves a job title according to the active UI locale.
+ * - For Arabic (`ar`): prefers `titleAr` / bilingual Arabic primary + Latin subtitle.
+ * - For non-Arabic locales (`de`, `fr`, `en`): prefers non-Arabic/German/Latin titles
+ *   and extracts the German/Latin title from bilingual strings, never falling back
+ *   to `titleAr` when non-Arabic fields or Latin substrings exist.
+ */
+export function localizeJobTitle(
+  jobOrTitle?: LocalizableJobTitleInput | string | null,
+  locale: string = "ar"
+): { primaryTitle: string; latinSubtitle: string | null } {
+  const obj: LocalizableJobTitleInput =
+    typeof jobOrTitle === "string" || !jobOrTitle
+      ? { title: jobOrTitle ?? "" }
+      : jobOrTitle;
+
+  const isAr = locale === "ar";
+  const isDe = locale === "de";
+  const isFr = locale === "fr";
+
+  if (isAr) {
+    const arCandidate = (obj.titleAr || "").trim();
+    const nonArCandidate = (obj.title || obj.titleDe || obj.titleEn || "").trim();
+    if (arCandidate) {
+      if (
+        nonArCandidate &&
+        nonArCandidate !== arCandidate &&
+        !/[\u0600-\u06FF]/.test(nonArCandidate) &&
+        !/[a-zA-ZäöüÄÖÜß]/.test(arCandidate)
+      ) {
+        return { primaryTitle: arCandidate, latinSubtitle: nonArCandidate };
+      }
+      return splitBilingualTitle(arCandidate);
+    }
+    return splitBilingualTitle(obj.title || nonArCandidate);
+  }
+
+  // Non-Arabic locales (`de`, `fr`, `en`): never prefer `titleAr`
+  const orderedCandidates = isDe
+    ? [obj.titleDe, obj.title, obj.titleEn, obj.titleFr]
+    : isFr
+    ? [obj.titleFr, obj.title, obj.titleDe, obj.titleEn]
+    : [obj.titleEn, obj.title, obj.titleDe, obj.titleFr];
+
+  const nonEmptyCandidates = orderedCandidates
+    .map((c) => (typeof c === "string" ? c.trim() : ""))
+    .filter(Boolean);
+
+  // First try any candidate that is already free of Arabic script
+  const pureLatin = nonEmptyCandidates.find((c) => !/[\u0600-\u06FF]/.test(c));
+  if (pureLatin) {
+    return { primaryTitle: pureLatin, latinSubtitle: null };
+  }
+
+  // Otherwise inspect bilingual candidates and extract the German/Latin title
+  for (const raw of nonEmptyCandidates) {
+    const { latinSubtitle } = splitBilingualTitle(raw);
+    const stripped = unwrapOuterParens(
+      raw
+        .replace(/[\u0600-\u06FF\u061B\u061F\u060C]+/g, " ")
+        .replace(/\s{2,}/g, " ")
+        .replace(/^[:\-–—،,\s/]+|[:\-–—،,\s/]+$/g, "")
+        .trim()
+    );
+
+    const meaningfulStripped = stripped
+      .replace(/\((?:m\/w\/d|w\/m\/d|f\/m\/d|all genders|gn)\)/gi, "")
+      .trim();
+
+    if (/[a-zA-ZäöüÄÖÜß]{2,}/.test(meaningfulStripped)) {
+      // If stripped has full title beyond what splitBilingualTitle captured (e.g. "أخصائي: Pflegefachkraft (m/w/d)")
+      if (latinSubtitle) {
+        const meaningfulSub = latinSubtitle
+          .replace(/\((?:m\/w\/d|w\/m\/d|f\/m\/d|all genders|gn)\)/gi, "")
+          .trim();
+        if (/[a-zA-ZäöüÄÖÜß]{2,}/.test(meaningfulSub) && meaningfulSub.length >= meaningfulStripped.length) {
+          return { primaryTitle: latinSubtitle, latinSubtitle: null };
+        }
+      }
+      return { primaryTitle: stripped, latinSubtitle: null };
+    }
+
+    if (latinSubtitle && /[a-zA-ZäöüÄÖÜß]{2,}/.test(latinSubtitle)) {
+      return { primaryTitle: latinSubtitle, latinSubtitle: null };
+    }
+  }
+
+  if (nonEmptyCandidates.length > 0) {
+    return { primaryTitle: nonEmptyCandidates[0], latinSubtitle: null };
+  }
+
+  const emptyFallback = isDe
+    ? "Stelle in Deutschland"
+    : isFr
+    ? "Offre d'emploi en Allemagne"
+    : "Job in Germany";
+  return { primaryTitle: emptyFallback, latinSubtitle: null };
+}
+
+/**
+ * Resolves and cleans a job description according to the active UI locale.
+ * In non-Arabic locales (`de`, `fr`, `en`), ignores `descriptionAr` and filters out
+ * Arabic-only boilerplate lines when German/English description content exists.
+ */
+export function localizeJobDescription(
+  jobOrDesc?: LocalizableJobDescInput | string | null,
+  locale: string = "ar"
+): string {
+  const obj: LocalizableJobDescInput =
+    typeof jobOrDesc === "string" || !jobOrDesc
+      ? { descriptionRaw: jobOrDesc ?? "" }
+      : jobOrDesc;
+
+  const isAr = locale === "ar";
+  const isDe = locale === "de";
+  const isFr = locale === "fr";
+
+  if (isAr) {
+    const raw = obj.descriptionAr || obj.descriptionRaw || obj.description || obj.descriptionDe || obj.descriptionEn || "";
+    return cleanJobDescription(raw);
+  }
+
+  const orderedCandidates = isDe
+    ? [obj.descriptionDe, obj.description, obj.descriptionRaw, obj.descriptionEn, obj.descriptionFr]
+    : isFr
+    ? [obj.descriptionFr, obj.description, obj.descriptionRaw, obj.descriptionEn, obj.descriptionDe]
+    : [obj.descriptionEn, obj.description, obj.descriptionRaw, obj.descriptionDe, obj.descriptionFr];
+
+  for (const candidate of orderedCandidates) {
+    if (!candidate || typeof candidate !== "string") continue;
+    const cleaned = cleanJobDescription(candidate).replace(/[\u2066\u2069]/g, "");
+    if (!cleaned) continue;
+
+    if (!/[\u0600-\u06FF]/.test(cleaned)) {
+      return cleaned;
+    }
+
+    // Filter out Arabic-heavy lines when mixed with German/English content
+    const keptLines: string[] = [];
+    for (const line of cleaned.split(/\r?\n/)) {
+      const trimmedLine = line.trim();
+      if (!trimmedLine) continue;
+      const latinCount = (trimmedLine.match(/[a-zA-ZäöüÄÖÜß]/g) || []).length;
+      const arabicCount = (trimmedLine.match(/[\u0600-\u06FF]/g) || []).length;
+
+      if (arabicCount === 0) {
+        keptLines.push(trimmedLine);
+      } else if (latinCount > arabicCount && latinCount >= 10) {
+        // Strip leading Arabic prefix before German/English text if mixed on one line
+        const stripLeadingArabic = trimmedLine
+          .replace(/^[^a-zA-ZäöüÄÖÜß]*[\u0600-\u06FF][^a-zA-ZäöüÄÖÜß]*(?=[a-zA-ZäöüÄÖÜß]{2,})/, "")
+          .trim();
+        keptLines.push(stripLeadingArabic || trimmedLine);
+      }
+    }
+
+    if (keptLines.length > 0) {
+      return keptLines.join("\n").trim();
+    }
+  }
+
+  // Fallback to requirements if it has non-Arabic content
+  if (obj.requirements && typeof obj.requirements === "string") {
+    const cleanedReq = cleanJobDescription(obj.requirements).replace(/[\u2066\u2069]/g, "");
+    if (cleanedReq && !/[\u0600-\u06FF]/.test(cleanedReq)) {
+      return cleanedReq;
+    }
+  }
+
+  return "";
+}
+
+/**
+ * Localizes language requirement badges such as "German B2", "EN (B2)", or "B1/B2".
+ * E.g. "German B2" -> "Deutsch B2" (de), "Allemand B2" (fr), "German B2" (en), "ألمانية B2" (ar).
+ */
+export function localizeLanguageBadge(lvl?: string | null, locale: string = "de"): string {
+  const isAr = locale === "ar";
+  const isDe = locale === "de";
+  const isFr = locale === "fr";
+
+  const germanLabel = isAr ? "ألمانية" : isDe ? "Deutsch" : isFr ? "Allemand" : "German";
+  const englishLabel = isAr ? "إنجليزية" : isDe ? "Englisch" : isFr ? "Anglais" : "English";
+
+  if (!lvl || typeof lvl !== "string" || !lvl.trim() || lvl.trim().toLowerCase() === "none") {
+    return `${germanLabel} (B1/B2)`;
+  }
+
+  const trimmed = lvl.trim();
+  const isEnglish = /^(?:EN\b|English\b|Englisch\b|Anglais\b|الإنجليزية|إنجليزية)/i.test(trimmed);
+  const cefrMatch = trimmed.match(/\b([ABC][12](?:\s*[\/\-]\s*[ABC][12])?)\b/i);
+  const cefr = cefrMatch ? cefrMatch[1].toUpperCase().replace(/\s+/g, "") : "";
+
+  if (isEnglish) {
+    return cefr ? `${englishLabel} ${cefr}` : englishLabel;
+  }
+
+  if (cefr) {
+    return `${germanLabel} ${cefr}`;
+  }
+
+  const strippedPrefix = trimmed
+    .replace(/^(?:German|Deutsch|Allemand|الألمانية|ألمانية)\s*[:\-–—]?\s*/i, "")
+    .trim();
+  return strippedPrefix ? `${germanLabel} ${strippedPrefix}` : germanLabel;
+}
+
+/**
+ * Localizes salary strings (especially stored Arabic period suffixes like "سنوياً" or "شهرياً")
+ * for the target UI locale so Arabic tokens never leak onto /de, /fr, or /en job pages.
+ */
+export function localizeSalary(salary?: string | null, locale: string = "ar"): string {
+  if (!salary || typeof salary !== "string") return "";
+  const trimmed = salary.trim();
+  if (!trimmed) return "";
+
+  if (locale === "ar") {
+    return trimmed;
+  }
+
+  const isDe = locale === "de";
+  const isFr = locale === "fr";
+
+  const yearlySuffix = isDe ? "/Jahr" : isFr ? "/an" : "/year";
+  const monthlySuffix = isDe ? "/Monat" : isFr ? "/mois" : "/month";
+  const weeklySuffix = isDe ? "/Woche" : isFr ? "/semaine" : "/week";
+  const hourlySuffix = isDe ? "/Std." : isFr ? "/heure" : "/hour";
+
+  const fromLabel = isDe ? "ab " : isFr ? "à partir de " : "from ";
+  const upToLabel = isDe ? "bis zu " : isFr ? "jusqu'à " : "up to ";
+
+  const normalized = trimmed
+    // Convert "من <min> إلى <max>" -> "<min> - <max>"
+    .replace(/(?:^|\s)من\s+([^\s]+(?:\s*(?:€|\$|EUR|CHF))?)\s+إلى\s+/g, " $1 - ")
+    .replace(/(?:ابتداءً|بدءاً)\s+من\s+/g, fromLabel)
+    .replace(/(?:يصل\s+إلى|حتى)\s+/g, upToLabel)
+    .replace(/(?:تقريباً|تقديرياً|حوالي)/g, "")
+    // Normalize Arabic & cross-locale period suffixes
+    .replace(/\s*(?:سنوياً|سنويا|في السنة|بالسنة)(?=$|[\s.,;)/])/g, ` ${yearlySuffix}`)
+    .replace(/\s*(?:شهرياً|شهريا|في الشهر|بالشهر)(?=$|[\s.,;)/])/g, ` ${monthlySuffix}`)
+    .replace(/\s*(?:أسبوعياً|أسبوعيا|في الأسبوع|بالأسبوع)(?=$|[\s.,;)/])/g, ` ${weeklySuffix}`)
+    .replace(/\s*(?:في الساعة|بالساعة|ساعياً|ساعيا)(?=$|[\s.,;)/])/g, ` ${hourlySuffix}`)
+    .replace(/\s*(?:per year|\/year|p\.a\.|pro Jahr|\/Jahr|par an|\/an)(?=$|[\s.,;)/])/gi, ` ${yearlySuffix}`)
+    .replace(/\s*(?:per month|\/month|pro Monat|\/Monat|par mois|\/mois)(?=$|[\s.,;)/])/gi, ` ${monthlySuffix}`)
+    .replace(/\s*(?:per week|\/week|pro Woche|\/Woche|par semaine|\/semaine)(?=$|[\s.,;)/])/gi, ` ${weeklySuffix}`)
+    .replace(/\s*(?:per hour|\/hour|pro Stunde|\/Std\.|par heure|\/heure)(?=$|[\s.,;)/])/gi, ` ${hourlySuffix}`)
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  return normalized;
+}
+
+/**
+ * Localizes job employment type strings across supported locales.
+ */
+export function localizeJobType(jobType?: string | null, locale: string = "ar"): string {
+  const isAr = locale === "ar";
+  const isDe = locale === "de";
+  const isFr = locale === "fr";
+  const raw = (jobType || "").trim();
+  const lower = raw.toLowerCase();
+
+  if (!raw || lower === "full-time" || lower === "fulltime" || lower === "vollzeit" || raw === "دوام كامل" || lower === "temps plein") {
+    return isAr ? "دوام كامل" : isDe ? "Vollzeit" : isFr ? "Temps plein" : "Full-time";
+  }
+  if (lower === "part-time" || lower === "parttime" || lower === "teilzeit" || raw === "دوام جزئي" || lower === "temps partiel") {
+    return isAr ? "دوام جزئي" : isDe ? "Teilzeit" : isFr ? "Temps partiel" : "Part-time";
+  }
+  return raw;
+}
 
 export function isLegacyNewsJob(job: {
   applyUrl?: string | null;
@@ -797,7 +1105,7 @@ export function extractCleanHrEmail(job?: {
 }
 
 // Returns Anerkennung (diploma equivalence) guidance based on role category
-export function getAnerkennungDetails(category?: string | null, isAr = false, isDe = false) {
+export function getAnerkennungDetails(category?: string | null, isAr = false, isDe = false, isFr = false) {
   try {
     const cat = typeof category === "string" ? category.toLowerCase() : "";
     const isHealthcare =
@@ -816,21 +1124,29 @@ export function getAnerkennungDetails(category?: string | null, isAr = false, is
           ? "مهنة منظمة قانونياً (Reglementierter Beruf)"
           : isDe
           ? "Reglementierter Beruf"
+          : isFr
+          ? "Profession réglementée"
           : "Regulated Profession",
         title: isAr
           ? "الاعتراف المهني للرعاية والتمريض (Berufsanerkennung)"
           : isDe
           ? "Berufliche Anerkennung Pflege"
+          : isFr
+          ? "Reconnaissance professionnelle en soins (Anerkennung)"
           : "Nursing Recognition (Anerkennung)",
         desc: isAr
           ? "تتطلب ممارسة مهنة التمريض والرعاية الطبية في ألمانيا استكمال إجراءات المعادلة الرسمية (Berufsanerkennung) أو الحصول على إشعار النقص (Defizitbescheid) للالتحاق بدورة تعديل (Anpassungslehrgang)."
           : isDe
           ? "Für die Ausübung dieses Pflegeberufs ist die behördliche Anerkennung oder ein Defizitbescheid für Anpassungsmaßnahmen erforderlich."
+          : isFr
+          ? "L'exercice de la profession d'infirmier en Allemagne nécessite une reconnaissance officielle (Anerkennung) ou un Defizitbescheid."
           : "Practicing nursing in Germany requires official recognition (Anerkennung) or a Defizitbescheid for adaptation training.",
         statusText: isAr
           ? "مطلوب تعديل رسمي أو إشعار نقص (Defizitbescheid)"
           : isDe
           ? "Anerkennung oder Anpassungslehrgang erforderlich"
+          : isFr
+          ? "Reconnaissance officielle ou stage d'adaptation requis"
           : "Official recognition or adaptation course required",
       };
     }
@@ -842,21 +1158,29 @@ export function getAnerkennungDetails(category?: string | null, isAr = false, is
           ? "عقد تدريب مهني معتمد (Duale Ausbildung)"
           : isDe
           ? "Duale Berufsausbildung"
+          : isFr
+          ? "Formation en alternance (Duale Ausbildung)"
           : "Dual Vocational Training",
         title: isAr
           ? "معادلة الشهادة المدرسية (Zeugnisanerkennung)"
           : isDe
           ? "Schulabschluss-Anerkennung"
+          : isFr
+          ? "Équivalence du diplôme scolaire (Zeugnisanerkennung)"
           : "School Certificate Recognition",
         desc: isAr
           ? "للالتحاق بعقود التدريب المهني، يلزم تعديل الشهادة المدرسية الثانوية أو الإعدادية (Mittlere Reife) عبر هيئة تعديل الشهادات في الولاية الألمانية المستهدفة."
           : isDe
           ? "Für eine duale Ausbildung ist in der Regel die behördliche Anerkennung des Schulabschlusses erforderlich."
+          : isFr
+          ? "Pour une formation en alternance, la reconnaissance officielle de votre diplôme scolaire est généralement requise."
           : "For dual vocational training, recognition of your secondary school diploma by the state office is required.",
         statusText: isAr
           ? "شهادة ثانوية معترف بها (Mittlere Reife / Abitur)"
           : isDe
           ? "Anerkannter Schulabschluss"
+          : isFr
+          ? "Diplôme de fin d'études secondaires reconnu"
           : "Recognized secondary school diploma",
       };
     }
@@ -867,30 +1191,38 @@ export function getAnerkennungDetails(category?: string | null, isAr = false, is
         ? "اعتماد أكاديمي وخبرة (Anabin / ZAB Standard)"
         : isDe
         ? "Anabin / ZAB Hochschulabschluss"
+        : isFr
+        ? "Reconnaissance académique Anabin / ZAB"
         : "Anabin / ZAB Academic Recognition",
       title: isAr
         ? "معادلة الشهادات والمؤهل العلمي (Anerkennung der Berufsqualifikation)"
         : isDe
         ? "Anerkennung des Hochschulabschlusses"
+        : isFr
+        ? "Reconnaissance des diplômes et qualifications"
         : "Degree & Professional Recognition",
       desc: isAr
         ? "تُقبل الشهادات الجامعية الصادرة خارج ألمانيا المعترف بها في قاعدة بيانات (Anabin) بدرجة H+، أو ما يعادلها من خبرات مهنية عملية موثقة في القطاع التقني والتجاري."
         : isDe
         ? "Ausländische Hochschulabschlüsse müssen in der Anabin-Datenbank (Status H+) gelistet sein oder einer ZAB-Gleichwertigkeitsprüfung entsprechen."
+        : isFr
+        ? "Les diplômes étrangers doivent être reconnus dans la base Anabin (statut H+) ou justifier d'une expérience professionnelle certifiée."
         : "Foreign degrees must be recognized in the Anabin database (H+ status) or have documented relevant professional experience.",
       statusText: isAr
         ? "شهادة معترف بها (Anabin H+) أو سنوات خبرة موثقة"
         : isDe
         ? "Vergleichbarer Abschluss (Anabin H+) oder Berufserfahrung"
+        : isFr
+        ? "Diplôme équivalent (Anabin H+) ou expérience certifiée"
         : "Comparable degree (Anabin H+) or certified experience",
     };
   } catch {
     return {
       type: "academic",
-      badge: isAr ? "معايير سوق العمل الألماني" : "German Labor Standard",
-      title: isAr ? "المعادلة المهنية والأكاديمية" : "Professional Equivalence",
-      desc: isAr ? "تخضع المؤهلات للتقييم بحسب معايير الجهات الألمانية المختصة." : "Qualifications assessed per German guidelines.",
-      statusText: isAr ? "مؤهل مهني أو جامعي معتمد" : "Recognized Qualification",
+      badge: isAr ? "معايير سوق العمل الألماني" : isDe ? "Deutscher Arbeitsstandard" : isFr ? "Norme du marché allemand" : "German Labor Standard",
+      title: isAr ? "المعادلة المهنية والأكاديمية" : isDe ? "Berufliche Gleichwertigkeit" : isFr ? "Équivalence professionnelle" : "Professional Equivalence",
+      desc: isAr ? "تخضع المؤهلات للتقييم بحسب معايير الجهات الألمانية المختصة." : isDe ? "Qualifikationen werden gemäß deutschen Richtlinien bewertet." : isFr ? "Les qualifications sont évaluées selon les directives allemandes." : "Qualifications assessed per German guidelines.",
+      statusText: isAr ? "مؤهل مهني أو جامعي معتمد" : isDe ? "Anerkannte Qualifikation" : isFr ? "Qualification reconnue" : "Recognized Qualification",
     };
   }
 }
