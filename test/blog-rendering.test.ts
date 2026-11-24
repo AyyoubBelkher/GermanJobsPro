@@ -15,6 +15,7 @@ const {
   localizeCategoryLabel,
   formatBidiInlineText,
   normalizeMarkdownFormatting,
+  parseDialogues,
 }: typeof import("../src/lib/courseUtils") = require("../src/lib/courseUtils.ts");
 
 describe("Blog Articles Rendering & Layout Unit Tests", () => {
@@ -318,6 +319,49 @@ function hello() {
       const text = "قرار (ZAB (Zentralstelle für ausländisches Bildungswesen الصادر";
       const normalized = normalizeMarkdownFormatting(text);
       assert.ok(normalized.includes("(ZAB - Zentralstelle für ausländisches Bildungswesen)"));
+    });
+  });
+
+  describe("Dialogue Detection Guard (parseDialogues)", () => {
+    it("does NOT classify Arabic metadata lines or pronunciation rule bullets as German dialogue cards", () => {
+      const metadata1 = "الدرس 1: التحية والتعريف بالنفس (Begrüßung und Vorstellung)";
+      const metadata2 = "المستوى: CEFR A1.1";
+      const pronunciationBullet =
+        "حرف (R) في نهاية الكلمة أو المقطع: يميل إلى النطق كألف تنطق Vater ممدودة خفيفة جداً مثل (Vater).";
+      const arabicRuleWithGermanExample =
+        "قاعدة: في الجملة الخبرية يأتي الفعل في المركز الثاني مثل Ich komme aus Syrien.";
+
+      assert.equal(parseDialogues(metadata1), null);
+      assert.equal(parseDialogues(metadata2), null);
+      assert.equal(parseDialogues(pronunciationBullet), null);
+      assert.equal(parseDialogues(arabicRuleWithGermanExample), null);
+    });
+
+    it("classifies genuine German dialogue speaker lines as dialogue turns", () => {
+      const singleTurn = "Anna: Guten Tag! Wie heißen Sie?";
+      const parsedSingle = parseDialogues(singleTurn);
+      assert.ok(parsedSingle !== null && parsedSingle.length === 1);
+      assert.equal(parsedSingle![0].speaker, "Anna");
+      assert.equal(parsedSingle![0].german, "Guten Tag! Wie heißen Sie?");
+
+      const multiLineTurn = [
+        "Herr Müller: Guten Tag! [جوتن تاج]",
+        "الترجمة: نهارك سعيد!",
+        "Frau Weber: Hallo! Mir geht es gut.",
+        "النطق: [هالو! مير جيت إس جوت]",
+        "الترجمة: مرحباً! أنا بخير.",
+      ].join("\n");
+
+      const parsedMulti = parseDialogues(multiLineTurn);
+      assert.ok(parsedMulti !== null && parsedMulti.length === 2);
+      assert.equal(parsedMulti![0].speaker, "Herr Müller");
+      assert.equal(parsedMulti![0].german, "Guten Tag!");
+      assert.equal(parsedMulti![0].phonetic, "جوتن تاج");
+      assert.equal(parsedMulti![0].translation, "نهارك سعيد!");
+      assert.equal(parsedMulti![1].speaker, "Frau Weber");
+      assert.equal(parsedMulti![1].german, "Hallo! Mir geht es gut.");
+      assert.equal(parsedMulti![1].phonetic, "هالو! مير جيت إس جوت");
+      assert.equal(parsedMulti![1].translation, "مرحباً! أنا بخير.");
     });
   });
 });

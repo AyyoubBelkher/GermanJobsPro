@@ -13,8 +13,15 @@ import {
   normalizeMarkdownFormatting,
   parseAsciiOrMarkdownTable,
   parseAsciiDiagram,
+  stripBrackets,
+  sanitizeSpeakerLine,
+  DIALOGUE_SPEAKER_LINE_REGEX,
+  isValidDialogueSpeaker,
+  isGermanDialogueUtterance,
+  parseDialogues,
   type ParsedTable,
   type ParsedDiagram,
+  type DialogueTurnData,
 } from "@/lib/courseUtils";
 
 export {
@@ -22,6 +29,9 @@ export {
   formatBidiInlineText,
   parseAsciiOrMarkdownTable,
   parseAsciiDiagram,
+  isValidDialogueSpeaker,
+  isGermanDialogueUtterance,
+  parseDialogues,
 } from "@/lib/courseUtils";
 export type {
   ParsedTable,
@@ -29,6 +39,8 @@ export type {
   ParsedBranchingDiagram,
   ParsedTimelineDiagram,
   ParsedGenericDiagram,
+  DialogueTurnData,
+  DialogueTurn,
 } from "@/lib/courseUtils";
 
 interface LessonContentRendererProps {
@@ -40,26 +52,7 @@ interface LessonContentRendererProps {
   title?: string;
 }
 
-/**
- * Strips all square brackets [ and ] completely from a string.
- */
-function stripBrackets(str: string): string {
-  if (!str) return "";
-  return str.replace(/[\[\]]/g, "").trim();
-}
-
-/**
- * Sanitizes leading punctuation, boundary markers, and markdown bold artifacts from speaker / dialogue / vocab lines.
- * Handles RTL/LTR artifacts like '?Herr Müller:', '• Frau Al-Mansoor:', '؟Lukas:', '**Herr Müller:**'.
- */
-function sanitizeSpeakerLine(line: string): string {
-  if (!line) return "";
-  return line
-    .replace(/^[\s?؟•\-\*🗣️💬:\uFEFF\u200E\u200F]+/, "")
-    .replace(/\*\*/g, "")
-    .replace(/__/g, "")
-    .trim();
-}
+// Helpers moved to @/lib/courseUtils and re-exported above.
 
 /**
  * Recursively extracts plain text from React nodes / children.
@@ -464,7 +457,7 @@ function renderInlineContent(
   // Group 4 & 5: (Latin parenthetical) and trailing punctuation (when isAr)
   // Group 6 & 7: standalone status token (H+, H-, H+/-) and trailing punctuation (when isAr)
   const tokenRegex = isAr
-    ? /(`[^`]+`)|(\*\*[^*]+\*\*)|\[([\u0600-\u06FF\s:!؟،.\-_…]+)\]|(\([A-Za-zäöüÄÖÜß0-9][^()]*\))([:؟،.;])?|(?<=^|[\s،,.:;!؟])(H\+\/-|H\+|H\-)([:؟،.;])?(?=[\s،,.:;!؟]|$)/g
+    ? /(`[^`]+`)|(\*\*[^*]+\*\*)|\[([\u0600-\u06FF\s:!؟،.\-_…]+)\]|(\([A-Za-zäöüÄÖÜß0-9][^()]*\))(\s*(?:\.{3}|[:؟،.;!]))?|(?<=^|[\s،,.:;!؟])(H\+\/-|H\+|H\-)([:؟،.;])?(?=[\s،,.:;!؟]|$)|(?<=^|[\s،,.:;!؟])((?:DIN\s*\d+|(?:\d+-[A-Za-zäöüÄÖÜß][A-Za-zäöüÄÖÜß0-9-]*(?:\s+[A-Za-zäöüÄÖÜß0-9-]+)*)|(?:[A-Za-zäöüÄÖÜß][A-Za-zäöüÄÖÜß0-9-]*(?:\.[A-Za-zäöüÄÖÜß0-9-]+)*(?:\s+[A-Za-zäöüÄÖÜß0-9-]+(?:\.[A-Za-zäöüÄÖÜß0-9-]+)*)*)))(\s*(?:\.{3}|[:؟،.;!]))?(?=[\s،,.:;!؟]|$)/g
     : /(`[^`]+`)|(\*\*[^*]+\*\*)|\[([\u0600-\u06FF\s:!؟،.\-_…]+)\]/g;
 
   const parts: React.ReactNode[] = [];
@@ -491,6 +484,8 @@ function renderInlineContent(
     const parenPunct = match[5];
     const statusToken = match[6];
     const statusPunct = match[7];
+    const latinToken = match[8];
+    const latinPunct = match[9];
 
     if (codeMatch) {
       const codeText = codeMatch.slice(1, -1);
@@ -532,12 +527,19 @@ function renderInlineContent(
         parts.push(cleanPhonetic);
       }
     } else if (parenSegment) {
+      const isDigitPrefixedPhrase = /^\(\d+-[A-Za-z]/.test(parenSegment);
       const isShort = parenSegment.length <= 14 && !/\s/.test(parenSegment);
       const bdiEl = (
         <bdi
           key={`bdi-p-${matchStart}`}
           dir="ltr"
-          className={isShort ? "inline-block whitespace-nowrap" : "inline break-words"}
+          className={
+            isDigitPrefixedPhrase
+              ? "inline-block whitespace-nowrap [unicode-bidi:isolate]"
+              : isShort
+              ? "inline-block whitespace-nowrap"
+              : "inline break-words"
+          }
         >
           {parenSegment}
         </bdi>
@@ -570,6 +572,36 @@ function renderInlineContent(
           {statusPunct ? "\u200F" + statusPunct : "\u200F"}
         </React.Fragment>
       );
+    } else if (latinToken) {
+      const isDigitPrefixedPhrase = /^\d+-[A-Za-z]/.test(latinToken);
+      const isShort =
+        latinToken.length <= 14 && (!/\s/.test(latinToken) || /^DIN\s*\d+$/i.test(latinToken));
+      const bdiEl = (
+        <bdi
+          key={`bdi-l-${matchStart}`}
+          dir="ltr"
+          className={
+            isDigitPrefixedPhrase
+              ? "inline-block whitespace-nowrap [unicode-bidi:isolate]"
+              : isShort
+              ? "inline-block whitespace-nowrap"
+              : "inline break-words"
+          }
+        >
+          {latinToken}
+        </bdi>
+      );
+
+      if (latinPunct) {
+        parts.push(
+          <React.Fragment key={`frag-l-${matchStart}`}>
+            {bdiEl}
+            {"\u200F" + latinPunct}
+          </React.Fragment>
+        );
+      } else {
+        parts.push(bdiEl);
+      }
     } else {
       parts.push(match[0]);
     }
@@ -697,14 +729,7 @@ function parseAlertBox(rawText: string, isLessonMode = false, locale = "ar") {
   return null;
 }
 
-export interface DialogueTurnData {
-  speaker: string;
-  german: string;
-  phonetic?: string;
-  translation?: string;
-}
-
-export type DialogueTurn = DialogueTurnData;
+// Dialogue types & helpers imported from @/lib/courseUtils.
 
 /**
  * Speaker theme styling for dialogue message bubbles / cards.
@@ -882,267 +907,7 @@ export function DialogueCard({
   );
 }
 
-/**
- * Extracts German text, phonetic guide, and Arabic translation from a single speaker line content.
- */
-/**
- * Extracts German text, phonetic guide, and Arabic translation from a single speaker line content.
- */
-function parseDialogueLineContent(rawContent: string): {
-  german: string;
-  phonetic: string;
-  translation: string;
-} {
-  const clean = rawContent.trim();
-  if (!clean) return { german: "", phonetic: "", translation: "" };
-
-  // 1. Check for German [Phonetic] (: / - / space) Translation
-  const matchWithPhoneticAndTrans = clean.match(
-    /^([A-Za-zäöüÄÖÜß0-9\s\-.,?!/’'"()…]+?)\s*\[([\u0600-\u06FFa-zA-ZäöüÄÖÜß\s:!؟،.\-_…]+)\](?:\s*[:\-–—]\s*|\s+)(.+)$/u
-  );
-  if (matchWithPhoneticAndTrans) {
-    return {
-      german: matchWithPhoneticAndTrans[1].trim(),
-      phonetic: stripBrackets(matchWithPhoneticAndTrans[2]),
-      translation: matchWithPhoneticAndTrans[3].replace(/^[:\-–—\s]+/, "").trim(),
-    };
-  }
-
-  // 2. Check for German [Phonetic] (no translation)
-  const matchPhoneticOnly = clean.match(
-    /^([A-Za-zäöüÄÖÜß0-9\s\-.,?!/’'"()…]+?)\s*\[([\u0600-\u06FFa-zA-ZäöüÄÖÜß\s:!؟،.\-_…]+)\]\s*$/u
-  );
-  if (matchPhoneticOnly) {
-    return {
-      german: matchPhoneticOnly[1].trim(),
-      phonetic: stripBrackets(matchPhoneticOnly[2]),
-      translation: "",
-    };
-  }
-
-  // 3. Check for German : / - / – / — Arabic Translation
-  const matchTransWithSeparator = clean.match(
-    /^([A-Za-zäöüÄÖÜß0-9\s\-.,?!/’'"()…]+?)\s*[:\-–—]\s*([\u0600-\u06FF].+)$/u
-  );
-  if (matchTransWithSeparator) {
-    return {
-      german: matchTransWithSeparator[1].trim(),
-      phonetic: "",
-      translation: matchTransWithSeparator[2].trim(),
-    };
-  }
-
-  // 4. Check for German (Arabic Translation)
-  const matchTransParen = clean.match(
-    /^([A-Za-zäöüÄÖÜß0-9\s\-.,?!/’'"()…]+?)\s*\(([\u0600-\u06FF].+?)\)\s*$/u
-  );
-  if (matchTransParen) {
-    return {
-      german: matchTransParen[1].trim(),
-      phonetic: "",
-      translation: matchTransParen[2].trim(),
-    };
-  }
-
-  // 5. Check for German followed directly by Arabic translation
-  const matchGermanArabic = clean.match(
-    /^([A-Za-zäöüÄÖÜß0-9\s\-.,?!/’'"()…]+?)\s+([\u0600-\u06FF].+)$/u
-  );
-  if (matchGermanArabic) {
-    return {
-      german: matchGermanArabic[1].trim(),
-      phonetic: "",
-      translation: matchGermanArabic[2].trim(),
-    };
-  }
-
-  // 6. If content contains only Arabic (or Arabic with phonetic/punctuation), with no German/Latin letters
-  if (!/[A-Za-zäöüÄÖÜß]/.test(clean) && /[\u0600-\u06FF]/.test(clean)) {
-    const phoneticMatch = clean.match(/\[([\u0600-\u06FFa-zA-ZäöüÄÖÜß\s:!؟،.\-_…]+)\]/u);
-    if (phoneticMatch) {
-      const ph = stripBrackets(phoneticMatch[1]);
-      const tr = clean
-        .replace(/\[[\u0600-\u06FFa-zA-ZäöüÄÖÜß\s:!؟،.\-_…]+\]/u, "")
-        .replace(/^[:\-–—\s]+/, "")
-        .trim();
-      return {
-        german: "",
-        phonetic: ph,
-        translation: tr,
-      };
-    }
-    return {
-      german: "",
-      phonetic: "",
-      translation: clean,
-    };
-  }
-
-  // Fallback: entire string is German text
-  return {
-    german: clean,
-    phonetic: "",
-    translation: "",
-  };
-}
-
-const RESERVED_SPEAKER_KEYWORD_REGEX =
-  /^(?:مثال|beispiel|ملاحظة|hinweis|قاعدة|regel|تنبيه|achtung|warnung|النطق|aussprache|الترجمة|übersetzung|التمرين|تمرين|übung|حل|حلول|lösung|lösungen)(?:[\s:：]|$)/iu;
-
-/**
- * Parses raw text into one or more DialogueTurns.
- * Correctly sanitizes leading punctuation, splits multiple turns in a single block,
- * attaches Arabic translations to preceding German speaker turns, and extracts unified cards.
- */
-export function parseDialogues(rawText: string): DialogueTurnData[] | null {
-  const lines = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
-  if (lines.length === 0) return null;
-
-  const dialogueSpeakerRegex = /^([A-Za-zäöüÄÖÜß\u0600-\u06FF0-9\s\-.\(\)/']{2,35})\s*[:：]\s*(.+)$/u;
-
-  const hasDialogueIndicator = lines.some((line) => {
-    const sanitized = sanitizeSpeakerLine(line);
-    const match = sanitized.match(dialogueSpeakerRegex);
-    if (!match) return false;
-    const spk = match[1].trim();
-    if (RESERVED_SPEAKER_KEYWORD_REGEX.test(spk)) return false;
-    const content = match[2].trim();
-    return (
-      /[A-Za-zäöüÄÖÜß]/.test(content) ||
-      lines.some(
-        (l) =>
-          l.startsWith("النطق:") ||
-          l.startsWith("الترجمة:") ||
-          l.startsWith("🗣️") ||
-          l.startsWith("💬")
-      )
-    );
-  });
-
-  if (!hasDialogueIndicator) return null;
-
-  const turns: DialogueTurnData[] = [];
-  let currentTurn: Partial<DialogueTurnData> | null = null;
-
-  for (const line of lines) {
-    const sanitized = sanitizeSpeakerLine(line);
-
-    // 1. Explicit phonetic line (e.g. "النطق: [جوتن تاج]" or "🗣️ [جوتن تاج]" or "[جوتن تاج]")
-    if (
-      sanitized.startsWith("النطق:") ||
-      sanitized.startsWith("🗣️") ||
-      (/^\[[\u0600-\u06FFa-zA-ZäöüÄÖÜß\s:!؟،.\-_…]+\]$/u.test(sanitized) && currentTurn)
-    ) {
-      const rawPhonetic = sanitized.replace(/^(النطق:|🗣️)\s*/, "");
-      const cleanPhonetic = stripBrackets(rawPhonetic);
-      if (currentTurn) {
-        currentTurn.phonetic = cleanPhonetic;
-      }
-      continue;
-    }
-
-    // 2. Explicit translation line (e.g. "الترجمة: نهارك سعيد" or "💬 نهارك سعيد")
-    if (sanitized.startsWith("الترجمة:") || sanitized.startsWith("💬")) {
-      const rawTranslation = sanitized.replace(/^(الترجمة:|💬)\s*/, "").trim();
-      if (currentTurn) {
-        currentTurn.translation = rawTranslation;
-      }
-      continue;
-    }
-
-    // Skip non-dialogue prefixes like notes, rules, warnings, examples
-    if (
-      sanitized.startsWith("ملاحظة:") ||
-      sanitized.startsWith("قاعدة:") ||
-      sanitized.startsWith("تنبيه:") ||
-      sanitized.startsWith("مثال:") ||
-      sanitized.startsWith("Beispiel:")
-    ) {
-      continue;
-    }
-
-    const speakerMatch = sanitized.match(dialogueSpeakerRegex);
-
-    // 3. If it's a speaker line (e.g. "Herr Müller: Guten Tag!" or "السيد مولر: نهارك سعيد!" or "المريض: Guten Tag!")
-    if (speakerMatch) {
-      const spk = speakerMatch[1].trim();
-      const contentAfterSpeaker = speakerMatch[2].trim();
-
-      if (!RESERVED_SPEAKER_KEYWORD_REGEX.test(spk)) {
-        const parsedContent = parseDialogueLineContent(contentAfterSpeaker);
-
-        // Check if this line is an Arabic translation line (no German Latin characters)
-        const isPureArabicContent =
-          !/[A-Za-zäöüÄÖÜß]/.test(contentAfterSpeaker) &&
-          /[\u0600-\u06FF]/.test(contentAfterSpeaker);
-
-        if (isPureArabicContent) {
-          // If we have an active German turn, attach this Arabic line to its translation
-          if (currentTurn && currentTurn.german) {
-            currentTurn.translation = parsedContent.translation || contentAfterSpeaker;
-            if (parsedContent.phonetic && !currentTurn.phonetic) {
-              currentTurn.phonetic = parsedContent.phonetic;
-            }
-            continue;
-          }
-        }
-
-        // If it has German/Latin characters, it is a genuine German speaker turn!
-        if (parsedContent.german && /[A-Za-zäöüÄÖÜß]/.test(parsedContent.german)) {
-          // Push previous completed turn if valid
-          if (currentTurn && currentTurn.german && /[A-Za-zäöüÄÖÜß]/.test(currentTurn.german)) {
-            turns.push({
-              speaker: currentTurn.speaker || "Speaker",
-              german: currentTurn.german,
-              phonetic: currentTurn.phonetic || "",
-              translation: currentTurn.translation || "",
-            });
-          }
-
-          currentTurn = {
-            speaker: spk,
-            german: parsedContent.german,
-            phonetic: parsedContent.phonetic,
-            translation: parsedContent.translation,
-          };
-          continue;
-        }
-
-        // If there's translation content on a speaker line, attach it to currentTurn
-        if (currentTurn && currentTurn.german && parsedContent.translation) {
-          currentTurn.translation = parsedContent.translation;
-          if (parsedContent.phonetic && !currentTurn.phonetic) {
-            currentTurn.phonetic = parsedContent.phonetic;
-          }
-          continue;
-        }
-      }
-    }
-
-    // 4. Plain Arabic line without prefix that follows a German speaker turn
-    if (currentTurn && currentTurn.german && !currentTurn.translation && /^[\u0600-\u06FF]/.test(sanitized)) {
-      currentTurn.translation = sanitized;
-      continue;
-    }
-  }
-
-  // Push the final turn if it contains German text
-  if (currentTurn && currentTurn.german && /[A-Za-zäöüÄÖÜß]/.test(currentTurn.german)) {
-    turns.push({
-      speaker: currentTurn.speaker || "Speaker",
-      german: currentTurn.german,
-      phonetic: currentTurn.phonetic || "",
-      translation: currentTurn.translation || "",
-    });
-  }
-
-  // Filter out any orphaned translation-only turns (ensure german exists and contains Latin/German chars)
-  const validTurns = turns.filter(
-    (t) => Boolean(t.german) && /[A-Za-zäöüÄÖÜß]/.test(t.german)
-  );
-
-  return validTurns.length > 0 ? validTurns : null;
-}
+// Dialogue parsing helpers imported from @/lib/courseUtils.
 
 export interface VocabularyItemData {
   german: string;
@@ -1172,11 +937,12 @@ export function parseVocabularyLine(rawText: string): VocabularyItemData | null 
   if (!clean) return null;
 
   // Skip dialogue speaker lines so Dialogue parser handles them
-  const dialogueMatch = clean.match(/^([A-Za-zäöüÄÖÜß\u0600-\u06FF0-9\s\-.\(\)/']{2,35})\s*[:：]\s*([A-Za-zäöüÄÖÜß].+)$/u);
+  const dialogueMatch = clean.match(DIALOGUE_SPEAKER_LINE_REGEX);
   if (
     dialogueMatch &&
-    !RESERVED_SPEAKER_KEYWORD_REGEX.test(dialogueMatch[1]) &&
-    !dialogueMatch[1].includes("[")
+    isValidDialogueSpeaker(dialogueMatch[1]) &&
+    !dialogueMatch[1].includes("[") &&
+    isGermanDialogueUtterance(dialogueMatch[2])
   ) {
     return null;
   }
@@ -1554,9 +1320,9 @@ export function normalizeDialogueMarkdown(markdownContent: string): string {
 
   const isSpeakerLine = (l: string) => {
     const s = sanitizeSpeakerLine(l);
-    const match = s.match(/^([A-Za-zäöüÄÖÜß\u0600-\u06FF0-9\s\-.\(\)/']{2,35})\s*[:：]\s*(.+)$/u);
+    const match = s.match(DIALOGUE_SPEAKER_LINE_REGEX);
     if (!match) return false;
-    return !RESERVED_SPEAKER_KEYWORD_REGEX.test(match[1]);
+    return isValidDialogueSpeaker(match[1]) && isGermanDialogueUtterance(match[2]);
   };
 
   const isDialogueFollowupLine = (l: string) => {
@@ -1933,7 +1699,7 @@ export default function LessonContentRenderer({
                 قاعدة نحوية
               </div>
               <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white text-right leading-tight">
-                {grammar.title}
+                {renderInlineContent(grammar.title, isLessonMode, isAr)}
               </h3>
             </div>
           </div>
@@ -1941,7 +1707,7 @@ export default function LessonContentRenderer({
           {/* Rule Description */}
           {grammar.description && (
             <div className="text-slate-700 dark:text-slate-200 text-base sm:text-lg leading-relaxed font-normal text-right pt-1" dir="rtl">
-              {renderInlineContent(grammar.description, isLessonMode)}
+              {renderInlineContent(grammar.description, isLessonMode, isAr)}
             </div>
           )}
 
@@ -1990,7 +1756,7 @@ export default function LessonContentRenderer({
             <div className="space-y-2 pt-2 text-right" dir="rtl">
               {grammar.remainingLines.map((rLine, rIdx) => (
                 <div key={`rem-${rIdx}`} className="text-slate-700 dark:text-slate-200 text-base leading-relaxed">
-                  {renderInlineContent(rLine, isLessonMode)}
+                  {renderInlineContent(rLine, isLessonMode, isAr)}
                 </div>
               ))}
             </div>
@@ -2009,7 +1775,7 @@ export default function LessonContentRenderer({
           📚
         </span>
         <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white text-right">
-          {grammar.title}
+          {renderInlineContent(grammar.title, isLessonMode, isAr)}
         </h3>
       </div>
     );

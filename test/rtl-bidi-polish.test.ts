@@ -179,12 +179,53 @@ describe("BiDi Isolation for Digit-Prefixed Latin Phrases (1-Click PDF)", () => 
 
       const rendered = formatBidiInlineText(input, true);
       const children = React.Children.toArray(rendered);
-      const hasBdi = children.some(
+      const bdiEl = children.find(
         (c: any) => c?.type === "bdi" && c?.props?.dir === "ltr" && c?.props?.children === token
+      ) as any;
+      assert.ok(bdiEl, `Expected <bdi dir="ltr">${token}</bdi>`);
+      assert.ok(
+        String(bdiEl.props.className).includes("inline-block") &&
+          String(bdiEl.props.className).includes("whitespace-nowrap") &&
+          String(bdiEl.props.className).includes("[unicode-bidi:isolate]"),
+        `Expected atomic unbroken className on ${token}, got: ${bdiEl.props.className}`
       );
-      assert.ok(hasBdi, `Expected <bdi dir="ltr">${token}</bdi>`);
       assert.equal(flattenReactText(rendered), input);
     }
+  });
+
+  it("isolates (Begrüßung und Vorstellung), inline Vater, and Goethe A1. in Arabic copy", () => {
+    const lessonHeading = "الدرس 1: التحية والتعريف بالنفس (Begrüßung und Vorstellung)";
+    const renderedHeading = formatBidiInlineText(lessonHeading, true);
+    const headingBdi = React.Children.toArray(renderedHeading).find(
+      (c: any) =>
+        c?.type === "bdi" &&
+        c?.props?.dir === "ltr" &&
+        c?.props?.children === "(Begrüßung und Vorstellung)"
+    );
+    assert.ok(headingBdi, "Expected <bdi dir='ltr'>(Begrüßung und Vorstellung)</bdi>");
+
+    const inlineGerman = "يميل إلى النطق كألف تنطق Vater ممدودة خفيفة جداً";
+    const renderedInline = formatBidiInlineText(inlineGerman, true);
+    const vaterBdi = React.Children.toArray(renderedInline).find(
+      (c: any) => c?.type === "bdi" && c?.props?.dir === "ltr" && c?.props?.children === "Vater"
+    );
+    assert.ok(vaterBdi, "Expected <bdi dir='ltr'>Vater</bdi>");
+
+    const bannerDesc = "دروس متسلسلة ومبسطة من الصفر وقواعد Goethe A1.";
+    const isolatedBanner = isolateBidiText(bannerDesc, true);
+    assert.ok(isolatedBanner.includes("\u2066Goethe A1\u2069\u200F."));
+    const renderedBanner = formatBidiInlineText(bannerDesc, true);
+    const hasGoetheBdiAndPeriod = React.Children.toArray(renderedBanner).some((c: any) => {
+      if (!c?.props?.children || !Array.isArray(c.props.children)) return false;
+      const hasBdi = c.props.children.some(
+        (sub: any) => sub?.type === "bdi" && sub?.props?.dir === "ltr" && sub?.props?.children === "Goethe A1"
+      );
+      const hasAnchoredPeriod = c.props.children.some(
+        (sub: any) => typeof sub === "string" && sub.includes("\u200F.")
+      );
+      return hasBdi && hasAnchoredPeriod;
+    });
+    assert.ok(hasGoetheBdiAndPeriod, "Expected <bdi dir='ltr'>Goethe A1</bdi> anchored with \\u200F.");
   });
 
   it("isolates unparenthesized 1-Click PDF and 1-Click PDF to DIN 5008 inside Arabic copy", () => {

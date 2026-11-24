@@ -636,7 +636,7 @@ const NESTED_PAREN_REGEX =
   /\(([A-Za-z0-9\s]+?)\s*\(([A-Za-zäöüÄÖÜß0-9\s\-/]+?)(?:\)+|(\s*)(?=[\u0600-\u06FF]|$))/g;
 
 const BIDI_TOKEN_REGEX =
-  /(\([A-Za-zäöüÄÖÜß0-9][^()]*\))(\s*(?:\.{3}|[:؟،.;!]))?|(?<=^|[\s،,.:;!؟])(H\+\/-|H\+|H\-)([:؟،.;])?(?=[\s،,.:;!؟]|$)|(?<=^|[\s،,.:;!؟])((?:DIN\s*\d+|(?:\d+-[A-Za-zäöüÄÖÜß][A-Za-zäöüÄÖÜß0-9-]*(?:\s+[A-Za-zäöüÄÖÜß0-9-]+)*)|(?:[A-Z]{2,}(?:\/[A-Z]{2,})*(?:-[A-Z0-9]+)?)|(?:[A-Za-zäöüÄÖÜß][A-Za-zäöüÄÖÜß0-9-]*)(?=\s*(?:\.{3}|[:؟،.;!]))))(\s*(?:\.{3}|[:؟،.;!]))?(?=[\s،,.:;!؟]|$)/g;
+  /(\([A-Za-zäöüÄÖÜß0-9][^()]*\))(\s*(?:\.{3}|[:؟،.;!]))?|(?<=^|[\s،,.:;!؟])(H\+\/-|H\+|H\-)([:؟،.;])?(?=[\s،,.:;!؟]|$)|(?<=^|[\s،,.:;!؟])((?:DIN\s*\d+|(?:\d+-[A-Za-zäöüÄÖÜß][A-Za-zäöüÄÖÜß0-9-]*(?:\s+[A-Za-zäöüÄÖÜß0-9-]+)*)|(?:[A-Za-zäöüÄÖÜß][A-Za-zäöüÄÖÜß0-9-]*(?:\.[A-Za-zäöüÄÖÜß0-9-]+)*(?:\s+[A-Za-zäöüÄÖÜß0-9-]+(?:\.[A-Za-zäöüÄÖÜß0-9-]+)*)*)))(\s*(?:\.{3}|[:؟،.;!]))?(?=[\s،,.:;!؟]|$)/g;
 
 /**
  * Pure-string BiDi isolation helper for Arabic RTL strings:
@@ -732,13 +732,19 @@ export function formatBidiInlineText(
     const latinPunct = match[6];
 
     if (parenSegment) {
+      const isDigitPrefixedPhrase = /^\(\d+-[A-Za-z]/.test(parenSegment);
       const isShort = parenSegment.length <= 14 && !/\s/.test(parenSegment);
+      const bdiClass = isDigitPrefixedPhrase
+        ? "inline-block whitespace-nowrap [unicode-bidi:isolate]"
+        : isShort
+        ? "inline-block whitespace-nowrap"
+        : "inline break-words";
       const bdiEl = React.createElement(
         "bdi",
         {
           key: `bdi-p-${matchStart}`,
           dir: "ltr",
-          className: isShort ? "inline-block whitespace-nowrap" : "inline break-words",
+          className: bdiClass,
         },
         parenSegment
       );
@@ -775,14 +781,20 @@ export function formatBidiInlineText(
         )
       );
     } else if (latinToken) {
+      const isDigitPrefixedPhrase = /^\d+-[A-Za-z]/.test(latinToken);
       const isShort =
         latinToken.length <= 14 && (!/\s/.test(latinToken) || /^DIN\s*\d+$/i.test(latinToken));
+      const bdiClass = isDigitPrefixedPhrase
+        ? "inline-block whitespace-nowrap [unicode-bidi:isolate]"
+        : isShort
+        ? "inline-block whitespace-nowrap"
+        : "inline break-words";
       const bdiEl = React.createElement(
         "bdi",
         {
           key: `bdi-l-${matchStart}`,
           dir: "ltr",
-          className: isShort ? "inline-block whitespace-nowrap" : "inline break-words",
+          className: bdiClass,
         },
         latinToken
       );
@@ -1196,6 +1208,320 @@ export function parseAsciiDiagram(rawText: string): ParsedDiagram | null {
   }
 
   return null;
+}
+
+export interface DialogueTurnData {
+  speaker: string;
+  german: string;
+  phonetic?: string;
+  translation?: string;
+}
+
+export type DialogueTurn = DialogueTurnData;
+
+export function stripBrackets(str: string): string {
+  if (!str) return "";
+  return str.replace(/[\[\]]/g, "").trim();
+}
+
+export function sanitizeSpeakerLine(line: string): string {
+  if (!line) return "";
+  return line
+    .replace(/^[\s?؟•\-\*🗣️💬:\uFEFF\u200E\u200F]+/, "")
+    .replace(/\*\*/g, "")
+    .replace(/__/g, "")
+    .trim();
+}
+
+export const RESERVED_SPEAKER_KEYWORD_REGEX =
+  /^(?:الدرس|درس|المستوى|مستوى|العنوان|عنوان|التاريخ|تاريخ|الهدف|هدف|الأهداف|مقدمة|المقدمة|ملخص|الملخص|خلاصة|الخلاصة|مثال|أمثلة|beispiel|beispiele|ملاحظة|ملاحظات|hinweis|قاعدة|قواعد|regel|تنبيه|تحذير|achtung|warnung|النطق|نطق|aussprache|الترجمة|ترجمة|übersetzung|التمرين|تمرين|تمارين|übung|übungen|حل|حلول|lösung|lösungen|حرف|الحرف|الأحرف|الحروف|صوت|الصوت|الأصوات|مقطع|كلمة|الكلمة|جملة|الجملة|شرح|الشرح|فائدة|تلميح|استثناء|معلومة|lesson|lektion|level|title|topic|note|rule|tip|example|summary|http|https|www|cefr|din)(?:[\s:：(\d]|$)/iu;
+
+export const DIALOGUE_SPEAKER_LINE_REGEX =
+  /^([A-Za-zäöüÄÖÜß\u0600-\u06FF0-9\s\-.\(\)/']{1,30})\s*[:：]\s*(.+)$/u;
+
+/**
+ * Extracts German text, phonetic guide, and Arabic translation from a single speaker line content.
+ */
+export function parseDialogueLineContent(rawContent: string): {
+  german: string;
+  phonetic: string;
+  translation: string;
+} {
+  const clean = rawContent.trim();
+  if (!clean) return { german: "", phonetic: "", translation: "" };
+
+  // 1. Check for German [Phonetic] (: / - / space) Translation
+  const matchWithPhoneticAndTrans = clean.match(
+    /^([A-Za-zäöüÄÖÜß0-9\s\-.,?!/’'"()…]+?)\s*\[([\u0600-\u06FFa-zA-ZäöüÄÖÜß\s:!؟،.\-_…]+)\](?:\s*[:\-–—]\s*|\s+)(.+)$/u
+  );
+  if (matchWithPhoneticAndTrans) {
+    return {
+      german: matchWithPhoneticAndTrans[1].trim(),
+      phonetic: stripBrackets(matchWithPhoneticAndTrans[2]),
+      translation: matchWithPhoneticAndTrans[3].replace(/^[:\-–—\s]+/, "").trim(),
+    };
+  }
+
+  // 2. Check for German [Phonetic] (no translation)
+  const matchPhoneticOnly = clean.match(
+    /^([A-Za-zäöüÄÖÜß0-9\s\-.,?!/’'"()…]+?)\s*\[([\u0600-\u06FFa-zA-ZäöüÄÖÜß\s:!؟،.\-_…]+)\]\s*$/u
+  );
+  if (matchPhoneticOnly) {
+    return {
+      german: matchPhoneticOnly[1].trim(),
+      phonetic: stripBrackets(matchPhoneticOnly[2]),
+      translation: "",
+    };
+  }
+
+  // 3. Check for German : / - / – / — Arabic Translation
+  const matchTransWithSeparator = clean.match(
+    /^([A-Za-zäöüÄÖÜß0-9\s\-.,?!/’'"()…]+?)\s*[:\-–—]\s*([\u0600-\u06FF].+)$/u
+  );
+  if (matchTransWithSeparator) {
+    return {
+      german: matchTransWithSeparator[1].trim(),
+      phonetic: "",
+      translation: matchTransWithSeparator[2].trim(),
+    };
+  }
+
+  // 4. Check for German (Arabic Translation)
+  const matchTransParen = clean.match(
+    /^([A-Za-zäöüÄÖÜß0-9\s\-.,?!/’'"()…]+?)\s*\(([\u0600-\u06FF].+?)\)\s*$/u
+  );
+  if (matchTransParen) {
+    return {
+      german: matchTransParen[1].trim(),
+      phonetic: "",
+      translation: matchTransParen[2].trim(),
+    };
+  }
+
+  // 5. Check for German followed directly by Arabic translation
+  const matchGermanArabic = clean.match(
+    /^([A-Za-zäöüÄÖÜß0-9\s\-.,?!/’'"()…]+?)\s+([\u0600-\u06FF].+)$/u
+  );
+  if (matchGermanArabic) {
+    return {
+      german: matchGermanArabic[1].trim(),
+      phonetic: "",
+      translation: matchGermanArabic[2].trim(),
+    };
+  }
+
+  // 6. If content starts with Arabic (even with embedded example German words like "Vater" or "(Begrüßung)"),
+  // it is NOT a German spoken utterance.
+  if (
+    /^[\s"„"«»'()\[\]]*[\u0600-\u06FF]/u.test(clean) ||
+    (!/[A-Za-zäöüÄÖÜß]/.test(clean) && /[\u0600-\u06FF]/.test(clean))
+  ) {
+    const phoneticMatch = clean.match(/\[([\u0600-\u06FFa-zA-ZäöüÄÖÜß\s:!؟،.\-_…]+)\]/u);
+    if (phoneticMatch) {
+      const ph = stripBrackets(phoneticMatch[1]);
+      const tr = clean
+        .replace(/\[[\u0600-\u06FFa-zA-ZäöüÄÖÜß\s:!؟،.\-_…]+\]/u, "")
+        .replace(/^[:\-–—\s]+/, "")
+        .trim();
+      return {
+        german: "",
+        phonetic: ph,
+        translation: tr,
+      };
+    }
+    return {
+      german: "",
+      phonetic: "",
+      translation: clean,
+    };
+  }
+
+  // Fallback: only treat as German text if it actually starts with a German/Latin character
+  if (!/^[\s"„"«»'¡¿]*[A-Za-zäöüÄÖÜß]/.test(clean)) {
+    return {
+      german: "",
+      phonetic: "",
+      translation: clean,
+    };
+  }
+
+  return {
+    german: clean,
+    phonetic: "",
+    translation: "",
+  };
+}
+
+/**
+ * Validates that a speaker label is a genuine short dialogue speaker name/role,
+ * rejecting Arabic metadata prefixes, pronunciation rules, and long descriptive phrases.
+ */
+export function isValidDialogueSpeaker(speaker: string): boolean {
+  const spk = speaker.trim();
+  if (!spk || /^\d+$/.test(spk)) return false;
+  if (RESERVED_SPEAKER_KEYWORD_REGEX.test(spk)) return false;
+
+  const hasArabic = /[\u0600-\u06FF]/.test(spk);
+  const words = spk.split(/\s+/).filter(Boolean);
+
+  // Descriptive headings like "حرف (R) في نهاية الكلمة" or "الأحرف الصوتية (Vokale)" contain parentheses
+  if (/[()]/.test(spk) && hasArabic) return false;
+
+  if (hasArabic) {
+    if (spk.length > 22 || words.length > 2) return false;
+  } else {
+    if (spk.length > 28 || words.length > 3) return false;
+  }
+
+  return true;
+}
+
+/**
+ * Checks whether the utterance after ":" actually starts with German/Latin dialogue text
+ * (not an Arabic explanation, metadata value, or URL).
+ */
+export function isGermanDialogueUtterance(contentAfterSpeaker: string): boolean {
+  const trimmed = contentAfterSpeaker.trim();
+  if (!trimmed) return false;
+  if (/^(?:https?:\/\/|www\.|cefr\b)/i.test(trimmed)) return false;
+
+  const strippedLead = trimmed.replace(/^[\s"„"«»'¡¿🗣️💬]+/, "");
+  if (!/^[A-Za-zäöüÄÖÜß]/.test(strippedLead)) return false;
+
+  const parsed = parseDialogueLineContent(trimmed);
+  return Boolean(parsed.german && /[A-Za-zäöüÄÖÜß]/.test(parsed.german));
+}
+
+/**
+ * Parses raw text into one or more DialogueTurns.
+ * Correctly sanitizes leading punctuation, splits multiple turns in a single block,
+ * attaches Arabic translations to preceding German speaker turns, and extracts unified cards.
+ */
+export function parseDialogues(rawText: string): DialogueTurnData[] | null {
+  const lines = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (lines.length === 0) return null;
+
+  const hasDialogueIndicator = lines.some((line) => {
+    const sanitized = sanitizeSpeakerLine(line);
+    const match = sanitized.match(DIALOGUE_SPEAKER_LINE_REGEX);
+    if (!match) return false;
+    const spk = match[1].trim();
+    if (!isValidDialogueSpeaker(spk)) return false;
+    const content = match[2].trim();
+    return isGermanDialogueUtterance(content);
+  });
+
+  if (!hasDialogueIndicator) return null;
+
+  const turns: DialogueTurnData[] = [];
+  let currentTurn: Partial<DialogueTurnData> | null = null;
+
+  for (const line of lines) {
+    const sanitized = sanitizeSpeakerLine(line);
+
+    if (
+      sanitized.startsWith("النطق:") ||
+      sanitized.startsWith("🗣️") ||
+      (/^\[[\u0600-\u06FFa-zA-ZäöüÄÖÜß\s:!؟،.\-_…]+\]$/u.test(sanitized) && currentTurn)
+    ) {
+      const rawPhonetic = sanitized.replace(/^(النطق:|🗣️)\s*/, "");
+      const cleanPhonetic = stripBrackets(rawPhonetic);
+      if (currentTurn) {
+        currentTurn.phonetic = cleanPhonetic;
+      }
+      continue;
+    }
+
+    if (sanitized.startsWith("الترجمة:") || sanitized.startsWith("💬")) {
+      const rawTranslation = sanitized.replace(/^(الترجمة:|💬)\s*/, "").trim();
+      if (currentTurn) {
+        currentTurn.translation = rawTranslation;
+      }
+      continue;
+    }
+
+    if (
+      sanitized.startsWith("ملاحظة:") ||
+      sanitized.startsWith("قاعدة:") ||
+      sanitized.startsWith("تنبيه:") ||
+      sanitized.startsWith("مثال:") ||
+      sanitized.startsWith("Beispiel:")
+    ) {
+      continue;
+    }
+
+    const speakerMatch = sanitized.match(DIALOGUE_SPEAKER_LINE_REGEX);
+
+    if (speakerMatch) {
+      const spk = speakerMatch[1].trim();
+      const contentAfterSpeaker = speakerMatch[2].trim();
+
+      if (isValidDialogueSpeaker(spk)) {
+        const parsedContent = parseDialogueLineContent(contentAfterSpeaker);
+
+        const isPureArabicContent =
+          !/[A-Za-zäöüÄÖÜß]/.test(contentAfterSpeaker) &&
+          /[\u0600-\u06FF]/.test(contentAfterSpeaker);
+
+        if (isPureArabicContent) {
+          if (currentTurn && currentTurn.german) {
+            currentTurn.translation = parsedContent.translation || contentAfterSpeaker;
+            if (parsedContent.phonetic && !currentTurn.phonetic) {
+              currentTurn.phonetic = parsedContent.phonetic;
+            }
+            continue;
+          }
+        }
+
+        if (isGermanDialogueUtterance(contentAfterSpeaker) && parsedContent.german) {
+          if (currentTurn && currentTurn.german && /[A-Za-zäöüÄÖÜß]/.test(currentTurn.german)) {
+            turns.push({
+              speaker: currentTurn.speaker || "Speaker",
+              german: currentTurn.german,
+              phonetic: currentTurn.phonetic || "",
+              translation: currentTurn.translation || "",
+            });
+          }
+
+          currentTurn = {
+            speaker: spk,
+            german: parsedContent.german,
+            phonetic: parsedContent.phonetic,
+            translation: parsedContent.translation,
+          };
+          continue;
+        }
+
+        if (currentTurn && currentTurn.german && parsedContent.translation) {
+          currentTurn.translation = parsedContent.translation;
+          if (parsedContent.phonetic && !currentTurn.phonetic) {
+            currentTurn.phonetic = parsedContent.phonetic;
+          }
+          continue;
+        }
+      }
+    }
+
+    if (currentTurn && currentTurn.german && !currentTurn.translation && /^[\u0600-\u06FF]/.test(sanitized)) {
+      currentTurn.translation = sanitized;
+      continue;
+    }
+  }
+
+  if (currentTurn && currentTurn.german && /[A-Za-zäöüÄÖÜß]/.test(currentTurn.german)) {
+    turns.push({
+      speaker: currentTurn.speaker || "Speaker",
+      german: currentTurn.german,
+      phonetic: currentTurn.phonetic || "",
+      translation: currentTurn.translation || "",
+    });
+  }
+
+  const validTurns = turns.filter(
+    (t) => Boolean(t.german) && /[A-Za-zäöüÄÖÜß]/.test(t.german)
+  );
+
+  return validTurns.length > 0 ? validTurns : null;
 }
 
 

@@ -18,6 +18,7 @@ import {
   resolveLessonImage,
   getArticlesOnlyPrismaFilter,
   getCourseLessonsPrismaFilter,
+  formatBidiInlineText,
 } from "@/lib/courseUtils";
 import { localizeBlogPost } from "@/lib/blogLocalization";
 
@@ -511,10 +512,10 @@ export default async function BlogPage({
                   <span>{ui.courseHubBadge}</span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                  {ui.courseHubTitle}
+                  {formatBidiInlineText(ui.courseHubTitle, isAr)}
                 </h2>
                 <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
-                  {ui.courseHubDesc}
+                  {formatBidiInlineText(ui.courseHubDesc, isAr)}
                 </p>
                 <div className="flex flex-wrap items-center gap-3 pt-1 text-xs font-semibold text-blue-300">
                   <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600/20 border border-blue-500/30">

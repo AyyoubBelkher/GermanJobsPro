@@ -310,26 +310,27 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
     <div className="space-y-6">
       {/* Top Action Bar */}
       <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 sm:p-6 backdrop-blur-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <Link
             href={`/${locale}/dashboard/cv`}
-            className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+            className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors shrink-0"
           >
             {isAr ? "→" : "←"}
           </Link>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 min-w-0">
               <input
                 type="text"
+                dir="auto"
                 value={cv.title}
                 onChange={(e) => {
                   setCv({ ...cv, title: e.target.value });
                   markUnsaved();
                 }}
-                className="bg-transparent text-white font-extrabold text-lg sm:text-xl border-b border-transparent hover:border-slate-700 focus:border-blue-500 focus:outline-hidden px-1"
+                className="bg-transparent text-white font-extrabold text-lg sm:text-xl border-b border-transparent hover:border-slate-700 focus:border-blue-500 focus:outline-hidden px-1 min-w-0 flex-1 w-full [unicode-bidi:isolate]"
               />
               <span
-                className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                className={`px-2.5 py-0.5 rounded-full text-xs font-bold shrink-0 ${
                   cv.isDraft
                     ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                     : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
@@ -491,6 +492,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
               </label>
               <input
                 type="text"
+                dir="auto"
                 value={cv.personalInfo?.fullName || ""}
                 onChange={(e) => {
                   setCv({
@@ -532,6 +534,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
               </label>
               <input
                 type="text"
+                dir="auto"
                 value={cv.personalInfo?.targetJobTitle || ""}
                 onChange={(e) => {
                   setCv({
@@ -573,6 +576,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
               </label>
               <input
                 type="text"
+                dir="auto"
                 value={cv.personalInfo?.address || ""}
                 onChange={(e) => {
                   setCv({
@@ -593,6 +597,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
               </label>
               <input
                 type="date"
+                dir="ltr"
                 value={formatDateInput(cv.personalInfo?.birthDate)}
                 onChange={(e) => {
                   setCv({
@@ -601,7 +606,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                   });
                   markUnsaved();
                 }}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden [color-scheme:dark]"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-blue-500 focus:outline-hidden [color-scheme:dark] text-left"
               />
             </div>
 
@@ -612,6 +617,7 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
               </label>
               <input
                 type="text"
+                dir="auto"
                 value={cv.personalInfo?.birthPlace || ""}
                 onChange={(e) => {
                   setCv({
