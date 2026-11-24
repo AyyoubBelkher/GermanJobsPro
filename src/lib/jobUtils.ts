@@ -672,6 +672,66 @@ export function deduplicateJobs<T extends { title: string; company: string }>(jo
   return result;
 }
 
+export interface PaginatedJobsResult<T> {
+  jobs: T[];
+  total: number;
+  page: number;
+  totalPages: number;
+  limit: number;
+}
+
+/**
+ * Filters excluded jobs, optionally sanitizes them, deduplicates, and computes
+ * accurate post-filter/post-dedup `total`, `totalPages`, and page slice.
+ */
+export function filterDeduplicateAndPaginateJobs<
+  T extends {
+    title: string;
+    company: string;
+    applyUrl?: string | null;
+    sourceUrl?: string | null;
+    city?: string | null;
+    location?: string | null;
+    description?: string | null;
+    descriptionRaw?: string | null;
+  }
+>(
+  rawJobs: T[],
+  options: {
+    page?: number;
+    limit?: number;
+    sanitize?: (job: T) => T;
+  } = {}
+): PaginatedJobsResult<T> {
+  const safeLimit = Math.min(
+    50,
+    Math.max(1, Math.floor(Number.isFinite(options.limit) ? (options.limit as number) : 15))
+  );
+  const safePage = Math.max(
+    1,
+    Math.floor(Number.isFinite(options.page) ? (options.page as number) : 1)
+  );
+
+  const visibleJobs = rawJobs.filter((job) => !isExcludedJob(job));
+  const sanitizedJobs = options.sanitize
+    ? visibleJobs.map((job) => options.sanitize!(job))
+    : visibleJobs;
+  const dedupedJobs = deduplicateJobs(sanitizedJobs);
+
+  const total = dedupedJobs.length;
+  const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+  const start = (safePage - 1) * safeLimit;
+  const jobs = dedupedJobs.slice(start, start + safeLimit);
+
+  return {
+    jobs,
+    total,
+    page: safePage,
+    totalPages,
+    limit: safeLimit,
+  };
+}
+
 export const GENERIC_HR_PREFIXES = [
   "jobs@",
   "hr@",

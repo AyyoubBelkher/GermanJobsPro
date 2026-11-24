@@ -3,7 +3,13 @@ import { prisma, withDbRetry } from "@/lib/prisma";
 import { getCityVariants } from "@/lib/cityAliases";
 import { handleJobIngestion } from "@/lib/jobIngestion";
 import { sanitizeJobPayload } from "@/lib/jobSanitizer";
-import { LEGACY_NEWS_OUTLETS, NON_GERMANY_LOCATIONS, isExcludedJob, deduplicateJobs } from "@/lib/jobUtils";
+import {
+  LEGACY_NEWS_OUTLETS,
+  NON_GERMANY_LOCATIONS,
+  filterDeduplicateAndPaginateJobs,
+} from "@/lib/jobUtils";
+
+const MAX_JOBS_FETCH = 500;
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,9 +21,10 @@ export async function GET(request: NextRequest) {
     const city = searchParams.get("city")?.trim() || "";
     const directEmail = searchParams.get("directEmail") === "true";
 
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "15", 10)));
-    const skip = (page - 1) * limit;
+    const parsedPage = parseInt(searchParams.get("page") || "1", 10);
+    const page = Math.max(1, Number.isFinite(parsedPage) ? parsedPage : 1);
+    const parsedLimit = parseInt(searchParams.get("limit") || "15", 10);
+    const limit = Math.min(50, Math.max(1, Number.isFinite(parsedLimit) ? parsedLimit : 15));
 
     // Build filter conditions
     const whereConditions: Array<Record<string, unknown>> = [];
@@ -111,33 +118,46 @@ export async function GET(request: NextRequest) {
 
     const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
 
-    const [total, jobs] = await withDbRetry(() =>
-      Promise.all([
-        prisma.job.count({ where }),
-        prisma.job.findMany({
-          where,
-          orderBy: { publishedAt: "desc" },
-          skip,
-          take: limit,
-        }),
-      ])
+    const rawJobs = await withDbRetry(() =>
+      prisma.job.findMany({
+        where,
+        select: {
+          id: true,
+          title: true,
+          company: true,
+          city: true,
+          category: true,
+          jobType: true,
+          languageReq: true,
+          salary: true,
+          applyUrl: true,
+          contactEmail: true,
+          requirements: true,
+          descriptionRaw: true,
+          publishedAt: true,
+          expiresAt: true,
+          status: true,
+          isVerified: true,
+        },
+        orderBy: { publishedAt: "desc" },
+        take: MAX_JOBS_FETCH,
+      })
     );
 
-    // Filter out excluded jobs (legacy news & non-Germany), sanitize descriptions, and deduplicate
-    const filteredJobs = deduplicateJobs(
-      jobs.filter((j) => !isExcludedJob(j)).map((j) => sanitizeJobPayload(j))
-    );
-
-    const totalPages = Math.ceil(total / limit) || 1;
+    const paginated = filterDeduplicateAndPaginateJobs(rawJobs, {
+      page,
+      limit,
+      sanitize: sanitizeJobPayload,
+    });
 
     return NextResponse.json(
       {
         success: true,
-        jobs: filteredJobs,
-        total,
-        page,
-        totalPages,
-        limit,
+        jobs: paginated.jobs,
+        total: paginated.total,
+        page: paginated.page,
+        totalPages: paginated.totalPages,
+        limit: paginated.limit,
       },
       { status: 200 }
     );

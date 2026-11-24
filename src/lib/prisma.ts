@@ -2,6 +2,9 @@ import "dotenv/config";
 import { Pool as PgPool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
+import { buildPgSslConfig, normalizeConnectionString } from "./prisma-ssl";
+
+export { buildPgSslConfig, normalizeConnectionString };
 
 export type ExtendedPrismaClient = PrismaClient;
 
@@ -9,25 +12,6 @@ const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
   pgPool?: PgPool;
 };
-
-/**
- * Normalizes PostgreSQL connection string by adding uselibpqcompat=true
- * when sslmode is 'require', 'prefer', or 'verify-ca' to eliminate Node 22 / pg SSL warnings.
- */
-export function normalizeConnectionString(rawUrl: string): string {
-  try {
-    const parsed = new URL(rawUrl);
-    const sslmode = parsed.searchParams.get("sslmode");
-    if (sslmode && ["require", "prefer", "verify-ca"].includes(sslmode.toLowerCase())) {
-      if (!parsed.searchParams.has("uselibpqcompat")) {
-        parsed.searchParams.set("uselibpqcompat", "true");
-      }
-    }
-    return parsed.toString();
-  } catch {
-    return rawUrl;
-  }
-}
 
 const TRANSIENT_DB_ERROR_PATTERNS = [
   "can't reach database server",
@@ -96,9 +80,7 @@ function getPrismaClient(): PrismaClient {
   if (!pool) {
     pool = new PgPool({
       connectionString: normalizeConnectionString(connectionString),
-      ssl: {
-        rejectUnauthorized: false,
-      },
+      ssl: buildPgSslConfig(connectionString),
       max: 10,
       connectionTimeoutMillis: 20000,
       idleTimeoutMillis: 15000,
