@@ -299,24 +299,39 @@ export async function POST(request: NextRequest) {
       } else {
         // Handle successful purchase: activate PRO PASS with detected duration (30 or 90 days)
         if (user) {
+          const now = Date.now();
+          // Check if user currently has an active PRO plan
+          const isCurrentlyActivePro =
+            user.plan === "PRO" &&
+            user.planExpiresAt !== null &&
+            new Date(user.planExpiresAt).getTime() > now;
+
           // If user currently has an active plan that hasn't expired yet, extend it
           const currentExpiryTime =
-            user.planExpiresAt && new Date(user.planExpiresAt).getTime() > Date.now()
+            user.planExpiresAt && new Date(user.planExpiresAt).getTime() > now
               ? new Date(user.planExpiresAt).getTime()
-              : Date.now();
+              : now;
 
           const planExpiresAt = new Date(
             currentExpiryTime + durationInDays * 24 * 60 * 60 * 1000
           );
 
           const grantedPlan = isNinetyDays ? "PRO" : "SPRINT";
+          // Preserve active PRO plan - never downgrade to SPRINT on purchasing a 30-day pass
+          const finalPlan = isCurrentlyActivePro && grantedPlan === "SPRINT" ? "PRO" : grantedPlan;
+          const finalSubscriptionPlan =
+            isCurrentlyActivePro && grantedPlan === "SPRINT"
+              ? (user.subscriptionPlan || "pro_90d")
+              : isNinetyDays
+              ? "pro_90d"
+              : "sprint_30d";
 
           await tx.user.update({
             where: { id: user.id },
             data: {
-              plan: grantedPlan,
+              plan: finalPlan,
               planExpiresAt,
-              subscriptionPlan: isNinetyDays ? "pro_90d" : "sprint_30d",
+              subscriptionPlan: finalSubscriptionPlan,
               subscriptionStatus: "active",
               subscriptionExpiresAt: planExpiresAt,
               aiCredits: { increment: isNinetyDays ? 100 : 50 },
@@ -328,7 +343,7 @@ export async function POST(request: NextRequest) {
           });
 
           console.log(
-            `[Gumroad Webhook]: Upgraded user ${user.email} (ID: ${user.id}) to ${grantedPlan} (${durationInDays} days, tier: ${
+            `[Gumroad Webhook]: Upgraded user ${user.email} (ID: ${user.id}) to ${finalPlan} (${durationInDays} days, tier: ${
               isNinetyDays ? "PRO Job Pass (90d)" : "Quick Sprint (30d)"
             }) until ${planExpiresAt.toISOString()}`
           );

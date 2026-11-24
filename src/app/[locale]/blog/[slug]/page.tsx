@@ -570,7 +570,7 @@ export default async function SinglePostPage({
 
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd).replace(/</g, "\\u003c") }}
       />
       {/* Invisible Admin Controls - Rendered ONLY if admin_session cookie is active */}
       {isAdmin && <AdminBar post={post} locale={locale} />}

@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "JITI_JSX=1 node --import jiti/register --test test/*.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.18.0",

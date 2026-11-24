@@ -3,7 +3,12 @@ import { prisma } from "../src/lib/prisma";
 import { hashPassword } from "../src/lib/user-session";
 
 async function main() {
-  const adminEmail = (process.env.ADMIN_EMAIL || "ayyoubbelkher1@gmail.com").trim().toLowerCase();
+  const adminEmail = (
+    process.env.ADMIN_EMAIL ||
+    process.env.NEXT_PUBLIC_IMPRESSUM_EMAIL ||
+    "admin@germanjobspro.com"
+  ).trim().toLowerCase();
+  const adminName = process.env.ADMIN_NAME || "Administrator";
   const adminPassword = process.env.ADMIN_PASSWORD;
 
   if (!adminPassword) {
@@ -18,14 +23,14 @@ async function main() {
     where: { email: adminEmail },
     create: {
       email: adminEmail,
-      name: "أيوب بلخير",
+      name: adminName,
       passwordHash: hashedPassword,
       plan: "PRO",
       emailVerified: true,
       aiCredits: 100,
     },
     update: {
-      name: "أيوب بلخير",
+      name: adminName,
       passwordHash: hashedPassword,
       plan: "PRO",
       emailVerified: true,

@@ -458,7 +458,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: unknown) {
     if (creditDeducted && userId) {
-      await refundAiCredit(userId).catch(() => {});
+      await refundAiCredit(userId, "DOSSIER_COMPILE").catch(() => {});
     }
     console.error("[Dossier Compile Error]:", error instanceof Error ? error.message : error);
     return NextResponse.json(

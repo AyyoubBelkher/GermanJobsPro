@@ -5,6 +5,7 @@ import { Metadata } from "next";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
 import LandingFaqAccordion from "@/components/landing/LandingFaqAccordion";
+import GuestCvPreview from "@/components/landing/GuestCvPreview";
 import { getUserSession } from "@/lib/user-session";
 import { getLandingContent } from "@/lib/i18n/landing-content";
 import { getDictionary, isValidLocale, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
@@ -403,6 +404,13 @@ export default async function LandingPage({
         </section>
 
         {/* ========================================================= */}
+        {/* 2.5 INTERACTIVE DIN 5008 GUEST CV PREVIEW (CONVERSION)     */}
+        {/* ========================================================= */}
+        <section className="mt-14 sm:mt-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
+          <GuestCvPreview locale={locale} />
+        </section>
+
+        {/* ========================================================= */}
         {/* 3. "HOW IT WORKS" & BOTTOM BERLIN SKYLINE SILHOUETTE      */}
         {/* ========================================================= */}
         <section className="mt-16 sm:mt-24 pt-12 pb-0 bg-slate-50 relative overflow-hidden">
@@ -600,7 +608,7 @@ export default async function LandingPage({
                         text: item.answer,
                       },
                     })),
-                  }),
+                  }).replace(/</g, "\\u003c"),
                 }}
               />
             </div>

@@ -40,19 +40,20 @@ export async function POST(request: NextRequest) {
       timingSafeCompare(password, adminPassword)
     ) {
       if (!user || !user.passwordHash) {
+        const adminName = process.env.ADMIN_NAME?.trim() || "Admin";
         const hashedPassword = await hashPassword(adminPassword);
         user = await prisma.user.upsert({
           where: { email: adminEmail },
           create: {
             email: adminEmail,
-            name: "أيوب بلخير",
+            name: adminName,
             passwordHash: hashedPassword,
             plan: "PRO",
             emailVerified: true,
             aiCredits: 100,
           },
           update: {
-            name: user?.name || "أيوب بلخير",
+            name: user?.name || adminName,
             passwordHash: hashedPassword,
             plan: "PRO",
             emailVerified: true,

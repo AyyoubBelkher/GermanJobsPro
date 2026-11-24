@@ -134,6 +134,12 @@ export const cvCreateSchema = z.object({
   title: z.string().min(1, "Title is required").max(150).optional().default("Lebenslauf"),
   language: z.string().min(2).max(10).optional().default("de"),
   isDraft: z.boolean().optional().default(true),
+  fullName: z.string().max(150).optional(),
+  targetJobTitle: z.string().max(150).optional(),
+  location: z.string().max(150).optional(),
+  currentRole: z.string().max(150).optional(),
+  keyBullet: z.string().max(3000).optional(),
+  languageLevel: z.string().max(100).optional(),
 });
 
 export type CvPersonalInfoInput = z.infer<typeof cvPersonalInfoSchema>;

@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { parseGuestCvDraft, GUEST_CV_DRAFT_KEY, GuestCvDraft } from "@/lib/guest-cv-draft";
 
 interface CvNewClientProps {
   locale: string;
@@ -14,9 +15,37 @@ export default function CvNewClient({ locale }: CvNewClientProps) {
   const [language, setLanguage] = useState("de");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [guestDraft, setGuestDraft] = useState<GuestCvDraft | null>(null);
 
   const isAr = locale === "ar";
   const isDe = locale === "de";
+  const isFr = locale === "fr";
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(GUEST_CV_DRAFT_KEY);
+      if (raw) {
+        const parsed = parseGuestCvDraft(raw);
+        if (parsed) {
+          setGuestDraft(parsed);
+          if (parsed.targetJobTitle) {
+            setTitle(`Lebenslauf - ${parsed.targetJobTitle}`);
+          } else if (parsed.fullName) {
+            setTitle(`Lebenslauf - ${parsed.fullName}`);
+          }
+          if (parsed.language && ["de", "en", "ar", "fr"].includes(parsed.language)) {
+            setLanguage(parsed.language);
+          }
+        }
+        sessionStorage.removeItem(GUEST_CV_DRAFT_KEY);
+      }
+    } catch (e) {
+      console.warn("[GuestCvDraft]: Failed to load draft from sessionStorage", e);
+      try {
+        sessionStorage.removeItem(GUEST_CV_DRAFT_KEY);
+      } catch {}
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +62,16 @@ export default function CvNewClient({ locale }: CvNewClientProps) {
           title: title.trim() || "Lebenslauf",
           language,
           isDraft: true,
+          ...(guestDraft
+            ? {
+                fullName: guestDraft.fullName,
+                targetJobTitle: guestDraft.targetJobTitle,
+                location: guestDraft.location,
+                currentRole: guestDraft.currentRole,
+                keyBullet: guestDraft.keyBullet,
+                languageLevel: guestDraft.languageLevel,
+              }
+            : {}),
         }),
       });
 
@@ -67,6 +106,32 @@ export default function CvNewClient({ locale }: CvNewClientProps) {
               : "Choose title and language to start building your DIN 5008 German resume."}
           </p>
         </div>
+
+        {guestDraft && (
+          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs sm:text-sm font-medium flex items-start gap-3">
+            <span className="text-xl">✨</span>
+            <div className="space-y-0.5">
+              <p className="font-bold text-emerald-400">
+                {isAr
+                  ? "تم استيراد مسودتك التفاعلية بنجاح!"
+                  : isDe
+                  ? "Ihr Live-Entwurf wurde erfolgreich geladen!"
+                  : isFr
+                  ? "Votre brouillon DIN 5008 a été chargé avec succès !"
+                  : "Your live preview draft was pre-loaded successfully!"}
+              </p>
+              <p className="text-emerald-300/90 text-xs">
+                {guestDraft.targetJobTitle ? `${guestDraft.targetJobTitle} • ` : ""}
+                {guestDraft.fullName ? `${guestDraft.fullName} • ` : ""}
+                {isAr
+                  ? "سيتم إنشاء الأقسام الأولية ومستويات اللغة تلقائياً وفقاً لمعيار DIN 5008."
+                  : isDe
+                  ? "Grunddaten und Sprachniveau werden automatisch nach DIN 5008 übernommen."
+                  : "Initial roles and language levels will be pre-populated under DIN 5008 standards."}
+              </p>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-medium">

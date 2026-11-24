@@ -61,10 +61,10 @@ export default async function ImpressumPage({
   const authResult = await getUserSession();
   const user = authResult ? authResult.user : null;
 
-  const companyName = process.env.NEXT_PUBLIC_IMPRESSUM_NAME || "GermanJobsPro";
-  const operatorName = process.env.NEXT_PUBLIC_IMPRESSUM_OPERATOR || "GermanJobsPro Platform Operations";
-  const address = process.env.NEXT_PUBLIC_IMPRESSUM_ADDRESS || "";
-  const email = process.env.NEXT_PUBLIC_IMPRESSUM_EMAIL || "support@germanjobspro.com";
+  const companyName = process.env.IMPRESSUM_NAME || process.env.NEXT_PUBLIC_IMPRESSUM_NAME || "GermanJobsPro";
+  const operatorName = process.env.IMPRESSUM_OPERATOR || process.env.NEXT_PUBLIC_IMPRESSUM_OPERATOR || "GermanJobsPro Platform Operations";
+  const address = process.env.IMPRESSUM_ADDRESS || process.env.NEXT_PUBLIC_IMPRESSUM_ADDRESS || "";
+  const email = process.env.IMPRESSUM_EMAIL || process.env.NEXT_PUBLIC_IMPRESSUM_EMAIL || "support@germanjobspro.com";
 
   return (
     <div

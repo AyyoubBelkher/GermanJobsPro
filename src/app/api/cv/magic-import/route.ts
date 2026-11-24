@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
         locale,
       });
     } catch (aiErr) {
-      await refundAiCredit(authResult.user.id);
+      await refundAiCredit(authResult.user.id, "CV_MAGIC_IMPORT");
       console.error("[Magic Import AI Generation Error]:", aiErr);
       return NextResponse.json(
         {
@@ -305,7 +305,7 @@ export async function POST(request: NextRequest) {
         { status: 201 }
       );
     } catch (dbErr) {
-      await refundAiCredit(authResult.user.id);
+      await refundAiCredit(authResult.user.id, "CV_MAGIC_IMPORT");
       console.error("[Magic Import DB Error]:", dbErr);
       return NextResponse.json(
         {

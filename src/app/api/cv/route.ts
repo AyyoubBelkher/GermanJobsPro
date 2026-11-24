@@ -85,7 +85,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { title, language, isDraft } = parseResult.data;
+    const {
+      title,
+      language,
+      isDraft,
+      fullName,
+      targetJobTitle,
+      location,
+      currentRole,
+      keyBullet,
+      languageLevel,
+    } = parseResult.data;
+
+    const now = new Date();
+    const initialExperiences = currentRole
+      ? [
+          {
+            position: currentRole,
+            company: "Aktuelle Position",
+            city: location || null,
+            startDate: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)),
+            isCurrent: true,
+            description: keyBullet || null,
+            order: 0,
+          },
+        ]
+      : undefined;
+
+    const initialLanguages = languageLevel
+      ? [
+          {
+            language: "Deutsch",
+            proficiency: languageLevel,
+            order: 0,
+          },
+        ]
+      : undefined;
 
     const newCv = await prisma.cv.create({
       data: {
@@ -95,10 +130,14 @@ export async function POST(request: NextRequest) {
         isDraft: isDraft !== undefined ? isDraft : true,
         personalInfo: {
           create: {
-            fullName: authResult.user.name || "",
+            fullName: fullName || authResult.user.name || "",
             email: authResult.user.email,
+            targetJobTitle: targetJobTitle || null,
+            address: location || null,
           },
         },
+        experiences: initialExperiences ? { create: initialExperiences } : undefined,
+        languages: initialLanguages ? { create: initialLanguages } : undefined,
       },
       include: {
         personalInfo: true,

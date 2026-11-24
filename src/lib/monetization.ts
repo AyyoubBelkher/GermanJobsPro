@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from "./prisma";
 
 type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
@@ -54,14 +54,11 @@ export function isPaidUser(user: {
 }
 
 /**
- * Calculates start of the current calendar day (00:00:00) and the reset timestamp (next 00:00:00).
+ * Calculates start of the current calendar day in UTC (00:00:00) and the reset timestamp (next 00:00:00 UTC).
  */
-export function getDailyQuotaWindow(): { startOfToday: Date; resetsAt: Date } {
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
-
-  const resetsAt = new Date();
-  resetsAt.setHours(24, 0, 0, 0);
+export function getDailyQuotaWindow(now: Date = new Date()): { startOfToday: Date; resetsAt: Date } {
+  const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+  const resetsAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0));
 
   return { startOfToday, resetsAt };
 }
@@ -80,8 +77,7 @@ export async function canUseAi(userId: string): Promise<CanUseAiResult> {
                        user.planExpiresAt && user.planExpiresAt > new Date();
 
   if (isPaidActive) {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
+    const { startOfToday, resetsAt } = getDailyQuotaWindow();
 
     const usedToday = await prisma.aiUsage.count({
       where: {
@@ -91,19 +87,15 @@ export async function canUseAi(userId: string): Promise<CanUseAiResult> {
       }
     });
 
-    const DAILY_LIMIT = 20;
-    if (usedToday >= DAILY_LIMIT) {
-      const resetsAt = new Date();
-      resetsAt.setHours(24, 0, 0, 0);
-
+    if (usedToday >= DAILY_PRO_LIMIT) {
       return {
         allowed: false,
         isPaid: true,
         usedToday,
-        dailyLimit: DAILY_LIMIT,
+        dailyLimit: DAILY_PRO_LIMIT,
         remainingToday: 0,
         requestsToday: usedToday,
-        limit: DAILY_LIMIT,
+        limit: DAILY_PRO_LIMIT,
         dailyRemaining: 0,
         resetsAt,
         reason: "DAILY_LIMIT_REACHED",
@@ -111,15 +103,15 @@ export async function canUseAi(userId: string): Promise<CanUseAiResult> {
       };
     }
 
-    const remainingToday = DAILY_LIMIT - usedToday;
+    const remainingToday = DAILY_PRO_LIMIT - usedToday;
     return {
       allowed: true,
       isPaid: true,
       usedToday,
-      dailyLimit: DAILY_LIMIT,
+      dailyLimit: DAILY_PRO_LIMIT,
       remainingToday,
       requestsToday: usedToday,
-      limit: DAILY_LIMIT,
+      limit: DAILY_PRO_LIMIT,
       dailyRemaining: remainingToday,
     };
   }
@@ -171,8 +163,7 @@ export async function consumeAiCredit(
                        user.planExpiresAt && user.planExpiresAt > new Date();
 
   if (isPaidActive) {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
+    const { startOfToday, resetsAt } = getDailyQuotaWindow();
 
     const usedToday = await prisma.aiUsage.count({
       where: {
@@ -182,21 +173,17 @@ export async function consumeAiCredit(
       }
     });
 
-    const DAILY_LIMIT = 20;
-    if (usedToday >= DAILY_LIMIT) {
-      const resetsAt = new Date();
-      resetsAt.setHours(24, 0, 0, 0);
-
+    if (usedToday >= DAILY_PRO_LIMIT) {
       return {
         success: false,
         allowed: false,
         isPro: true,
         isPaid: true,
         usedToday,
-        dailyLimit: DAILY_LIMIT,
+        dailyLimit: DAILY_PRO_LIMIT,
         remainingToday: 0,
         requestsToday: usedToday,
-        limit: DAILY_LIMIT,
+        limit: DAILY_PRO_LIMIT,
         dailyRemaining: 0,
         resetsAt,
         reason: "DAILY_LIMIT_REACHED",
@@ -205,17 +192,17 @@ export async function consumeAiCredit(
     }
 
     // For paid active users: do NOT decrement aiCredits to zero (keep it untouched)
-    const remainingToday = Math.max(0, DAILY_LIMIT - (usedToday + 1));
+    const remainingToday = Math.max(0, DAILY_PRO_LIMIT - (usedToday + 1));
     return {
       success: true,
       allowed: true,
       isPro: true,
       isPaid: true,
       usedToday: usedToday + 1,
-      dailyLimit: DAILY_LIMIT,
+      dailyLimit: DAILY_PRO_LIMIT,
       remainingToday,
       requestsToday: usedToday + 1,
-      limit: DAILY_LIMIT,
+      limit: DAILY_PRO_LIMIT,
       dailyRemaining: remainingToday,
     };
   }
@@ -260,13 +247,32 @@ export async function consumeAiCredit(
 }
 
 /**
+ * Helper to construct the query for finding the recent AiUsage record to refund.
+ * Scopes by userId, recent timestamp window, success: true, and optionally by operation.
+ */
+export function buildRefundAiCreditQuery(userId: string, action?: string, sinceDate?: Date) {
+  const twoMinutesAgo = sinceDate || new Date(Date.now() - 2 * 60 * 1000);
+  return {
+    where: {
+      userId,
+      ...(action ? { operation: action } : {}),
+      createdAt: { gte: twoMinutesAgo },
+      success: true,
+    },
+    orderBy: { createdAt: "desc" as const },
+  };
+}
+
+/**
  * Refunds 1 AI credit if downstream AI generation fails unexpectedly.
  * - For PAID users: Requests are tracked via successful AiUsage entries.
  *   Failed operations log success: false and are not counted towards the 20 daily limit.
  *   Hence, no counter is corrupted and no balance needs refunding.
+ *   When action/operation is specified, scopes to that specific operation within the last 2 minutes
+ *   to avoid marking concurrent unrelated successful operations as failed.
  * - For FREE users: Restores the single decremented static credit.
  */
-export async function refundAiCredit(userId: string): Promise<void> {
+export async function refundAiCredit(userId: string, action?: string): Promise<void> {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -284,15 +290,8 @@ export async function refundAiCredit(userId: string): Promise<void> {
     // Paid active users: if an AI call fails, mark success: false on the most recent
     // AiUsage record created for that userId within the last 2 minutes, ensuring failed AI calls
     // never count against a paid user's 20/day quota.
-    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
-    const recentUsage = await prisma.aiUsage.findFirst({
-      where: {
-        userId,
-        createdAt: { gte: twoMinutesAgo },
-        success: true,
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    const query = buildRefundAiCreditQuery(userId, action);
+    const recentUsage = await prisma.aiUsage.findFirst(query);
 
     if (recentUsage) {
       await prisma.aiUsage.update({

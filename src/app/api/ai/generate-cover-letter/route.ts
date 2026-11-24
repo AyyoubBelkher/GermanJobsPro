@@ -327,7 +327,7 @@ export async function POST(request: NextRequest) {
         { status: 200 }
       );
     } catch (aiError) {
-      await refundAiCredit(authResult.user.id);
+      await refundAiCredit(authResult.user.id, "COVER_LETTER_GEN");
       throw aiError;
     }
   } catch (error: unknown) {

@@ -1510,7 +1510,9 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                   {cv.personalInfo?.birthDate && (
                     <>
                       <span className="col-span-4 sm:col-span-3 font-semibold text-slate-500 text-left">Geburtsdatum:</span>
-                      <span className="col-span-8 sm:col-span-9 text-left">{new Date(cv.personalInfo.birthDate).toLocaleDateString("de-DE")}</span>
+                      <span className="col-span-8 sm:col-span-9 text-left" suppressHydrationWarning>
+                        {new Date(cv.personalInfo.birthDate).toLocaleDateString("de-DE", { timeZone: "UTC" })}
+                      </span>
                     </>
                   )}
                   {cv.personalInfo?.birthPlace && (
@@ -1633,8 +1635,8 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
                 <div className="space-y-2 text-left">
                   {cv.certifications.map((cert, idx) => (
                     <div key={idx} className="grid grid-cols-12 gap-4 text-xs text-left items-start">
-                      <div className="col-span-4 sm:col-span-3 text-slate-500 font-bold text-left">
-                        {cert.issueDate ? new Date(cert.issueDate).toLocaleDateString("de-DE", { month: "2-digit", year: "numeric" }) : "Zertifikat"}
+                      <div className="col-span-4 sm:col-span-3 text-slate-500 font-bold text-left" suppressHydrationWarning>
+                        {cert.issueDate ? new Date(cert.issueDate).toLocaleDateString("de-DE", { month: "2-digit", year: "numeric", timeZone: "UTC" }) : "Zertifikat"}
                       </div>
                       <div className="col-span-8 sm:col-span-9 text-left">
                         <span className="font-bold text-slate-900">{cert.name}</span>
@@ -1671,9 +1673,9 @@ export default function CvEditorClient({ initialCv, locale }: CvEditorClientProp
 
             {/* German CV Signature Line (Ort, Datum & Unterschrift) */}
             <div className="pt-8 text-xs text-slate-500 flex items-center justify-between border-t border-slate-200 text-left">
-              <div className="text-left">
+              <div className="text-left" suppressHydrationWarning>
                 {cv.personalInfo?.address ? cv.personalInfo.address.split(",")[1]?.trim() || "Deutschland" : "Deutschland"},{" "}
-                {new Date().toLocaleDateString("de-DE")}
+                {new Date().toLocaleDateString("de-DE", { timeZone: "UTC" })}
               </div>
               <div className="font-serif italic text-slate-800 text-sm text-right">
                 {cv.personalInfo?.fullName || "Max Mustermann"}

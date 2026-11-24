@@ -494,30 +494,22 @@ export function isCustomLessonImage(url?: string | null): boolean {
 }
 
 /**
- * Checks if a static lesson cover image exists on disk or in the client bundle.
- * - On server: verifies filesystem existence (public/images/lessons/german-a1-lesson-${lessonNum}.png).
- * - On client: lessons 1..17 and 19 exist (lesson 18 explicitly does NOT exist).
+ * Static set of lesson numbers that have verified static cover images in public/images/lessons/.
+ * Verified on disk: lessons 1..17 and 19 exist (lesson 18 explicitly does NOT exist).
+ */
+const STATIC_LESSON_IMAGE_NUMBERS = new Set<number>([
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19,
+]);
+
+/**
+ * Checks if a static lesson cover image exists in public/images/lessons/.
+ * Deterministic and client-safe (no runtime fs probing or eval require).
  */
 export function hasStaticLessonImage(lessonNum: number): boolean {
-  if (!lessonNum || lessonNum < 1 || lessonNum === 18) return false;
-
-  if (typeof window === "undefined") {
-    try {
-      // Dynamic eval require to prevent client bundlers from bundling 'fs' / 'path'
-      const fs = eval("require")("fs");
-      const path = eval("require")("path");
-      const filePath = path.resolve(
-        process.cwd(),
-        `public/images/lessons/german-a1-lesson-${lessonNum}.png`
-      );
-      return Boolean(fs.existsSync(filePath));
-    } catch {
-      // Server fallback if dynamic require fails
-    }
+  if (!lessonNum || typeof lessonNum !== "number" || lessonNum < 1 || lessonNum === 18) {
+    return false;
   }
-
-  // Client fallback: lessons 1..17 and 19 exist, lesson 18 does NOT
-  return (lessonNum >= 1 && lessonNum <= 17) || lessonNum === 19;
+  return STATIC_LESSON_IMAGE_NUMBERS.has(lessonNum);
 }
 
 /**

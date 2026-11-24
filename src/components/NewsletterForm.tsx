@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 
 export default function NewsletterForm({ locale: propLocale }: { locale?: string } = {}) {
@@ -199,14 +198,13 @@ export default function NewsletterForm({ locale: propLocale }: { locale?: string
 
               {/* Footer Trust Badges */}
               <p className="text-[11px] text-slate-400 pt-1 text-center font-medium">
-                مجاني 100% &nbsp;•&nbsp; 🔒 حماية لخصوصيتك &nbsp;•&nbsp; ⚡ يمكنك{" "}
-                <Link
-                  href={`/${locale}/unsubscribe`}
-                  className="underline hover:text-slate-200 transition-colors"
-                >
-                  إلغاء الاشتراك فـ أي وقت
-                </Link>{" "}
-                بنقرة واحدة
+                {locale === "de"
+                  ? "100% kostenlos • 🔒 Datenschutz garantiert • ⚡ Abmeldung jederzeit über den Link in jeder E-Mail möglich"
+                  : locale === "fr"
+                  ? "100% gratuit • 🔒 Confidentialité protégée • ⚡ Désabonnement possible à tout moment via le lien dans chaque e-mail"
+                  : locale === "en"
+                  ? "100% free • 🔒 Privacy protected • ⚡ Unsubscribe anytime via the link in any email"
+                  : "مجاني 100% • 🔒 حماية لخصوصيتك • ⚡ يمكنك إلغاء الاشتراك في أي وقت عبر الرابط في أسفل أي رسالة بريدية"}
               </p>
             </form>
           </div>
