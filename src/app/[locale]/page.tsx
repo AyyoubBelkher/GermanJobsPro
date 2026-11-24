@@ -419,9 +419,11 @@ export default async function LandingPage({
         {/* ========================================================= */}
         {/* 2.5 INTERACTIVE DIN 5008 GUEST CV PREVIEW (CONVERSION)     */}
         {/* ========================================================= */}
-        <section className="mt-14 sm:mt-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
-          <GuestCvPreview locale={locale} />
-        </section>
+        {!user && (
+          <section className="mt-14 sm:mt-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
+            <GuestCvPreview locale={locale} />
+          </section>
+        )}
 
         {/* ========================================================= */}
         {/* 3. "HOW IT WORKS" & BOTTOM BERLIN SKYLINE SILHOUETTE      */}

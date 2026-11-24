@@ -146,10 +146,10 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
     : "Save & Export PDF (Free) →";
 
   return (
-    <div className="w-full rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl p-5 sm:p-8 lg:p-10 text-white space-y-8">
+    <div className="w-full rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/60 dark:shadow-none p-5 sm:p-8 lg:p-10 text-slate-900 dark:text-white space-y-8">
       {/* Section Header */}
       <div className="text-center space-y-3 max-w-3xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-400 text-xs font-bold uppercase tracking-wider">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 dark:bg-amber-400/10 border border-amber-200 dark:border-amber-400/30 text-amber-800 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
           <span>⚡</span>
           <span>
             {isAr
@@ -162,31 +162,31 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
           </span>
         </div>
 
-        <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+        <h2 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
           {isAr ? (
             <>
               جرب بنفسك: سيرة ذاتية ألمانية طبقاً لمعيار{" "}
-              <span className="text-amber-400">DIN 5008</span> في ثوانٍ
+              <span className="text-blue-700 dark:text-amber-400">DIN 5008</span> في ثوانٍ
             </>
           ) : isDe ? (
             <>
               In wenigen Sekunden: Ihr tabellarischer Lebenslauf nach{" "}
-              <span className="text-amber-400">DIN 5008</span>
+              <span className="text-blue-700 dark:text-amber-400">DIN 5008</span>
             </>
           ) : isFr ? (
             <>
               Votre CV allemand selon la norme{" "}
-              <span className="text-amber-400">DIN 5008</span> en direct
+              <span className="text-blue-700 dark:text-amber-400">DIN 5008</span> en direct
             </>
           ) : (
             <>
               Live DIN 5008 German CV Mini-Preview:{" "}
-              <span className="text-amber-400">Try It Live</span>
+              <span className="text-blue-700 dark:text-amber-400">Try It Live</span>
             </>
           )}
         </h2>
 
-        <p className="text-slate-300 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed">
+        <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed">
           {isAr
             ? "املأ الحقول السريعة أدناه وشاهد بطاقة السيرة الذاتية تتحدث مباشرة بتنسيق التوظيف الألماني المعتمد. احفظ مسودتك بضغطة زر واحدة."
             : isDe
@@ -202,10 +202,10 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
         {/* Left Side: Quick Fields Form (dir depends on site locale) */}
         <div
           dir={dir}
-          className="lg:col-span-5 bg-slate-950/80 border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-4"
+          className="lg:col-span-5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 space-y-4"
         >
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+            <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
               {isAr
                 ? "1. البيانات السريعة"
                 : isDe
@@ -214,7 +214,7 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
                 ? "1. Champs rapides"
                 : "1. Quick Fields"}
             </span>
-            <span className="text-[11px] text-amber-400 font-semibold">
+            <span className="text-[11px] text-amber-700 dark:text-amber-400 font-semibold">
               {isAr
                 ? "تحديث حي ومباشر ⚡"
                 : isDe
@@ -227,7 +227,7 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
 
           {/* Full Name */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-200">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
               {isAr
                 ? "الاسم الكامل (Full Name)"
                 : isDe
@@ -241,13 +241,13 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Max Mustermann"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm focus:border-blue-500 focus:outline-hidden transition-colors"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 text-xs sm:text-sm focus:border-blue-500 focus:outline-hidden transition-colors"
             />
           </div>
 
           {/* Target Job Title in Germany */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-200">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
               {isAr
                 ? "المسمى الوظيفي المستهدف في ألمانيا"
                 : isDe
@@ -267,13 +267,13 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
                   ? "ex. Développeur / Infirmier"
                   : "e.g. Software Engineer / Nurse"
               }
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm focus:border-blue-500 focus:outline-hidden transition-colors"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 text-xs sm:text-sm focus:border-blue-500 focus:outline-hidden transition-colors"
             />
           </div>
 
           {/* City / Country */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-200">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
               {isAr
                 ? "المدينة والدولة الحالية"
                 : isDe
@@ -287,13 +287,13 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Berlin, Deutschland"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm focus:border-blue-500 focus:outline-hidden transition-colors"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 text-xs sm:text-sm focus:border-blue-500 focus:outline-hidden transition-colors"
             />
           </div>
 
           {/* Current / Last Role */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-200">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
               {isAr
                 ? "الوظيفة الحالية أو الأخيرة (Role)"
                 : isDe
@@ -313,13 +313,13 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
                   ? "Développeur Frontend"
                   : "Frontend Developer"
               }
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm focus:border-blue-500 focus:outline-hidden transition-colors"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 text-xs sm:text-sm focus:border-blue-500 focus:outline-hidden transition-colors"
             />
           </div>
 
           {/* Key Bullet / Achievement */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-200">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
               {isAr
                 ? "أهم مهمة أو إنجاز مهني (Key Bullet)"
                 : isDe
@@ -339,13 +339,13 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
                   ? "Développement de composants React & optimisation des performances"
                   : "Engineered React components & improved application performance"
               }
-              className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm focus:border-blue-500 focus:outline-hidden transition-colors resize-none"
+              className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 text-xs sm:text-sm focus:border-blue-500 focus:outline-hidden transition-colors resize-none"
             />
           </div>
 
           {/* German Language Level */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-200">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
               {isAr
                 ? "مستوى اللغة الألمانية (CEFR)"
                 : isDe
@@ -357,7 +357,7 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
             <select
               value={languageLevel}
               onChange={(e) => setLanguageLevel(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm focus:border-blue-500 focus:outline-hidden transition-colors cursor-pointer"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs sm:text-sm focus:border-blue-500 focus:outline-hidden transition-colors cursor-pointer"
             >
               {germanLevels.map((lvl) => (
                 <option key={lvl.value} value={lvl.value}>
@@ -367,7 +367,7 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
             </select>
           </div>
 
-          <div className="pt-2 text-[11px] text-slate-400 leading-relaxed">
+          <div className="pt-2 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
             {isAr
               ? "🔒 خصوصية 100%: تتم المعالجة بالكامل داخل متصفحك دون إرسال أي بيانات أو طلبات إلى السيرفر."
               : isDe
@@ -381,8 +381,8 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
         {/* Right Side: LIVE DIN 5008 GERMAN CV PREVIEW CARD (STRICT dir="ltr") */}
         <div className="lg:col-span-7 space-y-4">
           <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">
+              <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
               <span>
                 {isAr
                   ? "معاينة بطاقة DIN 5008 الألمانية المعتمدة"
@@ -393,7 +393,7 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
                   : "DIN 5008 Tabular CV Preview"}
               </span>
             </div>
-            <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 font-mono">
+            <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-blue-700 dark:text-blue-300 font-mono">
               {isAr
                 ? "DIN 5008 • متوافق مع ATS"
                 : isDe
@@ -407,7 +407,7 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
           {/* Authentic German CV Preview Sheet: Forced LTR for German Recruiter Standard */}
           <div
             dir="ltr"
-            className="bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200/90 p-6 sm:p-8 space-y-6 font-sans text-start selection:bg-blue-100"
+            className="bg-white text-slate-900 rounded-2xl shadow-md dark:shadow-2xl border border-slate-200 p-6 sm:p-8 space-y-6 font-sans text-start selection:bg-blue-100"
           >
             {/* CV Sheet Top Bar: Document Type & Candidate Header */}
             <div className="border-b-2 border-slate-900 pb-4 flex flex-wrap items-end justify-between gap-4">
@@ -523,9 +523,9 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
           </div>
 
           {/* Primary Call to Action Button */}
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950 via-slate-900 to-blue-950 border border-blue-500/40 shadow-xl flex flex-wrap items-center justify-between gap-4">
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-xl flex flex-wrap items-center justify-between gap-4">
             <div className="space-y-0.5">
-              <h4 className="text-xs sm:text-sm font-extrabold text-white">
+              <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
                 {isAr
                   ? "أعجبك التنسيق؟ احفظ مسودتك الآن وصدّرها مجاناً"
                   : isDe
@@ -534,7 +534,7 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
                   ? "Vous aimez la mise en page ? Enregistrez-la gratuitement"
                   : "Ready to export your DIN 5008 CV? Save it for free"}
               </h4>
-              <p className="text-[11px] text-slate-300">
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
                 {isAr
                   ? "سيتم نقل بياناتك فوراً إلى محرر السيرة الذاتية بعد التسجيل."
                   : isDe
@@ -549,7 +549,7 @@ export default function GuestCvPreview({ locale }: GuestCvPreviewProps) {
               type="button"
               onClick={handleSaveAndExport}
               disabled={isSaving}
-              className="py-3 px-6 rounded-xl bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-amber-400/20 transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50"
+              className="py-3 px-6 rounded-xl bg-[#FACC15] hover:bg-amber-300 active:scale-95 text-[#061838] font-black text-xs sm:text-sm shadow-md shadow-amber-400/20 transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50"
             >
               {isSaving ? (
                 <>
