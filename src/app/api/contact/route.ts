@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Send Alert Email to Admin via Resend
-    const adminEmail = process.env.ADMIN_EMAIL || "ayyoubbelkher1@gmail.com";
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.NEXT_PUBLIC_IMPRESSUM_EMAIL || "support@germanjobspro.com";
     const apiKey = process.env.RESEND_API_KEY;
 
     if (apiKey && apiKey.trim() !== "") {

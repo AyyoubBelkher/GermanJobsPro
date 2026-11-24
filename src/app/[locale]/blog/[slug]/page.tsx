@@ -12,6 +12,7 @@ import CommentSection, { CommentItem } from "@/components/blog/CommentSection";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
 import { verifySessionToken } from "@/lib/session";
+import { getUserSession } from "@/lib/user-session";
 import {
   isCourseLesson,
   parseLessonTitle,
@@ -555,14 +556,17 @@ export default async function SinglePostPage({
       : {}),
   };
 
+  const authResult = await getUserSession();
+  const user = authResult ? authResult.user : null;
+
   return (
     <div
       dir={dir}
-      className={`min-h-screen overflow-x-hidden bg-slate-50 text-slate-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white ${
+      className={`min-h-screen overflow-x-clip bg-slate-50 text-slate-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white ${
         isAdmin ? "pb-24" : ""
       }`}
     >
-      <Navbar locale={locale} />
+      <Navbar locale={locale} initialUser={user} />
 
       <script
         type="application/ld+json"

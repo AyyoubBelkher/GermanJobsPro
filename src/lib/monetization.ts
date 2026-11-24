@@ -284,23 +284,24 @@ export async function refundAiCredit(userId: string): Promise<void> {
     // Paid active users: if an AI call fails, mark success: false on the most recent
     // AiUsage record created for that userId within the last 2 minutes, ensuring failed AI calls
     // never count against a paid user's 20/day quota.
-    if (isPaidActive) {
-      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
-      const recentUsage = await prisma.aiUsage.findFirst({
-        where: {
-          userId,
-          createdAt: { gte: twoMinutesAgo },
-          success: true,
-        },
-        orderBy: { createdAt: "desc" },
-      });
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+    const recentUsage = await prisma.aiUsage.findFirst({
+      where: {
+        userId,
+        createdAt: { gte: twoMinutesAgo },
+        success: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
-      if (recentUsage) {
-        await prisma.aiUsage.update({
-          where: { id: recentUsage.id },
-          data: { success: false },
-        });
-      }
+    if (recentUsage) {
+      await prisma.aiUsage.update({
+        where: { id: recentUsage.id },
+        data: { success: false },
+      });
+    }
+
+    if (isPaidActive) {
       return;
     }
 
@@ -407,7 +408,17 @@ export async function deductCreditInTx(
 
   // Free or expired plan:
   const required = opts.requiredCredits ?? 1;
-  if (user.aiCredits < required) {
+  const updated = await tx.user.updateMany({
+    where: {
+      id: user.id,
+      aiCredits: { gte: required },
+    },
+    data: {
+      aiCredits: { decrement: required },
+    },
+  });
+
+  if (updated.count === 0) {
     return {
       success: false,
       allowed: false,
@@ -419,11 +430,8 @@ export async function deductCreditInTx(
     };
   }
 
-  const updatedUser = await tx.user.update({
+  const refreshedUser = await tx.user.findUnique({
     where: { id: user.id },
-    data: {
-      aiCredits: { decrement: required },
-    },
     select: { aiCredits: true },
   });
 
@@ -444,7 +452,7 @@ export async function deductCreditInTx(
     allowed: true,
     isPaid: false,
     isPro: false,
-    remainingCredits: updatedUser.aiCredits,
+    remainingCredits: refreshedUser?.aiCredits ?? 0,
   };
 }
 

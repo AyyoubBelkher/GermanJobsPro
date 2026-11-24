@@ -40,7 +40,7 @@ export default async function NewCoverLetterPage({
   const authResult = await verifyUserSession(token);
 
   if (!authResult) {
-    redirect(`/${locale}/auth/login`);
+    redirect(`/${locale}/auth/login?next=${encodeURIComponent(`/${locale}/dashboard/cover-letters/new`)}`);
   }
 
   const userCvs = await prisma.cv.findMany({

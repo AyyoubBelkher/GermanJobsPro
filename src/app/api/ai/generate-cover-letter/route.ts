@@ -9,11 +9,10 @@ import {
   CvContext,
   ExtractedApplicantInfo,
 } from "@/lib/gemini";
-import { consumeAiCredit, refundAiCredit, deductAiCreditAtomic } from "@/lib/monetization";
+import { refundAiCredit, deductAiCreditAtomic } from "@/lib/monetization";
 import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 import { extractText } from "unpdf";
 import { extractGermanJobTitle } from "@/lib/cover-letter";
-import { logAiUsage } from "@/lib/ai-telemetry";
 
 const MAX_PDF_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -303,7 +302,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const aiStartTime = performance.now();
     try {
       const cleanJobTitle = extractGermanJobTitle(jobTitle) || jobTitle;
       const generatedContent = await generateCoverLetterAI({
@@ -329,15 +327,6 @@ export async function POST(request: NextRequest) {
         { status: 200 }
       );
     } catch (aiError) {
-      const latencyMs = performance.now() - aiStartTime;
-      logAiUsage({
-        userId: authResult.user.id,
-        operation: "COVER_LETTER_GEN",
-        latencyMs,
-        success: false,
-        errorMessage: aiError instanceof Error ? aiError.message : String(aiError),
-      }).catch(() => {});
-
       await refundAiCredit(authResult.user.id);
       throw aiError;
     }

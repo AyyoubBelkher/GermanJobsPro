@@ -5,6 +5,7 @@ import BlogGrid from "@/components/ui/BlogGrid";
 import PostCard from "@/components/ui/PostCard";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
+import { getUserSession } from "@/lib/user-session";
 import BlogCategoryTabs from "@/components/blog/BlogCategoryTabs";
 import { prisma } from "@/lib/prisma";
 import {
@@ -461,9 +462,12 @@ export default async function BlogPage({
     return qs ? `/${locale}/blog?${qs}` : `/${locale}/blog`;
   };
 
+  const authResult = await getUserSession();
+  const user = authResult ? authResult.user : null;
+
   return (
     <div dir={dir} className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
-      <Navbar locale={locale} />
+      <Navbar locale={locale} initialUser={user} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full flex-1">
         {!isGermanA1Selected ? (

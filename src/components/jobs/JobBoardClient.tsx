@@ -450,6 +450,9 @@ export default function JobBoardClient({
             const { primaryTitle, latinSubtitle } = splitBilingualTitle(job.title);
             const spokenGermanTitle = latinSubtitle || extractGermanJobTitle(job.title) || job.title;
             const effectiveCategory = inferDisplayCategory(job);
+            const categoryBadgeLabel =
+              categories.find((c) => c.id.toLowerCase() === effectiveCategory.toLowerCase())?.label ||
+              effectiveCategory;
             const langBadge = inferDisplayLanguageReq(job);
 
             return (
@@ -461,7 +464,7 @@ export default function JobBoardClient({
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold">
-                        {effectiveCategory}
+                        {categoryBadgeLabel}
                       </span>
                       {hasDirectEmail ? (
                         <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-1">

@@ -2,8 +2,8 @@ import React from "react";
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import { DeckblattPage } from "./deckblatt-template";
 import { registerAmiriFont } from "./font-amiri";
-import { extractCityFromAddress } from "@/lib/location";
-import { formatDate, formatDateRange, formatFullDate } from "@/lib/cv-date-utils";
+import { extractCityFromAddress } from "../location";
+import { formatDate, formatDateRange, formatFullDate } from "../cv-date-utils";
 
 export { formatDate, formatDateRange, formatFullDate };
 

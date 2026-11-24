@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 import React from "react";
 import ReactPDF, { renderToBuffer } from "@react-pdf/renderer";
 import { getDocumentProxy } from "unpdf";
-import { CvDocument, CvPdfData, formatDate, formatDateRange } from "../src/lib/pdf/cv-template.js";
-import { DeckblattDocument, DeckblattData } from "../src/lib/pdf/deckblatt-template.js";
-import { compileBewerbungsmappe } from "../src/lib/pdf/dossier-compiler.js";
-import { extractCityFromAddress } from "../src/lib/location.js";
+import { CvDocument, CvPdfData, formatDate, formatDateRange } from "../src/lib/pdf/cv-template";
+import { DeckblattDocument, DeckblattData } from "../src/lib/pdf/deckblatt-template";
+import { compileBewerbungsmappe } from "../src/lib/pdf/dossier-compiler";
+import { extractCityFromAddress } from "../src/lib/location";
 
 async function countPages(doc: React.ReactElement<any>): Promise<number> {
   const stream = await ReactPDF.renderToStream(doc);

@@ -1,9 +1,9 @@
 import React from "react";
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
-import { extractGermanJobTitle } from "@/lib/cover-letter";
+import { extractGermanJobTitle } from "../cover-letter";
 import { containsArabic, ARABIC_REGEX } from "./font-amiri";
 
-import { extractCityFromAddress } from "@/lib/location";
+import { extractCityFromAddress } from "../location";
 
 export { extractGermanJobTitle, extractCityFromAddress };
 

@@ -45,26 +45,6 @@ export async function POST(request: NextRequest) {
 
     userId = authResult.user.id;
 
-    // PRO Plan or Credit Guardrail for 3-in-1 Bewerbungsmappe Compiler
-    const isPro = Boolean(
-      (authResult.user.plan === "PRO" || authResult.user.plan === "SPRINT") &&
-      authResult.user.planExpiresAt &&
-      new Date(authResult.user.planExpiresAt) > new Date()
-    );
-
-    if (!isPro && (authResult.user.aiCredits ?? 0) <= 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "INSUFFICIENT_CREDITS",
-          requiresPro: true,
-          outOfCredits: true,
-          message: "تجميع ملف الترشيح (Bewerbungsmappe) ميزة متقدمة تتطلب رصيداً أو ترقية إلى باقة PRO.",
-        },
-        { status: 402 }
-      );
-    }
-
     const formData = await request.formData().catch(() => null);
     if (!formData) {
       return NextResponse.json(
@@ -231,30 +211,30 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Atomically deduct 1 AI credit for non-Pro users for both saved DB CVs and uploaded PDF CVs
-    if (!isPro) {
-      const creditRes = await deductAiCreditAtomic({
-        userId: authResult.user.id,
-        operation: "DOSSIER_COMPILE",
-        requiredCredits: 1,
-      });
+    // Atomically deduct 1 AI credit or check daily PRO quota (20/day)
+    const creditRes = await deductAiCreditAtomic({
+      userId: authResult.user.id,
+      operation: "DOSSIER_COMPILE",
+      requiredCredits: 1,
+    });
 
-      if (!creditRes.success || !creditRes.allowed) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "INSUFFICIENT_CREDITS",
-            requiresPro: true,
-            outOfCredits: true,
-            message:
-              creditRes.error ||
-              "تجميع ملف الترشيح (Bewerbungsmappe) ميزة متقدمة تتطلب رصيداً أو ترقية إلى باقة PRO.",
-          },
-          { status: 402 }
-        );
-      }
-      creditDeducted = true;
+    if (!creditRes.success || !creditRes.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "INSUFFICIENT_CREDITS",
+          requiresPro: !creditRes.isPro,
+          outOfCredits: true,
+          message:
+            creditRes.error === "DAILY_LIMIT_REACHED"
+              ? "لقد وصلت إلى الحد اليومي المسموح به (20 عملية يومياً). يتجدد الرصيد غداً."
+              : (creditRes.error ||
+                "تجميع ملف الترشيح (Bewerbungsmappe) ميزة متقدمة تتطلب رصيداً أو ترقية إلى باقة PRO."),
+        },
+        { status: 402 }
+      );
     }
+    creditDeducted = true;
 
     // 3. Compile Pipeline for Direct Uploaded CV PDF
     if (cvFile && cvFileBuffer) {
@@ -467,22 +447,6 @@ export async function POST(request: NextRequest) {
     const fallbackFilename = `Bewerbungsmappe_${asciiName || "Bewerber"}.pdf`;
     const utf8Filename = `Bewerbungsmappe_${safeName}.pdf`;
     const encodedUtf8Filename = encodeURIComponent(utf8Filename);
-
-    // Telemetry: Ensure DOSSIER_COMPILE is logged for isPro users without blocking or deducting credits
-    if (isPro) {
-      try {
-        await prisma.aiUsage.create({
-          data: {
-            userId: authResult.user.id,
-            operation: "DOSSIER_COMPILE",
-            model: "dossier-compiler",
-            success: true,
-          },
-        });
-      } catch (telemetryErr) {
-        console.warn("[Dossier isPro Telemetry Warning]:", telemetryErr);
-      }
-    }
 
     return new NextResponse(compiledPdfBytes as unknown as BodyInit, {
       status: 200,

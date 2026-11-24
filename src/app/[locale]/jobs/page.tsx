@@ -4,9 +4,10 @@ import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
 import { prisma } from "@/lib/prisma";
 import { getCityVariants } from "@/lib/cityAliases";
-import { LEGACY_NEWS_OUTLETS, NON_GERMANY_LOCATIONS, isLegacyNewsJob, isExcludedJob, deduplicateJobs } from "@/lib/jobUtils";
+import { LEGACY_NEWS_OUTLETS, NON_GERMANY_LOCATIONS, isExcludedJob, deduplicateJobs } from "@/lib/jobUtils";
 import { sanitizeJobPayload } from "@/lib/jobSanitizer";
 import JobBoardClient, { JobItem } from "@/components/jobs/JobBoardClient";
+import { getUserSession } from "@/lib/user-session";
 
 export const revalidate = 60;
 
@@ -157,28 +158,6 @@ export default async function JobsPage({
     ]);
     total = fetchedTotal;
     rawJobs = fetchedJobs;
-
-    // Automatically trigger a background cleanup for legacy news rows and non-German listings
-    prisma.job
-      .deleteMany({
-        where: {
-          OR: [
-            { applyUrl: { contains: "news.google" } },
-            ...LEGACY_NEWS_OUTLETS.map((outlet) => ({
-              company: { contains: outlet, mode: "insensitive" as const },
-            })),
-            ...NON_GERMANY_LOCATIONS.map((loc) => ({
-              city: { contains: loc, mode: "insensitive" as const },
-            })),
-            ...NON_GERMANY_LOCATIONS.map((loc) => ({
-              title: { contains: loc, mode: "insensitive" as const },
-            })),
-          ],
-        },
-      })
-      .catch((err) => {
-        console.error("[JobsPage] Background cleanup error:", err instanceof Error ? err.message : err);
-      });
   } catch (error) {
     console.error(
       "[JobsPage] Database query warning (Neon connection timeout or offline):",
@@ -209,10 +188,12 @@ export default async function JobsPage({
   });
 
   const totalPages = Math.ceil(total / limit) || 1;
+  const authResult = await getUserSession();
+  const user = authResult ? authResult.user : null;
 
   return (
     <div dir={dir} className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between">
-      <Navbar locale={locale} />
+      <Navbar locale={locale} initialUser={user} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">
         <JobBoardClient

@@ -23,7 +23,7 @@ export default async function CvEditorPage({ params }: PageParams) {
   const authResult = await verifyUserSession(token);
 
   if (!authResult) {
-    redirect(`/${locale}/auth/login`);
+    redirect(`/${locale}/auth/login?next=${encodeURIComponent(`/${locale}/dashboard/cv/${id}`)}`);
   }
 
   const cv = await withDbRetry(() =>

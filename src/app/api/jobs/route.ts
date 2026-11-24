@@ -3,7 +3,7 @@ import { prisma, withDbRetry } from "@/lib/prisma";
 import { getCityVariants } from "@/lib/cityAliases";
 import { handleJobIngestion } from "@/lib/jobIngestion";
 import { sanitizeJobPayload } from "@/lib/jobSanitizer";
-import { LEGACY_NEWS_OUTLETS, NON_GERMANY_LOCATIONS, isLegacyNewsJob, isExcludedJob, deduplicateJobs } from "@/lib/jobUtils";
+import { LEGACY_NEWS_OUTLETS, NON_GERMANY_LOCATIONS, isExcludedJob, deduplicateJobs } from "@/lib/jobUtils";
 
 export async function GET(request: NextRequest) {
   try {
@@ -127,28 +127,6 @@ export async function GET(request: NextRequest) {
     const filteredJobs = deduplicateJobs(
       jobs.filter((j) => !isExcludedJob(j)).map((j) => sanitizeJobPayload(j))
     );
-
-    // Automatically trigger a background cleanup for legacy news rows and non-German listings
-    prisma.job
-      .deleteMany({
-        where: {
-          OR: [
-            { applyUrl: { contains: "news.google" } },
-            ...LEGACY_NEWS_OUTLETS.map((outlet) => ({
-              company: { contains: outlet, mode: "insensitive" as const },
-            })),
-            ...NON_GERMANY_LOCATIONS.map((loc) => ({
-              city: { contains: loc, mode: "insensitive" as const },
-            })),
-            ...NON_GERMANY_LOCATIONS.map((loc) => ({
-              title: { contains: loc, mode: "insensitive" as const },
-            })),
-          ],
-        },
-      })
-      .catch((err) => {
-        console.error("[GET /api/jobs] Background cleanup error:", err instanceof Error ? err.message : err);
-      });
 
     const totalPages = Math.ceil(total / limit) || 1;
 

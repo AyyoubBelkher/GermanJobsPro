@@ -26,7 +26,10 @@ export default async function AtsAnalyzerPage({
   const authResult = await verifyUserSession(token);
 
   if (!authResult) {
-    redirect(`/${locale}/auth/login`);
+    const nextUrl = resolvedSearchParams?.jobDescription
+      ? `/${locale}/dashboard/ats-analyzer?jobDescription=${encodeURIComponent(resolvedSearchParams.jobDescription)}`
+      : `/${locale}/dashboard/ats-analyzer`;
+    redirect(`/${locale}/auth/login?next=${encodeURIComponent(nextUrl)}`);
   }
 
   const userCvs = await withDbRetry(() =>

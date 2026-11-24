@@ -13,7 +13,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const { email, password, name, locale } = body || {};
+    const { email, password, name, locale, consentGiven } = body || {};
+
+    if (consentGiven === false) {
+      return NextResponse.json(
+        { success: false, error: "يجب الموافقة على شروط الاستخدام وسياسة الخصوصية للمتابعة / Terms and Privacy consent required" },
+        { status: 400 }
+      );
+    }
 
     if (typeof email !== "string" || typeof password !== "string") {
       return NextResponse.json(

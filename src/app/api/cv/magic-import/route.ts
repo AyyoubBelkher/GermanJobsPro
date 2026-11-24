@@ -4,8 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyUserSession } from "@/lib/user-session";
 import { extractText } from "unpdf";
 import { magicImportCvAI } from "@/lib/gemini";
-import { consumeAiCredit, refundAiCredit, deductAiCreditAtomic } from "@/lib/monetization";
-import { logAiUsage } from "@/lib/ai-telemetry";
+import { refundAiCredit, deductAiCreditAtomic } from "@/lib/monetization";
 import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 import {
   parseDateSafe,
@@ -162,7 +161,6 @@ export async function POST(request: NextRequest) {
 
     // 2. Execute AI Magic Import & DIN 5008 Optimization
     let parsedCv;
-    const aiStartTime = performance.now();
     const cleanShortTitle =
       typeof targetJobTitle === "string" && targetJobTitle.trim().length > 0 && targetJobTitle.trim().length <= 60
         ? targetJobTitle.trim()
@@ -176,15 +174,6 @@ export async function POST(request: NextRequest) {
         locale,
       });
     } catch (aiErr) {
-      const latencyMs = performance.now() - aiStartTime;
-      logAiUsage({
-        userId: authResult.user.id,
-        operation: "CV_MAGIC_IMPORT",
-        latencyMs,
-        success: false,
-        errorMessage: aiErr instanceof Error ? aiErr.message : String(aiErr),
-      }).catch(() => {});
-
       await refundAiCredit(authResult.user.id);
       console.error("[Magic Import AI Generation Error]:", aiErr);
       return NextResponse.json(

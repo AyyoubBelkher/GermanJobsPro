@@ -23,7 +23,7 @@ export default async function DossierPage({
   const authResult = await verifyUserSession(token);
 
   if (!authResult) {
-    redirect(`/${locale}/auth/login`);
+    redirect(`/${locale}/auth/login?next=${encodeURIComponent(`/${locale}/dashboard/dossier`)}`);
   }
 
   const [userCvsRaw, userCoverLetters] = await withDbRetry(() =>

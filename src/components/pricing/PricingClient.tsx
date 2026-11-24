@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { GUMROAD_VARIANTS } from "@/lib/gumroad";
 
 interface PricingClientProps {
   user: {
@@ -486,11 +487,11 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
 
           <button
             type="button"
-            onClick={() => handleCheckout("Quick Sprint (30 Days)")}
+            onClick={() => handleCheckout(GUMROAD_VARIANTS.SPRINT_30D)}
             disabled={isCheckingOut !== null}
             className="w-full py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 border border-slate-700"
           >
-            {isCheckingOut === "Quick Sprint (30 Days)" ? (
+            {isCheckingOut === GUMROAD_VARIANTS.SPRINT_30D ? (
               <span>{isAr ? "جاري تحويلك لبوابة الدفع..." : isDe ? "Weiterleitung..." : "Redirecting..."}</span>
             ) : isPro ? (
               <span>{isAr ? "تمديد 30 يوماً (Quick Sprint) ⚡" : isDe ? "30 Tage verlängern ⚡" : "Extend 30 Days (Quick Sprint) ⚡"}</span>
@@ -622,11 +623,11 @@ export default function PricingClient({ user, locale }: PricingClientProps) {
 
           <button
             type="button"
-            onClick={() => handleCheckout("PRO Job Pass (90 Days)")}
+            onClick={() => handleCheckout(GUMROAD_VARIANTS.PRO_90D)}
             disabled={isCheckingOut !== null}
             className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-sm sm:text-base transition-all shadow-xl shadow-blue-600/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            {isCheckingOut === "PRO Job Pass (90 Days)" ? (
+            {isCheckingOut === GUMROAD_VARIANTS.PRO_90D ? (
               <span>{isAr ? "جاري تحويلك لبوابة الدفع..." : isDe ? "Weiterleitung..." : "Redirecting..."}</span>
             ) : isPro ? (
               <span>{isAr ? "تمديد اشتراك PRO (90 يوماً) 🚀" : isDe ? "90 Tage verlängern 🚀" : "Extend PRO Pass (90 Days) 🚀"}</span>

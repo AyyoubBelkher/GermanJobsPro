@@ -8,6 +8,7 @@ import LandingFaqAccordion from "@/components/landing/LandingFaqAccordion";
 import { getUserSession } from "@/lib/user-session";
 import { getLandingContent } from "@/lib/i18n/landing-content";
 import { getDictionary, isValidLocale, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { formatBidiInlineText } from "@/lib/courseUtils";
 
 export const revalidate = 60;
 
@@ -83,10 +84,10 @@ export default async function LandingPage({
   const user = authResult ? authResult.user : null;
 
   return (
-    <div dir={dir} className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between selection:bg-amber-400 selection:text-slate-950 overflow-x-hidden">
+    <div dir={dir} className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between selection:bg-amber-400 selection:text-slate-950 overflow-x-clip">
       <Navbar locale={locale} initialUser={user} />
 
-      <main className="flex-1 w-full overflow-x-hidden">
+      <main className="flex-1 w-full overflow-x-clip">
         
         {/* ========================================================= */}
         {/* 1. HERO SECTION: FULL-BLEED BRANDENBURG GATE MONUMENT     */}
@@ -197,7 +198,7 @@ export default async function LandingPage({
               <path d="M0,0 C150,90 350,-40 500,40 C650,120 900,10 1200,50 L1200,120 L0,120 Z" fill="#000000" opacity="0.95" />
               <path d="M0,20 C180,95 380,-20 520,50 C660,120 920,30 1200,65 L1200,120 L0,120 Z" fill="#DD0000" opacity="0.95" />
               <path d="M0,45 C200,105 400,-5 540,65 C680,125 940,45 1200,80 L1200,120 L0,120 Z" fill="#FFCC00" />
-              <path d="M0,75 C220,115 420,15 560,78 C700,135 960,65 1200,95 L1200,120 L0,120 Z" fill="#f8fafc" />
+              <path d="M0,75 C220,115 420,15 560,78 C700,135 960,65 1200,95 L1200,120 L0,120 Z" className="fill-slate-50 dark:fill-[#040d21]" />
             </svg>
           </div>
         </section>
@@ -213,11 +214,11 @@ export default async function LandingPage({
               href={`/${locale}/dashboard/cv/new`}
               className="bg-gradient-to-b from-white to-blue-50/25 rounded-2xl shadow-md hover:shadow-xl border border-blue-100/60 hover:-translate-y-1 transition-all p-3.5 sm:p-4 active:scale-[0.98] flex flex-col items-center text-center group cursor-pointer"
             >
-              <div className="w-12 h-12 mb-3 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <div dir="ltr" className="w-12 h-12 mb-3 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <svg className="w-11 h-11 text-[#0D47A1]" viewBox="0 0 48 48" fill="none">
                   <path d="M12 6C10.8954 6 10 6.89543 10 8V40C10 41.1046 10.8954 42 12 42H36C37.1046 42 38 41.1046 38 40V16L28 6H12Z" stroke="#0D47A1" strokeWidth="2.5" fill="white" />
                   <path d="M28 6V16H38" stroke="#0D47A1" strokeWidth="2.5" fill="#EBF2FA" />
-                  <text x="14" y="24" fill="#0D47A1" fontSize="10.5" fontWeight="900" fontFamily="sans-serif">CV</text>
+                  <text x="14" y="24" fill="#0D47A1" fontSize="10.5" fontWeight="900" fontFamily="sans-serif" direction="ltr" textAnchor="start">CV</text>
                   <line x1="14" y1="29" x2="26" y2="29" stroke="#0D47A1" strokeWidth="2" strokeLinecap="round" />
                   <line x1="14" y1="34" x2="22" y2="34" stroke="#0D47A1" strokeWidth="2" strokeLinecap="round" />
                   <g transform="translate(25, 27)">
@@ -544,7 +545,7 @@ export default async function LandingPage({
                       {t.comparison.negativePoints.map((point, idx) => (
                         <li key={idx} className="flex items-start gap-2.5">
                           <span className="text-rose-400 font-bold mt-0.5 shrink-0">×</span>
-                          <span>{point}</span>
+                          <span>{formatBidiInlineText(point, isAr)}</span>
                         </li>
                       ))}
                     </ul>
@@ -562,7 +563,7 @@ export default async function LandingPage({
                       {t.comparison.positivePoints.map((point, idx) => (
                         <li key={idx} className="flex items-start gap-2.5">
                           <span className="text-emerald-400 font-bold mt-0.5 shrink-0">✓</span>
-                          <span>{point}</span>
+                          <span>{formatBidiInlineText(point, isAr)}</span>
                         </li>
                       ))}
                     </ul>
@@ -582,7 +583,7 @@ export default async function LandingPage({
                 </h2>
               </div>
 
-              <LandingFaqAccordion items={t.faq.items} />
+              <LandingFaqAccordion items={t.faq.items} isAr={isAr} />
 
               {/* FAQPage JSON-LD for rich Google Search snippets */}
               <script

@@ -59,3 +59,7 @@ live-production-data.json
 # repomix bundles
 repomix-output.xml
 
+# Demo video recording
+scripts/demo-video/.auth-state.json
+scripts/demo-video/output/
+

@@ -206,16 +206,16 @@ export default function ContactClient({ initialUser, locale }: ContactClientProp
                     onClick={() => setCategory(cat.id)}
                     className={`p-3.5 rounded-2xl border text-start transition-all cursor-pointer flex items-start gap-3 ${
                       category === cat.id
-                        ? "bg-blue-50 border-blue-500 text-[#061838] shadow-sm ring-1 ring-blue-500"
-                        : "bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-100"
+                        ? "bg-blue-50 dark:bg-blue-950/60 border-blue-500 dark:border-blue-500 text-[#061838] dark:text-blue-100 shadow-sm ring-1 ring-blue-500"
+                        : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
                     }`}
                   >
-                    <span className="text-xl p-1.5 rounded-xl bg-white border border-slate-200 shrink-0">
+                    <span className="text-xl p-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0">
                       {cat.icon}
                     </span>
                     <div className="min-w-0">
-                      <p className="font-bold text-xs truncate text-[#061838]">{cat.label}</p>
-                      <p className="text-[11px] text-slate-500 truncate mt-0.5">{cat.desc}</p>
+                      <p className="font-bold text-xs truncate text-[#061838] dark:text-slate-100">{cat.label}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{cat.desc}</p>
                     </div>
                   </button>
                 ))}

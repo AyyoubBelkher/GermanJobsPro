@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { GUMROAD_VARIANTS } from "@/lib/gumroad";
 
 export interface UpgradeModalProps {
   isOpen: boolean;
@@ -450,12 +451,12 @@ export default function UpgradeModal({
             </div>
 
             <button
-              onClick={() => handleCheckout("Quick Sprint")}
+              onClick={() => handleCheckout(GUMROAD_VARIANTS.SPRINT_30D)}
               disabled={isCheckingOut !== null}
               type="button"
               className="w-full py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm border border-slate-700 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
-              {isCheckingOut === "Quick Sprint" ? "⏳ ..." : t.quickSprint.cta}
+              {isCheckingOut === GUMROAD_VARIANTS.SPRINT_30D ? "⏳ ..." : t.quickSprint.cta}
             </button>
           </div>
 
@@ -502,12 +503,12 @@ export default function UpgradeModal({
             </div>
 
             <button
-              onClick={() => handleCheckout("PRO Job Pass")}
+              onClick={() => handleCheckout(GUMROAD_VARIANTS.PRO_90D)}
               disabled={isCheckingOut !== null}
               type="button"
               className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs sm:text-sm border border-blue-400/30 transition-all shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 hover:scale-[1.01]"
             >
-              {isCheckingOut === "PRO Job Pass" ? "⏳ ..." : t.proJobPass.cta}
+              {isCheckingOut === GUMROAD_VARIANTS.PRO_90D ? "⏳ ..." : t.proJobPass.cta}
             </button>
           </div>
         </div>

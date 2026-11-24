@@ -419,12 +419,13 @@ function useNavActive(
   const searchParams = useSearchParams();
 
   const isGermanA1 =
-    Boolean(pathname?.startsWith(blogLink)) &&
-    Boolean(searchParams?.get("category")?.toLowerCase().includes("a1"));
+    (Boolean(pathname?.startsWith(blogLink)) &&
+      Boolean(searchParams?.get("category")?.toLowerCase().includes("a1"))) ||
+    Boolean(pathname?.includes("/blog/german-a1-lesson"));
 
   const isBlog =
     Boolean(pathname?.startsWith(blogLink)) &&
-    !searchParams?.get("category")?.toLowerCase().includes("a1");
+    !isGermanA1;
 
   const isHome =
     pathname === homeLink || (pathname === "/" && activeLocale === DEFAULT_LOCALE);
@@ -814,7 +815,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [user, setUser] = useState<NavbarUser | null>(initialUser);
-  const [authChecked, setAuthChecked] = useState(initialUser !== null);
+  const [authChecked, setAuthChecked] = useState(true);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -1231,7 +1232,7 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
 
         {/* Mobile Header Right (Quick Language Switcher, Theme Toggle & Menu Toggle) */}
         <div className="lg:hidden flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {authChecked && !user && (
+          {!user && (
             <Link
               href={signupLink}
               className="sm:hidden inline-flex items-center gap-1 bg-[#FACC15] hover:bg-amber-300 text-[#061838] font-bold rounded-full px-3 py-1.5 text-[11px] shadow-xs whitespace-nowrap shrink-0"

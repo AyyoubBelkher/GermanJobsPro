@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import LandingFaqAccordion from "@/components/landing/LandingFaqAccordion";
+import { GUMROAD_VARIANTS } from "@/lib/gumroad";
 
 export interface PricingUser {
   id: string;
@@ -491,11 +492,11 @@ export default function PublicPricingClient({
           <div className="space-y-2">
             <button
               type="button"
-              onClick={() => handleCheckout("Quick Sprint (30 Days)")}
+              onClick={() => handleCheckout(GUMROAD_VARIANTS.SPRINT_30D)}
               disabled={isCheckingOut !== null}
               className="w-full py-3.5 px-6 rounded-2xl bg-[#061838] hover:bg-[#0A2552] text-white font-extrabold text-xs sm:text-sm shadow-md hover:scale-[1.02] active:scale-98 transition-all disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
             >
-              {isCheckingOut === "Quick Sprint (30 Days)" ? (
+              {isCheckingOut === GUMROAD_VARIANTS.SPRINT_30D ? (
                 <span>{isAr ? "جاري تحويلك إلى الدفع الآمن..." : isDe ? "Weiterleitung..." : "Redirecting to Checkout..."}</span>
               ) : isPro ? (
                 <span>{isAr ? "تمديد 30 يوماً (Quick Sprint) ⚡" : isDe ? "30 Tage verlängern ⚡" : "Extend 30 Days (Quick Sprint) ⚡"}</span>
@@ -630,11 +631,11 @@ export default function PublicPricingClient({
           <div className="space-y-2">
             <button
               type="button"
-              onClick={() => handleCheckout("PRO Job Pass (90 Days)")}
+              onClick={() => handleCheckout(GUMROAD_VARIANTS.PRO_90D)}
               disabled={isCheckingOut !== null}
               className="w-full py-4 px-8 rounded-2xl bg-[#FACC15] hover:bg-amber-300 text-[#061838] font-black text-sm sm:text-base shadow-xl shadow-amber-400/20 hover:scale-[1.02] active:scale-98 transition-all disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
             >
-              {isCheckingOut === "PRO Job Pass (90 Days)" ? (
+              {isCheckingOut === GUMROAD_VARIANTS.PRO_90D ? (
                 <span>{isAr ? "جاري تحويلك إلى الدفع الآمن..." : isDe ? "Weiterleitung..." : "Redirecting to Checkout..."}</span>
               ) : isPro ? (
                 <span>{isAr ? "تمديد اشتراك PRO (90 يوماً) 🚀" : isDe ? "90 Tage verlängern 🚀" : "Extend PRO Pass (90 Days) 🚀"}</span>
@@ -722,74 +723,74 @@ export default function PublicPricingClient({
           </p>
         </div>
 
-        <div className="overflow-x-auto rounded-3xl bg-white border border-slate-200 shadow-sm">
-          <table className="w-full text-start text-xs sm:text-sm text-slate-700">
+        <div className="overflow-x-auto rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <table className="w-full text-start text-xs sm:text-sm text-slate-700 dark:text-slate-300">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-[#061838]">
+              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 text-[#061838] dark:text-white">
                 <th className="py-4 px-6 text-start font-bold">{isAr ? "الميزة / الأداة" : isDe ? "Funktion / Werkzeug" : "Feature / Tool"}</th>
-                <th className="py-4 px-6 text-center font-bold text-slate-600">{isAr ? "المجانية ($0)" : isDe ? "Starter ($0)" : "Starter ($0)"}</th>
-                <th className="py-4 px-6 text-center font-bold text-slate-700 bg-slate-100/60">
+                <th className="py-4 px-6 text-center font-bold text-slate-600 dark:text-slate-400">{isAr ? "المجانية ($0)" : isDe ? "Starter ($0)" : "Starter ($0)"}</th>
+                <th className="py-4 px-6 text-center font-bold text-slate-700 dark:text-slate-200 bg-slate-100/60 dark:bg-slate-800/60">
                   {isAr ? "Quick Sprint ($9.99)" : isDe ? "Quick Sprint ($9.99)" : "Quick Sprint ($9.99)"}
                 </th>
-                <th className="py-4 px-6 text-center font-bold text-[#061838] bg-amber-50/60 border-x border-amber-200">
+                <th className="py-4 px-6 text-center font-bold text-[#061838] dark:text-amber-300 bg-amber-50/60 dark:bg-amber-950/40 border-x border-amber-200 dark:border-amber-900/50">
                   {isAr ? "PRO Job Pass ($19.99) ⭐" : isDe ? "PRO Job Pass ($19.99) ⭐" : "PRO Job Pass ($19.99) ⭐"}
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "صلاحية الاستخدام" : isDe ? "Gültigkeitsdauer" : "Validity Duration"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-600">{isAr ? "دائماً" : isDe ? "Dauerhaft" : "Forever"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-700 bg-slate-50">{isAr ? "30 يوماً" : isDe ? "30 Tage" : "30 Days"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">{isAr ? "90 يوماً (دورة توظيف كاملة)" : isDe ? "90 Tage (voller Zyklus)" : "90 Days (Full Cycle)"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{isAr ? "صلاحية الاستخدام" : isDe ? "Gültigkeitsdauer" : "Validity Duration"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">{isAr ? "دائماً" : isDe ? "Dauerhaft" : "Forever"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/40">{isAr ? "30 يوماً" : isDe ? "30 Tage" : "30 Days"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">{isAr ? "90 يوماً (دورة توظيف كاملة)" : isDe ? "90 Tage (voller Zyklus)" : "90 Days (Full Cycle)"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "بناء سيرة DIN 5008 وتصدير PDF" : isDe ? "DIN 5008 Builder & PDF-Export" : "DIN 5008 Builder & PDF Export"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-600">{isAr ? "1 سيرة ذاتية" : isDe ? "1 Lebenslauf" : "1 Resume"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 bg-slate-50">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{isAr ? "بناء سيرة DIN 5008 وتصدير PDF" : isDe ? "DIN 5008 Builder & PDF-Export" : "DIN 5008 Builder & PDF Export"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">{isAr ? "1 سيرة ذاتية" : isDe ? "1 Lebenslauf" : "1 Resume"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "البحث في الوظائف وحفظ الفرص المفضلة" : isDe ? "Jobsuche & Lesezeichen" : "Job Search & Bookmarks"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700">✓</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 bg-slate-50">✓</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">✓</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{isAr ? "البحث في الوظائف وحفظ الفرص المفضلة" : isDe ? "Jobsuche & Lesezeichen" : "Job Search & Bookmarks"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400">✓</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40">✓</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">✓</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "طلبات الذكاء الاصطناعي اليومية" : isDe ? "Tägliche KI-Anfragen" : "Daily AI Requests"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-600">{isAr ? "3 أرصدة أولية" : isDe ? "3 anfängliche Guthaben" : "3 Initial Credits"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 bg-slate-50">{isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">{isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{isAr ? "طلبات الذكاء الاصطناعي اليومية" : isDe ? "Tägliche KI-Anfragen" : "Daily AI Requests"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">{isAr ? "3 أرصدة أولية" : isDe ? "3 anfängliche Guthaben" : "3 Initial Credits"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40">{isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">{isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "فاحص الـ ATS وتحليل الكلمات المفتاحية" : isDe ? "ATS-Check & Keyword-Analyse" : "ATS Audit & Keyword Analysis"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-600">{isAr ? "فحص أساسي" : isDe ? "Basis-Check" : "Basic Audit"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 bg-slate-50">✓ {isAr ? "فحص ATS كامل" : isDe ? "Vollständiger ATS-Check" : "Full ATS Audit"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">✓ {isAr ? "فحص عميق وخطة كلمات مفتاحية" : isDe ? "Tiefer Audit & Keyword-Plan" : "Deep Audit & Keyword Plan"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{isAr ? "فاحص الـ ATS وتحليل الكلمات المفتاحية" : isDe ? "ATS-Check & Keyword-Analyse" : "ATS Audit & Keyword Analysis"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">{isAr ? "فحص أساسي" : isDe ? "Basis-Check" : "Basic Audit"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40">✓ {isAr ? "فحص ATS كامل" : isDe ? "Vollständiger ATS-Check" : "Full ATS Audit"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">✓ {isAr ? "فحص عميق وخطة كلمات مفتاحية" : isDe ? "Tiefer Audit & Keyword-Plan" : "Deep Audit & Keyword Plan"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "مولد خطابات الدافع المخصص (Anschreiben)" : isDe ? "KI-Anschreiben Generator" : "AI Cover Letter Generator"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-600">{isAr ? "تجريبي" : isDe ? "1 Test" : "1 Trial"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 bg-slate-50">✓ {isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">✓ {isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{isAr ? "مولد خطابات الدافع المخصص (Anschreiben)" : isDe ? "KI-Anschreiben Generator" : "AI Cover Letter Generator"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">{isAr ? "تجريبي" : isDe ? "1 Test" : "1 Trial"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40">✓ {isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">✓ {isAr ? "20 طلباً يومياً" : isDe ? "20 täglich" : "20 Daily Requests"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "استوديو ملف الترشيح الكامل (Bewerbungsmappe)" : isDe ? "Vollständige Bewerbungsmappe" : isFr ? "Studio Bewerbungsmappe complet" : "Complete Bewerbungsmappe Studio"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-600 font-medium">{isAr ? "تجريبي (1 رصيد)" : isDe ? "Test (1 Credit)" : isFr ? "Essai (1 crédit)" : "Trial (1 Credit)"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 bg-slate-50 font-medium">{isAr ? "✓ متاح (30 يوماً)" : isDe ? "✓ Inklusive (30 Tage)" : isFr ? "✓ Inclus (30 jours)" : "✓ Included (30 days)"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">✓ {isAr ? "مضمّن بالكامل (غلاف + سيرة + خطاب)" : isDe ? "Inklusive (Deckblatt + CV + Anschreiben)" : isFr ? "Inclus (Page de garde + CV + Lettre)" : "Included (Cover + CV + Anschreiben)"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{isAr ? "استوديو ملف الترشيح الكامل (Bewerbungsmappe)" : isDe ? "Vollständige Bewerbungsmappe" : isFr ? "Studio Bewerbungsmappe complet" : "Complete Bewerbungsmappe Studio"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400 font-medium">{isAr ? "تجريبي (1 رصيد)" : isDe ? "Test (1 Credit)" : isFr ? "Essai (1 crédit)" : "Trial (1 Credit)"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40 font-medium">{isAr ? "✓ متاح (30 يوماً)" : isDe ? "✓ Inklusive (30 Tage)" : isFr ? "✓ Inclus (30 jours)" : "✓ Included (30 days)"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">✓ {isAr ? "مضمّن بالكامل (غلاف + سيرة + خطاب)" : isDe ? "Inklusive (Deckblatt + CV + Anschreiben)" : isFr ? "Inclus (Page de garde + CV + Lettre)" : "Included (Cover + CV + Anschreiben)"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)" : isDe ? "1-Klick PDF zu DIN 5008 Auto-Adapt" : "1-Click PDF to DIN 5008 Auto-Adapt"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-600">{isAr ? "تجريبي" : isDe ? "1 Test" : "1 Trial"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 bg-slate-50">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
-                <td className="py-3.5 px-6 text-center text-emerald-700 font-bold bg-amber-50/30 border-x border-amber-100">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{isAr ? "تحويل فوري وتكييف ذكي للسيرة الذاتية (1-Click PDF to DIN 5008)" : isDe ? "1-Klick PDF zu DIN 5008 Auto-Adapt" : "1-Click PDF to DIN 5008 Auto-Adapt"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">{isAr ? "تجريبي" : isDe ? "1 Test" : "1 Trial"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 bg-slate-50 dark:bg-slate-800/40">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
+                <td className="py-3.5 px-6 text-center text-emerald-700 dark:text-emerald-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">✓ {isAr ? "غير محدود" : isDe ? "Unbegrenzt" : "Unlimited"}</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-medium text-[#061838]">{isAr ? "طريقة الدفع والتفعيل" : isDe ? "Zahlungsmodell & Support" : "Payment & Support"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-600">{isAr ? "مجاناً $0" : isDe ? "Kostenlos $0" : "Free $0"}</td>
-                <td className="py-3.5 px-6 text-center text-slate-700 bg-slate-50">{isAr ? "دفع لمرة واحدة ($9.99)" : isDe ? "Einmalzahlung ($9.99)" : "One-Time ($9.99)"}</td>
-                <td className="py-3.5 px-6 text-center text-amber-700 font-bold bg-amber-50/30 border-x border-amber-100">⚡ {isAr ? "دفع لمرة واحدة ($19.99) • أولوية 24/7" : isDe ? "Einmalzahlung ($19.99) • Priorität 24/7" : "One-Time ($19.99) • Priority 24/7"}</td>
+                <td className="py-3.5 px-6 font-medium text-[#061838] dark:text-slate-100">{isAr ? "طريقة الدفع والتفعيل" : isDe ? "Zahlungsmodell & Support" : "Payment & Support"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-600 dark:text-slate-400">{isAr ? "مجاناً $0" : isDe ? "Kostenlos $0" : "Free $0"}</td>
+                <td className="py-3.5 px-6 text-center text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/40">{isAr ? "دفع لمرة واحدة ($9.99)" : isDe ? "Einmalzahlung ($9.99)" : "One-Time ($9.99)"}</td>
+                <td className="py-3.5 px-6 text-center text-amber-700 dark:text-amber-400 font-bold bg-amber-50/30 dark:bg-amber-950/20 border-x border-amber-100 dark:border-amber-900/40">⚡ {isAr ? "دفع لمرة واحدة ($19.99) • أولوية 24/7" : isDe ? "Einmalzahlung ($19.99) • Priorität 24/7" : "One-Time ($19.99) • Priority 24/7"}</td>
               </tr>
             </tbody>
           </table>
@@ -837,7 +838,7 @@ export default function PublicPricingClient({
           </p>
         </div>
 
-        <LandingFaqAccordion items={faqItems} />
+        <LandingFaqAccordion items={faqItems} isAr={isAr} />
       </div>
 
     </div>

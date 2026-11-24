@@ -6,22 +6,32 @@
 
 /**
  * Checks if a URL points to an expiring social media CDN.
+ * Hardened to prevent SSRF and validate strict hostnames and protocols.
  */
 export function isExpiringSocialCdnUrl(url: string): boolean {
-  if (!url) return false;
-  const lower = url.toLowerCase();
-  return (
-    lower.includes("fbcdn.net") ||
-    lower.includes("scontent") ||
-    lower.includes("fbsbx.com")
-  );
+  if (!url || typeof url !== "string") return false;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return false;
+    }
+    const hostname = parsed.hostname.toLowerCase();
+    return (
+      hostname === "fbsbx.com" ||
+      hostname.endsWith(".fbsbx.com") ||
+      hostname === "fbcdn.net" ||
+      hostname.endsWith(".fbcdn.net")
+    );
+  } catch {
+    return false;
+  }
 }
 
 /**
  * Ensures image URLs are permanent and won't expire on CapRover or Facebook CDN.
  * - Empty url -> returns null
  * - Local path (/images/...) or data:image/ -> returns as-is
- * - Expiring social CDN (fbcdn.net, scontent, fbsbx.com) -> fetches image (8s timeout) and converts to data:image/...;base64,...
+ * - Expiring social CDN (fbcdn.net, fbsbx.com) -> fetches image (8s timeout, 5MB cap, verified image/ content-type) and converts to data:image/...;base64,...
  * - Other URLs -> returns as-is
  */
 export async function ensurePermanentImageUrl(
@@ -70,8 +80,31 @@ export async function ensurePermanentImageUrl(
     }
 
     const contentType =
-      res.headers.get("content-type")?.split(";")[0]?.trim() || "image/jpeg";
+      res.headers.get("content-type")?.split(";")[0]?.trim() || "";
+    if (!contentType.toLowerCase().startsWith("image/")) {
+      console.warn(
+        `[ensurePermanentImageUrl] Rejected non-image Content-Type (${contentType}): ${trimmed}`
+      );
+      return trimmed;
+    }
+
+    const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB max cap
+    const contentLength = res.headers.get("content-length");
+    if (contentLength && parseInt(contentLength, 10) > MAX_SIZE_BYTES) {
+      console.warn(
+        `[ensurePermanentImageUrl] Content-Length (${contentLength}) exceeds 5MB cap: ${trimmed}`
+      );
+      return trimmed;
+    }
+
     const arrayBuffer = await res.arrayBuffer();
+    if (arrayBuffer.byteLength > MAX_SIZE_BYTES) {
+      console.warn(
+        `[ensurePermanentImageUrl] Response payload (${arrayBuffer.byteLength} bytes) exceeds 5MB cap: ${trimmed}`
+      );
+      return trimmed;
+    }
+
     const buffer = Buffer.from(arrayBuffer);
     const base64 = buffer.toString("base64");
 

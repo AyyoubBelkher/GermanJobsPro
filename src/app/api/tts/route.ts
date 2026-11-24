@@ -50,13 +50,19 @@ export async function GET(request: NextRequest) {
       cleanText
     )}&tl=de&client=tw-ob&ttsspeed=0.88`;
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
     const upstreamResponse = await fetch(ttsUrl, {
+      signal: controller.signal,
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         Referer: "https://translate.google.com/",
         Accept: "audio/mpeg,audio/*;q=0.9,*/*;q=0.8",
       },
+    }).finally(() => {
+      clearTimeout(timeoutId);
     });
 
     if (!upstreamResponse.ok) {

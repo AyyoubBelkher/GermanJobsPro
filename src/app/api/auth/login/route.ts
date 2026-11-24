@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyPassword, hashPassword, createSession, revokeUserSession } from "@/lib/user-session";
 import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 import { getCookieDomain } from "@/lib/google-auth";
+import { timingSafeCompare } from "@/lib/session";
 
 export async function POST(request: NextRequest) {
   // Apply IP-based rate limiting (Max 10 attempts per IP per 10 minutes)
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
       adminEmail &&
       adminPassword &&
       normalizedEmail === adminEmail &&
-      password === adminPassword
+      timingSafeCompare(password, adminPassword)
     ) {
       if (!user || !user.passwordHash) {
         const hashedPassword = await hashPassword(adminPassword);

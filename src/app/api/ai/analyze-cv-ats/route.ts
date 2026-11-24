@@ -7,7 +7,6 @@ import { analyzeCvAtsAI } from "@/lib/gemini";
 import { EmploymentEntry } from "@/lib/ats-signals";
 import { refundAiCredit, deductAiCreditAtomic } from "@/lib/monetization";
 import { checkRateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
-import { logAiUsage } from "@/lib/ai-telemetry";
 import { formatDateRange } from "@/lib/cv-date-utils";
 
 function formatGermanDate(dateVal: Date | string | null | undefined): string {
@@ -245,7 +244,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const aiStartTime = performance.now();
     try {
       const analysis = await analyzeCvAtsAI({
         cvText: finalCvText,
@@ -267,15 +265,6 @@ export async function POST(request: NextRequest) {
         { status: 200 }
       );
     } catch (aiError) {
-      const latencyMs = performance.now() - aiStartTime;
-      logAiUsage({
-        userId: authResult.user.id,
-        operation: "ATS_ANALYSIS",
-        latencyMs,
-        success: false,
-        errorMessage: aiError instanceof Error ? aiError.message : String(aiError),
-      }).catch(() => {});
-
       await refundAiCredit(authResult.user.id);
       throw aiError;
     }

@@ -64,7 +64,7 @@ export const ar: Dictionary = {
       'تصفح أحدث الوظائف المحدثة يومياً مع إمكانية توليد خطاب الدافع (Anschreiben) وفحص سيرتك الذاتية بضغطة واحدة لكل وظيفة.',
     searchPlaceholder:
       '🔍 ابحث بالمسمى الوظيفي، اسم الشركة، أو المدينة (مثل: Software, Berlin, Pflege)...',
-    allLanguages: 'All Languages / كل اللغات',
+    allLanguages: 'كل اللغات',
     categories: {
       all: 'جميع المجالات',
       it: 'تقنية المعلومات والبرمجة',

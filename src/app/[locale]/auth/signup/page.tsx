@@ -35,6 +35,27 @@ export default function SignupPage({
       ? nextPath
       : `/${locale}/dashboard`;
 
+  // Step state: "signup" | "verify"
+  const [step, setStep] = useState<"signup" | "verify">("signup");
+
+  // Signup form state
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [consentGiven, setConsentGiven] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
+  // OTP Verification state
+  const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
+  const [countdown, setCountdown] = useState(60);
+  const [resending, setResending] = useState(false);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
   // Authenticated redirect guard
   useEffect(() => {
     let isMounted = true;
@@ -87,26 +108,6 @@ export default function SignupPage({
       }
     }
   }, [locale, isAr, isDe]);
-
-  // Step state: "signup" | "verify"
-  const [step, setStep] = useState<"signup" | "verify">("signup");
-
-  // Signup form state
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-
-  // OTP Verification state
-  const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
-  const [countdown, setCountdown] = useState(60);
-  const [resending, setResending] = useState(false);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Countdown timer for resend
   useEffect(() => {
@@ -161,6 +162,19 @@ export default function SignupPage({
       return;
     }
 
+    if (!consentGiven) {
+      setErrorMessage(
+        isAr
+          ? "يجب الموافقة على شروط الاستخدام وسياسة الخصوصية للمتابعة."
+          : isDe
+          ? "Bitte stimmen Sie den Nutzungsbedingungen und der Datenschutzerklärung zu."
+          : locale === "fr"
+          ? "Veuillez accepter les conditions d'utilisation et la politique de confidentialité."
+          : "Please agree to the Terms of Service and Privacy Policy to continue."
+      );
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -172,6 +186,7 @@ export default function SignupPage({
           email: trimmedEmail,
           password: trimmedPassword,
           locale,
+          consentGiven: true,
         }),
       });
 
@@ -543,6 +558,67 @@ export default function SignupPage({
                       )}
                     </button>
                   </div>
+                </div>
+
+                <div className="flex items-start gap-2.5 pt-1">
+                  <input
+                    type="checkbox"
+                    id="consent-checkbox"
+                    checked={consentGiven}
+                    onChange={(e) => setConsentGiven(e.target.checked)}
+                    required
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <label htmlFor="consent-checkbox" className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed cursor-pointer select-none">
+                    {isAr ? (
+                      <>
+                        أوافق على{" "}
+                        <Link href={`/${locale}/terms`} target="_blank" className="text-blue-600 dark:text-blue-400 font-semibold underline hover:text-blue-700">
+                          شروط الاستخدام
+                        </Link>{" "}
+                        و{" "}
+                        <Link href={`/${locale}/privacy`} target="_blank" className="text-blue-600 dark:text-blue-400 font-semibold underline hover:text-blue-700">
+                          سياسة الخصوصية
+                        </Link>
+                      </>
+                    ) : isDe ? (
+                      <>
+                        Ich stimme den{" "}
+                        <Link href={`/${locale}/terms`} target="_blank" className="text-blue-600 dark:text-blue-400 font-semibold underline hover:text-blue-700">
+                          Nutzungsbedingungen
+                        </Link>{" "}
+                        und der{" "}
+                        <Link href={`/${locale}/privacy`} target="_blank" className="text-blue-600 dark:text-blue-400 font-semibold underline hover:text-blue-700">
+                          Datenschutzerklärung
+                        </Link>{" "}
+                        zu.
+                      </>
+                    ) : locale === "fr" ? (
+                      <>
+                        J&apos;accepte les{" "}
+                        <Link href={`/${locale}/terms`} target="_blank" className="text-blue-600 dark:text-blue-400 font-semibold underline hover:text-blue-700">
+                          Conditions d&apos;utilisation
+                        </Link>{" "}
+                        et la{" "}
+                        <Link href={`/${locale}/privacy`} target="_blank" className="text-blue-600 dark:text-blue-400 font-semibold underline hover:text-blue-700">
+                          Politique de confidentialité
+                        </Link>
+                        .
+                      </>
+                    ) : (
+                      <>
+                        I agree to the{" "}
+                        <Link href={`/${locale}/terms`} target="_blank" className="text-blue-600 dark:text-blue-400 font-semibold underline hover:text-blue-700">
+                          Terms of Service
+                        </Link>{" "}
+                        and{" "}
+                        <Link href={`/${locale}/privacy`} target="_blank" className="text-blue-600 dark:text-blue-400 font-semibold underline hover:text-blue-700">
+                          Privacy Policy
+                        </Link>
+                        .
+                      </>
+                    )}
+                  </label>
                 </div>
 
                 <button

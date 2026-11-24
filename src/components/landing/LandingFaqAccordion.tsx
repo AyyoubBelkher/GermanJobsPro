@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { formatBidiInlineText } from "@/lib/courseUtils";
 
 interface FaqItem {
   question: string;
@@ -9,9 +10,10 @@ interface FaqItem {
 
 interface LandingFaqAccordionProps {
   items: FaqItem[];
+  isAr?: boolean;
 }
 
-export default function LandingFaqAccordion({ items }: LandingFaqAccordionProps) {
+export default function LandingFaqAccordion({ items, isAr }: LandingFaqAccordionProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const toggle = (index: number) => {
@@ -38,7 +40,7 @@ export default function LandingFaqAccordion({ items }: LandingFaqAccordionProps)
               aria-expanded={isOpen}
             >
               <span className="font-bold text-slate-900 text-base sm:text-lg">
-                {item.question}
+                {formatBidiInlineText(item.question, isAr)}
               </span>
               <span
                 className={`p-2 rounded-xl bg-slate-100 text-slate-600 shrink-0 transition-transform duration-300 ${
@@ -59,7 +61,7 @@ export default function LandingFaqAccordion({ items }: LandingFaqAccordionProps)
 
             {isOpen && (
               <div className="px-6 pb-5 pt-1 text-sm text-slate-600 leading-relaxed border-t border-slate-100">
-                {item.answer}
+                {formatBidiInlineText(item.answer, isAr)}
               </div>
             )}
           </div>

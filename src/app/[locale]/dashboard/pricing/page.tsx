@@ -23,7 +23,7 @@ export default async function PricingPage({
   const authResult = await verifyUserSession(token);
 
   if (!authResult) {
-    redirect(`/${locale}/auth/login`);
+    redirect(`/${locale}/auth/login?next=${encodeURIComponent(`/${locale}/dashboard/pricing`)}`);
   }
 
   const user = await withDbRetry(() =>
@@ -41,7 +41,7 @@ export default async function PricingPage({
   );
 
   if (!user) {
-    redirect(`/${locale}/auth/login`);
+    redirect(`/${locale}/auth/login?next=${encodeURIComponent(`/${locale}/dashboard/pricing`)}`);
   }
 
   const clientUser = {

@@ -241,7 +241,8 @@ export default async function ImpressumPage({
                   {isAr ? "إدارة التحرير والمحتوى الأكاديمي" : isDe ? "Redaktion & Content-Management GermanJobsPro" : "Editorial & Content Management"}
                 </p>
                 <p className="text-xs text-slate-500">
-                  Kontakt: <a href={`mailto:${email}`} className="text-blue-600 hover:underline">{email}</a>
+                  {isAr ? "للتواصل: " : isDe ? "Kontakt: " : isFr ? "Contact : " : "Contact: "}
+                  <a href={`mailto:${email}`} className="text-blue-600 hover:underline">{email}</a>
                 </p>
               </div>
             </div>

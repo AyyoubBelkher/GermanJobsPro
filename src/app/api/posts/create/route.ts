@@ -314,14 +314,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 4. Ensure final slug uniqueness
-    let finalSlug = targetSlug;
-    const existingSlug = await prisma.post.findUnique({
-      where: { slug: finalSlug },
+    // 4. Deduplication Check by normalized title (case-insensitive) or canonical targetSlug
+    const existingPostByTitleOrSlug = await prisma.post.findFirst({
+      where: {
+        OR: [
+          { title: { equals: normalizedTitle, mode: "insensitive" } },
+          { slug: targetSlug },
+        ],
+      },
     });
-    if (existingSlug) {
-      finalSlug = `${targetSlug}-${Date.now()}`;
+
+    if (existingPostByTitleOrSlug) {
+      console.log("[Webhook Automation] Post already exists with matching title or slug:", {
+        title: normalizedTitle,
+        slug: targetSlug,
+        existingId: existingPostByTitleOrSlug.id,
+        existingSlug: existingPostByTitleOrSlug.slug,
+      });
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Post already exists",
+          skipped: true,
+          post: existingPostByTitleOrSlug,
+        },
+        { status: 200 }
+      );
     }
+
+    const finalSlug = targetSlug;
 
     // Ensure image is permanent and does not expire from social CDN
     const permanentImageUrl = resolvedImage ? await ensurePermanentImageUrl(resolvedImage) : null;
