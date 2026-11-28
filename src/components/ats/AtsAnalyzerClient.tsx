@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AtsAnalysisResult } from "@/lib/gemini";
@@ -10,6 +10,15 @@ interface CvOption {
   id: string;
   title: string;
   language: string;
+}
+
+interface LiveJobOption {
+  id: string;
+  title: string;
+  company: string;
+  city?: string | null;
+  requirements?: string | null;
+  descriptionRaw?: string | null;
 }
 
 interface AtsAnalyzerClientProps {
@@ -62,6 +71,34 @@ export default function AtsAnalyzerClient({
   // Inline CV Text Editor states
   const [isEditingText, setIsEditingText] = useState(false);
   const textEditorRef = useRef<HTMLDivElement>(null);
+
+  // Optional 1-Click Live Job Picker
+  const [liveJobs, setLiveJobs] = useState<LiveJobOption[]>([]);
+  const [selectedLiveJobId, setSelectedLiveJobId] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/jobs?limit=20", { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.success && Array.isArray(data.jobs) && data.jobs.length > 0) {
+          setLiveJobs(data.jobs);
+        }
+      })
+      .catch(() => {
+        // Non-blocking: silently hide picker if fetch fails or aborts
+      });
+    return () => controller.abort();
+  }, []);
+
+  const handleSelectLiveJob = (jobId: string) => {
+    setSelectedLiveJobId(jobId);
+    const chosen = liveJobs.find((j) => j.id === jobId);
+    if (!chosen) return;
+    const header = `${chosen.title} — ${chosen.company}${chosen.city ? ` (${chosen.city})` : ""}`;
+    const body = (chosen.requirements || chosen.descriptionRaw || "").trim();
+    setJobDescription(body ? `${header}\n\n${body}` : header);
+  };
 
   const handleFileUpload = async (file: File) => {
     setUploadError(null);
@@ -500,26 +537,73 @@ export default function AtsAnalyzerClient({
             </div>
           )}
 
-          {/* Optional Job Description */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-200 flex items-center justify-between">
+          {/* Optional Job Description / Target Field */}
+          <div className="space-y-2.5">
+            <label className="text-xs font-bold text-slate-200 flex items-center justify-between gap-2">
               <span>
                 {isAr
-                  ? "إعلان الوظيفة المستهدفة (اختياري - لمطابقة الكلمات المفتاحية)"
-                  : "Target Job Description (Optional for Keyword Match)"}
+                  ? "الوظيفة أو المجال المستهدف (اختياري - لصق إعلان كامل أو كتابة المسمى مثل: رعاية صحية)"
+                  : isDe
+                  ? "Stellenanzeige oder Zielbereich (Optional – vollständige Anzeige oder Berufsfeld wie Pflegefachkraft)"
+                  : isFr
+                  ? "Offre d'emploi ou domaine cible (Optionnel – annonce complète ou métier ex. Pflegefachkraft)"
+                  : "Target Job or Field (Optional – paste full posting or enter a role like Pflegefachkraft)"}
               </span>
-              <span className="text-[11px] text-slate-400 font-normal">
-                {isAr ? "اختياري" : isFr ? "Optionnel" : "Optional"}
+              <span className="text-[11px] text-slate-400 font-normal shrink-0">
+                {isAr ? "اختياري" : isDe ? "Optional" : isFr ? "Optionnel" : "Optional"}
               </span>
             </label>
+
+            {liveJobs.length > 0 && (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <select
+                  aria-label={
+                    isAr
+                      ? "اختيار وظيفة مباشرة من البوابة"
+                      : isDe
+                      ? "Aktuelle Stelle aus dem Jobportal wählen"
+                      : isFr
+                      ? "Choisir une offre en direct du portail"
+                      : "Pick a live job from the portal"
+                  }
+                  value={selectedLiveJobId}
+                  onChange={(e) => handleSelectLiveJob(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:border-blue-500 focus:outline-hidden"
+                >
+                  <option value="">
+                    {isAr
+                      ? "⚡ تعبئة تلقائية بنقرة واحدة من أحدث الوظائف المتاحة في ألمانيا..."
+                      : isDe
+                      ? "⚡ Mit einem Klick aus aktuellen Stellenangeboten in Deutschland wählen..."
+                      : isFr
+                      ? "⚡ Remplir en 1 clic depuis les offres d'emploi en Allemagne..."
+                      : "⚡ 1-Click Fill from Live German Job Listings..."}
+                  </option>
+                  {liveJobs.map((job) => (
+                    <option key={job.id} value={job.id}>
+                      {job.title} — {job.company}
+                      {job.city ? ` (${job.city})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <textarea
               rows={4}
               value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value)}
+              onChange={(e) => {
+                setJobDescription(e.target.value);
+                if (selectedLiveJobId) setSelectedLiveJobId("");
+              }}
               placeholder={
                 isAr
-                  ? "الصق متطلبات الوظيفة المعنية للحصول على نسبة مطابقة الكلمات المفتاحية..."
-                  : "Stellenanzeige für Keyword-Matching einfügen..."
+                  ? "الصق إعلان الوظيفة كاملاً، أو اكتب المجال/المسمى الوظيفي فقط (مثل: رعاية صحية / Pflegefachkraft / مطور برمجيات)، أو اتركه فارغاً للمطابقة التلقائية..."
+                  : isDe
+                  ? "Stellenanzeige einfügen, nur Berufsfeld/Zielposition eingeben (z. B. Pflegefachkraft, Softwareentwickler) oder für automatischen Branchenabgleich leer lassen..."
+                  : isFr
+                  ? "Collez l'offre d'emploi complète, saisissez uniquement un métier cible (ex. Pflegefachkraft, Développeur) ou laissez vide pour l'analyse automatique du secteur..."
+                  : "Paste a full job posting, type just a target role/field (e.g., Pflegefachkraft, Software Developer), or leave blank for automatic field matching..."
               }
               className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder:text-slate-400 text-xs font-mono focus:border-blue-500 focus:outline-hidden"
             />
@@ -565,10 +649,16 @@ export default function AtsAnalyzerClient({
 
       {/* Analysis Results Display */}
       {analysis && (() => {
+        const requiresKeywordThreshold =
+          analysis.keywordMatchMode === "job_description" ||
+          analysis.keywordMatchMode === undefined;
+
         const hasPassingScores =
           analysis.overallScore >= 80 &&
           analysis.din5008Score >= 80 &&
-          (analysis.keywordMatchScore === null || analysis.keywordMatchScore >= 75);
+          (!requiresKeywordThreshold ||
+            analysis.keywordMatchScore === null ||
+            analysis.keywordMatchScore >= 75);
 
         const isValidated = analysis.validationStatus?.isValidated === true;
         const isCvAccepted = isValidated && hasPassingScores && analysis.weaknesses.length === 0;
@@ -702,11 +792,45 @@ export default function AtsAnalyzerClient({
                 </div>
                 <span className="text-xs font-semibold">
                   {analysis.keywordMatchScore !== null
-                    ? jobDescription.trim()
-                      ? isAr ? "بناءً على إعلان الوظيفة" : isDe ? "Basierend auf Stellenanzeige" : isFr ? "Basé sur l'offre d'emploi" : "Based on Job Posting"
-                      : isAr ? "بناءً على معايير المجال" : isDe ? "Branchenstandard-Abgleich" : isFr ? "Standard du secteur" : "Industry Standard Match"
-                    : isAr ? "يتطلب إدخال وصف وظيفي" : isDe ? "Erfordert Stellenbeschreibung" : isFr ? "Description de poste requise" : "Requires Job Description"}
+                    ? analysis.keywordMatchMode === "target_role"
+                      ? isAr
+                        ? "بناءً على المجال المستهدف"
+                        : isDe
+                        ? "Basierend auf Zielbereich"
+                        : isFr
+                        ? "Basé sur le domaine cible"
+                        : "Based on Target Field"
+                      : analysis.keywordMatchMode === "industry_benchmark"
+                      ? isAr
+                        ? "بناءً على معايير المجال"
+                        : isDe
+                        ? "Basierend auf Branchenstandard"
+                        : isFr
+                        ? "Basé sur la norme du secteur"
+                        : "Based on Industry Benchmark"
+                      : isAr
+                      ? "بناءً على إعلان الوظيفة"
+                      : isDe
+                      ? "Basierend auf Stellenanzeige"
+                      : isFr
+                      ? "Basé sur l'offre d'emploi"
+                      : "Based on Job Posting"
+                    : isAr
+                    ? "يتطلب إدخال وصف وظيفي"
+                    : isDe
+                    ? "Erfordert Stellenbeschreibung"
+                    : isFr
+                    ? "Description de poste requise"
+                    : "Requires Job Description"}
                 </span>
+                {analysis.detectedTargetRole && (
+                  <span
+                    dir="ltr"
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-900/70 border border-slate-700/70 text-[11px] font-semibold text-slate-200 max-w-full truncate"
+                  >
+                    {analysis.detectedTargetRole}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -1009,102 +1133,142 @@ export default function AtsAnalyzerClient({
             </div>
           </div>
 
-          {/* Interactive German Keywords */}
-          {analysis.missingKeywords.length > 0 && (
-            <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-base font-bold text-amber-400 flex items-center gap-2">
-                  <span>🔑</span>
-                  <span>{isAr ? "كلمات مفتاحية ألمانية موصى بإضافتها" : isDe ? "Fehlende Schlüsselbegriffe" : "Missing Keywords to Include"}</span>
-                </h3>
-                <span className="text-xs text-slate-400">
-                  {isAr ? "انقر لنسخ الكلمة للحافظة" : isDe ? "Klicken zum Kopieren" : "Click to copy keyword"}
-                </span>
-              </div>
-
-              {addedKeywords.length > 0 && (
-                <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex flex-wrap items-center justify-between gap-3 animate-fadeIn">
-                  <div className="flex items-center gap-2 text-xs font-bold text-blue-300">
-                    <span>ℹ️</span>
-                    <span>
-                      {isAr
-                        ? `تمت إضافة (${addedKeywords.length}) من الكلمات المفتاحية إلى نص السيرة بنجاح!`
-                        : isDe
-                        ? `(${addedKeywords.length}) Schlüsselbegriffe wurden zum Lebenslauf hinzugefügt!`
-                        : `(${addedKeywords.length}) keywords added to CV text successfully!`}
-                    </span>
+          {/* Interactive German Keywords (Matched + Missing) */}
+          {((analysis.matchedKeywords && analysis.matchedKeywords.length > 0) || analysis.missingKeywords.length > 0) && (
+            <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
+              {analysis.matchedKeywords && analysis.matchedKeywords.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-base font-bold text-emerald-400 flex items-center gap-2">
+                      <span>✅</span>
+                      <span>
+                        {isAr
+                          ? "الكلمات المفتاحية المتوفرة في سيرتك"
+                          : isDe
+                          ? "Gefundene Schlüsselbegriffe"
+                          : isFr
+                          ? "Mots-clés trouvés dans votre CV"
+                          : "Matched Keywords"}
+                      </span>
+                    </h3>
+                    {analysis.detectedTargetRole && (
+                      <span dir="ltr" className="text-xs text-emerald-300/80 font-mono">
+                        {analysis.detectedTargetRole}
+                      </span>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={(e) => handleAnalyze(e)}
-                    disabled={isAnalyzing}
-                    className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                  >
-                    <span>🔄</span>
-                    <span>
-                      {isAr
-                        ? "إعادة فحص السيرة الآن"
-                        : isDe
-                        ? "Jetzt erneut prüfen"
-                        : "Re-scan CV Now"}
-                    </span>
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    {analysis.matchedKeywords.map((kw, idx) => (
+                      <span
+                        key={idx}
+                        dir="ltr"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 font-mono"
+                      >
+                        <span>✓</span>
+                        <span>{kw}</span>
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              <div className="flex flex-wrap gap-2.5">
-                {analysis.missingKeywords.map((kw, idx) => {
-                  const isCopied = copiedKeyword === kw;
-                  const isAdded = addedKeywords.includes(kw);
-                  const canAddToText = inputMode === "upload" || inputMode === "paste";
+              {analysis.missingKeywords.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h3 className="text-base font-bold text-amber-400 flex items-center gap-2">
+                      <span>🔑</span>
+                      <span>{isAr ? "كلمات مفتاحية ألمانية موصى بإضافتها" : isDe ? "Fehlende Schlüsselbegriffe" : "Missing Keywords to Include"}</span>
+                    </h3>
+                    <span className="text-xs text-slate-400">
+                      {isAr ? "انقر لنسخ الكلمة للحافظة" : isDe ? "Klicken zum Kopieren" : "Click to copy keyword"}
+                    </span>
+                  </div>
 
-                  return (
-                    <div
-                      key={idx}
-                      className={`inline-flex items-center gap-1.5 rounded-xl border p-1 text-xs font-semibold transition-all ${
-                        isAdded
-                          ? "bg-blue-500/10 border-blue-500/30 text-blue-300"
-                          : "bg-amber-500/10 border-amber-500/20 text-amber-300 hover:border-amber-500/40"
-                      }`}
-                    >
+                  {addedKeywords.length > 0 && (
+                    <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex flex-wrap items-center justify-between gap-3 animate-fadeIn">
+                      <div className="flex items-center gap-2 text-xs font-bold text-blue-300">
+                        <span>ℹ️</span>
+                        <span>
+                          {isAr
+                            ? `تمت إضافة (${addedKeywords.length}) من الكلمات المفتاحية إلى نص السيرة بنجاح!`
+                            : isDe
+                            ? `(${addedKeywords.length}) Schlüsselbegriffe wurden zum Lebenslauf hinzugefügt!`
+                            : `(${addedKeywords.length}) keywords added to CV text successfully!`}
+                        </span>
+                      </div>
                       <button
                         type="button"
-                        onClick={() => handleCopyKeyword(kw)}
-                        title={isAr ? "نسخ الكلمة للحافظة" : "Copy keyword"}
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-amber-500/20 transition-colors cursor-pointer"
+                        onClick={(e) => handleAnalyze(e)}
+                        disabled={isAnalyzing}
+                        className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                       >
-                        <span>{isCopied ? "✓" : "📋"}</span>
-                        <span className="font-mono">{kw}</span>
-                        {isCopied && (
-                          <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">
-                            {isAr ? "تم النسخ" : "Copied"}
-                          </span>
-                        )}
+                        <span>🔄</span>
+                        <span>
+                          {isAr
+                            ? "إعادة فحص السيرة الآن"
+                            : isDe
+                            ? "Jetzt erneut prüfen"
+                            : "Re-scan CV Now"}
+                        </span>
                       </button>
-
-                      {canAddToText && (
-                        <button
-                          type="button"
-                          onClick={() => handleAddKeywordToText(kw)}
-                          disabled={isAdded}
-                          className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
-                            isAdded
-                              ? "bg-blue-600/20 text-blue-400 cursor-default"
-                              : "bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white"
-                          }`}
-                          title={isAr ? "إضافة الكلمة مباشرة إلى نص السيرة" : "Add keyword directly into CV text"}
-                        >
-                          {isAdded ? (
-                            <span>✓ {isAr ? "مضافة" : isDe ? "Hinzugefügt" : "Added"}</span>
-                          ) : (
-                            <span>{isAr ? "+ إضافتها للنص" : isDe ? "+ Zum Text hinzufügen" : "+ Add to CV"}</span>
-                          )}
-                        </button>
-                      )}
                     </div>
-                  );
-                })}
-              </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-2.5">
+                    {analysis.missingKeywords.map((kw, idx) => {
+                      const isCopied = copiedKeyword === kw;
+                      const isAdded = addedKeywords.includes(kw);
+                      const canAddToText = inputMode === "upload" || inputMode === "paste";
+
+                      return (
+                        <div
+                          key={idx}
+                          className={`inline-flex items-center gap-1.5 rounded-xl border p-1 text-xs font-semibold transition-all ${
+                            isAdded
+                              ? "bg-blue-500/10 border-blue-500/30 text-blue-300"
+                              : "bg-amber-500/10 border-amber-500/20 text-amber-300 hover:border-amber-500/40"
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleCopyKeyword(kw)}
+                            title={isAr ? "نسخ الكلمة للحافظة" : "Copy keyword"}
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-amber-500/20 transition-colors cursor-pointer"
+                          >
+                            <span>{isCopied ? "✓" : "📋"}</span>
+                            <span className="font-mono">{kw}</span>
+                            {isCopied && (
+                              <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">
+                                {isAr ? "تم النسخ" : "Copied"}
+                              </span>
+                            )}
+                          </button>
+
+                          {canAddToText && (
+                            <button
+                              type="button"
+                              onClick={() => handleAddKeywordToText(kw)}
+                              disabled={isAdded}
+                              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
+                                isAdded
+                                  ? "bg-blue-600/20 text-blue-400 cursor-default"
+                                  : "bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white"
+                              }`}
+                              title={isAr ? "إضافة الكلمة مباشرة إلى نص السيرة" : "Add keyword directly into CV text"}
+                            >
+                              {isAdded ? (
+                                <span>✓ {isAr ? "مضافة" : isDe ? "Hinzugefügt" : "Added"}</span>
+                              ) : (
+                                <span>{isAr ? "+ إضافتها للنص" : isDe ? "+ Zum Text hinzufügen" : "+ Add to CV"}</span>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

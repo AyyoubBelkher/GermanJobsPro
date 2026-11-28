@@ -37,6 +37,32 @@ export interface JobDescriptionEvaluation {
   text: string | null;
 }
 
+export type KeywordMatchMode = "job_description" | "target_role" | "industry_benchmark";
+
+export interface KeywordMatchModeResolution {
+  mode: KeywordMatchMode;
+  text: string | null;
+}
+
+/**
+ * Resolves keyword matching mode from user input without altering classifyJobDescription().
+ * - < 2 chars / empty => "industry_benchmark" (infer from CV)
+ * - 2..29 chars => "target_role" (interpret short role/field name in any language)
+ * - >= 30 chars => "job_description" (strict full job posting match)
+ */
+export function resolveKeywordMatchMode(
+  jd: string | null | undefined
+): KeywordMatchModeResolution {
+  const clean = typeof jd === "string" ? jd.trim() : "";
+  if (clean.length < 2) {
+    return { mode: "industry_benchmark", text: null };
+  }
+  if (clean.length < 30) {
+    return { mode: "target_role", text: clean };
+  }
+  return { mode: "job_description", text: clean };
+}
+
 export type ActionCategory =
   | "category_a_safe_general"
   | "category_b_candidate_claim"
@@ -72,6 +98,9 @@ export interface ValidatedAtsOutput {
   weaknesses: string[];
   missingKeywords: string[];
   actionPlan: string[];
+  matchedKeywords?: string[];
+  keywordMatchMode?: KeywordMatchMode;
+  detectedTargetRole?: string | null;
 }
 
 /**
@@ -611,13 +640,15 @@ export function filterVerifiedWeaknesses(
  */
 export function validateAtsTopLevelSchema(
   parsed: unknown,
-  hasValidJd: boolean
+  hasValidJd: boolean,
+  options?: { allowBenchmarkKeywords?: boolean }
 ): ValidatedAtsOutput {
   if (!parsed || typeof parsed !== "object") {
     throw new Error("UNRECOVERABLE_VALIDATION_FAILURE: AI output is not a JSON object");
   }
 
   const obj = parsed as Record<string, unknown>;
+  const allowBenchmarkKeywords = options?.allowBenchmarkKeywords === true;
 
   // 1. overallScore
   const overall = obj.overallScore;
@@ -633,7 +664,7 @@ export function validateAtsTopLevelSchema(
 
   // 3. keywordMatchScore
   let keywordMatchScore: number | null = null;
-  if (!hasValidJd) {
+  if (!hasValidJd && !allowBenchmarkKeywords) {
     keywordMatchScore = null;
   } else {
     const kw = obj.keywordMatchScore;
@@ -670,7 +701,7 @@ export function validateAtsTopLevelSchema(
 
   // 7. missingKeywords
   let missingKeywords: string[] = [];
-  if (!hasValidJd) {
+  if (!hasValidJd && !allowBenchmarkKeywords) {
     missingKeywords = [];
   } else {
     missingKeywords = validateStringArray("missingKeywords", obj.missingKeywords);
@@ -678,6 +709,36 @@ export function validateAtsTopLevelSchema(
 
   // 8. actionPlan
   const actionPlan = validateStringArray("actionPlan", obj.actionPlan);
+
+  if (!allowBenchmarkKeywords) {
+    return {
+      overallScore: overall,
+      din5008Score: din,
+      keywordMatchScore,
+      summary: summary.trim(),
+      strengths,
+      weaknesses,
+      missingKeywords,
+      actionPlan,
+    };
+  }
+
+  // Optional benchmark fields when allowBenchmarkKeywords === true
+  const matchedKeywords =
+    obj.matchedKeywords === undefined || obj.matchedKeywords === null
+      ? []
+      : validateStringArray("matchedKeywords", obj.matchedKeywords);
+
+  let detectedTargetRole: string | null = null;
+  if (obj.detectedTargetRole !== undefined && obj.detectedTargetRole !== null) {
+    if (typeof obj.detectedTargetRole !== "string") {
+      throw new Error(
+        `UNRECOVERABLE_VALIDATION_FAILURE: detectedTargetRole must be a string or null. Received: ${JSON.stringify(obj.detectedTargetRole)}`
+      );
+    }
+    const trimmedRole = obj.detectedTargetRole.trim();
+    detectedTargetRole = trimmedRole.length > 0 ? trimmedRole : null;
+  }
 
   return {
     overallScore: overall,
@@ -687,6 +748,8 @@ export function validateAtsTopLevelSchema(
     strengths,
     weaknesses,
     missingKeywords,
+    matchedKeywords,
+    detectedTargetRole,
     actionPlan,
   };
 }

@@ -9,6 +9,7 @@ const {
   hasVerifiedDateInversion,
   computeContactProvenance,
   classifyJobDescription,
+  resolveKeywordMatchMode,
   classifyActionPlanItem,
   filterVerifiedWeaknesses,
   isNoWeaknessPlaceholder,
@@ -894,6 +895,79 @@ ZERTIFIKATE
     it("R6: Identical start and end dates render as a single date without trailing hyphen", () => {
       const formatted = formatDateRange("2021-06-01", "2021-06-01", false);
       assert.equal(formatted, "06/2021");
+    });
+  });
+
+  describe("Group K: Keyword Match Mode & Benchmark Schema Validation", () => {
+    it("K1: resolveKeywordMatchMode('') resolves to industry_benchmark", () => {
+      assert.deepEqual(resolveKeywordMatchMode(""), {
+        mode: "industry_benchmark",
+        text: null,
+      });
+      assert.deepEqual(resolveKeywordMatchMode("   "), {
+        mode: "industry_benchmark",
+        text: null,
+      });
+      assert.deepEqual(resolveKeywordMatchMode(null), {
+        mode: "industry_benchmark",
+        text: null,
+      });
+    });
+
+    it("K2: resolveKeywordMatchMode('رعاية الصحية') resolves to target_role", () => {
+      assert.deepEqual(resolveKeywordMatchMode("رعاية الصحية"), {
+        mode: "target_role",
+        text: "رعاية الصحية",
+      });
+    });
+
+    it("K3: resolveKeywordMatchMode('Pflegefachkraft') resolves to target_role", () => {
+      assert.deepEqual(resolveKeywordMatchMode("Pflegefachkraft"), {
+        mode: "target_role",
+        text: "Pflegefachkraft",
+      });
+    });
+
+    it("K4: resolveKeywordMatchMode with 30+ char German JD resolves to job_description", () => {
+      const jd =
+        "Wir suchen eine examinierte Pflegefachkraft (m/w/d) in Berlin für die stationäre Patientenversorgung.";
+      assert.deepEqual(resolveKeywordMatchMode(jd), {
+        mode: "job_description",
+        text: jd,
+      });
+    });
+
+    it("K5: validateAtsTopLevelSchema with allowBenchmarkKeywords validates score/matched/missing while default enforces null/[]", () => {
+      const payload = {
+        overallScore: 86,
+        din5008Score: 90,
+        keywordMatchScore: 72,
+        detectedTargetRole: "Pflegefachkraft",
+        summary: "Starker Lebenslauf mit guten Grundlagen für die Pflege in Deutschland.",
+        strengths: ["Klare DIN 5008 Struktur"],
+        weaknesses: [],
+        matchedKeywords: ["Patientenversorgung", "Dokumentation"],
+        missingKeywords: ["Pflegeplanung", "Wundmanagement"],
+        actionPlan: [],
+      };
+
+      const benchmarkResult = validateAtsTopLevelSchema(payload, false, {
+        allowBenchmarkKeywords: true,
+      });
+      assert.equal(benchmarkResult.keywordMatchScore, 72);
+      assert.deepEqual(benchmarkResult.matchedKeywords, [
+        "Patientenversorgung",
+        "Dokumentation",
+      ]);
+      assert.deepEqual(benchmarkResult.missingKeywords, [
+        "Pflegeplanung",
+        "Wundmanagement",
+      ]);
+      assert.equal(benchmarkResult.detectedTargetRole, "Pflegefachkraft");
+
+      const legacyDefaultResult = validateAtsTopLevelSchema(payload, false);
+      assert.equal(legacyDefaultResult.keywordMatchScore, null);
+      assert.deepEqual(legacyDefaultResult.missingKeywords, []);
     });
   });
 });
