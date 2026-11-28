@@ -388,7 +388,7 @@ export async function deductCreditInTx(
       data: {
         userId: user.id,
         operation: opts.operation,
-        model: opts.model || process.env.GEMINI_MODEL || "gemini-1.5-flash",
+        model: opts.model || process.env.GEMINI_MODEL || "gemini-3.6-flash",
         inputTokens: opts.inputTokens ?? null,
         outputTokens: opts.outputTokens ?? null,
         latencyMs: opts.latencyMs ? Math.round(opts.latencyMs) : null,
@@ -438,7 +438,7 @@ export async function deductCreditInTx(
     data: {
       userId: user.id,
       operation: opts.operation,
-      model: opts.model || process.env.GEMINI_MODEL || "gemini-1.5-flash",
+      model: opts.model || process.env.GEMINI_MODEL || "gemini-3.6-flash",
       inputTokens: opts.inputTokens ?? null,
       outputTokens: opts.outputTokens ?? null,
       latencyMs: opts.latencyMs ? Math.round(opts.latencyMs) : null,

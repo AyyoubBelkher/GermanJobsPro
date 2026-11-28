@@ -22,19 +22,73 @@ const getGeminiClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-const FALLBACK_MODELS = [
-  process.env.GEMINI_MODEL || "gemini-2.5-flash",
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
+export const DEFAULT_GEMINI_MODEL = "gemini-3.6-flash";
+
+export const FALLBACK_MODELS = [
+  process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL,
+  "gemini-3.5-flash-lite",
+  "gemini-3.8-flash",
 ];
 
+/**
+ * Returns the deduplicated active Gemini model fallback chain.
+ */
+export function getActiveGeminiModelChain(): string[] {
+  return Array.from(
+    new Set([
+      process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL,
+      "gemini-3.5-flash-lite",
+      "gemini-3.8-flash",
+    ])
+  );
+}
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Checks if an error is an authentication/authorization error (HTTP 401/403, e.g. ACCOUNT_STATE_INVALID).
+ * Auth errors are non-transient and must fail fast without retrying across fallback models.
+ */
+export function isAuthError(error: unknown): boolean {
+  if (!error) return false;
+  if (typeof error === "object") {
+    const status =
+      (error as { status?: unknown; statusCode?: unknown }).status ??
+      (error as { statusCode?: unknown }).statusCode;
+    if (status === 401 || status === 403 || status === "401" || status === "403") {
+      return true;
+    }
+  }
+  const str = String(error).toLowerCase();
+  const msg = error instanceof Error ? error.message.toLowerCase() : "";
+  const combined = `${str} ${msg}`;
+  return (
+    /\b401\b/.test(combined) ||
+    /\b403\b/.test(combined) ||
+    combined.includes("account_state_invalid") ||
+    combined.includes("unauthenticated") ||
+    combined.includes("permission_denied") ||
+    combined.includes("api_key_invalid") ||
+    combined.includes("api key not valid") ||
+    combined.includes("invalid api key") ||
+    combined.includes("unauthorized") ||
+    combined.includes("forbidden")
+  );
+}
 
 /**
  * Checks if an error is a rate limit (HTTP 429 / RESOURCE_EXHAUSTED / Quota exceeded).
  */
 export function isRateLimitError(error: unknown): boolean {
   if (!error) return false;
+  if (typeof error === "object") {
+    const status =
+      (error as { status?: unknown; statusCode?: unknown }).status ??
+      (error as { statusCode?: unknown }).statusCode;
+    if (status === 429 || status === "429") {
+      return true;
+    }
+  }
   const str = String(error).toLowerCase();
   const msg = error instanceof Error ? error.message.toLowerCase() : "";
   return (
@@ -51,17 +105,30 @@ export function isRateLimitError(error: unknown): boolean {
   );
 }
 
+export interface GeminiContentClient {
+  models: {
+    generateContent: (params: {
+      model: string;
+      contents: string;
+      config?: Parameters<GoogleGenAI["models"]["generateContent"]>[0]["config"];
+    }) => Promise<{ text?: string }>;
+  };
+}
+
 /**
- * Executes generateContent with 1-retry backoff per model and automatic fallback across multiple models.
+ * Executes generateContent with fast-fail on 401/403 auth errors, 1-retry backoff per model on 429,
+ * and automatic fallback across active Gemini 3.x models on transient errors (429/500/503).
  */
-async function generateContentWithFallback(
-  ai: ReturnType<typeof getGeminiClient>,
+export async function generateContentWithFallback(
+  ai: GeminiContentClient,
   params: {
     contents: string;
-    config?: Parameters<typeof ai.models.generateContent>[0]["config"];
-  }
+    config?: Parameters<GoogleGenAI["models"]["generateContent"]>[0]["config"];
+  },
+  options?: { retryDelayMs?: number }
 ): Promise<string> {
-  const models = Array.from(new Set(FALLBACK_MODELS));
+  const models = getActiveGeminiModelChain();
+  const retryDelayMs = options?.retryDelayMs ?? 1500;
   let lastError: unknown = null;
 
   for (let m = 0; m < models.length; m++) {
@@ -86,16 +153,21 @@ async function generateContentWithFallback(
           err instanceof Error ? err.message : err
         );
 
+        // Fail fast on 401/403 authentication errors without wasting retries or falling back
+        if (isAuthError(err)) {
+          throw err;
+        }
+
         if (isRateLimitError(err)) {
-          // If this was attempt 0, wait 1500ms backoff and retry once with same model
+          // If this was attempt 0, wait backoff and retry once with same model
           if (attempt === 0) {
-            await sleep(1500);
+            await sleep(retryDelayMs);
             continue;
           }
           // If attempt 1 failed with rate limit, break out to try next fallback model
           break;
         } else {
-          // Non-rate limit error: try next model immediately
+          // Transient / other error (e.g. 500/503): try next model immediately
           break;
         }
       }
