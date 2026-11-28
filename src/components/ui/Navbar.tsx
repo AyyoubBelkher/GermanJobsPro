@@ -36,6 +36,12 @@ function getToolsLabel(locale: string) {
   return "Tools"; // en and de
 }
 
+function getFrenchCvNavLabel(locale: string) {
+  if (locale === "ar") return "سيرة ذاتية بالفرنسية (المغرب)";
+  if (locale === "de") return "Französischer Lebenslauf";
+  return "CV en Français (Maroc)";
+}
+
 function buildSwitchLocaleUrl(
   pathname: string | null,
   searchParamsString: string | null | undefined,
@@ -709,6 +715,16 @@ function MobileNav({
           </Link>
 
           <Link
+            href={`/${activeLocale}/dashboard/cv-fr`}
+            dir={isAr ? "rtl" : "ltr"}
+            onClick={onClose}
+            className={`${mobileInactiveClass} flex items-center gap-2`}
+          >
+            <span>🇲🇦</span>
+            <span>{getFrenchCvNavLabel(activeLocale)}</span>
+          </Link>
+
+          <Link
             href={atsLink}
             dir={isAr ? "rtl" : "ltr"}
             onClick={onClose}
@@ -806,6 +822,10 @@ function MobileNavFallback({
           <Link href={cvLink} dir={isAr ? "rtl" : "ltr"} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2`}>
             <span>📄</span>
             <span>{dict.nav.myResumes}</span>
+          </Link>
+          <Link href={`/${activeLocale}/dashboard/cv-fr`} dir={isAr ? "rtl" : "ltr"} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2`}>
+            <span>🇲🇦</span>
+            <span>{getFrenchCvNavLabel(activeLocale)}</span>
           </Link>
           <Link href={atsLink} dir={isAr ? "rtl" : "ltr"} onClick={onClose} className={`${mobileInactiveClass} flex items-center gap-2`}>
             <span>🔍</span>
@@ -1178,6 +1198,15 @@ export default function Navbar({ locale = "ar", initialUser = null }: NavbarProp
                         >
                           <span>📄</span>
                           <span>{dict.nav.myResumes}</span>
+                        </Link>
+
+                        <Link
+                          href={`/${activeLocale}/dashboard/cv-fr`}
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-teal-300 hover:text-teal-200 hover:bg-teal-500/10 transition-colors whitespace-nowrap"
+                        >
+                          <span>🇲🇦</span>
+                          <span>{getFrenchCvNavLabel(activeLocale)}</span>
                         </Link>
 
                         <Link

@@ -139,6 +139,48 @@ export default async function DashboardPage({
           </Link>
         </div>
 
+        {/* Additive Entry Card: French CV for Morocco */}
+        <Link
+          href={`/${locale}/dashboard/cv-fr`}
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-teal-600/20 via-emerald-600/15 to-slate-900/70 border border-teal-500/35 p-4 sm:p-5 hover:border-teal-400 transition-all hover:shadow-lg hover:shadow-teal-500/10 flex items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="w-11 h-11 rounded-xl bg-teal-600 flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 transition-transform shrink-0">
+              🇲🇦
+            </div>
+            <div className="space-y-0.5 min-w-0">
+              <span className="text-[11px] font-bold text-teal-400 uppercase tracking-wider">
+                {isAr
+                  ? "السوق المغربي والفرنكوفوني • متوافق مع ATS"
+                  : isDe
+                  ? "Marokko & Frankophoner Markt • ATS"
+                  : locale === "fr"
+                  ? "Marché Marocain & Francophone • ATS"
+                  : "Morocco & Francophone Market • ATS"}
+              </span>
+              <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-teal-300 transition-colors">
+                {isAr
+                  ? "سيرة ذاتية بالفرنسية (المغرب)"
+                  : isDe
+                  ? "Französischer Lebenslauf (Marokko)"
+                  : "CV en Français (Maroc)"}
+              </h3>
+              <p className="text-xs text-slate-400 truncate">
+                {isAr
+                  ? "أنشئ سيرة ذاتية فرنسية متوافقة مع ATS مع دبلومات المغرب وتحميل PDF فوري"
+                  : isDe
+                  ? "Erstellen Sie einen ATS-konformen französischen Lebenslauf für Marokko"
+                  : locale === "fr"
+                  ? "Créez un CV français ATS adapté au Maroc avec export PDF instantané"
+                  : "Create an ATS-friendly French CV tailored for Morocco with instant PDF export"}
+              </p>
+            </div>
+          </div>
+          <span className="px-3.5 py-2 rounded-xl bg-teal-500/20 border border-teal-400/30 text-teal-300 text-xs font-bold shrink-0 group-hover:bg-teal-500 group-hover:text-slate-950 transition-colors">
+            {isAr ? "ابدأ الآن ←" : isDe ? "Erstellen →" : locale === "fr" ? "Créer →" : "Open →"}
+          </span>
+        </Link>
+
         {/* Dynamic Dual-Column Content: CVs & Cover Letters */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Section 1: Saved CVs */}
